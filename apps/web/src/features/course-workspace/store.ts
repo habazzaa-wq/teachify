@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export type ExplorerNodeType = "course" | "lecture" | "section" | "content";
+export type MobilePane = "navigator" | "canvas" | "inspector";
 
 interface WorkspaceState {
   selectedType: ExplorerNodeType | null;
@@ -12,6 +13,7 @@ interface WorkspaceState {
   rightPanelWidth: number;
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
+  mobilePane: MobilePane;
   expandedLectures: string[];
   expandedSections: string[];
 
@@ -21,6 +23,7 @@ interface WorkspaceState {
   setRightPanelWidth: (width: number) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
+  setMobilePane: (pane: MobilePane) => void;
   toggleLecture: (id: string) => void;
   toggleSection: (id: string) => void;
   expandLectures: (ids: string[]) => void;
@@ -29,13 +32,14 @@ interface WorkspaceState {
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       selectedType: null,
       selectedId: null,
       leftPanelWidth: 300,
       rightPanelWidth: 320,
       leftPanelOpen: true,
-      rightPanelOpen: false,
+      rightPanelOpen: true,
+      mobilePane: "navigator",
       expandedLectures: [],
       expandedSections: [],
 
@@ -50,6 +54,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
 
       toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+
+      setMobilePane: (pane) => set({ mobilePane: pane }),
 
       toggleLecture: (id) =>
         set((s) => ({
