@@ -1,0 +1,427 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 20% 96%;
+    --foreground: 225 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 25% 12%;
+
+    --primary: 230 65% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 250 10% 92%;
+    --secondary-foreground: 225 25% 20%;
+
+    --muted: 42 15% 92%;
+    --muted-foreground: 220 10% 48%;
+
+    --accent: 250 14% 90%;
+    --accent-foreground: 225 25% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 35 92% 50%;
+    --warning-foreground: 225 25% 12%;
+
+    --border: 42 12% 85%;
+    --input: 42 12% 85%;
+    --ring: 230 65% 50%;
+
+    --sidebar: 42 15% 94%;
+    --sidebar-foreground: 225 25% 12%;
+    --sidebar-accent: 42 12% 88%;
+    --sidebar-border: 42 10% 84%;
+    --sidebar-ring: 230 65% 50%;
+
+    --radius: 0.75rem;
+
+    --chart-1: 230 65% 50%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 35 92% 50%;
+    --chart-4: 190 80% 50%;
+    --chart-5: 280 65% 60%;
+
+    --emerald: 160 84% 39%;
+    --emerald-foreground: 210 40% 98%;
+    --blue: 230 65% 50%;
+    --blue-foreground: 210 40% 98%;
+    --amber: 35 92% 50%;
+    --amber-foreground: 225 25% 12%;
+    --purple: 280 65% 60%;
+    --purple-foreground: 210 40% 98%;
+
+    --header-height: 4rem;
+    --sidebar-width: 16rem;
+    --sidebar-collapsed-width: 4.25rem;
+  }
+
+  .dark {
+    --background: 210 20% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 210 18% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 210 18% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 230 65% 55%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 15% 16%;
+    --secondary-foreground: 210 40% 90%;
+
+    --muted: 210 12% 16%;
+    --muted-foreground: 220 10% 62%;
+
+    --accent: 210 18% 16%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 96%;
+
+    --success: 160 70% 42%;
+    --success-foreground: 210 40% 96%;
+
+    --warning: 35 90% 50%;
+    --warning-foreground: 210 40% 96%;
+
+    --border: 210 12% 19%;
+    --input: 210 12% 19%;
+    --ring: 230 65% 55%;
+
+    --sidebar: 210 18% 10%;
+    --sidebar-foreground: 210 40% 94%;
+    --sidebar-accent: 210 14% 14%;
+    --sidebar-border: 210 10% 16%;
+    --sidebar-ring: 230 65% 55%;
+
+    --chart-1: 230 65% 55%;
+    --chart-2: 160 70% 42%;
+    --chart-3: 35 90% 50%;
+    --chart-4: 190 75% 45%;
+    --chart-5: 280 65% 65%;
+
+    --emerald: 160 70% 42%;
+    --emerald-foreground: 210 40% 96%;
+    --blue: 230 65% 55%;
+    --blue-foreground: 210 40% 98%;
+    --amber: 35 90% 50%;
+    --amber-foreground: 210 40% 96%;
+    --purple: 280 65% 65%;
+    --purple-foreground: 210 40% 96%;
+  }
+
+  .dark {
+    --background: 225 30% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 225 25% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 225 25% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 230 65% 55%;
+    --primary-foreground: 225 30% 8%;
+
+    --secondary: 225 20% 16%;
+    --secondary-foreground: 210 40% 90%;
+
+    --muted: 225 15% 18%;
+    --muted-foreground: 220 10% 62%;
+
+    --accent: 230 25% 18%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 96%;
+
+    --success: 160 70% 42%;
+    --success-foreground: 225 30% 8%;
+
+    --warning: 35 90% 50%;
+    --warning-foreground: 225 30% 8%;
+
+    --border: 225 15% 20%;
+    --input: 225 15% 20%;
+    --ring: 230 65% 55%;
+
+    --sidebar: 225 30% 9%;
+    --sidebar-foreground: 210 40% 94%;
+    --sidebar-accent: 225 20% 15%;
+    --sidebar-border: 225 15% 17%;
+    --sidebar-ring: 230 65% 55%;
+
+    --chart-1: 230 65% 55%;
+    --chart-2: 160 70% 42%;
+    --chart-3: 35 90% 50%;
+    --chart-4: 190 75% 45%;
+    --chart-5: 280 65% 65%;
+
+    --emerald: 160 70% 42%;
+    --emerald-foreground: 225 30% 8%;
+    --blue: 230 65% 55%;
+    --blue-foreground: 225 30% 8%;
+    --amber: 35 90% 50%;
+    --amber-foreground: 225 30% 8%;
+    --purple: 280 65% 65%;
+    --purple-foreground: 225 30% 8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  [dir="rtl"] {
+    text-align: right;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring/50;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .text-display {
+    @apply text-4xl font-bold tracking-tight sm:text-5xl;
+  }
+
+  .text-h1 {
+    @apply text-3xl font-bold tracking-tight sm:text-4xl;
+  }
+
+  .text-h2 {
+    @apply text-2xl font-bold tracking-tight sm:text-3xl;
+  }
+
+  .text-h3 {
+    @apply text-xl font-semibold tracking-tight sm:text-2xl;
+  }
+
+  .text-h4 {
+    @apply text-lg font-semibold tracking-tight;
+  }
+
+  .text-body-lg {
+    @apply text-base leading-relaxed;
+  }
+
+  .text-body {
+    @apply text-sm leading-relaxed;
+  }
+
+  .text-body-sm {
+    @apply text-xs leading-relaxed;
+  }
+
+  .text-caption {
+    @apply text-[11px] leading-normal text-muted-foreground;
+  }
+
+  .text-overline {
+    @apply text-[10px] font-semibold uppercase tracking-widest text-muted-foreground;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .card-glass {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm;
+  }
+
+  .card-elevated {
+    @apply border-0 shadow-lg ring-1 ring-border/50;
+  }
+
+  .nav-active-indicator {
+    @apply relative before:absolute before:end-0 before:top-1/2 before:h-5/6 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-primary before:shadow-sm before:shadow-primary/40;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-muted-foreground/20 transition-colors;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-grid {
+    background-image: linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-dot {
+    background-image: radial-gradient(hsl(var(--border)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
+
+  .animate-in {
+    animation: fade-in 0.3s ease-out, slide-in-from-bottom-2 0.3s ease-out;
+  }
+
+  .shimmer-overlay {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--muted-foreground) / 0.05) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  @keyframes slide-in-from-bottom-2 {
+    from { transform: translateY(4px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes slide-in-from-right-2 {
+    from { transform: translateX(-4px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes float-orb {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    33% { transform: translateY(-20px) scale(1.02); }
+    66% { transform: translateY(12px) scale(0.98); }
+  }
+
+  .card-premium {
+    @apply overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-500;
+  }
+
+  .card-premium:hover {
+    @apply shadow-xl -translate-y-1 border-border/80;
+  }
+
+  .card-cover {
+    @apply relative aspect-[16/9] overflow-hidden;
+  }
+
+  .card-cover img {
+    @apply h-full w-full object-cover transition-all duration-700 group-hover:scale-110;
+  }
+
+  .card-cover-gradient {
+    @apply absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500;
+  }
+
+  .card-badges {
+    @apply absolute top-3 start-3 flex flex-wrap gap-1.5 z-10;
+  }
+
+  .badge-premium {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm shadow-sm;
+  }
+
+  .badge-featured {
+    @apply badge-premium bg-amber-500/90 text-amber-50;
+  }
+
+  .pill-premium {
+    @apply inline-flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2 py-0.5 text-[10px] text-muted-foreground border shadow-sm;
+  }
+
+  .stat-grid {
+    @apply grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground;
+  }
+
+  .stat-item {
+    @apply flex items-center gap-1.5;
+  }
+
+  .stat-icon {
+    @apply h-3.5 w-3.5 text-muted-foreground/40 shrink-0;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary/60;
+  }
+
+  .nav-tree-line {
+    @apply absolute start-6 top-12 bottom-0 w-px bg-border/50;
+  }
+
+  .content-card {
+    @apply flex items-center gap-3 rounded-xl border border-transparent px-4 py-2.5 hover:border-border/60 hover:bg-muted/20 transition-all cursor-pointer;
+  }
+
+  .content-icon-wrapper {
+    @apply p-2 rounded-xl shrink-0 ring-1 ring-inset ring-black/5;
+  }
+}

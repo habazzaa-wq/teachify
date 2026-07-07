@@ -1,0 +1,422 @@
+"use client";
+
+import { useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  BookOpen,
+  Layers,
+  GraduationCap,
+  FileText,
+  Clock,
+  Sparkles,
+  Plus,
+  Video,
+  Headphones,
+  ExternalLink,
+  Box,
+  Monitor,
+  PenTool,
+  FileSpreadsheet,
+  FolderOpen,
+  CheckCircle2,
+  CircleDashed,
+  Users,
+  Star,
+  Globe,
+  Lock,
+  BadgeCheck,
+  BarChart3,
+  TrendingUp,
+  Award,
+} from "lucide-react";
+import { WorkspaceOverview } from "./WorkspaceOverview";
+import { ContentInspector } from "./ContentInspector";
+import { PermissionGuard, AppButton } from "@/components/ui";
+import { useWorkspaceStore } from "../store";
+import type { CourseModule, CourseModuleSection, ContentItem } from "@/features/course-content/types";
+import type { Course } from "@/features/courses/types";
+import { cn } from "@/lib/cn";
+import { formatNumber } from "@/lib/format";
+import { estimateDurationMinutes } from "@/features/course-content/utils";
+
+const contentTypeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  video: Video,
+  pdf: FileText,
+  exam: FileSpreadsheet,
+  assignment: PenTool,
+  audio: Headphones,
+  resource: FolderOpen,
+  live: Monitor,
+  scorm: Box,
+  external_link: ExternalLink,
+  certificate: Award,
+};
+
+const contentTypeColors: Record<string, string> = {
+  video: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  pdf: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+  exam: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  assignment: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  audio: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  resource: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+  live: "bg-red-500/10 text-red-500 border-red-500/20",
+  scorm: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+  external_link: "bg-sky-500/10 text-sky-500 border-sky-500/20",
+  certificate: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+};
+
+interface WorkspaceEditorProps {
+  course?: Course | null;
+  courseLoading?: boolean;
+  moduleTree: CourseModule[];
+  totalModules: number;
+  onAddLecture?: () => void;
+}
+
+function LectureEditor({ lecture }: { lecture: CourseModule }) {
+  const sections = lecture.sections ?? [];
+  const totalItems = sections.reduce((s, sec) => s + sec.items.length, 0);
+  const totalDuration = sections.reduce((s, sec) => s + (sec.durationMinutes ?? 0), 0);
+
+  const contentTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    sections.forEach((sec) =>
+      sec.items.forEach((item) => {
+        counts[item.type] = (counts[item.type] ?? 0) + 1;
+      }),
+    );
+    return counts;
+  }, [sections]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      className="space-y-8 max-w-3xl"
+    >
+      <div className="flex items-start gap-4">
+        <div className="p-3 rounded-2xl bg-primary/[0.06]">
+          <GraduationCap className="h-6 w-6 text-primary" />
+        </div>
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold tracking-tight">{lecture.title}</h2>
+            <span className={cn(
+              "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
+              lecture.status === "published"
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                : "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+            )}>
+              {lecture.status === "published" ? (
+                <CheckCircle2 className="h-3 w-3" />
+              ) : (
+                <CircleDashed className="h-3 w-3" />
+              )}
+              {lecture.status === "published" ? "منشور" : "مسودة"}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground/60">
+            {sections.length} أقسام · {totalItems} محتوى
+            {totalDuration > 0 && ` · ${estimateDurationMinutes(totalDuration)}`}
+          </p>
+        </div>
+      </div>
+
+      {lecture.description && (
+        <p className="text-sm text-muted-foreground/70 leading-relaxed">{lecture.description}</p>
+      )}
+
+      {/* Content type breakdown */}
+      {Object.keys(contentTypeCounts).length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(contentTypeCounts).map(([type, count]) => {
+            const Icon = contentTypeIcons[type] ?? FolderOpen;
+            const colors = contentTypeColors[type] ?? contentTypeColors.resource;
+            const typeLabels: Record<string, string> = {
+              video: "فيديو", pdf: "PDF", exam: "اختبار", assignment: "واجب",
+              audio: "صوت", resource: "مورد", live: "مباشر", scorm: "SCORM",
+              external_link: "رابط", certificate: "شهادة",
+            };
+            return (
+              <span key={type} className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border", colors)}>
+                <Icon className="h-3.5 w-3.5" />
+                {typeLabels[type] ?? type} ({count})
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Sections List */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-muted-foreground/60 tracking-wider uppercase">
+          الأقسام ({sections.length})
+        </h3>
+        {sections.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-border/40 bg-muted/10">
+            <Layers className="h-8 w-8 text-muted-foreground/15" />
+            <p className="text-xs text-muted-foreground/40">لا توجد أقسام بعد</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sections.map((section, i) => (
+              <div
+                key={section.id}
+                className="group flex items-start gap-3 p-4 rounded-xl bg-card border border-border/40 hover:border-border/60 hover:shadow-sm transition-all"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.06] text-xs font-mono font-bold text-muted-foreground/50 shrink-0">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold truncate">{section.title}</span>
+                    {section.freePreview && (
+                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-medium">مجاني</span>
+                    )}
+                    {section.locked && (
+                      <Lock className="h-3 w-3 text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/50">
+                    <span>{section.items.length} محتوى</span>
+                    {section.durationMinutes != null && section.durationMinutes > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>{estimateDurationMinutes(section.durationMinutes)}</span>
+                      </>
+                    )}
+                  </div>
+                  {section.items.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {section.items.map((item) => {
+                        const Icon = contentTypeIcons[item.type] ?? FolderOpen;
+                        const colors = contentTypeColors[item.type] ?? contentTypeColors.resource;
+                        return (
+                          <span
+                            key={item.id}
+                            className={cn(
+                              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-medium border",
+                              colors,
+                            )}
+                          >
+                            <Icon className="h-2.5 w-2.5" />
+                            {item.title.length > 20 ? item.title.slice(0, 20) + "…" : item.title}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Stats */}
+      {sections.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "الأقسام", value: sections.length, icon: Layers, color: "text-blue-500" },
+            { label: "المحتوى", value: totalItems, icon: FileText, color: "text-purple-500" },
+            { label: "المدة", value: estimateDurationMinutes(totalDuration), icon: Clock, color: "text-amber-500" },
+            { label: "الأنواع", value: Object.keys(contentTypeCounts).length, icon: Box, color: "text-emerald-500" },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-xl border border-border/40 bg-card p-3 text-center">
+              <stat.icon className={cn("h-4 w-4 mx-auto mb-1", stat.color)} />
+              <p className="text-sm font-bold">{stat.value}</p>
+              <p className="text-[9px] text-muted-foreground/50">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function SectionEditor({ section }: { section: CourseModuleSection }) {
+  const items = section.items ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+      className="space-y-8 max-w-3xl"
+    >
+      <div className="flex items-start gap-4">
+        <div className="p-3 rounded-2xl bg-blue-500/[0.06]">
+          <Layers className="h-6 w-6 text-blue-500" />
+        </div>
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold tracking-tight">{section.title}</h2>
+            {section.freePreview && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <Globe className="h-3 w-3" />مجاني
+              </span>
+            )}
+            {section.locked && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/60 bg-muted/20 px-2 py-0.5 rounded-full">
+                <Lock className="h-3 w-3" />مقفل
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground/60">
+            {items.length} محتوى
+            {section.durationMinutes != null && section.durationMinutes > 0 && ` · ${estimateDurationMinutes(section.durationMinutes)}`}
+          </p>
+        </div>
+      </div>
+
+      {section.description && (
+        <p className="text-sm text-muted-foreground/70 leading-relaxed">{section.description}</p>
+      )}
+
+      <div className="space-y-1.5">
+        <h3 className="text-xs font-bold text-muted-foreground/60 tracking-wider uppercase mb-3">
+          المحتوى ({items.length})
+        </h3>
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl border border-dashed border-border/40 bg-muted/10">
+            <FileText className="h-8 w-8 text-muted-foreground/15" />
+            <p className="text-xs text-muted-foreground/40">لا يوجد محتوى في هذا القسم</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {items.map((item, i) => {
+              const Icon = contentTypeIcons[item.type] ?? FolderOpen;
+              const colors = contentTypeColors[item.type] ?? contentTypeColors.resource;
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/20 transition-colors"
+                >
+                  <span className="text-[10px] font-mono text-muted-foreground/20 w-5 text-center shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className={cn("p-1.5 rounded-lg shrink-0", colors)}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="text-sm font-medium truncate flex-1">{item.title}</span>
+                  {item.duration != null && item.duration > 0 && (
+                    <span className="text-[10px] text-muted-foreground/50 shrink-0">
+                      {Math.round(item.duration / 60)}د
+                    </span>
+                  )}
+                  <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0",
+                    item.status === "published"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-muted/30 text-muted-foreground/50",
+                  )}>
+                    {item.status === "published" ? "منشور" : "مسودة"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function WorkspaceEditor({
+  course,
+  courseLoading,
+  moduleTree,
+  totalModules,
+  onAddLecture,
+}: WorkspaceEditorProps) {
+  const { selectedType, selectedId, select } = useWorkspaceStore();
+
+  const selectedLecture = useMemo(() => {
+    if (selectedType !== "lecture" || !selectedId) return null;
+    return moduleTree.find((m) => m.id === selectedId) ?? null;
+  }, [moduleTree, selectedType, selectedId]);
+
+  const selectedSection = useMemo(() => {
+    if (selectedType !== "section" || !selectedId) return null;
+    for (const mod of moduleTree) {
+      const sec = mod.sections.find((s) => s.id === selectedId);
+      if (sec) return sec;
+    }
+    return null;
+  }, [moduleTree, selectedType, selectedId]);
+
+  const selectedItem = useMemo(() => {
+    if (selectedType !== "content" || !selectedId) return null;
+    for (const mod of moduleTree) {
+      for (const sec of mod.sections) {
+        const item = sec.items.find((i) => i.id === selectedId);
+        if (item) return item;
+      }
+    }
+    return null;
+  }, [moduleTree, selectedType, selectedId]);
+
+  return (
+    <div className="h-full overflow-y-auto scrollbar-thin">
+      <div className="p-6">
+        <AnimatePresence mode="wait">
+          {(!selectedType || selectedType === "course") && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <WorkspaceOverview
+                course={course}
+                loading={courseLoading}
+                onAddLecture={onAddLecture}
+                totalModules={totalModules}
+              />
+            </motion.div>
+          )}
+
+          {selectedType === "lecture" && selectedLecture && (
+            <motion.div
+              key={`lecture-${selectedLecture.id}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+            >
+              <LectureEditor lecture={selectedLecture} />
+            </motion.div>
+          )}
+
+          {selectedType === "section" && selectedSection && (
+            <motion.div
+              key={`section-${selectedSection.id}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SectionEditor section={selectedSection} />
+            </motion.div>
+          )}
+
+          {selectedType === "content" && selectedItem && (
+            <motion.div
+              key={`item-${selectedItem.id}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ContentInspector item={selectedItem} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export { WorkspaceEditor };
+export type { WorkspaceEditorProps };

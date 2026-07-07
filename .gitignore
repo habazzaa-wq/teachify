@@ -29,6 +29,15 @@ apps/api/public/storage
 .idea/
 .vscode/
 
+# --- Debug / temporary scripts ---
+debug-*.cjs
+debug-*.js
+compare-urls.cjs
+
+# --- Accidental/error output files ---
+apps/api/forceDelete()
+apps/api/toArray()
+
 # --- OS ---
 .DS_Store
 Thumbs.db
@@ -44,8 +53,14 @@ coverage/
 .phpunit.cache
 .phpunit.result.cache
 
-# --- Nested project (separate git repo) ---
-apps/web/
+# --- Next.js web app ---
+apps/web/.next/
+apps/web/out/
+apps/web/build
+apps/web/.env.local
+apps/web/certificates/
+apps/web/*.tsbuildinfo
+apps/web/next-env.d.ts
 
 # --- Temp / debug ---
 tmp/
