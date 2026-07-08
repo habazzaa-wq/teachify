@@ -1,9 +1,9 @@
 "use client";
 
-import { CoursesPageContent } from "@/features/courses/components/CoursesPageContent";
+import { CoursesStudioContent } from "@/features/courses/components/CoursesStudioContent";
 
 function CoursesPage() {
-  return <CoursesPageContent />;
+  return <CoursesStudioContent />;
 }
 
 export default CoursesPage;
