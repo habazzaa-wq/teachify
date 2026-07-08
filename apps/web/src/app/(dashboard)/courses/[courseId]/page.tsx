@@ -1,9 +1,9 @@
 "use client";
 
-import { CourseWorkspaceShell } from "@/features/course-workspace/components/CourseWorkspaceShell";
+import { StudioShell } from "@/features/course-workspace/components/StudioShell";
 
 function CourseWorkspacePage() {
-  return <CourseWorkspaceShell />;
+  return <StudioShell />;
 }
 
 export default CourseWorkspacePage;
