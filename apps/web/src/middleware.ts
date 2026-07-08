@@ -4,13 +4,17 @@ import { resolveApiUrl } from "@/config/env";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
 
-const CACHE_TTL = 300_000; // 5 minutes
+const CACHE_TTL = 300_000; // 5 minutes for successful lookups
+const NEGATIVE_CACHE_TTL = 10_000; // 10 seconds for failed lookups (API down / 404)
 const domainCache = new Map<string, { data: any; timestamp: number }>();
 
 async function getTenantData(hostname: string, requestUrl: URL): Promise<any | null> {
   const cached = domainCache.get(hostname);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
+  if (cached) {
+    const ttl = cached.data ? CACHE_TTL : NEGATIVE_CACHE_TTL;
+    if (Date.now() - cached.timestamp < ttl) {
+      return cached.data;
+    }
   }
 
   try {
@@ -23,6 +27,7 @@ async function getTenantData(hostname: string, requestUrl: URL): Promise<any | n
     });
     
     if (!res.ok) {
+      console.error(`Middleware tenant lookup for ${hostname} returned HTTP ${res.status}`);
       domainCache.set(hostname, { data: null, timestamp: Date.now() });
       return null;
     }
