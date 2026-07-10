@@ -39,7 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
 const ACTION_COLORS: Record<string, string> = {
   created: "text-green-600 bg-green-100 dark:bg-green-900/20",
   edited: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
-  assigned: "text-purple-600 bg-purple-100 dark:bg-purple-900/20",
+  assigned: "text-secondary bg-secondary/10 dark:bg-secondary/20",
   unassigned: "text-orange-600 bg-orange-100 dark:bg-orange-900/20",
   imported: "text-cyan-600 bg-cyan-100 dark:bg-cyan-900/20",
   archived: "text-amber-600 bg-amber-100 dark:bg-amber-900/20",

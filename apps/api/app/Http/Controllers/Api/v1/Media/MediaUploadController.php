@@ -8,13 +8,14 @@ use App\Models\MediaUploadSession;
 use App\Models\TenantUser;
 use App\Services\Authorization\TenantAuthorizationService;
 use App\Services\Media\StorageUploadService;
+use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class MediaUploadController extends Controller
 {
-    public function store(Request $request, StorageUploadService $uploads, TenantAuthorizationService $authorization): JsonResponse
+    public function store(Request $request, StorageUploadService $uploads, TenantAuthorizationService $authorization, UploadGuardService $guard): JsonResponse
     {
         $authorization->authorize($request->user(), currentTenant(), 'courses.update');
 
@@ -27,6 +28,12 @@ class MediaUploadController extends Controller
             'checksum' => ['nullable', 'string', 'max:255'],
             'visibility' => ['sometimes', Rule::in(['private', 'public'])],
         ]);
+
+        $guard->guardFileUpload(
+            currentTenant(),
+            $validated['size_bytes'] ?? null,
+            $validated['mime_type'] ?? null,
+        );
 
         $result = $uploads->createUploadIntent(currentTenant(), app(TenantUser::class), $validated);
 

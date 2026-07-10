@@ -70,6 +70,7 @@ export const sectionsService = {
       title: payload.title,
       slug: payload.slug,
       description: payload.description,
+      course_module_id: payload.course_module_id,
       sort_order: payload.sort_order,
       duration_minutes: payload.duration_minutes,
       free_preview: payload.free_preview,
@@ -136,6 +137,11 @@ export const sectionsService = {
 
   async duplicate(courseId: string, id: string): Promise<CourseSection | null> {
     const { data } = await api.post(`/courses/${courseId}/sections/${id}/duplicate`);
+    return data.data ? formatSection(data.data) : null;
+  },
+
+  async move(courseId: string, id: string, payload: { course_module_id: string | null; sort_order?: number }): Promise<CourseSection | null> {
+    const { data } = await api.post(`/courses/${courseId}/sections/${id}/move`, payload);
     return data.data ? formatSection(data.data) : null;
   },
 

@@ -37,7 +37,10 @@ class MediaLibraryPolicy
 
     public function upload(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.upload');
+        return $this->auth->hasPermission($user, 'media.upload')
+            || $this->auth->hasPermission($user, 'media.create')
+            || $this->auth->hasPermission($user, 'courses.update')
+            || $this->auth->hasPermission($user, 'courses.create');
     }
 
     public function download(User $user): bool

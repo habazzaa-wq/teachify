@@ -63,7 +63,7 @@ class CoursePolicy
 
     public function archive(User $user, Course $course): bool
     {
-        return $this->publish($user, $course);
+        return $this->update($user, $course);
     }
 
     public function feature(User $user, Course $course): bool

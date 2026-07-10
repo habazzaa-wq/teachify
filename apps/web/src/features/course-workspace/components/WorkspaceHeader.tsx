@@ -28,7 +28,7 @@ function WorkspaceHeader({ course, loading, onPublish, publishPending, onEdit, o
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <AppBreadcrumb
           items={[
-            { label: "الدورات", href: "/courses" },
+            { label: "الدورات", href: "/teacher/courses" },
             { label: loading ? "..." : (course?.title ?? "غير معروف"), href: "#" },
           ]}
         />

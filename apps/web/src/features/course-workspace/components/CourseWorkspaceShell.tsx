@@ -130,7 +130,7 @@ function CourseWorkspaceShell() {
   }, [publishCourse, courseId]);
 
   const handlePreview = useCallback(() => {
-    window.open(`/courses/${courseId}/preview`, "_blank");
+    window.open(`/teacher/courses/${courseId}/preview`, "_blank");
   }, [courseId]);
 
   const handleShare = useCallback(() => {
@@ -376,7 +376,7 @@ function CourseWorkspaceShell() {
         <div className="flex items-center gap-3">
           <AppBreadcrumb
             items={[
-              { label: "الدورات", href: "/courses" },
+              { label: "الدورات", href: "/teacher/courses" },
               { label: courseLoading ? "..." : (course?.title ?? ""), href: "#" },
             ]}
           />
@@ -610,7 +610,6 @@ function CourseWorkspaceShell() {
         courseId={courseId}
         onSave={handleEditSave}
         saving={updateCourse.isPending}
-        categories={[]}
       />
     </div>
   );

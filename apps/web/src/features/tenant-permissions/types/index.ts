@@ -20,7 +20,9 @@ export type PermissionModule =
   | "notifications"
   | "reports"
   | "api"
-  | "integrations";
+  | "integrations"
+  | "exam"
+  | "question";
 
 export type PermissionAction =
   | "view"

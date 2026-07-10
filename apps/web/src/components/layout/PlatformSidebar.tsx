@@ -18,6 +18,8 @@ import {
   Star,
   Package,
   Globe,
+  Rabbit,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { usePlatformAuth } from "@/providers/PlatformAuthProvider";
@@ -45,6 +47,8 @@ const customerNav: NavItem[] = [
 const platformNav: NavItem[] = [
   { label: "الباقات", href: "/superadmin/dashboard/plans", icon: Package },
   { label: "إدارة النطاقات", href: "/superadmin/dashboard/domains", icon: Globe },
+  { label: "تخزين Bunny", href: "/superadmin/dashboard/bunny-settings", icon: Rabbit },
+  { label: "مركز Bunny", href: "/superadmin/dashboard/bunny-center", icon: BarChart3 },
 ];
 
 const systemNav: NavItem[] = [

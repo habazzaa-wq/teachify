@@ -18,7 +18,9 @@ export const MODULE_CONFIG: Record<PermissionModule, { label: string; icon: stri
   reports: { label: "التقارير", icon: "FileBarChart", order: 13 },
   settings: { label: "الإعدادات", icon: "Settings", order: 14 },
   media: { label: "الوسائط", icon: "Image", order: 15 },
-  notifications: { label: "الإشعارات", icon: "Bell", order: 16 },
+  exam: { label: "الاختبارات", icon: "ClipboardList", order: 16 },
+  question: { label: "الأسئلة", icon: "ListChecks", order: 17 },
+  notifications: { label: "الإشعارات", icon: "Bell", order: 18 },
   api: { label: "API", icon: "Code2", order: 17 },
   integrations: { label: "التكاملات", icon: "Puzzle", order: 18 },
 };

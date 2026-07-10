@@ -1,70 +1,112 @@
 import { api } from "@/services/api";
+import { resolveApiBaseUrl } from "@/config/env";
+import { useAuthStore } from "@/stores/auth.store";
+import { useTenantStore } from "@/stores/tenant.store";
 import type {
   MediaAsset,
+  MediaCaption,
   MediaFolder,
-  MediaFilterParams,
   MediaMetricData,
+  MediaQuality,
+  MediaUsage,
+  MediaFilterParams,
+  ProcessingStatus,
   UploadIntent,
 } from "../types";
 
-function formatAsset(raw: any): MediaAsset {
+type RawAsset = Record<string, unknown>;
+type RawFolder = Record<string, unknown>;
+
+function num(raw: unknown, fallback = 0): number {
+  return typeof raw === "number" ? raw : fallback;
+}
+
+function str(raw: unknown, fallback: string | null = null): string | null {
+  return raw === undefined || raw === null ? fallback : String(raw);
+}
+
+function formatAsset(raw: RawAsset): MediaAsset {
+  const tags = Array.isArray(raw.tags) ? (raw.tags as string[]) : [];
+  const folder = raw.folder as MediaAsset["folder"];
+  const uploader = raw.uploader as MediaAsset["uploader"];
+  const meta = raw.metadata as Record<string, unknown> | undefined;
   return {
-    id: raw.id,
-    tenantId: String(raw.tenantId ?? ""),
-    folderId: raw.folderId ?? null,
-    uploaderId: raw.uploaderId ?? null,
-    type: raw.type ?? "file",
-    source: raw.source ?? null,
-    provider: raw.provider ?? "local",
-    providerService: raw.providerService ?? null,
-    bunnyVideoId: raw.bunnyVideoId ?? null,
-    bunnyLibraryId: raw.bunnyLibraryId ?? null,
-    bunnyStoragePath: raw.bunnyStoragePath ?? null,
-    bunnyStreamUrl: raw.bunnyStreamUrl ?? null,
-    cdnUrl: raw.cdnUrl ?? null,
-    thumbnailUrl: raw.thumbnailUrl ?? null,
-    previewUrl: raw.previewUrl ?? null,
-    mimeType: raw.mimeType ?? null,
-    extension: raw.extension ?? null,
-    originalName: raw.originalName ?? raw.originalFilename ?? null,
-    originalFilename: raw.originalFilename ?? null,
-    title: raw.title ?? null,
-    description: raw.description ?? null,
-    tags: raw.tags ?? [],
-    size: raw.size ?? raw.sizeBytes ?? 0,
-    sizeBytes: raw.sizeBytes ?? raw.size ?? 0,
-    duration: raw.duration ?? 0,
-    width: raw.width ?? null,
-    height: raw.height ?? null,
-    status: raw.status ?? "pending",
-    visibility: raw.visibility ?? "private",
-    processingStatus: raw.processingStatus ?? "uploading",
-    checksum: raw.checksum ?? null,
-    metadata: raw.metadata ?? {},
-    favorite: raw.favorite ?? false,
-    favoriteAt: raw.favoriteAt ?? null,
-    archivedAt: raw.archivedAt ?? null,
-    deletedAt: raw.deletedAt ?? null,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    folder: raw.folder ?? null,
-    uploader: raw.uploader ?? null,
+    id: num(raw.id),
+    tenantId: str(raw.tenantId, "") ?? "",
+    folderId: raw.folderId == null ? null : num(raw.folderId),
+    uploaderId: raw.uploaderId == null ? null : num(raw.uploaderId),
+    createdById: raw.createdById == null ? null : num(raw.createdById),
+    type: (str(raw.type, "file") ?? "file") as MediaAsset["type"],
+    slug: str(raw.slug),
+    source: str(raw.source),
+    provider: str(raw.provider, "local") ?? "local",
+    providerService: str(raw.providerService),
+    collectionId: raw.collectionId == null ? null : num(raw.collectionId),
+    bunnyVideoId: str(raw.bunnyVideoId),
+    bunnyLibraryId: str(raw.bunnyLibraryId),
+    bunnyStoragePath: str(raw.bunnyStoragePath),
+    bunnyStreamUrl: str(raw.bunnyStreamUrl),
+    cdnUrl: str(raw.cdnUrl),
+    thumbnailUrl: str(raw.thumbnailUrl),
+    previewUrl: str(raw.previewUrl),
+    posterUrl: str(raw.posterUrl),
+    mimeType: str(raw.mimeType),
+    extension: str(raw.extension),
+    originalName: str(raw.originalName) ?? str(raw.originalFilename),
+    originalFilename: str(raw.originalFilename),
+    title: str(raw.title),
+    description: str(raw.description),
+    language: str(raw.language),
+    tags,
+    size: num(raw.size) || num(raw.sizeBytes),
+    sizeBytes: num(raw.sizeBytes) || num(raw.size),
+    duration: num(raw.duration),
+    width: raw.width == null ? null : num(raw.width),
+    height: raw.height == null ? null : num(raw.height),
+    status: (str(raw.status, "pending") ?? "pending") as MediaAsset["status"],
+    visibility: (str(raw.visibility, "private") ?? "private") as MediaAsset["visibility"],
+    processingStatus: (str(raw.processingStatus, "uploading") ??
+      "uploading") as MediaAsset["processingStatus"],
+    transcodingStatus: raw.transcodingStatus == null
+      ? null
+      : (str(raw.transcodingStatus) as ProcessingStatus),
+    isProcessing: raw.isProcessing === true,
+    processingProgress: num(raw.processingProgress),
+    captions: Array.isArray(raw.captions) ? (raw.captions as MediaCaption[]) : [],
+    qualities: Array.isArray(raw.qualities) ? (raw.qualities as MediaQuality[]) : [],
+    checksum: str(raw.checksum),
+    metadata: meta ?? {},
+    favorite: raw.favorite === true,
+    favoriteAt: str(raw.favoriteAt),
+    pinned: raw.pinned === true,
+    pinnedAt: str(raw.pinnedAt),
+    archivedAt: str(raw.archivedAt),
+    deletedAt: str(raw.deletedAt),
+    createdAt: str(raw.createdAt) ?? "",
+    updatedAt: str(raw.updatedAt) ?? "",
+    folder,
+    uploader,
+    createdBy: raw.createdBy as MediaAsset["createdBy"],
+    usages: Array.isArray(raw.usages) ? (raw.usages as MediaUsage[]) : [],
   };
 }
 
-function formatFolder(raw: any): MediaFolder {
+function formatFolder(raw: RawFolder): MediaFolder {
+  const children = Array.isArray(raw.children)
+    ? (raw.children as RawFolder[]).map(formatFolder)
+    : undefined;
   return {
-    id: raw.id,
-    parentId: raw.parentId ?? null,
-    name: raw.name,
-    slug: raw.slug,
-    path: raw.path ?? null,
-    sortOrder: raw.sortOrder ?? 0,
-    childrenCount: raw.childrenCount,
-    assetCount: raw.assetCount,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    children: raw.children ? raw.children.map(formatFolder) : undefined,
+    id: num(raw.id),
+    parentId: raw.parentId == null ? null : num(raw.parentId),
+    name: str(raw.name) ?? "",
+    slug: str(raw.slug) ?? "",
+    path: str(raw.path),
+    sortOrder: num(raw.sortOrder),
+    childrenCount: raw.childrenCount == null ? undefined : num(raw.childrenCount),
+    assetCount: raw.assetCount == null ? undefined : num(raw.assetCount),
+    createdAt: str(raw.createdAt) ?? "",
+    updatedAt: str(raw.updatedAt) ?? "",
+    children,
   };
 }
 
@@ -77,10 +119,12 @@ function buildListParams(params?: MediaFilterParams): Record<string, string> {
 
   if (params.search) q.search = params.search;
   if (params.type && params.type !== "all") q.type = params.type;
+  if (params.types && params.types.length > 0) q.types = params.types.join(",");
   if (params.status && params.status !== "all") q.status = params.status;
   if (params.visibility && params.visibility !== "all") q.visibility = params.visibility;
   if (params.processing_status && params.processing_status !== "all") q.processing_status = params.processing_status;
   if (params.favorites) q.favorites = "true";
+  if (params.pinned) q.pinned = "true";
   if (params.archived) q.archived = "true";
   if (params.extension) q.extension = params.extension;
   if (params.uploader_id) q.uploader_id = String(params.uploader_id);
@@ -93,7 +137,7 @@ function buildListParams(params?: MediaFilterParams): Record<string, string> {
 }
 
 export const mediaLibraryService = {
-  async listAssets(params?: MediaFilterParams): Promise<{ data: MediaAsset[]; meta: any }> {
+  async listAssets(params?: MediaFilterParams): Promise<{ data: MediaAsset[]; meta: Record<string, unknown> }> {
     const { data } = await api.get("/media-library/assets", { params: buildListParams(params) });
     return {
       data: (data.data ?? []).map(formatAsset),
@@ -107,7 +151,7 @@ export const mediaLibraryService = {
   },
 
   async updateAsset(id: number, payload: Partial<MediaAsset>): Promise<MediaAsset | null> {
-    const body: Record<string, any> = {};
+    const body: Record<string, unknown> = {};
     if (payload.title !== undefined) body.title = payload.title;
     if (payload.description !== undefined) body.description = payload.description;
     if (payload.tags !== undefined) body.tags = payload.tags;
@@ -144,6 +188,11 @@ export const mediaLibraryService = {
 
   async toggleFavorite(id: number): Promise<MediaAsset | null> {
     const { data } = await api.post(`/media-library/assets/${id}/favorite`);
+    return data.data ? formatAsset(data.data) : null;
+  },
+
+  async togglePin(id: number): Promise<MediaAsset | null> {
+    const { data } = await api.post(`/media-library/assets/${id}/pin`);
     return data.data ? formatAsset(data.data) : null;
   },
 
@@ -192,6 +241,13 @@ export const mediaLibraryService = {
 
   async deleteFolder(id: number): Promise<void> {
     await api.delete(`/media-library/folders/${id}`);
+  },
+
+  async moveFolder(id: number, parentId: number | null): Promise<MediaFolder> {
+    const { data } = await api.put(`/media-library/folders/${id}/move`, {
+      parent_id: parentId ?? null,
+    });
+    return formatFolder(data.data);
   },
 
   async getFolderBreadcrumbs(id: number): Promise<Array<{ id: number; name: string }>> {
@@ -253,6 +309,84 @@ export const mediaLibraryService = {
     const { data } = await api.post(`/media-library/upload/${sessionId}/confirm`, payload ?? {});
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
+    };
+  },
+
+  async uploadFileDirect(
+    file: File,
+    visibility?: string,
+  ): Promise<{ asset: MediaAsset | null; cdnUrl: string | null }> {
+    const form = new FormData();
+    form.append("file", file);
+    if (visibility) form.append("visibility", visibility);
+
+    // Build the same auth/tenant context the axios interceptor would, but use
+    // the native fetch API so the browser sets the multipart boundary and the
+    // file is transmitted correctly (axios forced a JSON content-type).
+    const token =
+      (() => {
+        try {
+          return useAuthStore.getState().accessToken;
+        } catch {
+          return null;
+        }
+      })() ?? undefined;
+
+    const tenantId =
+      (() => {
+        try {
+          return useTenantStore.getState().activeTenant?.id?.toString() ?? null;
+        } catch {
+          return null;
+        }
+      })() ?? undefined;
+
+    const domain =
+      (() => {
+        try {
+          return useTenantStore.getState().domain ?? null;
+        } catch {
+          return null;
+        }
+      })() ?? undefined;
+
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (tenantId) headers["X-Tenant-ID"] = tenantId;
+    else if (domain) headers["X-Tenant-Domain"] = domain;
+
+    const baseUrl = (() => {
+      try {
+        return resolveApiBaseUrl();
+      } catch {
+        return "/api";
+      }
+    })();
+
+    const res = await fetch(`${baseUrl}/media-library/upload/file`, {
+      method: "POST",
+      headers,
+      body: form,
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      let message = `Upload failed (${res.status})`;
+      try {
+        const body = await res.json();
+        if (body?.message) message = body.message;
+      } catch {
+        // ignore non-json bodies
+      }
+      throw new Error(message);
+    }
+
+    const json = await res.json();
+    const data = json.data ?? json;
+
+    return {
+      asset: data?.asset ? formatAsset(data.asset) : null,
+      cdnUrl: data?.cdn_url ?? null,
     };
   },
 };

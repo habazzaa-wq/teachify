@@ -58,7 +58,7 @@ const contentTypeIcons: Record<string, React.ComponentType<{ className?: string 
 const contentTypeColors: Record<string, string> = {
   video: "text-blue-500",
   pdf: "text-rose-500",
-  exam: "text-purple-500",
+  exam: "text-secondary",
   assignment: "text-amber-500",
   audio: "text-emerald-500",
   resource: "text-cyan-500",

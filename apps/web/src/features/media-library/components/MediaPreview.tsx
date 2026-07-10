@@ -1,12 +1,14 @@
 "use client";
 
-import { X, Download, ExternalLink, Heart, Archive, Trash2 } from "lucide-react";
+import { X, Download, ExternalLink, Heart, Archive, Trash2, Eye, Link2 } from "lucide-react";
 import { AppButton, AppBadge } from "@/components/ui";
-import { MEDIA_TYPE_CONFIG, MEDIA_STATUS_CONFIG } from "../constants";
-import type { MediaAsset } from "../types";
+import { MEDIA_TYPE_CONFIG, MEDIA_STATUS_CONFIG, VISIBILITY_CONFIG } from "../constants";
+import { cn } from "@/lib/cn";
+import type { MediaAsset, MediaUsage } from "../types";
 
 interface MediaPreviewProps {
   asset: MediaAsset | null;
+  usages?: MediaUsage[];
   onClose?: () => void;
   onDownload?: (asset: MediaAsset) => void;
   onFavorite?: (asset: MediaAsset) => void;
@@ -31,11 +33,13 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function MediaPreview({ asset, onClose, onDownload, onFavorite, onArchive, onDelete }: MediaPreviewProps) {
+function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchive, onDelete }: MediaPreviewProps) {
   if (!asset) return null;
 
   const typeConfig = MEDIA_TYPE_CONFIG[asset.type] ?? MEDIA_TYPE_CONFIG.file;
   const statusConfig = MEDIA_STATUS_CONFIG[asset.status] ?? MEDIA_STATUS_CONFIG.pending;
+  const visibilityConfig = VISIBILITY_CONFIG[asset.visibility] ?? VISIBILITY_CONFIG.private;
+  const resolvedUsages = usages ?? asset.usages ?? [];
 
   return (
     <div className="flex h-full flex-col border-s bg-background">
@@ -109,6 +113,19 @@ function MediaPreview({ asset, onClose, onDownload, onFavorite, onArchive, onDel
             <span dir="ltr" className="text-end">{asset.mimeType ?? "—"}</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-muted-foreground">الرؤية</span>
+            <span className="inline-flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {visibilityConfig.label}
+            </span>
+          </div>
+          {asset.language && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">اللغة</span>
+              <span>{asset.language}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
             <span className="text-muted-foreground">تاريخ الرفع</span>
             <span>{new Date(asset.createdAt).toLocaleDateString("ar-SA")}</span>
           </div>
@@ -116,6 +133,26 @@ function MediaPreview({ asset, onClose, onDownload, onFavorite, onArchive, onDel
             <div className="flex justify-between">
               <span className="text-muted-foreground">رفع بواسطة</span>
               <span>{asset.uploader.name}</span>
+            </div>
+          )}
+          {asset.createdBy && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">أنشئ بواسطة</span>
+              <span>{asset.createdBy.name}</span>
+            </div>
+          )}
+          {asset.isProcessing && (
+            <div className="pt-1">
+              <div className="mb-1 flex justify-between">
+                <span className="text-muted-foreground">التقدم</span>
+                <span>{asset.processingProgress}%</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${asset.processingProgress}%` }}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -135,6 +172,45 @@ function MediaPreview({ asset, onClose, onDownload, onFavorite, onArchive, onDel
             </div>
           </div>
         )}
+
+        {/* Where Used — extension point for future backend integration */}
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Link2 className="h-3.5 w-3.5" />
+            مستخدم في
+          </p>
+          {resolvedUsages.length === 0 ? (
+            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-[11px] text-muted-foreground">
+              لم يتم استخدام هذا الملف في أي محتوى بعد.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {resolvedUsages.map((usage) => (
+                <li
+                  key={`${usage.entityType}-${usage.entityId}-${usage.id}`}
+                  className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{usage.entityTitle}</p>
+                    {usage.context && (
+                      <p className="truncate text-[10px] text-muted-foreground">{usage.context}</p>
+                    )}
+                  </div>
+                  {usage.url && (
+                    <a
+                      href={usage.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn("shrink-0 text-primary hover:underline")}
+                    >
+                      فتح
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Actions */}

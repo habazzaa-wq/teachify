@@ -64,6 +64,37 @@
     --header-height: 4rem;
     --sidebar-width: 16rem;
     --sidebar-collapsed-width: 4.25rem;
+
+    --studio-bg: 42 20% 96%;
+    --studio-surface: 40 25% 98%;
+    --studio-soft: 42 18% 92%;
+    --studio-border: 42 15% 86%;
+    --studio-muted: 42 12% 91%;
+    --studio-fg: 25 15% 15%;
+    --studio-fg-muted: 30 8% 58%;
+    --studio-fg-subtle: 30 6% 72%;
+    --studio-accent: 180 25% 39%;
+    --studio-accent-fg: 0 0% 100%;
+    --studio-accent-soft: 180 20% 92%;
+    --studio-accent-border: 180 25% 75%;
+    --studio-ring: 180 25% 39%;
+    --studio-secondary: 220 12% 88%;
+    --studio-secondary-soft: 220 16% 94%;
+    --studio-secondary-border: 220 14% 86%;
+    --studio-sidebar-hover: 220 16% 94%;
+    --studio-glass: 40 25% 98% / 0.6;
+    --studio-glass-border: 42 15% 86% / 0.5;
+    --studio-glass-toolbar: 40 25% 98% / 0.7;
+    --studio-glass-sidebar: 42 18% 92% / 0.8;
+    --studio-glass-dialog: 40 25% 98% / 0.85;
+    --studio-glass-floating: 40 25% 98% / 0.9;
+    --studio-overlay: 0 0% 0% / 0.25;
+    --studio-skeleton: 42 15% 88%;
+    --studio-skeleton-shine: 42 20% 94%;
+    --studio-info: 210 60% 50%;
+    --studio-success: 160 60% 40%;
+    --studio-warning: 35 85% 50%;
+    --studio-danger: 0 65% 50%;
   }
 
   .dark {
@@ -121,6 +152,44 @@
     --amber-foreground: 210 40% 96%;
     --purple: 280 65% 65%;
     --purple-foreground: 210 40% 96%;
+
+    --studio-bg: 0 0% 10%;
+    --studio-surface: 0 0% 13%;
+    --studio-soft: 0 0% 16%;
+    --studio-border: 0 0% 19%;
+    --studio-muted: 0 0% 14%;
+    --studio-fg: 30 8% 88%;
+    --studio-fg-muted: 30 3% 52%;
+    --studio-fg-subtle: 30 3% 38%;
+    --studio-accent: 180 25% 45%;
+    --studio-accent-fg: 0 0% 10%;
+    --studio-accent-soft: 180 20% 12%;
+    --studio-accent-border: 180 25% 30%;
+    --studio-ring: 180 25% 45%;
+    --studio-secondary: 220 12% 24%;
+    --studio-secondary-soft: 0 0% 18%;
+    --studio-secondary-border: 0 0% 26%;
+    --studio-sidebar-hover: 0 0% 18%;
+    --studio-glass: 0 0% 13% / 0.6;
+    --studio-glass-border: 0 0% 19% / 0.5;
+    --studio-glass-toolbar: 220 25% 18% / 1;
+    --studio-glass-toolbar-fg: 0 0% 100%;
+    --studio-glass-toolbar-fg-muted: 0 0% 80%;
+    --studio-glass-toolbar-border: 0 0% 100% / 0.18;
+    --studio-glass-toolbar-soft: 0 0% 100% / 0.1;
+    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.18;
+    --studio-navbar: 220 25% 18%;
+    --studio-navbar-contrast: 0 0% 100%;
+    --studio-glass-sidebar: 0 0% 12% / 0.8;
+    --studio-glass-dialog: 0 0% 13% / 0.85;
+    --studio-glass-floating: 0 0% 13% / 0.9;
+    --studio-overlay: 0 0% 0% / 0.5;
+    --studio-skeleton: 0 0% 16%;
+    --studio-skeleton-shine: 0 0% 20%;
+    --studio-info: 210 60% 55%;
+    --studio-success: 160 60% 45%;
+    --studio-warning: 35 85% 55%;
+    --studio-danger: 0 65% 55%;
   }
 
   .dark {
@@ -178,6 +247,44 @@
     --amber-foreground: 225 30% 8%;
     --purple: 280 65% 65%;
     --purple-foreground: 225 30% 8%;
+
+    --studio-bg: 0 0% 10%;
+    --studio-surface: 0 0% 13%;
+    --studio-soft: 0 0% 16%;
+    --studio-border: 0 0% 19%;
+    --studio-muted: 0 0% 14%;
+    --studio-fg: 30 8% 88%;
+    --studio-fg-muted: 30 3% 52%;
+    --studio-fg-subtle: 30 3% 38%;
+    --studio-accent: 180 25% 45%;
+    --studio-accent-fg: 0 0% 10%;
+    --studio-accent-soft: 180 20% 12%;
+    --studio-accent-border: 180 25% 30%;
+    --studio-ring: 180 25% 45%;
+    --studio-secondary: 220 12% 24%;
+    --studio-secondary-soft: 0 0% 18%;
+    --studio-secondary-border: 0 0% 26%;
+    --studio-sidebar-hover: 0 0% 18%;
+    --studio-glass: 0 0% 13% / 0.6;
+    --studio-glass-border: 0 0% 19% / 0.5;
+    --studio-glass-toolbar: 220 25% 18% / 1;
+    --studio-glass-toolbar-fg: 0 0% 100%;
+    --studio-glass-toolbar-fg-muted: 0 0% 80%;
+    --studio-glass-toolbar-border: 0 0% 100% / 0.18;
+    --studio-glass-toolbar-soft: 0 0% 100% / 0.1;
+    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.18;
+    --studio-navbar: 220 25% 18%;
+    --studio-navbar-contrast: 0 0% 100%;
+    --studio-glass-sidebar: 0 0% 12% / 0.8;
+    --studio-glass-dialog: 0 0% 13% / 0.85;
+    --studio-glass-floating: 0 0% 13% / 0.9;
+    --studio-overlay: 0 0% 0% / 0.5;
+    --studio-skeleton: 0 0% 16%;
+    --studio-skeleton-shine: 0 0% 20%;
+    --studio-info: 210 60% 55%;
+    --studio-success: 160 60% 45%;
+    --studio-warning: 35 85% 55%;
+    --studio-danger: 0 65% 55%;
   }
 }
 
@@ -274,6 +381,147 @@
 
   .nav-active-indicator {
     @apply relative before:absolute before:end-0 before:top-1/2 before:h-5/6 before:w-[3px] before:-translate-y-1/2 before:rounded-full before:bg-primary before:shadow-sm before:shadow-primary/40;
+  }
+}
+
+/* ───────── Tenant Theme (completely independent palette) ───────── */
+
+@layer base {
+  .tenant-theme {
+    --primary: 180 25% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 12% 88%;
+    --secondary-foreground: 222 24% 18%;
+    --accent: 180 25% 39%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 180 25% 39%;
+    --tenant-bg: 220 20% 97%;
+    --tenant-surface: 0 0% 100%;
+    --tenant-soft: 220 16% 94%;
+    --tenant-border: 220 14% 89%;
+    --tenant-muted: 220 16% 96%;
+    --tenant-fg: 222 24% 18%;
+    --tenant-fg-muted: 220 12% 46%;
+    --tenant-fg-subtle: 220 10% 62%;
+    --tenant-accent: 180 25% 39%;
+    --tenant-accent-fg: 0 0% 100%;
+    --tenant-accent-soft: 180 20% 92%;
+    --tenant-ring: 180 25% 39%;
+    --tenant-secondary: 220 12% 80%;
+    --tenant-secondary-soft: 220 16% 94%;
+    --tenant-sidebar: 0 0% 100%;
+    --tenant-sidebar-soft: 220 16% 96%;
+    --tenant-sidebar-fg: 222 24% 22%;
+    --tenant-sidebar-fg-muted: 220 12% 48%;
+    --tenant-sidebar-border: 220 14% 90%;
+    --tenant-sidebar-hover: 220 16% 94%;
+    --tenant-header: 220 30% 22%;
+
+    --studio-bg: 220 20% 97%;
+    --studio-surface: 0 0% 100%;
+    --studio-soft: 220 16% 94%;
+    --studio-border: 220 14% 89%;
+    --studio-muted: 220 16% 96%;
+    --studio-fg: 222 24% 18%;
+    --studio-fg-muted: 220 12% 46%;
+    --studio-fg-subtle: 220 10% 62%;
+    --studio-accent: 180 25% 39%;
+    --studio-accent-fg: 0 0% 100%;
+    --studio-accent-soft: 180 20% 92%;
+    --studio-accent-border: 180 25% 75%;
+    --studio-ring: 180 25% 39%;
+    --studio-secondary: 220 12% 80%;
+    --studio-secondary-soft: 220 16% 94%;
+    --studio-secondary-border: 220 14% 86%;
+    --studio-sidebar-hover: 220 16% 94%;
+    --studio-glass: 0 0% 100% / 0.7;
+    --studio-glass-border: 220 14% 89% / 0.5;
+    --studio-glass-toolbar: 220 30% 22% / 1;
+    --studio-glass-toolbar-fg: 0 0% 100%;
+    --studio-glass-toolbar-fg-muted: 0 0% 80%;
+    --studio-glass-toolbar-border: 0 0% 100% / 0.25;
+    --studio-glass-toolbar-soft: 0 0% 100% / 0.12;
+    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.2;
+    --studio-navbar: 220 30% 22%;
+    --studio-navbar-contrast: 0 0% 100%;
+    --studio-glass-sidebar: 0 0% 100% / 1;
+    --studio-glass-sidebar-fg: 222 24% 22%;
+    --studio-glass-sidebar-fg-muted: 220 12% 48%;
+    --studio-glass-sidebar-border: 220 14% 90% / 1;
+    --studio-glass-dialog: 0 0% 100% / 0.9;
+    --studio-glass-floating: 0 0% 100% / 0.92;
+    --studio-overlay: 0 0% 0% / 0.12;
+    --studio-skeleton: 220 16% 90%;
+    --studio-skeleton-shine: 220 20% 95%;
+    --studio-info: 210 60% 50%;
+    --studio-success: 160 60% 40%;
+    --studio-warning: 35 85% 50%;
+    --studio-danger: 0 65% 50%;
+  }
+
+  .dark.tenant-theme {
+    --primary: 180 25% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 12% 24%;
+    --secondary-foreground: 0 0% 92%;
+    --accent: 180 25% 45%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 180 25% 45%;
+    --tenant-bg: 0 0% 10%;
+    --tenant-surface: 0 0% 13%;
+    --tenant-soft: 0 0% 16%;
+    --tenant-border: 0 0% 19%;
+    --tenant-muted: 0 0% 14%;
+    --tenant-fg: 30 8% 88%;
+    --tenant-fg-muted: 30 3% 52%;
+    --tenant-accent: 180 25% 45%;
+    --tenant-accent-fg: 0 0% 10%;
+    --tenant-accent-soft: 180 20% 12%;
+    --tenant-ring: 180 25% 45%;
+    --tenant-sidebar: 0 0% 12%;
+    --tenant-sidebar-soft: 0 0% 15%;
+    --tenant-sidebar-fg: 30 8% 88%;
+    --tenant-sidebar-fg-muted: 30 3% 52%;
+    --tenant-sidebar-border: 0 0% 17%;
+    --tenant-header: 0 0% 11%;
+
+    --studio-bg: 0 0% 10%;
+    --studio-surface: 0 0% 13%;
+    --studio-soft: 0 0% 16%;
+    --studio-border: 0 0% 19%;
+    --studio-muted: 0 0% 14%;
+    --studio-fg: 30 8% 88%;
+    --studio-fg-muted: 30 3% 52%;
+    --studio-fg-subtle: 30 3% 38%;
+    --studio-accent: 180 25% 45%;
+    --studio-accent-fg: 0 0% 10%;
+    --studio-accent-soft: 180 20% 12%;
+    --studio-accent-border: 180 25% 30%;
+    --studio-ring: 180 25% 45%;
+    --studio-secondary: 220 12% 24%;
+    --studio-secondary-soft: 0 0% 18%;
+    --studio-secondary-border: 0 0% 26%;
+    --studio-sidebar-hover: 0 0% 18%;
+    --studio-glass: 0 0% 13% / 0.6;
+    --studio-glass-border: 0 0% 19% / 0.5;
+    --studio-glass-toolbar: 220 25% 18% / 1;
+    --studio-glass-toolbar-fg: 0 0% 100%;
+    --studio-glass-toolbar-fg-muted: 0 0% 80%;
+    --studio-glass-toolbar-border: 0 0% 100% / 0.18;
+    --studio-glass-toolbar-soft: 0 0% 100% / 0.1;
+    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.18;
+    --studio-navbar: 220 25% 18%;
+    --studio-navbar-contrast: 0 0% 100%;
+    --studio-glass-sidebar: 0 0% 12% / 0.8;
+    --studio-glass-dialog: 0 0% 13% / 0.85;
+    --studio-glass-floating: 0 0% 13% / 0.9;
+    --studio-overlay: 0 0% 0% / 0.5;
+    --studio-skeleton: 0 0% 16%;
+    --studio-skeleton-shine: 0 0% 20%;
+    --studio-info: 210 60% 55%;
+    --studio-success: 160 60% 45%;
+    --studio-warning: 35 85% 55%;
+    --studio-danger: 0 65% 55%;
   }
 }
 
@@ -423,5 +671,176 @@
 
   .content-icon-wrapper {
     @apply p-2 rounded-xl shrink-0 ring-1 ring-inset ring-black/5;
+  }
+}
+
+/* ───────── Tenant canvas: subtle professional background ───────── */
+
+@layer components {
+  /* خلفية لوحة التحكم: توهجات خفيفة من اللونين الأساسي/الثانوي + شبكة خفيفة،
+     بدون تلوين الأسطح نفسها حتى تبقى نظيفة. */
+  .tenant-aurora {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .tenant-aurora::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(48rem 48rem at 100% -8%, hsl(var(--studio-accent) / 0.10), transparent 60%),
+      radial-gradient(42rem 42rem at -8% 4%, hsl(var(--studio-secondary, 220 12% 88%) / 0.12), transparent 58%),
+      radial-gradient(36rem 36rem at 50% 120%, hsl(var(--studio-accent) / 0.06), transparent 60%);
+  }
+
+  .tenant-aurora::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, hsl(var(--studio-border) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--studio-border) / 0.6) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(circle at 50% 0%, black, transparent 75%);
+    mask-image: radial-gradient(circle at 50% 0%, black, transparent 75%);
+    opacity: 0.5;
+  }
+
+  .tenant-aurora > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* عنوان القسم مع مؤشر شريط جانبي باللون الأساسي */
+  .section-title-accent {
+    position: relative;
+    padding-inline-start: 0.875rem;
+  }
+
+  .section-title-accent::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.1em;
+    bottom: 0.1em;
+    width: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--studio-accent)),
+      hsl(var(--studio-accent) / 0.35)
+    );
+  }
+
+  /* كارت احترافي: رفع عند الـ hover + توهج حدودي باللون الأساسي */
+  .premium-card {
+    position: relative;
+    border-radius: 0.875rem;
+    background-color: hsl(var(--studio-surface));
+    border: 1px solid hsl(var(--studio-border));
+    box-shadow: 0 1px 2px 0 hsl(var(--studio-fg) / 0.04), 0 1px 3px -1px hsl(var(--studio-fg) / 0.06);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+
+  .premium-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--studio-accent) / 0.5), transparent 45%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  .premium-card:hover {
+    transform: translateY(-3px);
+    border-color: hsl(var(--studio-accent) / 0.35);
+    box-shadow: 0 12px 32px -8px hsl(var(--studio-accent) / 0.18),
+      0 4px 8px -4px hsl(var(--studio-fg) / 0.1);
+  }
+
+  .premium-card:hover::after {
+    opacity: 1;
+  }
+
+  /* شريط علوي رفيع باللون الأساسي يظهر عند الـ hover */
+  .card-top-accent {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-top-accent::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(
+      to right,
+      hsl(var(--studio-accent)),
+      hsl(var(--studio-secondary, 220 12% 88%))
+    );
+    transform: scaleX(0);
+    transform-origin: start;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .card-top-accent:hover::before {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* — News ticker (شريط الأخبار): glass chips marquee — */
+@keyframes news-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-1 * var(--marquee-shift, 0px)));
+  }
+}
+
+/* RTL: start offset one group to the right so items enter seamlessly
+   from the right edge instead of leaving an empty gap. */
+@keyframes news-marquee-scroll-rtl {
+  from {
+    transform: translateX(var(--marquee-shift, 0px));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.news-marquee-track {
+  animation-name: news-marquee-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-play-state: running;
+  will-change: transform;
+}
+
+.news-marquee:hover .news-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news-marquee-track {
+    animation: none;
   }
 }

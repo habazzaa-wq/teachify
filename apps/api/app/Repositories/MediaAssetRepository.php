@@ -65,6 +65,10 @@ class MediaAssetRepository
             $query->whereNotNull('favorite_at');
         }
 
+        if (! empty($params['pinned'])) {
+            $query->whereNotNull('pinned_at');
+        }
+
         if (! empty($params['archived'])) {
             $query->whereNotNull('archived_at');
         } elseif (! isset($params['archived']) && empty($params['status'])) {
@@ -96,10 +100,13 @@ class MediaAssetRepository
         $sortField = $params['sort'] ?? 'created_at';
         $sortDir = $params['sort_dir'] ?? 'desc';
 
-        $allowedSorts = ['created_at', 'updated_at', 'original_filename', 'title', 'size_bytes', 'type', 'duration', 'favorite_at'];
+        $allowedSorts = ['created_at', 'updated_at', 'original_filename', 'title', 'size_bytes', 'type', 'duration', 'favorite_at', 'pinned_at'];
         if (! in_array($sortField, $allowedSorts, true)) {
             $sortField = 'created_at';
         }
+
+        // Pinned assets always surface first when browsing the library.
+        $query->orderByRaw('pinned_at IS NULL');
 
         $query->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
 

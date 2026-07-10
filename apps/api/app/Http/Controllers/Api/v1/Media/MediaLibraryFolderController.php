@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaLibraryFolderResource;
 use App\Models\MediaAsset;
 use App\Services\Media\MediaLibraryFolderService;
+use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -14,6 +15,7 @@ class MediaLibraryFolderController extends Controller
 {
     public function __construct(
         private readonly MediaLibraryFolderService $folders,
+        private readonly UploadGuardService $guard,
     ) {
     }
 
@@ -52,6 +54,9 @@ class MediaLibraryFolderController extends Controller
         ]);
 
         $tenant = currentTenant();
+
+        $this->guard->guardFolderCreation($tenant);
+
         $folder = $this->folders->create($tenant, $data);
 
         return response()->json([
@@ -97,6 +102,23 @@ class MediaLibraryFolderController extends Controller
         $this->folders->delete($tenant, $folder);
 
         return response()->json(['message' => 'Folder deleted successfully.']);
+    }
+
+    public function move(Request $request, int $id): JsonResponse
+    {
+        Gate::authorize('update', MediaAsset::class);
+
+        $data = $request->validate([
+            'parent_id' => 'nullable|integer|exists:media_folders,id',
+        ]);
+
+        $tenant = currentTenant();
+        $folder = $this->folders->findOrFail($tenant, $id);
+        $folder = $this->folders->move($tenant, $folder, $data['parent_id']);
+
+        return response()->json([
+            'data' => new MediaLibraryFolderResource($folder->load('children')),
+        ]);
     }
 
     public function breadcrumbs(int $id): JsonResponse

@@ -42,7 +42,7 @@ const typeIcons: Record<ContentItemType, React.ComponentType<{ className?: strin
 const typeColors: Record<ContentItemType, string> = {
   video: "text-blue-500 bg-blue-500/10 ring-blue-500/20",
   pdf: "text-rose-500 bg-rose-500/10 ring-rose-500/20",
-  exam: "text-purple-500 bg-purple-500/10 ring-purple-500/20",
+  exam: "text-secondary bg-secondary/10 ring-secondary/20",
   assignment: "text-amber-500 bg-amber-500/10 ring-amber-500/20",
   audio: "text-emerald-500 bg-emerald-500/10 ring-emerald-500/20",
   resource: "text-cyan-500 bg-cyan-500/10 ring-cyan-500/20",

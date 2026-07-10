@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useFolderTree } from "../hooks";
 import { FolderTree } from "./FolderTree";
 import { StorageWidget } from "./StorageWidget";
@@ -10,6 +9,7 @@ interface FolderSidebarProps {
   selectedFolderId?: number | "root" | null;
   onSelectFolder?: (folderId: number | "root" | null) => void;
   onCreateFolder?: () => void;
+  onMoveFolder?: (id: number, parentId: number | null) => void;
   collapsed?: boolean;
 }
 
@@ -17,6 +17,7 @@ function FolderSidebar({
   selectedFolderId,
   onSelectFolder,
   onCreateFolder,
+  onMoveFolder,
   collapsed,
 }: FolderSidebarProps) {
   const { data: folders = [], isLoading } = useFolderTree();
@@ -41,6 +42,7 @@ function FolderSidebar({
             selectedId={selectedFolderId}
             onSelect={onSelectFolder}
             onCreateFolder={onCreateFolder}
+            onMoveFolder={onMoveFolder}
           />
         )}
       </div>

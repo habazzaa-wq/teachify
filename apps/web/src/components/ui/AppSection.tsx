@@ -28,10 +28,12 @@ function AppSection({
         <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             {title && (
-              <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+              <h2 className="section-title-accent text-lg font-semibold tracking-tight">
+                {title}
+              </h2>
             )}
             {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
             )}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}

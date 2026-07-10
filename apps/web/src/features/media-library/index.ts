@@ -20,3 +20,6 @@ export * from "./components/DeleteDialog";
 export * from "./components/MoveDialog";
 export * from "./components/CreateFolderDialog";
 export * from "./components/BulkActionBar";
+export * from "./components/MediaPicker";
+export * from "./components/ChooseMediaButton";
+export * from "./components/AssetSelector";

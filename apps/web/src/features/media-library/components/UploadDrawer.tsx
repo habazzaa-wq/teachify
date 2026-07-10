@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Upload, X, FileUp, AlertCircle } from "lucide-react";
+import { Upload, X, FileUp } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
   AppDialogHeader,
   AppDialogTitle,
   AppButton,
-  AppBadge,
 } from "@/components/ui";
-import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_SIZE } from "../constants";
+import { MAX_UPLOAD_SIZE } from "../constants";
 import { useCreateUploadIntent, useConfirmUpload } from "../hooks";
 
 interface UploadDrawerProps {
@@ -40,6 +39,8 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
   const createIntent = useCreateUploadIntent();
   const confirmUpload = useConfirmUpload();
 
+  const uploadFileRef = useRef<((entry: FileEntry) => void) | null>(null);
+
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const entries: FileEntry[] = Array.from(newFiles)
       .filter((f) => {
@@ -59,7 +60,7 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
     setFiles((prev) => [...prev, ...entries]);
 
     // Start uploading each file
-    entries.forEach((entry) => uploadFile(entry));
+    entries.forEach((entry) => uploadFileRef.current?.(entry));
   }, []);
 
   const uploadFile = useCallback(
@@ -118,11 +119,11 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
             ),
           );
         }
-      } catch (err: any) {
+      } catch (err) {
         setFiles((prev) =>
           prev.map((f) =>
             f.id === entry.id
-              ? { ...f, status: "error" as const, error: err?.message ?? "فشل الرفع" }
+              ? { ...f, status: "error" as const, error: err instanceof Error ? err.message : "فشل الرفع" }
               : f,
           ),
         );
@@ -130,6 +131,8 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
     },
     [createIntent, confirmUpload, folderId],
   );
+
+  uploadFileRef.current = uploadFile;
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

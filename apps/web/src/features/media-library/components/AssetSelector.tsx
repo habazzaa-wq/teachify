@@ -15,9 +15,8 @@
  *   />
  */
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useMediaAssets } from "../hooks";
-import { MediaGrid } from "./MediaGrid";
 import { MediaEmptyState } from "./MediaEmptyState";
 import { MediaLoadingState } from "./MediaLoadingState";
 import type { MediaAsset, MediaType } from "../types";

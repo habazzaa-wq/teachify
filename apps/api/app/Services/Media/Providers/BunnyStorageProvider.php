@@ -6,6 +6,7 @@ use App\Contracts\Media\MediaProvider;
 use App\Models\MediaAsset;
 use App\Models\MediaAssetVariant;
 use App\Models\MediaUploadSession;
+use App\Models\PlatformBunnySetting;
 use App\Models\TenantIntegration;
 use RuntimeException;
 
@@ -113,6 +114,12 @@ class BunnyStorageProvider implements MediaProvider
             ->first();
 
         if (! $integration) {
+            $platform = PlatformBunnySetting::active();
+
+            if ($platform && $platform->hasStorageCredentials()) {
+                return $platform->toProviderConfig('storage');
+            }
+
             throw new RuntimeException('Bunny Storage integration is not configured for this tenant.');
         }
 

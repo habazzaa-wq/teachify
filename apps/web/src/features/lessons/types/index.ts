@@ -59,6 +59,7 @@ export interface CreateLessonPayload {
   notes?: string | null;
   color?: string | null;
   icon?: string | null;
+  exam_id?: number | null;
 }
 
 export interface UpdateLessonPayload {
@@ -79,6 +80,7 @@ export interface UpdateLessonPayload {
   notes?: string | null;
   color?: string | null;
   icon?: string | null;
+  exam_id?: number | null;
 }
 
 export interface LessonFilterParams {

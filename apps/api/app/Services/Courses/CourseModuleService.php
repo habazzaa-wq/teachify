@@ -245,27 +245,29 @@ class CourseModuleService
         $slug = Str::slug($value);
 
         if ($slug === '') {
-            throw ValidationException::withMessages([
-                'slug' => ['The module slug is invalid.'],
-            ]);
+            $slug = 'module-' . Str::random(6);
         }
 
-        $query = CourseModule::query()
-            ->where('tenant_id', $course->tenant_id)
-            ->where('course_id', $course->id)
-            ->where('slug', $slug);
+        $base = $slug;
+        $counter = 1;
 
-        if ($ignore) {
-            $query->whereKeyNot($ignore->id);
+        while (true) {
+            $query = CourseModule::withTrashed()
+                ->where('tenant_id', $course->tenant_id)
+                ->where('course_id', $course->id)
+                ->where('slug', $slug);
+
+            if ($ignore) {
+                $query->whereKeyNot($ignore->id);
+            }
+
+            if (! $query->exists()) {
+                return $slug;
+            }
+
+            $slug = $base . '-' . $counter;
+            $counter++;
         }
-
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'slug' => ['The module slug has already been taken in this course.'],
-            ]);
-        }
-
-        return $slug;
     }
 
     private function ensureModuleBelongsToCourse(Course $course, CourseModule $module): void

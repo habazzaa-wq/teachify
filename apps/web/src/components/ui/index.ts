@@ -93,7 +93,6 @@ export { AppSearchInput, type AppSearchProps } from "./AppSearch";
 export { AppFilter, type AppFilterProps, type FilterGroup, type FilterOption } from "./AppFilter";
 export { AppStatusBadge, type AppStatusBadgeProps, type StatusType } from "./AppStatusBadge";
 export { AppWidget, type AppWidgetProps } from "./AppWidget";
-export { AppMetric, type AppMetricProps } from "./AppMetric";
 export { AppMetricCard, type AppMetricCardProps } from "./AppMetricCard";
 export { AppChartCard, type AppChartCardProps } from "./AppChartCard";
 export { AppBreadcrumb, type AppBreadcrumbItem, type AppBreadcrumbProps } from "./AppBreadcrumb";

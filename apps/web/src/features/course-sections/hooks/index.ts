@@ -166,6 +166,28 @@ export function useReorderSections() {
   });
 }
 
+export function useMoveSection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      id,
+      courseModuleId,
+      sortOrder,
+    }: {
+      courseId: string;
+      id: string;
+      courseModuleId: string | null;
+      sortOrder?: number;
+    }) => sectionsService.move(courseId, id, { course_module_id: courseModuleId, sort_order: sortOrder }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [SECTIONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [LESSONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [COURSES_QUERY_KEY] });
+    },
+  });
+}
+
 export function useExportSections() {
   return useMutation({
     mutationFn: (courseId: string) => sectionsService.exportCsv(courseId),

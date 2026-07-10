@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
-use App\Models\TenantDomain;
+use App\Models\Usage\TenantUsage;
+use App\Models\Usage\TenantUsageHistory;
+use App\Models\Usage\TenantUsageSnapshot;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -308,5 +310,20 @@ class Tenant extends Model
         $primary = $this->getPrimaryDomain();
 
         return $primary?->domain ?? $this->slug.'.'.config('app.base_domain', 'localhost');
+    }
+
+    public function usage(): HasMany
+    {
+        return $this->hasMany(TenantUsage::class);
+    }
+
+    public function usageHistory(): HasMany
+    {
+        return $this->hasMany(TenantUsageHistory::class);
+    }
+
+    public function usageSnapshots(): HasMany
+    {
+        return $this->hasMany(TenantUsageSnapshot::class);
     }
 }

@@ -53,7 +53,7 @@ import {
 const contentTypeMeta: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
   video: { label: "فيديو", icon: Video, color: "text-blue-500 bg-blue-500/10" },
   pdf: { label: "PDF", icon: FileType, color: "text-rose-500 bg-rose-500/10" },
-  exam: { label: "اختبار", icon: ClipboardList, color: "text-purple-500 bg-purple-500/10" },
+  exam: { label: "اختبار", icon: ClipboardList, color: "text-secondary bg-secondary/10" },
   assignment: { label: "واجب", icon: PenTool, color: "text-amber-500 bg-amber-500/10" },
   audio: { label: "صوت", icon: Headphones, color: "text-emerald-500 bg-emerald-500/10" },
   resource: { label: "مورد", icon: FolderOpen, color: "text-cyan-500 bg-cyan-500/10" },

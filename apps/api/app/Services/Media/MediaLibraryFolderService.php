@@ -48,4 +48,20 @@ class MediaLibraryFolderService
     {
         $this->folders->delete($tenant, $folder);
     }
+
+    public function move(Tenant $tenant, MediaFolder $folder, ?int $parentId): MediaFolder
+    {
+        // Prevent moving a folder into one of its own descendants.
+        if ($parentId !== null) {
+            $descendants = $folder->allDescendantIds();
+            if (in_array($parentId, $descendants, true) || $parentId === $folder->id) {
+                throw new \InvalidArgumentException('Cannot move a folder into itself or its descendant.');
+            }
+        }
+
+        $folder->forceFill(['parent_id' => $parentId])->save();
+        $folder->refreshPath();
+
+        return $folder->refresh();
+    }
 }

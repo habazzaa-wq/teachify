@@ -57,6 +57,15 @@ export const mockMatrixPermissions: MatrixPermission[] = [
   { id: "perm_59", key: "media.view", nameAr: "عرض الوسائط", nameEn: "View Media", module: "media", action: "view", description: "السماح بعرض ملفات الوسائط", riskLevel: "low", isSystem: true },
   { id: "perm_60", key: "media.upload", nameAr: "رفع الوسائط", nameEn: "Upload Media", module: "media", action: "create", description: "السماح برفع ملفات الوسائط", riskLevel: "low", isSystem: true },
   { id: "perm_61", key: "media.delete", nameAr: "حذف الوسائط", nameEn: "Delete Media", module: "media", action: "delete", description: "السماح بحذف ملفات الوسائط", riskLevel: "medium", isSystem: true },
+  { id: "perm_68", key: "exam.view", nameAr: "عرض الاختبارات", nameEn: "View Exams", module: "exam", action: "view", description: "السماح بعرض مكتبة الاختبارات", riskLevel: "low", isSystem: true },
+  { id: "perm_69", key: "exam.create", nameAr: "إنشاء اختبار", nameEn: "Create Exam", module: "exam", action: "create", description: "السماح بإنشاء اختبارات جديدة", riskLevel: "medium", isSystem: true },
+  { id: "perm_70", key: "exam.update", nameAr: "تعديل الاختبارات", nameEn: "Update Exams", module: "exam", action: "update", description: "السماح بتعديل الاختبارات", riskLevel: "medium", isSystem: true },
+  { id: "perm_71", key: "exam.delete", nameAr: "حذف الاختبارات", nameEn: "Delete Exams", module: "exam", action: "delete", description: "السماح بحذف الاختبارات", riskLevel: "high", isSystem: true },
+  { id: "perm_72", key: "exam.publish", nameAr: "نشر الاختبارات", nameEn: "Publish Exams", module: "exam", action: "publish", description: "السماح بنشر الاختبارات", riskLevel: "high", isSystem: true },
+  { id: "perm_73", key: "question.view", nameAr: "عرض الأسئلة", nameEn: "View Questions", module: "question", action: "view", description: "السماح بعرض بنك الأسئلة", riskLevel: "low", isSystem: true },
+  { id: "perm_74", key: "question.create", nameAr: "إنشاء سؤال", nameEn: "Create Question", module: "question", action: "create", description: "السماح بإنشاء أسئلة جديدة", riskLevel: "medium", isSystem: true },
+  { id: "perm_75", key: "question.update", nameAr: "تعديل الأسئلة", nameEn: "Update Question", module: "question", action: "update", description: "السماح بتعديل الأسئلة", riskLevel: "medium", isSystem: true },
+  { id: "perm_76", key: "question.delete", nameAr: "حذف الأسئلة", nameEn: "Delete Question", module: "question", action: "delete", description: "السماح بحذف الأسئلة", riskLevel: "high", isSystem: true },
   { id: "perm_62", key: "notifications.view", nameAr: "عرض الإشعارات", nameEn: "View Notifications", module: "notifications", action: "view", description: "السماح بعرض الإشعارات", riskLevel: "low", isSystem: true },
   { id: "perm_63", key: "notifications.manage", nameAr: "إدارة الإشعارات", nameEn: "Manage Notifications", module: "notifications", action: "manage", description: "السماح بإدارة الإشعارات", riskLevel: "medium", isSystem: true },
   { id: "perm_64", key: "api.view", nameAr: "عرض API", nameEn: "View API", module: "api", action: "view", description: "السماح بعرض إعدادات API", riskLevel: "medium", isSystem: true },
@@ -71,7 +80,7 @@ export const mockInitialMatrix: MatrixData = {
   role_03: Object.fromEntries(
     mockMatrixPermissions.map((p) => [
       p.key,
-      ["dashboard", "users", "courses", "lessons", "students", "teachers", "analytics", "reports", "media", "notifications"].includes(p.module),
+      ["dashboard", "users", "courses", "lessons", "students", "teachers", "analytics", "reports", "media", "notifications", "exam", "question"].includes(p.module),
     ]),
   ),
   role_04: Object.fromEntries(

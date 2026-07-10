@@ -20,15 +20,32 @@ export interface MediaFolder {
   children?: MediaFolder[];
 }
 
+export interface MediaCaption {
+  id: number;
+  language: string;
+  label: string;
+  url: string;
+}
+
+export interface MediaQuality {
+  label: string;
+  width: number;
+  height: number;
+  url: string;
+}
+
 export interface MediaAsset {
   id: number;
   tenantId: string;
   folderId: number | null;
   uploaderId: number | null;
+  createdById: number | null;
   type: MediaType;
+  slug: string | null;
   source: string | null;
   provider: string;
   providerService: string | null;
+  collectionId: number | null;
   bunnyVideoId: string | null;
   bunnyLibraryId: string | null;
   bunnyStoragePath: string | null;
@@ -36,12 +53,14 @@ export interface MediaAsset {
   cdnUrl: string | null;
   thumbnailUrl: string | null;
   previewUrl: string | null;
+  posterUrl: string | null;
   mimeType: string | null;
   extension: string | null;
   originalName: string | null;
   originalFilename: string | null;
   title: string | null;
   description: string | null;
+  language: string | null;
   tags: string[];
   size: number;
   sizeBytes: number;
@@ -51,16 +70,25 @@ export interface MediaAsset {
   status: MediaStatus;
   visibility: MediaVisibility;
   processingStatus: ProcessingStatus;
+  transcodingStatus: ProcessingStatus | null;
+  isProcessing: boolean;
+  processingProgress: number;
+  captions: MediaCaption[];
+  qualities: MediaQuality[];
   checksum: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   favorite: boolean;
   favoriteAt: string | null;
+  pinned: boolean;
+  pinnedAt: string | null;
   archivedAt: string | null;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
   folder: { id: number; name: string; path: string | null } | null;
   uploader: { id: number; name: string; avatar: string | null } | null;
+  createdBy: { id: number; name: string; avatar: string | null } | null;
+  usages: MediaUsage[];
 }
 
 export interface MediaFilterParams {
@@ -73,6 +101,7 @@ export interface MediaFilterParams {
   visibility?: MediaVisibility | "all";
   processing_status?: ProcessingStatus | "all";
   favorites?: boolean;
+  pinned?: boolean;
   archived?: boolean;
   extension?: string;
   uploader_id?: number;
@@ -109,6 +138,17 @@ export interface UploadIntent {
   uploadMethod: string;
   headers: Record<string, string>;
   expiresAt: string | null;
+}
+
+export type MediaUsageEntity = "course" | "lecture" | "section" | "assignment" | "certificate" | "announcement";
+
+export interface MediaUsage {
+  id: number;
+  entityType: MediaUsageEntity;
+  entityId: number;
+  entityTitle: string;
+  context?: string;
+  url?: string | null;
 }
 
 export type ViewMode = "grid" | "list";

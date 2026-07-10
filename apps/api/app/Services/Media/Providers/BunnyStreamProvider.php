@@ -7,6 +7,7 @@ use App\Exceptions\MediaProviderException;
 use App\Models\MediaAsset;
 use App\Models\MediaAssetVariant;
 use App\Models\MediaUploadSession;
+use App\Models\PlatformBunnySetting;
 use App\Models\TenantIntegration;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -128,6 +129,12 @@ class BunnyStreamProvider implements MediaProvider
             ->first();
 
         if (! $integration) {
+            $platform = PlatformBunnySetting::active();
+
+            if ($platform && $platform->hasStreamCredentials()) {
+                return $platform->toProviderConfig('stream');
+            }
+
             throw new RuntimeException('Bunny Stream integration is not configured for this tenant.');
         }
 

@@ -64,7 +64,7 @@ const statusBadgeStyles: Record<string, string> = {
   draft: "bg-amber-500/90 text-amber-50 border-amber-400/30",
   archived: "bg-muted-foreground/60 text-background border-muted-foreground/30",
   review: "bg-blue-500/90 text-blue-50 border-blue-400/30",
-  scheduled: "bg-purple-500/90 text-purple-50 border-purple-400/30",
+  scheduled: "bg-secondary/90 text-secondary-foreground border-secondary/30",
 };
 
 const visibilityIcons: Record<string, React.ReactNode> = {
@@ -161,7 +161,7 @@ function CourseCard({
   const visibilityConfig = COURSE_VISIBILITY_CONFIG[course.visibility];
 
   const handleClick = useCallback(() => {
-    router.push(`/courses/${course.id}`);
+    router.push(`/teacher/courses/${course.id}`);
   }, [router, course.id]);
 
   const handleKeyDown = useCallback(

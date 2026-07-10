@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   AppDialog,
   AppDialogContent,
@@ -21,9 +21,13 @@ interface RenameDialogProps {
 
 function RenameDialog({ open, onOpenChange, onSave, currentTitle, saving }: RenameDialogProps) {
   const [title, setTitle] = useState("");
+  const wasOpen = useRef(false);
 
   useEffect(() => {
-    if (open) setTitle(currentTitle ?? "");
+    if (open && !wasOpen.current) {
+      setTitle(currentTitle ?? "");
+    }
+    wasOpen.current = open;
   }, [open, currentTitle]);
 
   const handleSubmit = (e: React.FormEvent) => {

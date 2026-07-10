@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Folder,
   FolderOpen,
@@ -17,12 +17,14 @@ interface FolderTreeProps {
   selectedId?: number | "root" | null;
   onSelect?: (folderId: number | "root" | null) => void;
   onCreateFolder?: () => void;
+  onMoveFolder?: (id: number, parentId: number | null) => void;
 }
 
 interface FolderTreeItemProps {
   folder: MediaFolder;
   selectedId?: number | "root" | null;
   onSelect?: (folderId: number | "root" | null) => void;
+  onMoveFolder?: (id: number, parentId: number | null) => void;
   depth?: number;
 }
 
@@ -30,11 +32,48 @@ function FolderTreeItem({
   folder,
   selectedId,
   onSelect,
+  onMoveFolder,
   depth = 0,
 }: FolderTreeItemProps) {
   const [expanded, setExpanded] = useState(true);
+  const [isDropTarget, setIsDropTarget] = useState(false);
+  const dragIdRef = useRef<number | null>(null);
   const hasChildren = folder.children && folder.children.length > 0;
   const isSelected = selectedId === folder.id;
+
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      dragIdRef.current = folder.id;
+      e.dataTransfer.setData("text/folder-id", String(folder.id));
+      e.dataTransfer.effectAllowed = "move";
+    },
+    [folder.id],
+  );
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (dragIdRef.current === folder.id) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setIsDropTarget(true);
+    },
+    [folder.id],
+  );
+
+  const handleDragLeave = useCallback(() => setIsDropTarget(false), []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDropTarget(false);
+      const id = Number(e.dataTransfer.getData("text/folder-id"));
+      if (id && id !== folder.id) {
+        onMoveFolder?.(id, folder.id);
+      }
+      dragIdRef.current = null;
+    },
+    [folder.id, onMoveFolder],
+  );
 
   return (
     <div>
@@ -42,8 +81,14 @@ function FolderTreeItem({
         className={cn(
           "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent",
           isSelected && "bg-accent font-medium text-accent-foreground",
+          isDropTarget && "ring-2 ring-primary ring-offset-1",
         )}
         style={{ paddingRight: 8 + depth * 16 }}
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onClick={() => {
           onSelect?.(folder.id);
           if (hasChildren) setExpanded(!expanded);
@@ -73,6 +118,7 @@ function FolderTreeItem({
               folder={child}
               selectedId={selectedId}
               onSelect={onSelect}
+              onMoveFolder={onMoveFolder}
               depth={depth + 1}
             />
           ))}
@@ -87,9 +133,25 @@ function FolderTree({
   selectedId,
   onSelect,
   onCreateFolder,
+  onMoveFolder,
 }: FolderTreeProps) {
+  const [isRootDrop, setIsRootDrop] = useState(false);
+
   return (
-    <div className="space-y-0.5">
+    <div
+      className={cn("space-y-0.5", isRootDrop && "rounded-lg ring-2 ring-primary/40")}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsRootDrop(true);
+      }}
+      onDragLeave={() => setIsRootDrop(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsRootDrop(false);
+        const id = Number(e.dataTransfer.getData("text/folder-id"));
+        if (id) onMoveFolder?.(id, null);
+      }}
+    >
       <button
         className={cn(
           "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent",
@@ -106,6 +168,7 @@ function FolderTree({
           folder={folder}
           selectedId={selectedId}
           onSelect={onSelect}
+          onMoveFolder={onMoveFolder}
         />
       ))}
       {onCreateFolder && (

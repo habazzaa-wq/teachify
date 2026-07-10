@@ -26,7 +26,7 @@ function EmptyLecturesState({ onCreateLecture }: EmptyLecturesStateProps) {
           transition={{ repeat: Infinity, repeatType: "reverse", duration: 3, ease: "easeInOut" }}
           className="absolute -start-10 top-4 flex h-20 w-28 items-center justify-center rounded-2xl border border-border/60 bg-card shadow-lg shadow-primary/5"
         >
-          <Video className="h-6 w-6 text-purple" />
+          <Video className="h-6 w-6 text-secondary" />
         </motion.div>
         <motion.div
           initial={{ rotate: 5, y: -4 }}

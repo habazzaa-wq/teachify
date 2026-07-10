@@ -24,7 +24,7 @@ class CourseSectionController extends Controller
         $this->ensureCourseInTenant($course);
         Gate::authorize('viewAny', CourseSection::class);
 
-        $sections = $this->service->list($course, request()->all());
+        $sections = $this->service->list($course, request()->all(), true);
 
         return response()->json([
             'data' => CourseSectionResource::collection($sections),
@@ -166,6 +166,44 @@ class CourseSectionController extends Controller
         ]);
     }
 
+    public function archive(Course $course, CourseSection $section): JsonResponse
+    {
+        $this->ensureCourseInTenant($course);
+        $this->ensureSectionInCourse($course, $section);
+        Gate::authorize('update', $section);
+
+        $section = $this->service->changeStatus($course, $section, 'archived');
+
+        return response()->json([
+            'message' => 'Course section archived successfully.',
+            'data' => new CourseSectionResource($section),
+        ]);
+    }
+
+    public function move(Request $request, Course $course, CourseSection $section): JsonResponse
+    {
+        $this->ensureCourseInTenant($course);
+        $this->ensureSectionInCourse($course, $section);
+        Gate::authorize('update', $section);
+
+        $validated = $request->validate([
+            'course_module_id' => ['required', 'nullable', 'integer'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
+        ]);
+
+        $section = $this->service->move(
+            $course,
+            $section,
+            $validated['course_module_id'] ?? null,
+            $validated['sort_order'] ?? null,
+        );
+
+        return response()->json([
+            'message' => 'Course section moved successfully.',
+            'data' => new CourseSectionResource($section),
+        ]);
+    }
+
     public function toggleLock(Course $course, CourseSection $section): JsonResponse
     {
         $this->ensureCourseInTenant($course);
@@ -238,6 +276,7 @@ class CourseSectionController extends Controller
             'title' => [$required, 'string', 'max:255'],
             'slug' => ['sometimes', 'string', 'max:255', 'alpha_dash:ascii'],
             'description' => ['nullable', 'string'],
+            'course_module_id' => ['sometimes', 'nullable', 'integer', 'exists:course_modules,id'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:0'],
             'free_preview' => ['sometimes', 'boolean'],

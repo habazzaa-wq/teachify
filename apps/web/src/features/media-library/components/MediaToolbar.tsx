@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Upload, Plus, SlidersHorizontal, Grid3X3, List, ChevronLeft } from "lucide-react";
+import { Search, Upload, Plus, Grid3X3, List, ChevronLeft } from "lucide-react";
 import {
   AppButton,
   AppInput,
@@ -9,7 +9,6 @@ import {
   AppSelectItem,
   AppSelectTrigger,
   AppSelectValue,
-  AppBadge,
 } from "@/components/ui";
 import { TYPE_OPTIONS, STATUS_OPTIONS, SORT_OPTIONS } from "../constants";
 import type { ViewMode, MediaType, MediaStatus } from "../types";

@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { mediaLibraryService } from "../services";
 import { MEDIA_QUERY_KEY } from "../constants";
-import type { MediaFilterParams } from "../types";
+import type { MediaAsset, MediaFilterParams } from "../types";
 
 export function useMediaAssets(params?: MediaFilterParams) {
   return useQuery({
@@ -93,6 +93,15 @@ export function useDeleteFolder() {
   });
 }
 
+export function useMoveFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, parentId }: { id: number; parentId: number | null }) =>
+      mediaLibraryService.moveFolder(id, parentId),
+    onSuccess: () => invalidateAll(qc),
+  });
+}
+
 export function useDeleteAsset() {
   const qc = useQueryClient();
   return useMutation({
@@ -139,6 +148,14 @@ export function useToggleFavorite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => mediaLibraryService.toggleFavorite(id),
+    onSuccess: () => invalidateAll(qc),
+  });
+}
+
+export function useTogglePin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => mediaLibraryService.togglePin(id),
     onSuccess: () => invalidateAll(qc),
   });
 }
@@ -211,7 +228,7 @@ export function useConfirmUpload() {
 export function useUpdateAsset() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<MediaAsset> }) =>
       mediaLibraryService.updateAsset(id, data),
     onSuccess: () => invalidateAll(qc),
   });

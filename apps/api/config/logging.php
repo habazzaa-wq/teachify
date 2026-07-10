@@ -127,6 +127,22 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'bunny' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/bunny.log'),
+            'level' => env('LOG_BUNNY_LEVEL', 'debug'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'usage' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/usage.log'),
+            'level' => env('LOG_USAGE_LEVEL', 'debug'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

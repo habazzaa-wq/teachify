@@ -30,7 +30,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   draft: { label: "مسودة", cls: "bg-warning/10 text-warning" },
   review: { label: "قيد المراجعة", cls: "bg-blue/10 text-blue" },
   published: { label: "منشور", cls: "bg-success/10 text-success" },
-  scheduled: { label: "مجدول", cls: "bg-purple/10 text-purple" },
+  scheduled: { label: "مجدول", cls: "bg-secondary/10 text-secondary" },
   archived: { label: "مؤرشف", cls: "bg-muted text-muted-foreground" },
 };
 

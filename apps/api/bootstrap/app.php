@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'any-permission' => \App\Http\Middleware\AnyPermissionMiddleware::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'any-role' => \App\Http\Middleware\AnyRoleMiddleware::class,
+            'upload.quota' => \App\Http\Middleware\UploadQuotaMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

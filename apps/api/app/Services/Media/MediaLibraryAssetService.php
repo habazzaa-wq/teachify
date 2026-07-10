@@ -26,12 +26,22 @@ class MediaLibraryAssetService
 
     public function find(Tenant $tenant, int $id): ?MediaAsset
     {
-        return $this->assets->findForTenant($tenant, $id);
+        return $this->assets->findForTenant($tenant, $id)?->load([
+            'creator',
+            'captions',
+            'qualities',
+            'usages',
+        ]);
     }
 
     public function findOrFail(Tenant $tenant, int $id): MediaAsset
     {
-        return $this->assets->findOrFailForTenant($tenant, $id);
+        return $this->assets->findOrFailForTenant($tenant, $id)->load([
+            'creator',
+            'captions',
+            'qualities',
+            'usages',
+        ]);
     }
 
     public function create(Tenant $tenant, TenantUser $uploader, array $data): MediaAsset
@@ -117,6 +127,7 @@ class MediaLibraryAssetService
             $copy->updated_at = now();
             $copy->favorite_at = null;
             $copy->archived_at = null;
+            $copy->pinned_at = null;
             $copy->save();
 
             return $copy->refresh()->load(['folder', 'uploader']);
@@ -139,6 +150,15 @@ class MediaLibraryAssetService
     {
         $asset->forceFill([
             'favorite_at' => $asset->favorite_at ? null : now(),
+        ])->save();
+
+        return $asset->refresh();
+    }
+
+    public function togglePin(Tenant $tenant, MediaAsset $asset): MediaAsset
+    {
+        $asset->forceFill([
+            'pinned_at' => $asset->pinned_at ? null : now(),
         ])->save();
 
         return $asset->refresh();

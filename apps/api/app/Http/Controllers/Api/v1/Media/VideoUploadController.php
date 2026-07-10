@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\MediaUploadSession;
 use App\Models\TenantUser;
 use App\Services\Media\BunnyStreamService;
+use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VideoUploadController extends Controller
 {
-    public function store(Request $request, BunnyStreamService $stream): JsonResponse
+    public function store(Request $request, BunnyStreamService $stream, UploadGuardService $guard): JsonResponse
     {
         $validated = $request->validate([
             'course_id' => ['nullable', 'integer'],
@@ -27,6 +28,12 @@ class VideoUploadController extends Controller
         if (! $stream->canCreateVideo(currentTenant(), $membership, $validated['course_id'] ?? null)) {
             throw new AuthorizationException('This action is unauthorized.');
         }
+
+        $guard->guardVideoUpload(
+            currentTenant(),
+            $validated['size_bytes'] ?? null,
+            $validated['mime_type'] ?? null,
+        );
 
         $result = $stream->createUploadIntent(currentTenant(), $membership, $validated);
 

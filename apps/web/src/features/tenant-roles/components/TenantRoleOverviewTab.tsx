@@ -22,7 +22,7 @@ function TenantRoleOverviewTab({ role }: TenantRoleOverviewTabProps) {
 
   const statCards = [
     { icon: Users, label: "المستخدمون", value: role.usersCount, color: "text-blue-600" },
-    { icon: Key, label: "الصلاحيات", value: role.permissionsCount, color: "text-purple-600" },
+    { icon: Key, label: "الصلاحيات", value: role.permissionsCount, color: "text-secondary" },
     { icon: Calendar, label: "تم الإنشاء", value: formatDate(role.createdAt), color: "text-green-600" },
     { icon: Clock, label: "تم التحديث", value: formatDateTime(role.updatedAt), color: "text-amber-600" },
   ];

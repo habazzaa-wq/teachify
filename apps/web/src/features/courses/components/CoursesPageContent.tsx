@@ -29,7 +29,7 @@ import {
   useToggleFeatureCourse,
 } from "@/features/courses/hooks";
 import { useCategories } from "@/features/course-categories/hooks";
-import { CourseCreateDrawer } from "@/features/courses/components/CourseCreateDrawer";
+import { CourseCreatePanel } from "@/features/courses/components/CourseCreatePanel";
 import { CourseEditDrawer } from "@/features/courses/components/CourseEditDrawer";
 import { CourseCard } from "./CourseCard";
 import { cn } from "@/lib/cn";
@@ -231,7 +231,10 @@ function CoursesPageContent() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="pb-16"
+        className={cn(
+          "pb-16 transition-[padding] duration-300 ease-out",
+          (createDrawerOpen || editDrawerOpen) && "lg:pe-[480px]",
+        )}
     >
       {isLoading && (
         <div className="space-y-8">
@@ -338,7 +341,7 @@ function CoursesPageContent() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setCreateDrawerOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-50 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:bg-emerald-600"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4" />
                     إنشاء كورس
@@ -538,7 +541,7 @@ function CoursesPageContent() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setCreateDrawerOpen(true)}
-                  className="inline-flex items-center gap-2.5 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-emerald-50 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:bg-emerald-600"
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-200 hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" />
                   إنشاء أول دورة
@@ -634,12 +637,11 @@ function CoursesPageContent() {
         </>
       )}
 
-      <CourseCreateDrawer
+      <CourseCreatePanel
         open={createDrawerOpen}
         onOpenChange={setCreateDrawerOpen}
         onSave={handleCreateSave}
         saving={createCourse.isPending}
-        categories={categories}
       />
 
       <CourseEditDrawer
@@ -648,7 +650,6 @@ function CoursesPageContent() {
         courseId={selectedCourseId}
         onSave={handleEditSave}
         saving={updateCourse.isPending}
-        categories={categories}
       />
     </motion.div>
   );

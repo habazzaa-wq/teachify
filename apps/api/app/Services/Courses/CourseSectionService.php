@@ -3,6 +3,7 @@
 namespace App\Services\Courses;
 
 use App\Models\Course;
+use App\Models\CourseLesson;
 use App\Models\CourseSection;
 use App\Repositories\CourseSectionRepository;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +17,9 @@ class CourseSectionService
         private readonly CourseSectionRepository $repository,
     ) {}
 
-    public function list(Course $course, array $params = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function list(Course $course, array $params = [], bool $withTrashed = false): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return $this->repository->list($params, $course);
+        return $this->repository->list($params, $course, $withTrashed);
     }
 
     public function get(Course $course, int $id): CourseSection
@@ -32,6 +33,7 @@ class CourseSectionService
             $section = $this->repository->create([
                 'tenant_id' => $course->tenant_id,
                 'course_id' => $course->id,
+                'course_module_id' => $data['course_module_id'] ?? null,
                 'title' => $data['title'],
                 'slug' => $this->uniqueSectionSlug($course, $data['slug'] ?? $data['title']),
                 'description' => $data['description'] ?? null,
@@ -40,7 +42,6 @@ class CourseSectionService
                 'free_preview' => $data['free_preview'] ?? false,
                 'status' => 'draft',
                 'is_published' => false,
-                'published' => false,
                 'locked' => $data['locked'] ?? false,
                 'featured' => $data['featured'] ?? false,
                 'color' => $data['color'] ?? null,
@@ -88,9 +89,10 @@ class CourseSectionService
         return DB::transaction(function () use ($course, $section): CourseSection {
             $this->ensureSectionBelongsToCourse($course, $section);
 
-            return $this->repository->create([
+            $newSection = $this->repository->create([
                 'tenant_id' => $course->tenant_id,
                 'course_id' => $course->id,
+                'course_module_id' => $section->course_module_id,
                 'title' => $section->title . ' (نسخة)',
                 'slug' => $this->uniqueSectionSlug($course, $section->slug . '-copy'),
                 'description' => $section->description,
@@ -106,7 +108,86 @@ class CourseSectionService
                 'icon' => $section->icon,
                 'notes' => $section->notes,
             ]);
+
+            $order = 0;
+            foreach ($section->lessons()->orderBy('sort_order')->get() as $lesson) {
+                $order++;
+                CourseLesson::create([
+                    'tenant_id' => $course->tenant_id,
+                    'course_id' => $course->id,
+                    'course_section_id' => $newSection->id,
+                    'title' => $lesson->title,
+                    'slug' => $this->uniqueLessonSlug($course, $newSection, $lesson->slug . '-copy'),
+                    'short_description' => $lesson->short_description,
+                    'description' => $lesson->description,
+                    'type' => $lesson->type,
+                    'lesson_type' => $lesson->lesson_type,
+                    'status' => 'draft',
+                    'visibility' => $lesson->visibility,
+                    'sort_order' => $order,
+                    'duration_seconds' => $lesson->duration_seconds,
+                    'estimated_duration' => $lesson->estimated_duration,
+                    'free_preview' => false,
+                    'downloadable' => $lesson->downloadable,
+                    'featured' => false,
+                    'comments_enabled' => $lesson->comments_enabled,
+                    'notes' => $lesson->notes,
+                    'color' => $lesson->color,
+                    'icon' => $lesson->icon,
+                    'published_at' => null,
+                ]);
+            }
+
+            return $newSection;
         });
+    }
+
+    public function move(Course $course, CourseSection $section, ?int $moduleId, ?int $sortOrder): CourseSection
+    {
+        $this->ensureSectionBelongsToCourse($course, $section);
+
+        $data = [];
+
+        if ($moduleId !== null) {
+            $data['course_module_id'] = $moduleId;
+        }
+
+        if ($sortOrder !== null) {
+            $data['sort_order'] = $sortOrder;
+        } elseif ($moduleId !== null && $section->course_module_id !== $moduleId) {
+            $data['sort_order'] = $this->nextSortOrder($course);
+        }
+
+        if (empty($data)) {
+            return $section;
+        }
+
+        return $this->repository->update($section, $data);
+    }
+
+    private function uniqueLessonSlug(Course $course, CourseSection $section, string $value): string
+    {
+        $slug = Str::slug($value);
+
+        if ($slug === '') {
+            $slug = 'lesson-' . Str::random(6);
+        }
+
+        $query = CourseLesson::withTrashed()
+            ->where('tenant_id', $course->tenant_id)
+            ->where('course_id', $course->id)
+            ->where('course_section_id', $section->id)
+            ->where('slug', $slug);
+
+        $counter = 1;
+        $base = $slug;
+        while ($query->exists()) {
+            $slug = $base . '-' . $counter;
+            $counter++;
+            $query->where('slug', $slug);
+        }
+
+        return $slug;
     }
 
     public function changeStatus(Course $course, CourseSection $section, string $status): CourseSection
@@ -262,27 +343,29 @@ class CourseSectionService
         $slug = Str::slug($value);
 
         if ($slug === '') {
-            throw ValidationException::withMessages([
-                'slug' => ['The section slug is invalid.'],
-            ]);
+            $slug = 'section-' . Str::random(6);
         }
 
-        $query = CourseSection::query()
-            ->where('tenant_id', $course->tenant_id)
-            ->where('course_id', $course->id)
-            ->where('slug', $slug);
+        $base = $slug;
+        $counter = 1;
 
-        if ($ignore) {
-            $query->whereKeyNot($ignore->id);
+        while (true) {
+            $query = CourseSection::withTrashed()
+                ->where('tenant_id', $course->tenant_id)
+                ->where('course_id', $course->id)
+                ->where('slug', $slug);
+
+            if ($ignore) {
+                $query->whereKeyNot($ignore->id);
+            }
+
+            if (! $query->exists()) {
+                return $slug;
+            }
+
+            $slug = $base . '-' . $counter;
+            $counter++;
         }
-
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'slug' => ['The section slug has already been taken in this course.'],
-            ]);
-        }
-
-        return $slug;
     }
 
     private function ensureSectionBelongsToCourse(Course $course, CourseSection $section): void

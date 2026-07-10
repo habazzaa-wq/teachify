@@ -13,7 +13,7 @@ function TenantGuestRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "authenticated" && activeTenant) {
-      router.replace("/dashboard");
+      router.replace("/teacher/dashboard");
     }
   }, [status, activeTenant, router]);
 

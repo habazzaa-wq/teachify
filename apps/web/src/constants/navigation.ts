@@ -14,6 +14,7 @@ import {
   UserCircle,
   HelpCircle,
   GraduationCap,
+  Images,
   type LucideIcon,
 } from "lucide-react";
 import { routes } from "./routes";
@@ -116,6 +117,12 @@ export const dashboardNav: readonly NavItem[] = [
     featureFlag: "certificates",
   },
   {
+    labelKey: "nav.media",
+    href: routes.dashboardMedia,
+    icon: Images,
+    permission: permissions.mediaView,
+  },
+  {
     labelKey: "nav.activityLog",
     href: routes.dashboardActivityLog,
     icon: Activity,
@@ -150,20 +157,20 @@ export const dashboardNav: readonly NavItem[] = [
 export const SIDEBAR_SECTIONS = [
   {
     label: "main",
-    items: ["/", "/analytics", "/calendar"],
+    items: ["/teacher/dashboard", "/teacher/analytics", "/teacher/calendar"],
   },
   {
     label: "teaching",
-    items: ["/courses", "/lessons", "/content", "/discussions"],
+    items: ["/teacher/courses", "/teacher/lessons", "/teacher/content", "/teacher/discussions"],
     featureFlag: "courses",
   },
   {
     label: "people",
-    items: ["/students"],
+    items: ["/teacher/students"],
     featureFlag: "users",
   },
   {
     label: "system",
-    items: ["/notifications", "/activity-log", "/audit-log", "/profile", "/settings", "/help"],
+    items: ["/teacher/notifications", "/teacher/activity-log", "/teacher/audit-log", "/teacher/profile", "/teacher/settings", "/teacher/help"],
   },
 ] as const;

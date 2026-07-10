@@ -17,7 +17,7 @@ class HazemAcademySeeder extends Seeder
             'academy_name' => 'Hazem Academy',
             'academy_slug' => 'hazem',
             'owner_name' => 'Hazem',
-            'owner_email' => 'hazem@academy.test',
+            'owner_email' => 'hazem@gmail.com',
             'owner_password' => bcrypt('password'),
         ]);
 

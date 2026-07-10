@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\TenantUser;
+use App\Services\Authorization\PlatformAuthorizationService;
 use App\Policies\DashboardPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
@@ -39,6 +40,10 @@ class AuthServiceProvider extends ServiceProvider
 
     private function registerDynamicGates(): void
     {
+        Gate::define('platform.settings.bunny', function ($user) {
+            return app(PlatformAuthorizationService::class)->isPlatformSuperAdmin($user);
+        });
+
         try {
             $permissions = Permission::query()->pluck('slug');
 

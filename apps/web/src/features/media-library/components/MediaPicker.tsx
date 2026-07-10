@@ -18,7 +18,7 @@
  * It only exposes the interface that Course Builder will consume.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   AppDialog,
   AppDialogContent,
@@ -32,7 +32,7 @@ import { MediaToolbar } from "./MediaToolbar";
 import { MediaEmptyState } from "./MediaEmptyState";
 import { MediaLoadingState } from "./MediaLoadingState";
 import { MediaErrorState } from "./MediaErrorState";
-import type { MediaAsset, ViewMode, MediaType, MediaStatus } from "../types";
+import type { ViewMode, MediaType, MediaStatus } from "../types";
 
 interface MediaPickerResult {
   id: number;
@@ -66,10 +66,11 @@ function MediaPicker({
     type: typeFilter !== "all" ? typeFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     sort,
+    types: allowedTypes,
     per_page: 50,
   });
 
-  const assets = data?.data ?? [];
+  const assets = useMemo(() => data?.data ?? [], [data]);
   const handleSelect = useCallback(
     (id: number, selected: boolean) => {
       if (mode === "single") {
@@ -77,12 +78,14 @@ function MediaPicker({
         if (asset) onSelect({ id, ids: [id] });
         return;
       }
-      const next = new Set(selectedIds);
-      if (selected) next.add(id);
-      else next.delete(id);
-      setSelectedIds(next);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (selected) next.add(id);
+        else next.delete(id);
+        return next;
+      });
     },
-    [mode, selectedIds, assets, onSelect],
+    [mode, assets, onSelect],
   );
 
   const handleConfirm = useCallback(() => {
@@ -131,6 +134,7 @@ function MediaPicker({
                   if (mode === "single") onSelect({ id: asset.id, ids: [asset.id] });
                   else handleSelect(asset.id, !selectedIds.has(asset.id));
                 }}
+                selectable={mode === "multi"}
               />
             )}
           </div>

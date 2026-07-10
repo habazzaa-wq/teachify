@@ -18,7 +18,7 @@ export function useTenantLogin() {
     mutationFn: (credentials: LoginRequest) => login(credentials),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.all });
-      router.replace("/dashboard");
+      router.replace("/teacher/dashboard");
     },
     onError: (error: ApiError) => {
       toast.error(error.message);

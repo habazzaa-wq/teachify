@@ -8,6 +8,7 @@ use App\Models\MediaAsset;
 use App\Models\Tenant;
 use App\Policies\MediaLibraryPolicy;
 use App\Services\Media\MediaLibraryAssetService;
+use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +18,7 @@ class MediaLibraryController extends Controller
     public function __construct(
         private readonly MediaLibraryAssetService $assets,
         private readonly MediaLibraryPolicy $policy,
+        private readonly UploadGuardService $guard,
     ) {
     }
 
@@ -135,6 +137,9 @@ class MediaLibraryController extends Controller
 
         $tenant = currentTenant();
         $asset = $this->assets->findOrFail($tenant, $id);
+
+        $this->guard->guardFileUpload($tenant, $asset->size_bytes, $asset->mime_type);
+
         $copy = $this->assets->duplicate($tenant, $asset);
 
         return response()->json([
@@ -183,6 +188,19 @@ class MediaLibraryController extends Controller
         $tenant = currentTenant();
         $asset = $this->assets->findOrFail($tenant, $id);
         $this->assets->toggleFavorite($tenant, $asset);
+
+        return response()->json([
+            'data' => new MediaLibraryAssetResource($asset),
+        ]);
+    }
+
+    public function pin(Request $request, int $id): JsonResponse
+    {
+        Gate::authorize('update', MediaAsset::class);
+
+        $tenant = currentTenant();
+        $asset = $this->assets->findOrFail($tenant, $id);
+        $this->assets->togglePin($tenant, $asset);
 
         return response()->json([
             'data' => new MediaLibraryAssetResource($asset),

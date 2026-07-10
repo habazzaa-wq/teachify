@@ -2,7 +2,7 @@
 
 import { X, CheckCircle2, AlertCircle, Loader2, FileUp } from "lucide-react";
 import { AppButton, AppBadge } from "@/components/ui";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface UploadItem {
   id: string;

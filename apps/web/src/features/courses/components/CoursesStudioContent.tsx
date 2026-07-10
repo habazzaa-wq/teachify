@@ -61,7 +61,7 @@ const STATUS_META: Record<CourseStatus, { label: string; cls: string; dot: strin
   draft: { label: "مسودة", cls: "bg-amber-500/10 text-amber-500", dot: "bg-amber-500" },
   review: { label: "قيد المراجعة", cls: "bg-blue-500/10 text-blue-500", dot: "bg-blue-500" },
   published: { label: "منشورة", cls: "bg-emerald-500/10 text-emerald-500", dot: "bg-emerald-500" },
-  scheduled: { label: "مجدولة", cls: "bg-purple-500/10 text-purple-500", dot: "bg-purple-500" },
+  scheduled: { label: "مجدولة", cls: "bg-secondary/10 text-secondary", dot: "bg-secondary" },
   archived: { label: "مؤرشفة", cls: "bg-muted text-muted-foreground", dot: "bg-muted-foreground" },
 };
 
@@ -143,7 +143,7 @@ function CoursesStudioContent() {
   );
 
   const openWorkspace = useCallback(
-    (course: Course) => router.push(`/courses/${course.id}`),
+    (course: Course) => router.push(`/teacher/courses/${course.id}`),
     [router],
   );
 
@@ -232,7 +232,7 @@ function CoursesStudioContent() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setCreateDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-emerald-50 transition-colors hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             >
               <Plus className="h-3.5 w-3.5" />
               دورة جديدة
@@ -416,7 +416,7 @@ function CoursesStudioContent() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setCreateDrawerOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-emerald-50 shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-600"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4" />
                   إنشاء أول دورة
@@ -584,7 +584,6 @@ function CoursesStudioContent() {
         courseId={selectedCourseId}
         onSave={handleEditSave}
         saving={updateCourse.isPending}
-        categories={categories}
       />
     </div>
   );

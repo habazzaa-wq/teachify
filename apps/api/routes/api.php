@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Platform\BunnyCenter\BunnyCenterController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
 use App\Http\Controllers\Api\v1\Access\CourseAccessController;
 use App\Http\Controllers\Api\v1\Access\LessonAccessController;
@@ -50,17 +51,26 @@ use App\Http\Controllers\Api\v1\Media\MediaLibraryMetricsController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaUploadController;
 use App\Http\Controllers\Api\v1\Media\VideoPlaybackController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
+use App\Http\Controllers\Api\v1\ExamBank\ExamController;
+use App\Http\Controllers\Api\v1\ExamBank\ExamAnalyticsController;
 use App\Http\Controllers\Api\v1\Media\VideoStatusController;
 use App\Http\Controllers\Api\v1\Media\VideoUploadController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationPreferenceController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
+use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
+use App\Http\Controllers\Api\Platform\Usage\UsageController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
+use App\Http\Controllers\Api\v1\PublicNewsController;
+use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
@@ -99,6 +109,7 @@ Route::prefix('v1')->group(function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
+    Route::get('/public/news', [PublicNewsController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
 
@@ -205,6 +216,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/assets/{id}/rename', [MediaLibraryController::class, 'rename']);
             Route::put('/assets/{id}/move', [MediaLibraryController::class, 'move']);
             Route::post('/assets/{id}/favorite', [MediaLibraryController::class, 'favorite']);
+            Route::post('/assets/{id}/pin', [MediaLibraryController::class, 'pin']);
             Route::post('/assets/{id}/archive', [MediaLibraryController::class, 'archiveAsset']);
             Route::post('/assets/bulk/delete', [MediaLibraryController::class, 'bulkDelete']);
             Route::post('/assets/bulk/restore', [MediaLibraryController::class, 'bulkRestore']);
@@ -216,6 +228,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/folders', [MediaLibraryFolderController::class, 'store']);
             Route::get('/folders/{id}', [MediaLibraryFolderController::class, 'show']);
             Route::put('/folders/{id}', [MediaLibraryFolderController::class, 'update']);
+            Route::put('/folders/{id}/move', [MediaLibraryFolderController::class, 'move']);
             Route::delete('/folders/{id}', [MediaLibraryFolderController::class, 'destroy']);
             Route::get('/folders/{id}/breadcrumbs', [MediaLibraryFolderController::class, 'breadcrumbs']);
 
@@ -224,6 +237,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/recent', [MediaLibraryMetricsController::class, 'recent']);
 
             Route::post('/upload/intent', [MediaLibraryUploadController::class, 'uploadIntent']);
+            Route::post('/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
             Route::post('/upload/{session}/confirm', [MediaLibraryUploadController::class, 'confirmUpload']);
             Route::get('/assets/{asset}/status', [MediaLibraryUploadController::class, 'status']);
             Route::get('/assets/{asset}/signed-url', [MediaLibraryUploadController::class, 'signedUrl']);
@@ -254,10 +268,12 @@ Route::prefix('v1')->group(function () {
         Route::patch('/courses/{course}/sections/{section}/status', [CourseSectionController::class, 'updateStatus']);
         Route::patch('/courses/{course}/sections/{section}/publish', [CourseSectionController::class, 'publish']);
         Route::patch('/courses/{course}/sections/{section}/unpublish', [CourseSectionController::class, 'unpublish']);
+        Route::patch('/courses/{course}/sections/{section}/archive', [CourseSectionController::class, 'archive']);
         Route::post('/courses/{course}/sections/{section}/lock', [CourseSectionController::class, 'toggleLock']);
         Route::post('/courses/{course}/sections/{section}/feature', [CourseSectionController::class, 'toggleFeature']);
         Route::post('/courses/{course}/sections/{section}/restore', [CourseSectionController::class, 'restore']);
         Route::post('/courses/{course}/sections/{section}/duplicate', [CourseSectionController::class, 'duplicate']);
+        Route::post('/courses/{course}/sections/{section}/move', [CourseSectionController::class, 'move']);
         Route::delete('/courses/{course}/sections/{section}', [CourseSectionController::class, 'destroy']);
         Route::get('/lessons/metrics', [CourseLessonController::class, 'metrics']);
         Route::get('/courses/{course}/sections/{section}/lessons', [CourseLessonController::class, 'index']);
@@ -362,6 +378,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings/{group}', [TenantSettingController::class, 'show']);
         Route::put('/settings/{group}', [TenantSettingController::class, 'update']);
 
+        Route::apiResource('teacher/news', NewsController::class)->names('teacher.news');
+        Route::post('/teacher/news/reorder', [NewsController::class, 'reorder']);
+
         Route::get('/domains', [TenantDomainController::class, 'index']);
         Route::post('/domains', [TenantDomainController::class, 'store']);
         Route::put('/domains/{tenantDomain}', [TenantDomainController::class, 'update']);
@@ -372,6 +391,54 @@ Route::prefix('v1')->group(function () {
         Route::post('/integrations', [TenantIntegrationController::class, 'store']);
         Route::put('/integrations/{tenantIntegration}', [TenantIntegrationController::class, 'update']);
         Route::delete('/integrations/{tenantIntegration}', [TenantIntegrationController::class, 'destroy']);
+
+        // Exam Bank routes
+        Route::prefix('exam-bank')->group(function () {
+            Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
+            Route::apiResource('questions', QuestionController::class);
+            Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
+            Route::post('/questions/bulk/restore', [QuestionController::class, 'bulkRestore']);
+            Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
+            Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
+            Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
+
+            Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
+            Route::apiResource('categories', QuestionCategoryController::class);
+            Route::post('/categories/{category}/restore', [QuestionCategoryController::class, 'restore']);
+
+            Route::apiResource('banks', QuestionBankController::class);
+            Route::patch('/banks/{bank}/status', [QuestionBankController::class, 'updateStatus']);
+            Route::post('/banks/{bank}/restore', [QuestionBankController::class, 'restore']);
+
+            Route::get('/exams/metrics', [ExamController::class, 'metrics']);
+            Route::get('/exams/recent', [ExamController::class, 'recent']);
+            Route::get('/exams/pinned', [ExamController::class, 'pinned']);
+            Route::get('/exams/favorites', [ExamController::class, 'favorites']);
+            Route::apiResource('exams', ExamController::class);
+            Route::patch('/exams/{exam}/status', [ExamController::class, 'updateStatus']);
+            Route::patch('/exams/{exam}/publish', [ExamController::class, 'publish']);
+            Route::patch('/exams/{exam}/archive', [ExamController::class, 'archive']);
+            Route::post('/exams/{exam}/restore', [ExamController::class, 'restore']);
+            Route::post('/exams/{exam}/duplicate', [ExamController::class, 'duplicate']);
+            Route::post('/exams/{exam}/pin', [ExamController::class, 'togglePinned']);
+            Route::post('/exams/{exam}/feature', [ExamController::class, 'toggleFeatured']);
+            Route::post('/exams/{exam}/favorite', [ExamController::class, 'toggleFavorite']);
+            Route::post('/exams/bulk/delete', [ExamController::class, 'bulkDelete']);
+            Route::post('/exams/bulk/restore', [ExamController::class, 'bulkRestore']);
+            Route::post('/exams/bulk/duplicate', [ExamController::class, 'bulkDuplicate']);
+            Route::post('/exams/bulk/archive', [ExamController::class, 'bulkArchive']);
+            Route::post('/exams/bulk/publish', [ExamController::class, 'bulkPublish']);
+
+            Route::get('/exams/{exam}/questions', [ExamController::class, 'questions']);
+            Route::post('/exams/{exam}/questions', [ExamController::class, 'addQuestion']);
+            Route::put('/exams/{exam}/questions', [ExamController::class, 'setQuestions']);
+            Route::post('/exams/{exam}/questions/reorder', [ExamController::class, 'reorderQuestions']);
+            Route::put('/exams/{exam}/questions/{question}', [ExamController::class, 'updateQuestionLink']);
+            Route::delete('/exams/{exam}/questions/{question}', [ExamController::class, 'removeQuestion']);
+
+            Route::get('/analytics/overview', [ExamAnalyticsController::class, 'overview']);
+            Route::get('/exams/{exam}/analytics', [ExamAnalyticsController::class, 'exam']);
+        });
 
         Route::get('/categories/tree', [CategoryController::class, 'tree']);
         Route::get('/categories/metrics', [CategoryController::class, 'metrics']);
@@ -397,6 +464,42 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
         Route::post('/tenants/bulk/delete', [TenantController::class, 'bulkDestroy']);
         Route::get('/audit-logs', [PlatformAuditController::class, 'index']);
         Route::apiResource('admins', PlatformAdminController::class);
+
+        Route::prefix('bunny-settings')->group(function () {
+            Route::get('/', [PlatformBunnySettingController::class, 'index']);
+            Route::get('/health', [PlatformBunnySettingController::class, 'health']);
+            Route::post('/verify', [PlatformBunnySettingController::class, 'verify']);
+            Route::post('/rotate-secrets', [PlatformBunnySettingController::class, 'rotate']);
+            Route::post('/reveal', [PlatformBunnySettingController::class, 'reveal']);
+            Route::post('/disable', [PlatformBunnySettingController::class, 'disable']);
+            Route::post('/reset', [PlatformBunnySettingController::class, 'reset']);
+            Route::delete('/credentials', [PlatformBunnySettingController::class, 'deleteCredentials']);
+            Route::put('/', [PlatformBunnySettingController::class, 'update']);
+        });
+
+        Route::prefix('usage')->group(function () {
+            Route::get('/tenants/{tenant}/current', [UsageController::class, 'current']);
+            Route::get('/tenants/{tenant}/history', [UsageController::class, 'history']);
+            Route::get('/tenants/{tenant}/snapshot', [UsageController::class, 'snapshot']);
+            Route::get('/tenants/{tenant}/quota', [UsageController::class, 'quota']);
+            Route::get('/tenants/{tenant}/remaining', [UsageController::class, 'remaining']);
+            Route::get('/tenants/{tenant}/sync-status', [UsageController::class, 'syncStatus']);
+            Route::post('/tenants/{tenant}/sync', [UsageController::class, 'sync']);
+            Route::get('/tenants/{tenant}/verify', [UsageController::class, 'verify']);
+        });
+
+        Route::prefix('bunny-center')->group(function () {
+            Route::get('/metrics', [BunnyCenterController::class, 'metrics']);
+            Route::get('/health', [BunnyCenterController::class, 'health']);
+            Route::get('/usage-report', [BunnyCenterController::class, 'usageReport']);
+            Route::get('/top-consumers', [BunnyCenterController::class, 'topConsumers']);
+            Route::get('/alerts', [BunnyCenterController::class, 'alerts']);
+            Route::get('/sync-jobs', [BunnyCenterController::class, 'syncJobs']);
+            Route::get('/tenants', [BunnyCenterController::class, 'tenants']);
+            Route::get('/storage-history', [BunnyCenterController::class, 'storageHistory']);
+            Route::get('/bandwidth-history', [BunnyCenterController::class, 'bandwidthHistory']);
+            Route::get('/views-history', [BunnyCenterController::class, 'viewsHistory']);
+        });
     });
 
 Route::get('/diag/ping', function () {

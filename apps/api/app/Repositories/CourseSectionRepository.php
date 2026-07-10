@@ -39,9 +39,13 @@ class CourseSectionRepository
         return $query->withCount('lessons');
     }
 
-    public function list(array $params = [], ?Course $course = null): LengthAwarePaginator
+    public function list(array $params = [], ?Course $course = null, bool $withTrashed = false): LengthAwarePaginator
     {
         $query = $this->query($course);
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
 
         $query = $this->applySearch($query, $params['search'] ?? null);
         $query = $this->applyCourseFilter($query, $params['course_id'] ?? null);

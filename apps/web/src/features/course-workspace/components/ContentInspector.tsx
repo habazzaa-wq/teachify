@@ -40,7 +40,7 @@ interface ContentInspectorProps {
 const typeMeta: Record<ContentItemType, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; description: string }> = {
   video: { label: "فيديو", icon: Video, color: "text-blue-500 bg-blue-500/10", description: "محتوى فيديو تعليمي" },
   pdf: { label: "PDF", icon: FileType, color: "text-rose-500 bg-rose-500/10", description: "ملف PDF قابل للعرض" },
-  exam: { label: "اختبار", icon: ClipboardList, color: "text-purple-500 bg-purple-500/10", description: "اختبار تفاعلي للطلاب" },
+  exam: { label: "اختبار", icon: ClipboardList, color: "text-secondary bg-secondary/10", description: "اختبار تفاعلي للطلاب" },
   assignment: { label: "واجب", icon: PenTool, color: "text-amber-500 bg-amber-500/10", description: "واجب للتقييم والتسليم" },
   audio: { label: "صوت", icon: Headphones, color: "text-emerald-500 bg-emerald-500/10", description: "ملف صوتي أو بودكاست" },
   resource: { label: "مورد", icon: FolderOpen, color: "text-cyan-500 bg-cyan-500/10", description: "مرفقات وملفات إضافية" },
@@ -107,10 +107,10 @@ function PdfPreview({ item, compact }: { item: ContentItem; compact?: boolean })
 
 function ExamPreview({ item, compact }: { item: ContentItem; compact?: boolean }) {
   return (
-    <div className={cn("rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-4 border border-border/50", compact ? "p-3" : "p-6")}>
+    <div className={cn("rounded-2xl bg-gradient-to-br from-secondary/10 to-secondary/5 p-4 border border-border/50", compact ? "p-3" : "p-6")}>
       <div className="flex items-start gap-3">
-        <div className={cn("p-2 rounded-xl bg-purple-500/10 shrink-0", compact ? "p-1.5" : "p-3")}>
-          <FileSpreadsheet className={cn(compact ? "h-4 w-4" : "h-6 w-6", "text-purple-500")} />
+        <div className={cn("p-2 rounded-xl bg-secondary/10 shrink-0", compact ? "p-1.5" : "p-3")}>
+          <FileSpreadsheet className={cn(compact ? "h-4 w-4" : "h-6 w-6", "text-secondary")} />
         </div>
         <div>
           <h4 className={cn("font-semibold", compact ? "text-xs" : "text-sm")}>اختبار</h4>

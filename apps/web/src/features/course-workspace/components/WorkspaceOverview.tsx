@@ -69,7 +69,7 @@ function WorkspaceOverview({ course, loading, onAddLecture, totalModules = 0 }: 
   const outlineItems = [
     { label: "المحاضرات", value: totalModules, icon: BookOpen, color: "text-primary" },
     { label: "الأقسام", value: course.sectionsCount ?? 0, icon: Layers, color: "text-blue-500" },
-    { label: "المحتوى", value: course.lessonsCount ?? 0, icon: FileText, color: "text-purple-500" },
+    { label: "المحتوى", value: course.lessonsCount ?? 0, icon: FileText, color: "text-secondary" },
     { label: "المدة", value: course.duration ? `${course.duration} د` : "—", icon: Clock, color: "text-amber-500" },
   ];
 

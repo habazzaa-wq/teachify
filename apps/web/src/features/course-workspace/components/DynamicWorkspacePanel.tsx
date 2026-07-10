@@ -58,7 +58,7 @@ const contentTypeIcons: Record<string, React.ComponentType<{ className?: string 
 const contentTypeColors: Record<string, string> = {
   video: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   pdf: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-  exam: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  exam: "bg-secondary/10 text-secondary border-secondary/20",
   assignment: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   audio: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
   resource: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
@@ -179,7 +179,7 @@ function LectureCanvas({ lecture }: { lecture: CourseModule }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: "الأقسام", value: sections.length, icon: Layers, color: "text-blue-500" },
-            { label: "المحتوى", value: totalItems, icon: FileText, color: "text-purple-500" },
+            { label: "المحتوى", value: totalItems, icon: FileText, color: "text-secondary" },
             { label: "المدة", value: estimateDurationMinutes(totalDuration), icon: Clock, color: "text-amber-500" },
             { label: "النوع", value: lecture.sectionsCount > 0 ? "مختلط" : "—", icon: GraduationCap, color: "text-emerald-500" },
           ].map((stat) => (

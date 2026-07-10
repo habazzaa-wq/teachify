@@ -86,7 +86,7 @@ function LoginForm() {
       setDone(true);
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: authKeys.all });
-        router.replace("/dashboard");
+        router.replace("/teacher/dashboard");
       }, 1200);
     },
     onError: (err: ApiError) => {

@@ -33,6 +33,7 @@ export interface CreateCourseSectionPayload {
   title: string;
   slug?: string;
   description?: string | null;
+  course_module_id?: string | null;
   sort_order?: number;
   duration_minutes?: number | null;
   free_preview?: boolean;

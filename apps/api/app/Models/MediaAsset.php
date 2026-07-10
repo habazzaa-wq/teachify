@@ -33,10 +33,13 @@ class MediaAsset extends Model
         'cdn_url',
         'thumbnail_url',
         'preview_url',
+        'poster_url',
         'original_filename',
         'original_name',
         'title',
+        'slug',
         'description',
+        'language',
         'tags',
         'mime_type',
         'extension',
@@ -49,6 +52,7 @@ class MediaAsset extends Model
         'metadata',
         'favorite_at',
         'archived_at',
+        'pinned_at',
         'created_by_tenant_user_id',
         'uploader_id',
     ];
@@ -65,6 +69,8 @@ class MediaAsset extends Model
             'tags' => 'array',
             'favorite_at' => 'datetime',
             'archived_at' => 'datetime',
+            'pinned_at' => 'datetime',
+            'processing_progress' => 'integer',
         ];
     }
 
@@ -148,6 +154,11 @@ class MediaAsset extends Model
         return $this->archived_at !== null;
     }
 
+    public function isPinned(): bool
+    {
+        return $this->pinned_at !== null;
+    }
+
     public function isReady(): bool
     {
         return $this->status === 'ready';
@@ -166,6 +177,11 @@ class MediaAsset extends Model
     public function scopeArchived($query)
     {
         return $query->whereNotNull('archived_at');
+    }
+
+    public function scopePinned($query)
+    {
+        return $query->whereNotNull('pinned_at');
     }
 
     public function scopeNotArchived($query)

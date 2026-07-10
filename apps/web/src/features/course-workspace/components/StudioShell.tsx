@@ -729,7 +729,6 @@ function StudioShell() {
         courseId={courseId}
         onSave={(id, data) => handleUpdateCourse(data)}
         saving={updateCourse.isPending}
-        categories={[]}
       />
     </div>
   );

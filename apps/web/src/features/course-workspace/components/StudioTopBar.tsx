@@ -18,7 +18,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   draft: { label: "مسودة", cls: "bg-warning/10 text-warning" },
   review: { label: "قيد المراجعة", cls: "bg-blue/10 text-blue" },
   published: { label: "منشورة", cls: "bg-success/10 text-success" },
-  scheduled: { label: "مجدولة", cls: "bg-purple/10 text-purple" },
+  scheduled: { label: "مجدولة", cls: "bg-secondary/10 text-secondary" },
   archived: { label: "مؤرشفة", cls: "bg-muted text-muted-foreground" },
 };
 
@@ -93,7 +93,7 @@ const StudioTopBar = memo(function StudioTopBar({
       <div className="flex min-w-0 items-center gap-2.5">
         <AppBreadcrumb
           items={[
-            { label: "الدورات", href: "/courses" },
+            { label: "الدورات", href: "/teacher/courses" },
             { label: courseLoading ? "..." : (course?.title ?? ""), href: "#" },
           ]}
         />

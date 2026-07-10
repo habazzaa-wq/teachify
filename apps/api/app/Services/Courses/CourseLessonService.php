@@ -320,27 +320,29 @@ class CourseLessonService
         $slug = Str::slug($value);
 
         if ($slug === '') {
-            throw ValidationException::withMessages([
-                'slug' => ['The lesson slug is invalid.'],
-            ]);
+            $slug = 'lesson-' . Str::random(6);
         }
 
-        $query = CourseLesson::query()
-            ->where('course_id', $course->id)
-            ->where('course_section_id', $section->id)
-            ->where('slug', $slug);
+        $base = $slug;
+        $counter = 1;
 
-        if ($ignore) {
-            $query->whereKeyNot($ignore->id);
+        while (true) {
+            $query = CourseLesson::withTrashed()
+                ->where('course_id', $course->id)
+                ->where('course_section_id', $section->id)
+                ->where('slug', $slug);
+
+            if ($ignore) {
+                $query->whereKeyNot($ignore->id);
+            }
+
+            if (! $query->exists()) {
+                return $slug;
+            }
+
+            $slug = $base . '-' . $counter;
+            $counter++;
         }
-
-        if ($query->exists()) {
-            throw ValidationException::withMessages([
-                'slug' => ['The lesson slug has already been taken in this section.'],
-            ]);
-        }
-
-        return $slug;
     }
 
     private function ensureSectionBelongsToCourse(Course $course, CourseSection $section): void

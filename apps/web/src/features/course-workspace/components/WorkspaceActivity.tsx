@@ -13,7 +13,7 @@ const activityIconMap = {
   published: { icon: CheckCircle, color: "text-emerald-500 bg-emerald-500/10" },
   archived: { icon: Archive, color: "text-amber-500 bg-amber-500/10" },
   updated: { icon: Pencil, color: "text-blue-500 bg-blue-500/10" },
-  restored: { icon: RotateCcw, color: "text-purple-500 bg-purple-500/10" },
+  restored: { icon: RotateCcw, color: "text-secondary bg-secondary/10" },
 } as const;
 
 type ActionKey = keyof typeof activityIconMap;
