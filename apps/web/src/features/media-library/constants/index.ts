@@ -90,3 +90,57 @@ export const FILE_SIZE_FORMAT = [
   { threshold: 1_048_576, label: "MB", divisor: 1_048_576 },
   { threshold: 1_024, label: "KB", divisor: 1_024 },
 ] as const;
+
+export const SMART_FOLDERS: Array<{ id: string; label: string; icon: string; type?: MediaType }> = [
+  { id: "recent", label: "الأخيرة", icon: "Clock" },
+  { id: "favorites", label: "المفضلة", icon: "Heart" },
+  { id: "pinned", label: "المثبتة", icon: "Pin" },
+  { id: "images", label: "الصور", icon: "Image", type: "image" },
+  { id: "videos", label: "الفيديو", icon: "Video", type: "video" },
+  { id: "audio", label: "الصوت", icon: "Music", type: "audio" },
+  { id: "documents", label: "المستندات", icon: "FileText", type: "document" },
+  { id: "archives", label: "الأرشيف", icon: "Archive", type: "zip" },
+];
+
+export const VIEW_MODE_OPTIONS = [
+  { value: "grid", label: "شبكة", icon: "Grid3X3" },
+  { value: "list", label: "قائمة", icon: "List" },
+  { value: "compact", label: "مضغوط", icon: "LayoutGrid" },
+  { value: "large", label: "معاينة كبيرة", icon: "Maximize2" },
+] as const;
+
+export const GROUP_BY_OPTIONS = [
+  { value: "none", label: "بدون تجميع" },
+  { value: "type", label: "بالنوع" },
+  { value: "date", label: "التاريخ" },
+  { value: "owner", label: "المالك" },
+  { value: "size", label: "الحجم" },
+] as const;
+
+export const EXTENSION_OPTIONS = [
+  { value: "", label: "جميع الامتدادات" },
+  { value: "mp4", label: "MP4" },
+  { value: "webm", label: "WebM" },
+  { value: "mov", label: "MOV" },
+  { value: "jpg", label: "JPG" },
+  { value: "jpeg", label: "JPEG" },
+  { value: "png", label: "PNG" },
+  { value: "gif", label: "GIF" },
+  { value: "webp", label: "WebP" },
+  { value: "svg", label: "SVG" },
+  { value: "mp3", label: "MP3" },
+  { value: "wav", label: "WAV" },
+  { value: "ogg", label: "OGG" },
+  { value: "pdf", label: "PDF" },
+  { value: "docx", label: "DOCX" },
+  { value: "xlsx", label: "XLSX" },
+  { value: "pptx", label: "PPTX" },
+  { value: "zip", label: "ZIP" },
+] as const;
+
+export const VISIBILITY_OPTIONS = [
+  { value: "all", label: "جميع الرؤى" },
+  { value: "private", label: "خاص" },
+  { value: "organization", label: "المؤسسة" },
+  { value: "public", label: "عام" },
+] as const;

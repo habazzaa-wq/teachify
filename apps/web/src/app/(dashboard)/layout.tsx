@@ -1,5 +1,6 @@
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { TenantDashboardLayout } from "@/components/layout/TenantDashboardLayout";
+import { UploadManager } from "@/features/media-library/upload-manager";
 
 export default function DashboardRouteLayout({
   children,
@@ -8,7 +9,10 @@ export default function DashboardRouteLayout({
 }) {
   return (
     <ProtectedRoute>
-      <TenantDashboardLayout>{children}</TenantDashboardLayout>
+      <TenantDashboardLayout>
+        {children}
+        <UploadManager />
+      </TenantDashboardLayout>
     </ProtectedRoute>
   );
 }

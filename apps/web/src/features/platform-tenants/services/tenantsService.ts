@@ -345,7 +345,7 @@ export const tenantsService = {
     if (index === -1) return null;
     getTenants()[index] = { ...getTenants()[index], ...data, updatedAt: new Date().toISOString() } as Tenant;
     persist();
-    return getTenants()[index];
+    return getTenants()[index] ?? null;
   },
 
   async suspend(id: string): Promise<void> {

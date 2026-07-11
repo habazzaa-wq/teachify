@@ -844,3 +844,48 @@
     animation: none;
   }
 }
+
+/* — Hero section (قسم الترحيب): cream-themed decorations — */
+.hero-deco-icon {
+  animation: hero-float var(--hero-duration, 8s) ease-in-out infinite;
+  animation-delay: var(--hero-delay, 0s);
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0) rotate(var(--hero-rotate, 0deg)); }
+  50% { transform: translateY(-12px) rotate(calc(var(--hero-rotate, 0deg) + 3deg)); }
+}
+
+@keyframes hero-glow-pulse {
+  0%, 100% { box-shadow: 0 0 24px var(--hero-glow, rgba(216,123,99,0.25)), 0 0 48px var(--hero-glow, rgba(216,123,99,0.10)); }
+  50% { box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.40)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.18)); }
+}
+
+@keyframes hero-ring-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.hero-avatar-ring {
+  animation: hero-glow-pulse 4s ease-in-out infinite;
+}
+
+.hero-dashed-ring {
+  animation: hero-ring-rotate 30s linear infinite;
+  transform-origin: center center;
+}
+
+.hero-social-btn {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hero-social-btn:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-deco-icon,
+  .hero-avatar-ring,
+  .hero-dashed-ring {
+    animation: none;
+  }
+}

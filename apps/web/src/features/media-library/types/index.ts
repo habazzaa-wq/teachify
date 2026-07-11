@@ -132,7 +132,7 @@ export interface MediaMetricData {
 }
 
 export interface UploadIntent {
-  asset: MediaAsset;
+  asset?: MediaAsset | null;
   sessionId: number;
   uploadUrl: string | null;
   uploadMethod: string;
@@ -151,4 +151,15 @@ export interface MediaUsage {
   url?: string | null;
 }
 
-export type ViewMode = "grid" | "list";
+export type ViewMode = "grid" | "list" | "compact" | "large";
+
+export type AssetGroupBy = "none" | "type" | "date" | "owner" | "size";
+
+export type SmartFolderType = "recent" | "images" | "videos" | "audio" | "documents" | "archives" | "favorites" | "pinned" | "trash" | "shared";
+
+export interface SmartFolder {
+  id: SmartFolderType;
+  label: string;
+  icon: string;
+  count?: number;
+}

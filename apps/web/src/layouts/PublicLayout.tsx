@@ -13,9 +13,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       <NewsTicker />
       <PublicNavbar />
 
-      <main className="flex-1">
-        <div className="container py-8">{children}</div>
-      </main>
+      <main className="flex-1">{children}</main>
 
       <footer className="border-t py-6">
         <div className="container text-center text-sm text-muted-foreground">

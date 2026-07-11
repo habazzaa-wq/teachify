@@ -281,8 +281,33 @@ export const mediaLibraryService = {
     visibility?: string;
     service?: string;
     title?: string;
+    upload_id?: string;
+    total_chunks?: number;
   }): Promise<UploadIntent> {
     const { data } = await api.post("/media-library/upload/intent", payload);
+    return {
+      asset: formatAsset(data.data.asset),
+      sessionId: data.data.session_id,
+      uploadUrl: data.data.upload_url,
+      uploadMethod: data.data.upload_method,
+      headers: data.data.headers,
+      expiresAt: data.data.expires_at,
+    };
+  },
+
+  async createResumableIntent(payload: {
+    type: string;
+    original_filename: string;
+    mime_type?: string;
+    size_bytes?: number;
+    folder_id?: number;
+    visibility?: string;
+    service?: string;
+    title?: string;
+    upload_id?: string;
+    total_chunks?: number;
+  }): Promise<UploadIntent> {
+    const { data } = await api.post("/media-library/upload/resumable/intent", payload);
     return {
       asset: formatAsset(data.data.asset),
       sessionId: data.data.session_id,
@@ -309,6 +334,42 @@ export const mediaLibraryService = {
     const { data } = await api.post(`/media-library/upload/${sessionId}/confirm`, payload ?? {});
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
+    };
+  },
+
+  async finalizeResumable(
+    sessionId: number,
+    payload?: {
+      size_bytes?: number;
+      file_hash?: string;
+    },
+  ): Promise<{ asset: MediaAsset | null }> {
+    const { data } = await api.post(`/media-library/upload/resumable/${sessionId}/finalize`, {
+      size_bytes: payload?.size_bytes,
+      file_hash: payload?.file_hash,
+    });
+    return {
+      asset: data.data?.asset ? formatAsset(data.data.asset) : null,
+    };
+  },
+
+  async resumeResumable(sessionId: number): Promise<{
+    sessionId: number;
+    completedChunks: number[];
+    remainingChunks: number[];
+    nextChunk: number | null;
+    totalChunks: number;
+    completed: boolean;
+  }> {
+    const { data } = await api.get(`/media-library/upload/resumable/${sessionId}/resume`);
+    const d = data.data ?? {};
+    return {
+      sessionId,
+      completedChunks: d.completed_chunks ?? [],
+      remainingChunks: d.remaining_chunks ?? [],
+      nextChunk: d.next_chunk ?? null,
+      totalChunks: d.total_chunks ?? 0,
+      completed: Boolean(d.completed),
     };
   },
 

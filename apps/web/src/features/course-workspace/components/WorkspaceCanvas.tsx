@@ -49,7 +49,7 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 };
 
 function StatusPill({ status }: { status: string }) {
-  const meta = STATUS_META[status] ?? STATUS_META.draft;
+  const meta = STATUS_META[status] ?? STATUS_META.draft!;
   return (
     <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", meta.cls)}>
       {meta.label}

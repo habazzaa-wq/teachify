@@ -70,6 +70,7 @@ use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
 use App\Http\Controllers\Api\Platform\Usage\UsageController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
+use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
@@ -110,6 +111,7 @@ Route::prefix('v1')->group(function () {
     });
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
+    Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
 
@@ -241,6 +243,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/upload/{session}/confirm', [MediaLibraryUploadController::class, 'confirmUpload']);
             Route::get('/assets/{asset}/status', [MediaLibraryUploadController::class, 'status']);
             Route::get('/assets/{asset}/signed-url', [MediaLibraryUploadController::class, 'signedUrl']);
+
+            // Resumable multipart upload pipeline (backend transport).
+            Route::post('/upload/resumable/intent', [MediaLibraryUploadController::class, 'resumableIntent']);
+            Route::put('/upload/resumable/{session}/chunk', [MediaLibraryUploadController::class, 'resumableChunk'])
+                ->withoutMiddleware('throttle:api');
+            Route::get('/upload/resumable/{session}/resume', [MediaLibraryUploadController::class, 'resumableResume']);
+            Route::post('/upload/resumable/{session}/finalize', [MediaLibraryUploadController::class, 'resumableFinalize']);
         });
 
         Route::get('/modules/metrics', [CourseModuleController::class, 'metrics']);

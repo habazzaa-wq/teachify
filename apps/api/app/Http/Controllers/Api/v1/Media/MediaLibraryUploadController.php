@@ -7,6 +7,7 @@ use App\Http\Resources\MediaLibraryAssetResource;
 use App\Models\MediaAsset;
 use App\Models\MediaUploadSession;
 use App\Services\Media\BunnyIntegrationService;
+use App\Services\Media\ResumableUploadService;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class MediaLibraryUploadController extends Controller
     public function __construct(
         private readonly BunnyIntegrationService $bunny,
         private readonly \App\Services\Media\StorageUploadService $storageUploads,
+        private readonly ResumableUploadService $resumable,
         private readonly UploadGuardService $guard,
     ) {
     }
@@ -67,6 +69,100 @@ class MediaLibraryUploadController extends Controller
                 'expires_at' => $result['session']->expires_at?->toISOString(),
             ],
         ], 201);
+    }
+
+    /**
+     * Create a resumable upload session that streams chunks to the backend
+     * transport (chunk receive / resume / finalize) instead of to Bunny CDN
+     * directly. Used by the chunk upload engine.
+     */
+    public function resumableIntent(Request $request): JsonResponse
+    {
+        Gate::authorize('upload', MediaAsset::class);
+
+        $data = $request->validate([
+            'type' => 'required|string|max:50',
+            'original_filename' => 'required|string|max:255',
+            'mime_type' => 'nullable|string|max:255',
+            'size_bytes' => 'nullable|integer|min:0',
+            'folder_id' => 'nullable|integer|exists:media_folders,id',
+            'visibility' => 'nullable|in:private,organization,public',
+            'service' => 'nullable|in:storage,stream',
+            'collection' => 'nullable|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'upload_id' => 'nullable|string|max:255',
+            'total_chunks' => 'nullable|integer|min:1',
+        ]);
+
+        $tenant = currentTenant();
+        $uploader = currentTenantUser();
+
+        if (! $uploader) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $service = $data['service'] ?? 'storage';
+        $uploadType = $service === 'stream' ? 'video' : 'file';
+
+        $this->guard->guardUpload(
+            $tenant,
+            $uploadType,
+            $data['size_bytes'] ?? null,
+            $data['mime_type'] ?? null,
+        );
+
+        $result = $this->resumable->createResumableIntent($tenant, $uploader, $data, $service);
+
+        return response()->json([
+            'data' => [
+                'asset' => new MediaLibraryAssetResource($result['asset']),
+                'session_id' => $result['session']->id,
+                'upload_url' => $result['intent']['upload_url'] ?? null,
+                'upload_method' => $result['intent']['upload_method'] ?? 'PUT',
+                'headers' => $result['intent']['headers'] ?? [],
+                'expires_at' => $result['session']->expires_at?->toISOString(),
+            ],
+        ], 201);
+    }
+
+    /**
+     * Receive a single resumable chunk (validates session, order, checksum).
+     */
+    public function resumableChunk(Request $request, MediaUploadSession $session): JsonResponse
+    {
+        Gate::authorize('upload', MediaAsset::class);
+
+        $result = $this->resumable->receiveChunk($request, $session);
+
+        return response()->json(['data' => $result]);
+    }
+
+    /**
+     * Return the uploaded-chunk bitmap so a client can resume missing chunks.
+     */
+    public function resumableResume(Request $request, MediaUploadSession $session): JsonResponse
+    {
+        Gate::authorize('upload', MediaAsset::class);
+
+        $result = $this->resumable->resume($session);
+
+        return response()->json(['data' => $result]);
+    }
+
+    /**
+     * Finalize: assemble + verify + push to Bunny + purge temporary artifacts.
+     */
+    public function resumableFinalize(Request $request, MediaUploadSession $session): JsonResponse
+    {
+        Gate::authorize('upload', MediaAsset::class);
+
+        $result = $this->resumable->finalize($request, $session);
+
+        return response()->json([
+            'data' => [
+                'asset' => $result['asset'] ? new MediaLibraryAssetResource($result['asset']) : null,
+            ],
+        ]);
     }
 
     public function confirmUpload(Request $request, MediaUploadSession $session): JsonResponse

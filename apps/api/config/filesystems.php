@@ -60,6 +60,16 @@ return [
             'report' => false,
         ],
 
+        // Scratch space for resumable multipart uploads. Chunks and the
+        // assembled file live here only for the lifetime of an upload session
+        // and are purged by the garbage-collection command.
+        'uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/uploads'),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -44,9 +44,25 @@ class PublicNewsController extends Controller
             'accentColor' => $values['ticker']['accentColor'] ?? null,
         ];
 
+        $hero = [
+            'title' => $values['hero']['title'] ?? 'مرحباً بكم',
+            'subtitle' => $values['hero']['subtitle'] ?? '',
+            'teacherImage' => $values['hero']['teacherImage'] ?? '',
+            'teacherName' => $values['hero']['teacherName'] ?? '',
+            'badge1Text' => $values['hero']['badge1Text'] ?? 'معلم محترف',
+            'badge2Text' => $values['hero']['badge2Text'] ?? '',
+            'isActive' => $values['hero']['isActive'] ?? true,
+            'socialLinks' => [
+                'facebook' => $values['hero']['socialLinks']['facebook'] ?? '',
+                'youtube' => $values['hero']['socialLinks']['youtube'] ?? '',
+                'phone' => $values['hero']['socialLinks']['phone'] ?? '',
+            ],
+        ];
+
         return response()->json([
             'items' => $items,
             'ticker' => $ticker,
+            'hero' => $hero,
         ]);
     }
 }

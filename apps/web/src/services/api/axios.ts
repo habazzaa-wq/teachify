@@ -50,11 +50,11 @@ function getAccessToken(): string | null {
   }
 }
 
-const PUBLIC_ENDPOINTS = ["/tenant/by-domain", "/public/news", "/auth/login", "sanctum/csrf-cookie", "/auth/refresh", "/health", "/tenant/auth/login", "/tenant/auth/refresh", "/tenant/auth/forgot-password", "/tenant/auth/reset-password"];
+const PUBLIC_ENDPOINTS = ["/tenant/by-domain", "/public/news", "/public/hero", "/auth/login", "sanctum/csrf-cookie", "/auth/refresh", "/health", "/tenant/auth/login", "/tenant/auth/refresh", "/tenant/auth/forgot-password", "/tenant/auth/reset-password"];
 
 function isPublicEndpoint(url?: string): boolean {
   if (!url) return false;
-  const path = url.split("?")[0].split("#")[0];
+  const path = url.split("?")[0]?.split("#")[0] ?? "";
   return PUBLIC_ENDPOINTS.some((endpoint) => path.endsWith(endpoint));
 }
 
@@ -93,7 +93,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
 
   // Prefer Bearer token over session cookies
-  const isLoginRequest = config.url?.includes("/auth/login") || config.url?.includes("/tenant/auth/login");
+  const isLoginRequest = config.url?.includes("/auth/login") || config.url?.includes("/tenant/auth/login") || false;
   if (token && !isPublic && !isLoginRequest && !config.url?.includes("sanctum/csrf-cookie")) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }

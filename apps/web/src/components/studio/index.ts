@@ -77,7 +77,7 @@ export type { StudioDropdownProps } from "./overlays/StudioDropdown";
 export { StudioCommandPalette } from "./overlays/StudioCommandPalette";
 export type { StudioCommandPaletteProps } from "./overlays/StudioCommandPalette";
 export { StudioContextMenu } from "./overlays/StudioContextMenu";
-export type { StudioContextMenuProps } from "./overlays/StudioContextMenu";
+export type { StudioContextMenuProps, StudioContextMenuItem } from "./overlays/StudioContextMenu";
 
 export { StudioEmptyState, StudioSearchEmpty, StudioPermissionEmpty, StudioNoData, StudioNoResults } from "./states/EmptyStates";
 export { StudioPageLoading, StudioCardLoading, StudioTableLoading, StudioTreeLoading, StudioDialogLoading, StudioInspectorLoading } from "./states/LoadingStates";

@@ -141,7 +141,7 @@ export const tenantUsersService = {
     return data.data ?? [];
   },
 
-  async getDevices(): Promise<any[]> {
+  async getDevices(_userId?: string | null): Promise<any[]> {
     return [];
   },
 
@@ -163,7 +163,7 @@ export const tenantUsersService = {
     await api.delete(`/users/${userId}/sessions/${sessionId}`);
   },
 
-  async toggleTrustedDevice(): Promise<void> {
+  async toggleTrustedDevice(_userId?: string, _deviceId?: string, _trusted?: boolean): Promise<void> {
     // Not implemented on backend
   },
 

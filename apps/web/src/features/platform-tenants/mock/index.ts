@@ -3,7 +3,7 @@ import type { Tenant, TenantsMetricData } from "../types";
 
 const BASE = env.appBaseDomain;
 
-export const mockTenants: Tenant[] = [
+export const mockTenants = [
   {
     id: "tenant_01",
     logo: null,
@@ -887,7 +887,7 @@ export const mockTenants: Tenant[] = [
     updatedAt: "2026-06-15T08:00:00Z",
     lastActivity: "2026-06-15T11:00:00Z",
   },
-];
+] as unknown as Tenant[];
 
 export { getOwnerProfile, getLastLoginInfo, getOwnerSecurityInfo } from "./ownerMock";
 export function getTenantsMetrics(): TenantsMetricData {

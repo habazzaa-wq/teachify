@@ -28,6 +28,7 @@ export const routes = {
   dashboardHelp: "/teacher/help",
   dashboardSettings: "/teacher/settings",
   homepageNews: "/teacher/homepage/news",
+  homepageHero: "/teacher/homepage/hero",
   dashboardRolePermissionMatrix: "/teacher/role-permission-matrix",
   dashboardRoles: "/teacher/roles",
   dashboardUsers: "/teacher/users",

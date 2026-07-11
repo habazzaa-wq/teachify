@@ -1,0 +1,70 @@
+import {
+  Clock,
+  Loader,
+  ArrowUp,
+  Pause,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  RotateCw,
+  WifiOff,
+  HardDrive,
+  Lock,
+  ServerCrash,
+  FileWarning,
+  Timer,
+  AlertTriangle,
+  CloudOff,
+  ShieldAlert,
+  Video,
+  Image as ImageIcon,
+  Music,
+  FileText,
+  Archive,
+  Presentation,
+  Table,
+  File,
+  Link as LinkIcon,
+  type LucideIcon,
+} from "lucide-react";
+import type { UploadStatus, UploadErrorType } from "../types";
+import type { MediaType } from "../../types";
+
+export const UPLOAD_STATUS_ICONS: Record<UploadStatus, LucideIcon> = {
+  queued: Clock,
+  preparing: Loader,
+  uploading: ArrowUp,
+  paused: Pause,
+  processing: RefreshCw,
+  completed: CheckCircle2,
+  failed: XCircle,
+  cancelled: Ban,
+  retrying: RotateCw,
+};
+
+export const UPLOAD_ERROR_ICONS: Record<UploadErrorType, LucideIcon> = {
+  network: WifiOff,
+  offline: CloudOff,
+  quota: HardDrive,
+  cancelled: Ban,
+  permission: Lock,
+  server: ServerCrash,
+  validation: FileWarning,
+  checksum: ShieldAlert,
+  timeout: Timer,
+  unknown: AlertTriangle,
+};
+
+export const CATEGORY_ICONS: Record<MediaType, LucideIcon> = {
+  video: Video,
+  image: ImageIcon,
+  audio: Music,
+  pdf: FileText,
+  zip: Archive,
+  presentation: Presentation,
+  spreadsheet: Table,
+  document: FileText,
+  link: LinkIcon,
+  file: File,
+};
