@@ -1,330 +1,340 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import CountUp from "react-countup";
 import {
-  Facebook,
-  Youtube,
-  Phone,
-  Star,
-  MessageCircle,
-  Gift,
-  Pencil,
-  Lightbulb,
-  HelpCircle,
-  Globe,
   GraduationCap,
+  Play,
+  BookOpen,
+  Trophy,
+  Users,
+  CheckCircle,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
 
-const primary = "#D87B63";
-const secondary = "#FFB50E";
-
-const watermarkLetters = [
-  { char: "ص", x: "5%", y: "12%", size: 72, rotate: -15 },
-  { char: "ب", x: "88%", y: "8%", size: 64, rotate: 12 },
-  { char: "س", x: "10%", y: "75%", size: 56, rotate: -8 },
-  { char: "ق", x: "82%", y: "80%", size: 68, rotate: 20 },
-  { char: "خ", x: "3%", y: "45%", size: 52, rotate: -25 },
-  { char: "ل", x: "92%", y: "50%", size: 60, rotate: 18 },
+/* ── Stat counters ── */
+const STATS = [
+  { end: 2500, suffix: "+", label: "طالب", icon: Users },
+  { end: 20, suffix: "", label: "سنة خبرة", icon: BookOpen },
+  { end: 98, suffix: "%", label: "نسبة نجاح", icon: Trophy },
 ];
 
-const doodleIcons = [
-  { Icon: Pencil, x: "15%", y: "20%", size: 20, rotate: -20 },
-  { Icon: Lightbulb, x: "80%", y: "22%", size: 18, rotate: 15 },
-  { Icon: HelpCircle, x: "12%", y: "82%", size: 16, rotate: 10 },
-  { Icon: Globe, x: "85%", y: "78%", size: 18, rotate: -12 },
-  { Icon: GraduationCap, x: "20%", y: "55%", size: 16, rotate: 25 },
-  { Icon: Pencil, x: "78%", y: "60%", size: 14, rotate: -30 },
+/* ── Sticky notes (icon + label cards floating around photo) ── */
+const STICKY_NOTES = [
+  { icon: GraduationCap, text: "أفضل الطلاب", rotate: -5, x: "-5%", y: "8%", accent: "success" as const },
+  { icon: CheckCircle, text: "٩٨٪ نجاح", rotate: 4, x: "85%", y: "5%", accent: "warning" as const },
+  { icon: Trophy, text: "معلم متميز", rotate: -3, x: "-8%", y: "65%", accent: "success" as const },
+  { icon: GraduationCap, text: "هدايا تعليمية", rotate: 6, x: "88%", y: "70%", accent: "warning" as const },
 ];
 
+/* ── Headline: word-by-word staggered reveal ── */
+function HeadlineReveal({ text, isVisible }: { text: string; isVisible: boolean }) {
+  const words = text.split(" ");
+  return (
+    <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl lg:text-4xl">
+      {words.map((word, i) => (
+        <motion.span
+          key={`${word}-${i}`}
+          className="hero-chalk-word inline-block"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isVisible ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: i * 0.08, duration: 0.4, ease: "easeOut" }}
+        >
+          {word}
+          {i < words.length - 1 && "\u00A0"}
+        </motion.span>
+      ))}
+    </h1>
+  );
+}
+
+/* ── Single stat counter ── */
+function StatCounter({
+  end,
+  suffix,
+  label,
+  icon: Icon,
+  delay,
+  shouldAnimate,
+}: {
+  end: number;
+  suffix: string;
+  label: string;
+  icon: React.ElementType;
+  delay: number;
+  shouldAnimate: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+      transition={{ delay, duration: 0.5, ease: "easeOut" }}
+      className="flex flex-col items-center gap-1"
+    >
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-success" />
+        <span className="text-3xl font-black tabular-nums text-foreground">
+          <CountUp end={end} duration={2} delay={delay} separator="," enableScrollSpy scrollSpyOnce />
+          {suffix}
+        </span>
+      </div>
+      <span className="text-sm text-muted-foreground">{label}</span>
+    </motion.div>
+  );
+}
+
+/* ── Floating sticky note card ── */
+function StickyNote({
+  icon: Icon,
+  text,
+  rotate,
+  x,
+  y,
+  delay,
+  accent,
+  shouldAnimate,
+}: {
+  icon: React.ElementType;
+  text: string;
+  rotate: number;
+  x: string;
+  y: string;
+  delay: number;
+  accent: "success" | "warning";
+  shouldAnimate: boolean;
+}) {
+  const accentClasses =
+    accent === "success"
+      ? "border-success/20 bg-success/5 text-success"
+      : "border-warning/20 bg-warning/5 text-warning";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.7 }}
+      animate={shouldAnimate ? { opacity: 1, scale: 1 } : {}}
+      transition={{ delay, duration: 0.5, type: "spring", stiffness: 200, damping: 18 }}
+      className="hero-sticky-note absolute z-10"
+      style={{ left: x, top: y, "--note-rotate": `${rotate}deg` } as React.CSSProperties}
+    >
+      <div
+        className={`flex items-center gap-2 rounded-lg border px-3 py-2 shadow-lg backdrop-blur-sm ${accentClasses}`}
+        style={{ transform: `rotate(${rotate}deg)` }}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="whitespace-nowrap text-xs font-bold">{text}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   Main HeroSection
+   ══════════════════════════════════════════════ */
 export function HeroSection() {
-  const { data: hero } = usePublicHero();
+  const { data: hero, isLoading } = usePublicHero();
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
+  const prefersReducedMotion = useReducedMotion();
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  if (!hero?.isActive) return null;
+  /* Intersection Observer — trigger on first 10% visible, or immediately if already in view */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
 
-  const title = hero.title || `مرحباً بكم في ${tenantName}`;
-  const social = hero.socialLinks;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.05, rootMargin: "100px" },
+    );
+    observer.observe(el);
 
-  const lightBg =
-    "radial-gradient(ellipse at 50% 30%, #FFFCF8 0%, #FFF8F0 30%, #FFF3E8 60%, #FFEDD9 100%)";
-  const darkBg =
-    "radial-gradient(ellipse at 50% 30%, #1a1412 0%, #1c1513 35%, #1e1714 70%, #201916 100%)";
+    /* Fallback: if already in viewport, reveal immediately */
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 100 && rect.bottom > 0) {
+      setIsVisible(true);
+      observer.disconnect();
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  /* Don't render if explicitly disabled (but DO render while loading) */
+  if (hero && !hero.isActive) return null;
+
+  const title = hero?.title || `مرحباً بكم في ${tenantName}`;
+  const social = hero?.socialLinks;
+  const shouldAnimate = isVisible && !prefersReducedMotion;
 
   return (
     <section
-      className="hero-section relative w-full overflow-hidden"
+      ref={sectionRef}
+      className="hero-section bg-background relative w-full overflow-hidden transition-colors duration-300"
       dir="rtl"
       style={{ minHeight: 560 }}
     >
-      {/* ── Background ── */}
+      {/* ── Notebook ruled-lines texture ── */}
       <div
-        className="absolute inset-0 transition-colors duration-500"
+        className="pointer-events-none absolute inset-0"
         style={{
-          background: isDark ? darkBg : lightBg,
+          opacity: isDark ? 0.02 : 0.04,
+          backgroundImage: isDark
+            ? "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.25) 39px, rgba(255,255,255,0.25) 40px)"
+            : "repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,0,0,0.08) 39px, rgba(0,0,0,0.08) 40px)",
+          backgroundSize: "100% 40px",
         }}
+        aria-hidden="true"
       />
+
+      {/* ── Subtle accent glow spots ── */}
       <div
-        className="absolute inset-0 transition-colors duration-500"
+        className="pointer-events-none absolute inset-0"
         style={{
           background: isDark
-            ? "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.04) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.03) 0%, transparent 50%)"
-            : "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.04) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.04) 0%, transparent 50%)",
+            ? "radial-gradient(ellipse at 80% 50%, hsl(var(--success) / 0.04), transparent 50%), radial-gradient(ellipse at 20% 60%, hsl(var(--warning) / 0.03), transparent 50%)"
+            : "radial-gradient(ellipse at 80% 50%, hsl(var(--success) / 0.05), transparent 50%), radial-gradient(ellipse at 20% 60%, hsl(var(--warning) / 0.04), transparent 50%)",
         }}
+        aria-hidden="true"
       />
 
-      {/* ── Watermark letters ── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        {watermarkLetters.map((item, i) => (
-          <span
-            key={`wm-${i}`}
-            className="hero-deco-icon absolute select-none font-extrabold"
-            style={{
-              left: item.x,
-              top: item.y,
-              fontSize: item.size,
-              color: isDark ? "rgba(200,170,140,0.05)" : "rgba(180,150,120,0.04)",
-              transform: `rotate(${item.rotate}deg)`,
-              fontFamily: "'Cairo', sans-serif",
-              "--hero-delay": `${i * 0.8}s`,
-              "--hero-duration": `${7 + i}s`,
-            } as React.CSSProperties}
-          >
-            {item.char}
-          </span>
-        ))}
-      </div>
+      {/* ── Content: two-column split ── */}
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-8 px-6 py-12 sm:px-8 md:flex-row md:items-center md:gap-12 lg:py-16">
 
-      {/* ── Doodle icons ── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        {doodleIcons.map(({ Icon, x, y, size, rotate }, i) => (
-          <div
-            key={`doodle-${i}`}
-            className="hero-deco-icon absolute"
-            style={{
-              left: x,
-              top: y,
-              "--hero-delay": `${i * 1.2}s`,
-              "--hero-duration": `${8 + i}s`,
-            } as React.CSSProperties}
+        {/* ── Text side (right in RTL) ── */}
+        <div className="flex flex-1 flex-col items-center gap-6 text-center md:items-start md:text-right">
+
+          {/* Headline */}
+          <HeadlineReveal text={title} isVisible={shouldAnimate} />
+
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg"
           >
-            <Icon
-              style={{
-                width: size,
-                height: size,
-                color: isDark ? "rgba(200,170,140,0.06)" : "rgba(180,150,120,0.05)",
-                transform: `rotate(${rotate}deg)`,
-              }}
-            />
+            {hero?.subtitle || "تعليم متميز يجمع بين الخبرة والابتكار"}
+          </motion.p>
+
+          {/* Stat counters row */}
+          <div className="flex items-center gap-6 sm:gap-10">
+            {STATS.map((stat, i) => (
+              <StatCounter
+                key={stat.label}
+                end={stat.end}
+                suffix={stat.suffix}
+                label={stat.label}
+                icon={stat.icon}
+                delay={0.3 + i * 0.2}
+                shouldAnimate={shouldAnimate}
+              />
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* ── Content ── */}
-      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-6 pb-10 sm:pt-8 sm:pb-14">
-
-        {/* ── Floating badge pills ── */}
-        {hero.badge1Text && (
+          {/* CTA buttons */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="absolute top-5 end-4 z-20 sm:top-6 sm:end-10 lg:end-20"
+            initial={{ opacity: 0, y: 16 }}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 1.0, duration: 0.5 }}
+            className="flex flex-wrap items-center gap-3"
           >
-            <div
-              className={`rounded-full border px-3 py-1.5 text-[11px] font-bold shadow-lg backdrop-blur-sm sm:px-4 sm:py-2 sm:text-xs ${
-                isDark
-                  ? "border-white/10 bg-white/10"
-                  : "border-white/60 bg-white/85"
-              }`}
-              style={{
-                color: primary,
-                boxShadow: isDark
-                  ? `0 4px 20px rgba(0,0,0,0.3)`
-                  : `0 4px 20px rgba(216,123,99,0.15)`,
-              }}
+            <a
+              href={social?.phone ? `tel:${social.phone}` : "#"}
+              className="hero-cta-primary group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/30"
             >
-              {hero.badge1Text}
-            </div>
-          </motion.div>
-        )}
-
-        {hero.badge2Text && (
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="absolute top-5 start-4 z-20 sm:top-6 sm:start-10 lg:start-20"
-          >
-            <div
-              className={`rounded-full border px-3 py-1.5 text-[11px] font-bold shadow-lg backdrop-blur-sm sm:px-4 sm:py-2 sm:text-xs ${
-                isDark
-                  ? "border-white/10 bg-white/10"
-                  : "border-white/60 bg-white/85"
-              }`}
-              style={{
-                color: primary,
-                boxShadow: isDark
-                  ? `0 4px 20px rgba(0,0,0,0.3)`
-                  : `0 4px 20px rgba(255,181,14,0.15)`,
-              }}
+              <BookOpen className="h-4 w-4" />
+              <span>احجز حصة تجريبية مجانية</span>
+              <span className="hero-chalk-dust pointer-events-none absolute inset-0" aria-hidden="true" />
+            </a>
+            <a
+              href={social?.youtube || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hero-cta-ghost inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3 text-sm font-bold text-foreground transition-all duration-300 hover:scale-[1.03] hover:bg-accent"
             >
-              {hero.badge2Text}
-            </div>
+              <Play className="h-4 w-4" />
+              <span>شاهد نبذة تعريفية</span>
+            </a>
           </motion.div>
-        )}
+        </div>
 
-        {/* ── Title ── */}
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-5 max-w-lg text-center text-lg font-extrabold leading-snug sm:text-xl lg:text-2xl"
-          style={{
-            color: primary,
-            fontFamily: "'Cairo', sans-serif",
-          }}
-        >
-          {title}
-        </motion.h1>
-
-        {/* ── Profile circle wrapper: 380×380 ── */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.6, type: "spring", stiffness: 180, damping: 20 }}
-          className="relative mx-auto h-[380px] w-[380px]"
-        >
-          {/* Glow behind image */}
+        {/* ── Photo side (left in RTL) ── */}
+        <div className="relative flex flex-shrink-0 items-center justify-center py-8">
+          {/* Glow behind photo */}
           <div
             className="absolute rounded-full blur-3xl"
             style={{
-              inset: -40,
-              background: `radial-gradient(circle, ${secondary}18, transparent 70%)`,
+              width: 360,
+              height: 360,
+              background: isDark
+                ? "radial-gradient(circle, hsl(var(--success) / 0.08), transparent 70%)"
+                : "radial-gradient(circle, hsl(var(--success) / 0.10), transparent 70%)",
             }}
           />
 
-          {/* Profile image */}
-          <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-orange-400 shadow-2xl">
-            {hero.teacherImage ? (
-              <img
-                src={hero.teacherImage}
-                alt={hero.teacherName || "المعلم"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
+          {/* Teacher photo with chalk-frame clip-path */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={shouldAnimate ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: 0.2, duration: 0.7, type: "spring", stiffness: 140, damping: 20 }}
+            className="relative"
+          >
+            <div
+              className="hero-photo-frame bg-card border-border relative h-[300px] w-[300px] overflow-hidden border sm:h-[360px] sm:w-[360px]"
+              style={{
+                clipPath:
+                  "polygon(8% 0%, 92% 2%, 98% 10%, 100% 88%, 94% 98%, 6% 100%, 0% 92%, 2% 8%)",
+              }}
+            >
+              {hero?.teacherImage ? (
+                <img
+                  src={hero.teacherImage}
+                  alt={hero?.teacherName || "المعلم"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="bg-muted flex h-full w-full items-center justify-center">
+                  <GraduationCap className="h-24 w-24 text-muted-foreground/30" />
+                </div>
+              )}
+
+              {/* Chalk-frame border overlay */}
               <div
-                className="flex h-full w-full items-center justify-center"
+                className="pointer-events-none absolute inset-0"
                 style={{
-                  background: `linear-gradient(135deg, ${primary}15, ${secondary}15)`,
+                  boxShadow: isDark
+                    ? "inset 0 0 0 3px hsl(var(--border) / 0.3), inset 0 0 0 6px hsl(var(--success) / 0.08)"
+                    : "inset 0 0 0 3px hsl(var(--border) / 0.4), inset 0 0 0 6px hsl(var(--success) / 0.10)",
                 }}
-              >
-                <GraduationCap className="h-24 w-24" style={{ color: `${primary}40` }} />
-              </div>
-            )}
-          </div>
-
-          {/* ── Icon 1: الهدايا — top-left ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute -left-7 top-[28%] z-10 flex flex-col items-center"
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: primary }}>
-              <Gift className="h-6 w-6 text-white" />
+              />
             </div>
-            <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
-              الهدايا
-            </span>
           </motion.div>
 
-          {/* ── Icon 2: فيس بوك — top-right ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.58, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute -right-7 top-[28%] z-10 flex flex-col items-center"
-          >
-            <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: secondary }}>
-                <Facebook className="h-6 w-6 text-white" />
-              </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
-                فيس بوك
-              </span>
-            </a>
-          </motion.div>
-
-          {/* ── Icon 3: محادثة مباشرة — left, lower ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.66, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute -left-9 top-[60%] z-10 flex flex-col items-center"
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: secondary }}>
-              <MessageCircle className="h-6 w-6 text-white" />
-            </div>
-            <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
-              محادثة مباشرة
-            </span>
-          </motion.div>
-
-          {/* ── Icon 4: يوتيوب — right, lower ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.74, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute -right-9 top-[60%] z-10 flex flex-col items-center"
-          >
-            <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: secondary }}>
-                <Youtube className="h-6 w-6 text-white" />
-              </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
-                يوتيوب
-              </span>
-            </a>
-          </motion.div>
-
-          {/* ── Icon 5: أفضل الطلاب — bottom-left ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.82, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute left-[22%] -bottom-10 z-10 flex flex-col items-center"
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: primary }}>
-              <Star className="h-6 w-6 text-white" />
-            </div>
-            <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
-              أفضل الطلاب
-            </span>
-          </motion.div>
-
-          {/* ── Icon 6: رقم الهاتف — bottom-right ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.9, type: "spring", stiffness: 300, damping: 18 }}
-            className="absolute right-[22%] -bottom-10 z-10 flex flex-col items-center"
-          >
-            <a href={social?.phone ? `tel:${social.phone}` : "#"} className="flex flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ backgroundColor: secondary }}>
-                <Phone className="h-6 w-6 text-white" />
-              </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
-                رقم الهاتف
-              </span>
-            </a>
-          </motion.div>
-        </motion.div>
+          {/* ── Floating sticky notes ── */}
+          {STICKY_NOTES.map((note, i) => (
+            <StickyNote
+              key={`${note.text}-${i}`}
+              icon={note.icon}
+              text={note.text}
+              rotate={note.rotate}
+              x={note.x}
+              y={note.y}
+              accent={note.accent}
+              delay={0.8 + i * 0.15}
+              shouldAnimate={shouldAnimate}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
