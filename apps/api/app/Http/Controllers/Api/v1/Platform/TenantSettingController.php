@@ -32,12 +32,19 @@ class TenantSettingController extends Controller
             'values' => ['required', 'array'],
         ]);
 
+        $existing = TenantSetting::query()
+            ->where('tenant_id', currentTenant()->id)
+            ->where('group', $group)
+            ->first();
+
+        $merged = array_merge($existing?->values ?? [], $validated['values']);
+
         $setting = TenantSetting::updateOrCreate(
             [
                 'tenant_id' => currentTenant()->id,
                 'group' => $group,
             ],
-            ['values' => $validated['values']],
+            ['values' => $merged],
         );
 
         return response()->json([

@@ -37,6 +37,9 @@ compare-urls.cjs
 # --- Accidental/error output files ---
 apps/api/forceDelete()
 apps/api/toArray()
+apps/api/all())
+proxy/caddy.run.err
+proxy/caddy.run.out
 
 # --- OS ---
 .DS_Store

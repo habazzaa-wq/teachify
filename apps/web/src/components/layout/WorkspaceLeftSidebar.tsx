@@ -16,6 +16,8 @@ import {
   Megaphone,
   Home,
   User,
+  Award,
+  GraduationCap,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -253,6 +255,22 @@ export function WorkspaceLeftSidebar() {
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
                 onClick={() => router.push(routes.homepageHero)}
+              />
+              <StudioSidebarItem
+                icon={<Award className="h-4 w-4" />}
+                label="لماذا تختارنا؟"
+                active={pathname === routes.homepageWhyChooseUs}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => router.push(routes.homepageWhyChooseUs)}
+              />
+              <StudioSidebarItem
+                icon={<GraduationCap className="h-4 w-4" />}
+                label="المراحل الدراسية"
+                active={pathname === routes.homepageEducationalStages}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => router.push(routes.homepageEducationalStages)}
               />
             </StudioSidebarSection>
           </div>

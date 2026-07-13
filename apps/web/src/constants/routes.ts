@@ -29,6 +29,8 @@ export const routes = {
   dashboardSettings: "/teacher/settings",
   homepageNews: "/teacher/homepage/news",
   homepageHero: "/teacher/homepage/hero",
+  homepageWhyChooseUs: "/teacher/homepage/why-choose-us",
+  homepageEducationalStages: "/teacher/homepage/educational-stages",
   dashboardRolePermissionMatrix: "/teacher/role-permission-matrix",
   dashboardRoles: "/teacher/roles",
   dashboardUsers: "/teacher/users",

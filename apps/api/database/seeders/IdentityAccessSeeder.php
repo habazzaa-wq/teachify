@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\News;
+use App\Models\EducationalStage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,7 @@ class IdentityAccessSeeder extends Seeder
         'tenant_owner' => [
             'tenant.manage',
             'news.manage',
+            'stages.manage',
             'users.view',
             'users.invite',
             'users.manage',
@@ -171,6 +173,7 @@ class IdentityAccessSeeder extends Seeder
             'question-categories.delete',
             'question-categories.restore',
             'news.manage',
+            'stages.manage',
             'media.view',
             'media.create',
             'media.update',
@@ -255,7 +258,63 @@ class IdentityAccessSeeder extends Seeder
             }
 
             $this->seedDemoNews($tenant);
+            $this->seedDemoStages($tenant);
         });
+    }
+
+    /**
+     * Add a few realistic educational stages so the homepage section has
+     * content out of the box. Skipped when the tenant already has stages.
+     */
+    private function seedDemoStages(Tenant $tenant): void
+    {
+        // The EducationalStage model auto-sets tenant_id from the current
+        // tenant context, so we must bind it here (seeders run outside a request).
+        app()->instance(Tenant::class, $tenant);
+        app()->instance('currentTenant', $tenant);
+
+        if (EducationalStage::query()->where('tenant_id', $tenant->id)->exists()) {
+            return;
+        }
+
+        $samples = [
+            [
+                'name' => 'رياض الأطفال',
+                'description' => 'أساس متين لعالم التعلم عبر اللعب والأنشطة الحركية التي تنمّي الذكاء والإبداع لدى الطفل.',
+                'image' => 'https://picsum.photos/seed/kindergarten-stage/800/500',
+                'sort_order' => 0,
+            ],
+            [
+                'name' => 'المرحلة الابتدائية',
+                'description' => 'بناء المهارات الأساسية في القراءة والكتابة والحساب بأسلوب شائق يناسب الصفوف الأولى.',
+                'image' => 'https://picsum.photos/seed/primary-stage/800/500',
+                'sort_order' => 1,
+            ],
+            [
+                'name' => 'المرحلة الإعدادية',
+                'description' => 'تعزيز الفهم وتوسيع المدارك عبر مواد متنوعة تؤسّس لشخصية الطالب وقدراته البحثية.',
+                'image' => 'https://picsum.photos/seed/preparatory-stage/800/500',
+                'sort_order' => 2,
+            ],
+            [
+                'name' => 'المرحلة الثانوية',
+                'description' => 'التحصّص الأكاديمي والاستعداد الجاد للمرحلة الجامعية وشهادات المعادلة بثقة وكفاءة.',
+                'image' => 'https://picsum.photos/seed/secondary-stage/800/500',
+                'sort_order' => 3,
+            ],
+        ];
+
+        foreach ($samples as $index => $sample) {
+            EducationalStage::create([
+                'tenant_id' => $tenant->id,
+                'name' => $sample['name'],
+                'description' => $sample['description'],
+                'image' => $sample['image'],
+                'link' => null,
+                'is_active' => true,
+                'sort_order' => $sample['sort_order'],
+            ]);
+        }
     }
 
     /**

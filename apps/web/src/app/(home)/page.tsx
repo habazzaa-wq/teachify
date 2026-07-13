@@ -1,13 +1,15 @@
 "use client";
 
 import { HeroSection } from "@/components/home/HeroSection";
-import { TreeSection } from "@/components/home/TreeSection";
+import { WhyChooseUsOrbit } from "@/components/home/WhyChooseUsOrbit";
+import { EducationalStagesSection } from "@/components/home/EducationalStagesSection";
 
 function HomePage() {
   return (
     <>
       <HeroSection />
-      <TreeSection />
+      <WhyChooseUsOrbit />
+      <EducationalStagesSection />
     </>
   );
 }
