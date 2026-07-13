@@ -42,7 +42,7 @@ export function BunnyConnectionSection({
       {
         storageZoneName: draft.storageZoneName ?? "",
         storageZonePassword: draft.storageZonePasswordValue ?? "",
-        storageZoneRegion: draft.storageZoneRegion,
+        storageZoneRegion: draft.storageZoneRegion ?? "de",
         apiKey: draft.apiKeyValue ?? "",
         libraryId: draft.libraryId ?? undefined,
         streamApiKey: draft.streamApiKeyValue ?? undefined,

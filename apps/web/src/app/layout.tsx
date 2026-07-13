@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cairo, Baloo_2 } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { headers } from "next/headers";
@@ -12,12 +12,6 @@ import { env } from "@/config/env";
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-sans",
-  display: "swap",
-});
-
-const baloo = Baloo_2({
-  subsets: ["latin"],
-  variable: "--font-display",
   display: "swap",
 });
 
@@ -44,7 +38,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} ${baloo.variable} h-full`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`} suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

@@ -1,6 +1,6 @@
 export type LessonStatus = "draft" | "review" | "published" | "scheduled" | "archived";
 export type LessonVisibility = "private" | "preview" | "public";
-export type LessonType = "video" | "text" | "pdf" | "external" | "live";
+export type LessonType = "video" | "text" | "pdf" | "external" | "live" | "exam" | "audio";
 export type LessonSort = "title" | "sort_order" | "status" | "visibility" | "lesson_type" | "duration_seconds" | "estimated_duration" | "free_preview" | "featured" | "created_at" | "updated_at";
 
 export interface Lesson {
@@ -25,6 +25,7 @@ export interface Lesson {
   notes: string | null;
   color: string | null;
   icon: string | null;
+  examId: string | null;
   publishedAt: string | null;
   course: {
     id: string;

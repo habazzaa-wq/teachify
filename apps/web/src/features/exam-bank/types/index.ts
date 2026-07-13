@@ -232,4 +232,5 @@ export interface PaginatedList<T> {
 export interface ExamPickerResult {
   id: string;
   ids: string[];
+  title: string;
 }

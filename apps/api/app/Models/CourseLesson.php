@@ -35,6 +35,7 @@ class CourseLesson extends Model
         'notes',
         'color',
         'icon',
+        'exam_id',
         'published_at',
     ];
 
@@ -106,6 +107,11 @@ class CourseLesson extends Model
     public function assignment(): HasOne
     {
         return $this->hasOne(Assignment::class);
+    }
+
+    public function exam(): BelongsTo
+    {
+        return $this->belongsTo(Exam::class);
     }
 
     public function discussionThreads(): HasMany

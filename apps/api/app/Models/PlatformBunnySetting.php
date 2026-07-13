@@ -125,14 +125,14 @@ class PlatformBunnySetting extends Model
             'service' => $service,
             'region' => $region,
             'api_key' => $this->api_key,
-            'client_upload_key' => $this->api_key,
+            'client_upload_key' => $this->storage_zone_password,
             'storage_zone_name' => $this->storage_zone_name,
             'zone' => $this->storage_zone_name,
             'password' => $this->storage_zone_password,
             'cdn_base_url' => $this->cdn_hostname
                 ? rtrim($this->cdn_hostname, '/')
                 : "https://{$this->storage_zone_name}.b-cdn.net",
-            'upload_base_url' => "https://storage.bunnycdn.com/{$this->storage_zone_name}",
+            'upload_base_url' => "https://{$this->storageHost($region)}/{$this->storage_zone_name}",
         ];
 
         if ($service === 'stream') {
@@ -151,5 +151,25 @@ class PlatformBunnySetting extends Model
         }
 
         return $base;
+    }
+
+    private function storageHost(string $region): string
+    {
+        $map = [
+            'de' => 'storage.bunnycdn.com',
+            'uk' => 'uk.storage.bunnycdn.com',
+            'gb' => 'uk.storage.bunnycdn.com',
+            'ny' => 'ny.storage.bunnycdn.com',
+            'la' => 'la.storage.bunnycdn.com',
+            'sg' => 'sg.storage.bunnycdn.com',
+            'se' => 'se.storage.bunnycdn.com',
+            'br' => 'br.storage.bunnycdn.com',
+            'jh' => 'jh.storage.bunnycdn.com',
+            'za' => 'jh.storage.bunnycdn.com',
+            'syd' => 'syd.storage.bunnycdn.com',
+            'au' => 'syd.storage.bunnycdn.com',
+        ];
+
+        return $map[$region] ?? $map['de'];
     }
 }

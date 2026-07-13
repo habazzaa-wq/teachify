@@ -29,6 +29,10 @@ function nextChunkId(uploadId: string, index: number): string {
   return `${uploadId}_c${index}_${chunkCounter.toString(36)}`;
 }
 
+export function resetChunkCounter(): void {
+  chunkCounter = 0;
+}
+
 /** Build the ordered chunk descriptors for a file (no bytes are read here). */
 export function buildChunks(uploadId: string, fileSize: number, chunkSize: number): UploadChunk[] {
   const total = computeTotalChunks(fileSize, chunkSize);

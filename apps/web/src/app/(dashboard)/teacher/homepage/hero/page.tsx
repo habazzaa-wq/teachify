@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { User, Phone, Youtube, Facebook } from "lucide-react";
+import { User, Phone, Youtube, Facebook, Gift, MessageCircle, Star } from "lucide-react";
 import {
   AppPage,
   AppPageHeader,
@@ -273,6 +273,85 @@ export default function HomepageHeroPage() {
                       placeholder="+20 ..."
                     />
                   </div>
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-medium">
+                      <Phone className="h-4 w-4" /> رقم الواتساب
+                    </label>
+                    <AppInput
+                      dir="ltr"
+                      value={form.socialLinks.whatsapp}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          socialLinks: { ...form.socialLinks, whatsapp: e.target.value },
+                        })
+                      }
+                      placeholder="+20 ..."
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      يُستخدم لرابط محادثة الواتساب في القائمة المنسدلة لأيقونة الهاتف
+                    </p>
+                  </div>
+                </AppCardContent>
+              </AppCard>
+
+              <AppCard>
+                <AppCardHeader>
+                  <AppCardTitle>إعدادات الأيقونات</AppCardTitle>
+                  <AppCardDescription>
+                    تسمية وإظهار أو إخفاء كل أيقونة على حدة
+                  </AppCardDescription>
+                </AppCardHeader>
+                <AppCardContent className="space-y-4">
+                  {(
+                    [
+                      ["gifts", "الهدايا", Gift],
+                      ["facebook", "فيس بوك", Facebook],
+                      ["chat", "محادثة مباشرة", MessageCircle],
+                      ["youtube", "يوتيوب", Youtube],
+                      ["bestStudents", "أفضل الطلاب", Star],
+                      ["phone", "رقم الهاتف", Phone],
+                    ] as const
+                  ).map(([key, defaultLabel, Icon]) => {
+                    const iconKey = key as keyof typeof form.icons;
+                    const cfg = form.icons[iconKey];
+                    return (
+                      <label
+                        key={key}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <AppInput
+                            value={cfg.label}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                icons: {
+                                  ...form.icons,
+                                  [iconKey]: { ...cfg, label: e.target.value },
+                                },
+                              })
+                            }
+                            placeholder={defaultLabel}
+                            className="h-9 w-40"
+                          />
+                        </div>
+                        <AppSwitch
+                          checked={cfg.visible}
+                          onCheckedChange={(v) =>
+                            setForm({
+                              ...form,
+                              icons: {
+                                ...form.icons,
+                                [iconKey]: { ...cfg, visible: v },
+                              },
+                            })
+                          }
+                        />
+                      </label>
+                    );
+                  })}
                 </AppCardContent>
               </AppCard>
 

@@ -167,3 +167,29 @@ export function useExportLessons() {
       lessonsService.exportCsv(courseId, sectionId),
   });
 }
+
+export function useAttachLessonVideo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, sectionId, lessonId, mediaAssetId }: { courseId: string; sectionId: string; lessonId: string; mediaAssetId: number }) =>
+      lessonsService.attachVideo(courseId, sectionId, lessonId, mediaAssetId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [LESSONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [SECTIONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [COURSES_QUERY_KEY] });
+    },
+  });
+}
+
+export function useAttachLessonFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ courseId, sectionId, lessonId, mediaAssetId, title }: { courseId: string; sectionId: string; lessonId: string; mediaAssetId: number; title: string }) =>
+      lessonsService.attachFile(courseId, sectionId, lessonId, mediaAssetId, title),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [LESSONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [SECTIONS_QUERY_KEY] });
+      qc.invalidateQueries({ queryKey: [COURSES_QUERY_KEY] });
+    },
+  });
+}

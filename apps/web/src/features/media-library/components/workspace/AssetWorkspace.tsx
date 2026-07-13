@@ -19,6 +19,7 @@ interface AssetWorkspaceProps {
   onRenameAsset: (asset: MediaAsset) => void;
   onMoveAsset: (asset: MediaAsset) => void;
   onDeleteAsset: (asset: MediaAsset) => void;
+  onDownloadAsset: (asset: MediaAsset) => void;
   onBulkDelete: () => void;
   onBulkMove: () => void;
 }
@@ -80,6 +81,7 @@ function AssetWorkspaceBase({
   onRenameAsset,
   onMoveAsset,
   onDeleteAsset,
+  onDownloadAsset,
   onBulkDelete,
   onBulkMove,
 }: AssetWorkspaceProps) {
@@ -286,6 +288,7 @@ function AssetWorkspaceBase({
                         onFavorite={handleFavorite}
                         onRename={onRenameAsset}
                         onMove={onMoveAsset}
+                        onDownload={onDownloadAsset}
                         onDuplicate={handleDuplicate}
                         onArchive={handleArchive}
                         onPin={handlePin}
@@ -314,7 +317,13 @@ function AssetWorkspaceBase({
           selectedIds.forEach((id) => archiveAsset.mutate(id));
           clearSelection();
         }}
-        onDownload={() => {}}
+        onDownload={() => {
+          selectedIds.forEach((id) => {
+            const asset = assets.find((a) => a.id === id);
+            if (asset?.cdnUrl) window.open(asset.cdnUrl, "_blank");
+          });
+          clearSelection();
+        }}
         onPin={() => {
           selectedIds.forEach((id) => togglePin.mutate(id));
           clearSelection();

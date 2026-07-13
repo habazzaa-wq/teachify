@@ -80,7 +80,7 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
   resumeItem: (id) =>
     set((state) => {
       const current = state.items[id];
-      if (!current || current.status !== "paused") return state;
+      if (!current || (current.status !== "paused" && current.status !== "recovering")) return state;
       return {
         items: {
           ...state.items,
@@ -141,7 +141,7 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
         if (!current) continue;
         switch (action) {
           case "pause-all":
-            if (["queued", "preparing", "uploading", "retrying"].includes(current.status)) {
+            if (["queued", "preparing", "uploading", "retrying", "recovering"].includes(current.status)) {
               items[id] = { ...current, status: "paused", speed: 0, eta: null, retryAt: null };
             }
             break;

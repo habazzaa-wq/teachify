@@ -106,54 +106,89 @@ class PlatformBunnySettingService
             }
         }
 
-        // 1. Verify the storage zone exists and the API key is authorized.
-        $storage = $this->call("https://storage.bunnycdn.com/{$zone}", 'GET', [
-            'AccessKey' => $apiKey,
+        // 1. Verify the storage zone exists and the zone password is authorized.
+        $storageHost = $this->storageHost($region);
+        $storageUrl = "https://{$storageHost}/{$zone}/";
+
+        \Log::channel('single')->info('Bunny Verify Debug', [
+            'zone' => $zone,
+            'region' => $region,
+            'storage_host' => $storageHost,
+            'url' => $storageUrl,
+            'password_length' => $password !== null ? strlen($password) : 0,
+            'password_first4' => $password !== null ? substr($password, 0, 4) : null,
+            'password_last4' => $password !== null ? substr($password, -4) : null,
         ]);
 
+        $storage = $this->call($storageUrl, 'GET', [
+            'AccessKey' => $password,
+        ]);
+
+        $storageOk = $storage['status'] === 'ok';
+        $storageError = null;
+
         if ($storage['status'] === 'timeout') {
-            return $this->result(PlatformBunnySetting::CONNECTION_TIMEOUT, 'The Bunny Storage API timed out.');
+            $storageError = 'Storage API timed out.';
+        } elseif ($storage['status'] === 'unauthorized') {
+            $storageError = 'Storage zone password is unauthorized.';
+        } elseif ($storage['status'] === 'missing') {
+            $storageError = "Storage zone \"{$zone}\" not found.";
+        } elseif ($storage['status'] === 'error') {
+            $storageError = 'Storage API returned an unexpected error.';
         }
 
-        if ($storage['status'] === 'unauthorized') {
-            return $this->result(PlatformBunnySetting::CONNECTION_UNAUTHORIZED, 'The Bunny API key is unauthorized.');
-        }
+        if (! $storageOk) {
+            $code = match ($storage['status']) {
+                'timeout' => PlatformBunnySetting::CONNECTION_TIMEOUT,
+                'unauthorized' => PlatformBunnySetting::CONNECTION_UNAUTHORIZED,
+                'missing' => PlatformBunnySetting::CONNECTION_STORAGE_MISSING,
+                default => PlatformBunnySetting::CONNECTION_API_ERROR,
+            };
 
-        if ($storage['status'] === 'missing') {
-            return $this->result(PlatformBunnySetting::CONNECTION_STORAGE_MISSING, "The storage zone \"{$zone}\" was not found.");
-        }
-
-        if ($storage['status'] === 'error') {
-            return $this->result(PlatformBunnySetting::CONNECTION_API_ERROR, 'The Bunny Storage API returned an unexpected error.');
+            return $this->result($code, $storageError, [
+                'storage' => ['status' => 'failed', 'error' => $storageError],
+                'stream' => ['status' => $enableStream ? 'skipped' : 'disabled'],
+            ]);
         }
 
         // 2. Verify the stream library when streaming is enabled.
+        $streamStatus = 'disabled';
+        $streamError = null;
+
         if ($enableStream) {
             $library = $this->call("https://video.bunnycdn.com/library/{$libraryId}", 'GET', [
                 'AccessKey' => $streamKey,
             ]);
 
-            if ($library['status'] === 'timeout') {
-                return $this->result(PlatformBunnySetting::CONNECTION_TIMEOUT, 'The Bunny Stream API timed out.');
-            }
+            if ($library['status'] === 'ok') {
+                $streamStatus = 'ok';
+            } else {
+                $streamStatus = 'failed';
+                $streamError = match ($library['status']) {
+                    'timeout' => 'Stream API timed out.',
+                    'unauthorized' => 'Stream API key is unauthorized.',
+                    'missing' => "Stream library \"{$libraryId}\" not found.",
+                    default => 'Stream API returned an unexpected error.',
+                };
 
-            if ($library['status'] === 'unauthorized') {
-                return $this->result(PlatformBunnySetting::CONNECTION_UNAUTHORIZED, 'The Bunny Stream API key is unauthorized.');
-            }
+                $code = match ($library['status']) {
+                    'timeout' => PlatformBunnySetting::CONNECTION_TIMEOUT,
+                    'unauthorized' => PlatformBunnySetting::CONNECTION_UNAUTHORIZED,
+                    'missing' => PlatformBunnySetting::CONNECTION_LIBRARY_MISSING,
+                    default => PlatformBunnySetting::CONNECTION_API_ERROR,
+                };
 
-            if ($library['status'] === 'missing') {
-                return $this->result(PlatformBunnySetting::CONNECTION_LIBRARY_MISSING, "The stream library \"{$libraryId}\" was not found.");
-            }
-
-            if ($library['status'] === 'error') {
-                return $this->result(PlatformBunnySetting::CONNECTION_API_ERROR, 'The Bunny Stream API returned an unexpected error.');
+                return $this->result($code, $streamError, [
+                    'storage' => ['status' => 'ok'],
+                    'stream' => ['status' => 'failed', 'error' => $streamError],
+                ]);
             }
         }
 
         return $this->result(
             PlatformBunnySetting::CONNECTION_CONNECTED,
             null,
-            ['storage' => 'ok', 'stream' => $enableStream ? 'ok' : 'disabled'],
+            ['storage' => ['status' => 'ok'], 'stream' => ['status' => $streamStatus]],
         );
     }
 
@@ -387,16 +422,47 @@ class PlatformBunnySettingService
         ];
     }
 
+    private function storageHost(string $region): string
+    {
+        $map = [
+            'de' => 'storage.bunnycdn.com',
+            'uk' => 'uk.storage.bunnycdn.com',
+            'gb' => 'uk.storage.bunnycdn.com',
+            'ny' => 'ny.storage.bunnycdn.com',
+            'la' => 'la.storage.bunnycdn.com',
+            'sg' => 'sg.storage.bunnycdn.com',
+            'se' => 'se.storage.bunnycdn.com',
+            'br' => 'br.storage.bunnycdn.com',
+            'jh' => 'jh.storage.bunnycdn.com',
+            'za' => 'jh.storage.bunnycdn.com',
+            'syd' => 'syd.storage.bunnycdn.com',
+            'au' => 'syd.storage.bunnycdn.com',
+        ];
+
+        return $map[$region] ?? $map['de'];
+    }
+
     /**
      * @return array{status: string}
      */
     private function call(string $url, string $method, array $headers): array
     {
         try {
+            \Log::channel('single')->info('Bunny API Request', [
+                'method' => $method,
+                'url' => $url,
+                'headers' => $headers,
+            ]);
+
             $response = Http::withHeaders($headers)
                 ->timeout(8)
                 ->withOptions(['connect_timeout' => 8])
                 ->send($method, $url);
+
+            \Log::channel('single')->info('Bunny API Response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             if ($response->status() === 401 || $response->status() === 403) {
                 return ['status' => 'unauthorized'];

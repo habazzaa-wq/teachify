@@ -14,7 +14,6 @@ class UploadPolicyService
         $this->ensureTenantNotSuspended($tenant);
         $this->ensurePlatformNotInMaintenance();
         $this->ensureSubscriptionActive($tenant);
-        $this->ensurePlanExists($tenant);
     }
 
     public function isTenantActive(Tenant $tenant): bool
@@ -50,8 +49,16 @@ class UploadPolicyService
     public function hasPlan(Tenant $tenant): bool
     {
         $plan = $tenant->plan ?? [];
+        if (! empty($plan) && isset($plan['name'])) {
+            return true;
+        }
 
-        return ! empty($plan) && isset($plan['name']);
+        $subscription = $tenant->subscription ?? [];
+        if (! empty($subscription['planId']) || ! empty($subscription['plan_name'])) {
+            return true;
+        }
+
+        return false;
     }
 
     public function isPlatformInMaintenance(): bool

@@ -22,10 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: [
-            'api/platform/*',
-            'api/v1/tenant/auth/login',
-            'api/v1/tenant/auth/forgot-password',
-            'api/v1/tenant/auth/reset-password',
+            'api/*',
         ]);
         $middleware->throttleApi();
         $middleware->api(prepend: [
@@ -41,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'any-role' => \App\Http\Middleware\AnyRoleMiddleware::class,
             'upload.quota' => \App\Http\Middleware\UploadQuotaMiddleware::class,
         ]);
+        $middleware->redirectGuestsTo(fn () => url('/'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

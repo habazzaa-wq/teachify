@@ -22,7 +22,7 @@ class TenantQuotaService
     {
         $usage = $this->getUsage($tenantId);
         $limit = $this->limits->getVideoCountLimit($tenantId);
-        return $usage['uploaded_videos'] < $limit;
+        return ($usage['uploaded_videos'] ?? 0) < $limit;
     }
 
     public function canCreateFolder(int $tenantId): bool
@@ -48,25 +48,25 @@ class TenantQuotaService
     public function remainingStorage(int $tenantId): int
     {
         $usage = $this->getUsage($tenantId);
-        return max(0, $this->limits->getStorageLimit($tenantId) - $usage['storage_bytes']);
+        return max(0, $this->limits->getStorageLimit($tenantId) - ($usage['storage_bytes'] ?? 0));
     }
 
     public function remainingBandwidth(int $tenantId): int
     {
         $usage = $this->getUsage($tenantId);
-        return max(0, $this->limits->getBandwidthLimit($tenantId) - $usage['bandwidth_bytes']);
+        return max(0, $this->limits->getBandwidthLimit($tenantId) - ($usage['bandwidth_bytes'] ?? 0));
     }
 
     public function remainingViews(int $tenantId): int
     {
         $usage = $this->getUsage($tenantId);
-        return max(0, $this->limits->getViewsLimit($tenantId) - $usage['views']);
+        return max(0, $this->limits->getViewsLimit($tenantId) - ($usage['views'] ?? 0));
     }
 
     public function remainingUploads(int $tenantId): int
     {
         $usage = $this->getUsage($tenantId);
-        return max(0, $this->limits->getUploadLimit($tenantId) - $usage['uploaded_files']);
+        return max(0, $this->limits->getUploadLimit($tenantId) - ($usage['uploaded_files'] ?? 0));
     }
 
     public function remainingFolders(int $tenantId): int
@@ -84,7 +84,7 @@ class TenantQuotaService
     public function remainingRequests(int $tenantId): int
     {
         $usage = $this->getUsage($tenantId);
-        return max(0, $this->limits->getRequestLimit($tenantId) - $usage['requests']);
+        return max(0, $this->limits->getRequestLimit($tenantId) - ($usage['requests'] ?? 0));
     }
 
     public function remainingPercentage(int $tenantId, string $field): float

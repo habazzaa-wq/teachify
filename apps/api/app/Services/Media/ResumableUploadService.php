@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Bunny\BunnyCacheService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -36,6 +38,7 @@ class ResumableUploadService
     public function __construct(
         private readonly BunnyIntegrationService $bunny,
         private readonly MediaManager $manager,
+        private readonly BunnyCacheService $cache,
     ) {
     }
 
@@ -296,6 +299,31 @@ class ResumableUploadService
             ]);
         }
 
+        // Duplicate detection: if an existing active asset for this tenant has
+        // the same SHA-256 checksum, reuse it instead of assembling + pushing.
+        $effectiveHash = $fileHash ? strtolower((string) $fileHash) : $combined;
+        $existingAsset = MediaAsset::query()
+            ->where('tenant_id', $session->tenant_id)
+            ->where('checksum', $effectiveHash)
+            ->where('status', 'ready')
+            ->whereNull('deleted_at')
+            ->first();
+
+        if ($existingAsset) {
+            $this->purgeTemporaryArtifacts($session);
+            $session->forceFill([
+                'status' => 'completed',
+                'completed' => true,
+                'final_file_hash' => $effectiveHash,
+                'expires_at' => null,
+            ])->save();
+
+            return [
+                'session' => $session->fresh(),
+                'asset' => $existingAsset,
+            ];
+        }
+
         $assembledAbs = $this->assembledPath($session);
         File::ensureDirectoryExists(dirname($assembledAbs));
 
@@ -331,6 +359,14 @@ class ResumableUploadService
             'expires_at' => null,
         ])->save();
 
+        // Invalidate Bunny usage cache so the storage meter reflects the new file.
+        try {
+            $this->cache->invalidateUsage();
+            $this->cache->invalidateStorage();
+        } catch (\Throwable) {
+            // Cache invalidation failure is non-fatal.
+        }
+
         return [
             'session' => $session->fresh(),
             'asset' => $asset,
@@ -354,20 +390,38 @@ class ResumableUploadService
         $headers = $intent['headers'] ?? [];
         $headers['Content-Type'] = $session->mime_type ?: 'application/octet-stream';
 
-        try {
-            $client = new GuzzleClient();
-            $response = $client->put($url, [
-                'headers' => $headers,
-                'body' => fopen($assembledAbs, 'r'),
-                'timeout' => 600,
-                'connect_timeout' => 30,
-            ]);
+        $maxRetries = 3;
+        $lastException = null;
 
-            if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
-                throw new RuntimeException("Bunny rejected the upload (HTTP {$response->getStatusCode()}).");
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                $client = new GuzzleClient([
+                    'timeout' => 600,
+                    'connect_timeout' => 30,
+                    'retry' => false,
+                ]);
+                $response = $client->put($url, [
+                    'headers' => $headers,
+                    'body' => fopen($assembledAbs, 'r'),
+                ]);
+
+                if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+                    throw new RuntimeException("Bunny rejected the upload (HTTP {$response->getStatusCode()}).");
+                }
+
+                $lastException = null;
+                break;
+            } catch (GuzzleException $e) {
+                $lastException = $e;
+                if ($attempt < $maxRetries) {
+                    $delay = min(30, 2 * pow(2, $attempt - 1));
+                    sleep($delay);
+                }
             }
-        } catch (GuzzleException $e) {
-            throw new RuntimeException("Failed to upload to Bunny storage: {$e->getMessage()}");
+        }
+
+        if ($lastException !== null) {
+            throw new RuntimeException("Failed to upload to Bunny storage after {$maxRetries} attempts: {$lastException->getMessage()}");
         }
 
         $asset = $session->asset;

@@ -5,8 +5,7 @@ namespace App\Http\Controllers\Api\v1\Media;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaLibraryAssetResource;
 use App\Models\MediaAsset;
-use App\Models\Tenant;
-use App\Policies\MediaLibraryPolicy;
+use App\Services\Bunny\Exceptions\BunnyServiceException;
 use App\Services\Media\MediaLibraryAssetService;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
@@ -17,10 +16,8 @@ class MediaLibraryController extends Controller
 {
     public function __construct(
         private readonly MediaLibraryAssetService $assets,
-        private readonly MediaLibraryPolicy $policy,
         private readonly UploadGuardService $guard,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -109,7 +106,17 @@ class MediaLibraryController extends Controller
 
         $tenant = currentTenant();
         $asset = $this->assets->findOrFail($tenant, $id);
-        $this->assets->softDelete($tenant, $asset);
+
+        try {
+            $this->assets->softDelete($tenant, $asset);
+        } catch (BunnyServiceException $e) {
+            return response()->json([
+                'message' => 'Failed to delete asset from Bunny CDN. The local record was not modified.',
+                'error' => $e->getMessage(),
+                'service' => $e->getService(),
+                'operation' => $e->getOperation(),
+            ], 422);
+        }
 
         return response()->json(['message' => 'Asset deleted successfully.']);
     }
@@ -230,9 +237,42 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $count = $this->assets->bulkDelete($tenant, $data['ids']);
 
-        return response()->json(['message' => "{$count} assets deleted successfully."]);
+        try {
+            $result = $this->assets->bulkDelete($tenant, $data['ids']);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'حدث خطأ أثناء الحذف الجماعي. حاول مرة أخرى.',
+                'deleted' => 0,
+                'failed' => count($data['ids']),
+                'failures' => [],
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
+        if ($result['failed'] > 0 && $result['deleted'] === 0) {
+            return response()->json([
+                'message' => 'All deletions failed. No assets were removed.',
+                'deleted' => 0,
+                'failed' => $result['failed'],
+                'failures' => $result['failures'],
+            ], 422);
+        }
+
+        if ($result['failed'] > 0) {
+            return response()->json([
+                'message' => "{$result['deleted']} assets deleted. {$result['failed']} failed and were queued for retry.",
+                'deleted' => $result['deleted'],
+                'failed' => $result['failed'],
+                'failures' => $result['failures'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => "{$result['deleted']} assets deleted successfully.",
+            'deleted' => $result['deleted'],
+            'failed' => 0,
+        ]);
     }
 
     public function bulkRestore(Request $request): JsonResponse

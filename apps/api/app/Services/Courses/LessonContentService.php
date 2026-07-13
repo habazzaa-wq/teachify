@@ -85,7 +85,7 @@ class LessonContentService
     public function createFile(Course $course, CourseSection $section, CourseLesson $lesson, array $data): LessonFile
     {
         $this->ensureLesson($course, $section, $lesson, 'file');
-        $media = $this->mediaAssetForTenant($course, $data['media_asset_id'], ['document', 'archive', 'attachment']);
+        $media = $this->mediaAssetForTenant($course, $data['media_asset_id'], ['document', 'pdf', 'archive', 'attachment']);
 
         return LessonFile::create([
             'tenant_id' => $course->tenant_id,
@@ -108,7 +108,7 @@ class LessonContentService
         $this->ensureFile($course, $section, $lesson, $file);
 
         if (array_key_exists('media_asset_id', $data)) {
-            $data['media_asset_id'] = $this->mediaAssetForTenant($course, $data['media_asset_id'], ['document', 'archive', 'attachment'])->id;
+            $data['media_asset_id'] = $this->mediaAssetForTenant($course, $data['media_asset_id'], ['document', 'pdf', 'archive', 'attachment'])->id;
         }
 
         $file->fill(collect($data)->only([
@@ -191,7 +191,7 @@ class LessonContentService
             ]);
         }
 
-        if ($lesson->type !== $type) {
+        if ($type === 'video' && $lesson->type !== 'video') {
             throw ValidationException::withMessages([
                 'type' => ["Lesson type [{$lesson->type}] cannot use {$type} content."],
             ]);

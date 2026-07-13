@@ -80,11 +80,26 @@ class BunnyStreamProvider implements MediaProvider
 
     public function deleteAsset(MediaAsset $asset): array
     {
+        $videoId = $asset->bunny_video_id ?: $asset->external_id;
+
+        if (! $videoId) {
+            return [
+                'provider' => 'bunny',
+                'provider_service' => 'stream',
+                'deleted' => true,
+                'video_id' => null,
+                'skipped' => true,
+                'reason' => 'No video ID on asset.',
+            ];
+        }
+
+        app(\App\Services\Bunny\Contracts\BunnyStreamInterface::class)->deleteVideo($videoId);
+
         return [
             'provider' => 'bunny',
             'provider_service' => 'stream',
             'deleted' => true,
-            'video_id' => $asset->external_id,
+            'video_id' => $videoId,
         ];
     }
 

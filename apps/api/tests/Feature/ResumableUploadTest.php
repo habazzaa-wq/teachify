@@ -106,18 +106,17 @@ class ResumableUploadTest extends TestCase
         return hash('sha256', implode('', $chunkHashes));
     }
 
-    private function putChunk(Tenant $tenant, MediaUploadSession $session, int $index, string $bytes, string $hash): \Illuminate\Testing\TestResponse
+    private function putChunk(Tenant $tenant, MediaUploadSession $session, int $index, string $bytes, string $hash, int $byteOffset = 0): \Illuminate\Testing\TestResponse
     {
-        $total = strlen($bytes);
-        $start = 0;
-        $end = $total - 1;
+        $length = strlen($bytes);
+        $end = $byteOffset + $length - 1;
         $fileSize = $session->size;
 
         $headers = array_merge($this->tenantHeader($tenant), [
             'X-Chunk-Index' => (string) $index,
             'X-Chunk-Hash' => $hash,
             'Content-Type' => 'application/octet-stream',
-            'Content-Range' => "bytes {$start}-{$end}/{$fileSize}",
+            'Content-Range' => "bytes {$byteOffset}-{$end}/{$fileSize}",
         ]);
 
         return $this->call(
@@ -161,7 +160,7 @@ class ResumableUploadTest extends TestCase
 
         // Upload the two chunks.
         $this->putChunk($tenant, $session, 0, $chunk0, $hash0)->assertOk();
-        $this->putChunk($tenant, $session, 1, $chunk1, $hash1)->assertOk();
+        $this->putChunk($tenant, $session, 1, $chunk1, $hash1, 1500)->assertOk();
 
         // Resume reflects a fully uploaded session.
         $resume = $this->getJson(
@@ -174,9 +173,9 @@ class ResumableUploadTest extends TestCase
         $resume->assertJsonPath('data.next_chunk', null);
 
         // Finalize: stub the Bunny push so we never touch the network.
-        $service = ResumableUploadService::partialMock();
-        $service->shouldAllowMockingProtectedMethods();
-        $service->shouldReceive('pushToBunny')->andReturnUsing(function (MediaUploadSession $s, string $path) {
+        $mock = \Mockery::mock(ResumableUploadService::class)->makePartial();
+        $mock->shouldAllowMockingProtectedMethods();
+        $mock->shouldReceive('pushToBunny')->once()->andReturnUsing(function (MediaUploadSession $s, string $path) {
             $asset = $s->asset;
             $asset->forceFill([
                 'status' => 'ready',
@@ -187,6 +186,7 @@ class ResumableUploadTest extends TestCase
 
             return $asset;
         });
+        app()->instance(ResumableUploadService::class, $mock);
 
         $finalize = $this->postJson(
             "/api/v1/media-library/upload/resumable/{$sessionId}/finalize",
@@ -264,7 +264,7 @@ class ResumableUploadTest extends TestCase
 
         $session = MediaUploadSession::findOrFail($sessionId);
         $this->putChunk($tenant, $session, 0, $chunk0, $hash0)->assertOk();
-        $this->putChunk($tenant, $session, 1, $chunk1, $hash1)->assertOk();
+        $this->putChunk($tenant, $session, 1, $chunk1, $hash1, 1500)->assertOk();
 
         $this->postJson(
             "/api/v1/media-library/upload/resumable/{$sessionId}/finalize",

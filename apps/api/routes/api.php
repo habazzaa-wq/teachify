@@ -514,3 +514,7 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
 Route::get('/diag/ping', function () {
     return response()->json(['ok' => true, 'time' => now()->toIso8601String()]);
 });
+
+use App\Http\Controllers\Api\v1\Platform\BunnyDebugController;
+
+Route::post('/diag/bunny-test', [BunnyDebugController::class, 'test']);

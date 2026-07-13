@@ -67,6 +67,9 @@ export function useUploadManagerStats(): UploadManagerStats {
           stats.processing += 1;
           stats.active += 1;
           break;
+        case "recovering":
+          stats.active += 1;
+          break;
         case "completed":
           stats.completed += 1;
           break;

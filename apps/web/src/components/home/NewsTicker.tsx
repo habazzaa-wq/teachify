@@ -265,7 +265,7 @@ export function NewsTicker({
         )}
       </div>
 
-      {/* Collapsed re-open handle: click, or drag downward to expand */}
+      {/* Collapsed re-open handle: thin pull-down arrow bar */}
       {collapsible && collapsed && (
         <button
           type="button"
@@ -276,13 +276,16 @@ export function NewsTicker({
           onPointerCancel={onHandlePointerUp}
           aria-label="إظهار شريط الأخبار"
           className={cn(
-            "fixed z-40 end-3 flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-background/95 px-3 py-2 text-foreground shadow-lg backdrop-blur transition-transform duration-150 hover:bg-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
-            isBottom ? "bottom-3" : "top-3",
-            pulling && "scale-105 translate-y-1",
+            "fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            pulling && "translate-y-1",
           )}
+          style={{
+            background: gradient,
+            color: text,
+            boxShadow: `0 4px 20px rgba(0,0,0,0.25)`,
+          }}
         >
-          <ChevronDown className="h-4 w-4" />
-          <span className="text-xs font-semibold">الأخبار</span>
+          <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-300", pulling && "translate-y-0.5")} />
         </button>
       )}
     </>

@@ -110,16 +110,16 @@ function formatFolder(raw: RawFolder): MediaFolder {
   };
 }
 
-function buildListParams(params?: MediaFilterParams): Record<string, string> {
+function buildListParams(params?: MediaFilterParams): Record<string, string | string[]> {
   if (!params) return {};
-  const q: Record<string, string> = {};
+  const q: Record<string, string | string[]> = {};
 
   if (params.folder_id === "root") q.root = "true";
   else if (params.folder_id !== undefined) q.folder_id = String(params.folder_id);
 
   if (params.search) q.search = params.search;
   if (params.type && params.type !== "all") q.type = params.type;
-  if (params.types && params.types.length > 0) q.types = params.types.join(",");
+  if (params.types && params.types.length > 0) q.types = params.types;
   if (params.status && params.status !== "all") q.status = params.status;
   if (params.visibility && params.visibility !== "all") q.visibility = params.visibility;
   if (params.processing_status && params.processing_status !== "all") q.processing_status = params.processing_status;
@@ -343,11 +343,12 @@ export const mediaLibraryService = {
       size_bytes?: number;
       file_hash?: string;
     },
+    options?: { signal?: AbortSignal },
   ): Promise<{ asset: MediaAsset | null }> {
     const { data } = await api.post(`/media-library/upload/resumable/${sessionId}/finalize`, {
       size_bytes: payload?.size_bytes,
       file_hash: payload?.file_hash,
-    });
+    }, { signal: options?.signal });
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
     };

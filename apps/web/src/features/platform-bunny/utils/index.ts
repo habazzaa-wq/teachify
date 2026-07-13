@@ -84,10 +84,10 @@ export function buildUpdatePayload(
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     storageZoneName: draft.storageZoneName,
-    storageZoneRegion: draft.storageZoneRegion,
+    storageZoneRegion: draft.storageZoneRegion ?? "de",
     cdnHostname: draft.cdnHostname,
     libraryId: draft.libraryId,
-    defaultPrivacy: draft.defaultPrivacy,
+    defaultPrivacy: draft.defaultPrivacy ?? "private",
     defaultExpirationDays: draft.defaultExpirationDays,
     maxUploadSize: draft.maxUploadSize,
     chunkSize: draft.chunkSize,

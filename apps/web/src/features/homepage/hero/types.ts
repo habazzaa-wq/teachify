@@ -2,6 +2,21 @@ export interface HeroSocialLinks {
   facebook: string;
   youtube: string;
   phone: string;
+  whatsapp: string;
+}
+
+export interface HeroIconConfig {
+  label: string;
+  visible: boolean;
+}
+
+export interface HeroIcons {
+  gifts: HeroIconConfig;
+  facebook: HeroIconConfig;
+  chat: HeroIconConfig;
+  youtube: HeroIconConfig;
+  bestStudents: HeroIconConfig;
+  phone: HeroIconConfig;
 }
 
 export interface HeroSettings {
@@ -13,6 +28,7 @@ export interface HeroSettings {
   badge2Text: string;
   isActive: boolean;
   socialLinks: HeroSocialLinks;
+  icons: HeroIcons;
 }
 
 export const DEFAULT_HERO: HeroSettings = {
@@ -27,5 +43,14 @@ export const DEFAULT_HERO: HeroSettings = {
     facebook: "",
     youtube: "",
     phone: "",
+    whatsapp: "",
+  },
+  icons: {
+    gifts: { label: "الهدايا", visible: true },
+    facebook: { label: "فيس بوك", visible: true },
+    chat: { label: "محادثة مباشرة", visible: true },
+    youtube: { label: "يوتيوب", visible: true },
+    bestStudents: { label: "أفضل الطلاب", visible: true },
+    phone: { label: "رقم الهاتف", visible: true },
   },
 };

@@ -54,6 +54,7 @@ class CourseLessonService
                 'notes' => $data['notes'] ?? null,
                 'color' => $data['color'] ?? null,
                 'icon' => $data['icon'] ?? null,
+                'exam_id' => $data['exam_id'] ?? null,
                 'published_at' => ($data['status'] ?? 'draft') === 'published' ? now() : null,
             ]);
         });
@@ -68,7 +69,7 @@ class CourseLessonService
                 'title', 'short_description', 'description', 'status', 'visibility',
                 'sort_order', 'duration_seconds', 'estimated_duration',
                 'free_preview', 'downloadable', 'featured', 'comments_enabled',
-                'notes', 'color', 'icon',
+                'notes', 'color', 'icon', 'exam_id',
             ])->all();
 
             if (array_key_exists('slug', $data)) {

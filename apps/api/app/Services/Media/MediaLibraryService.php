@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 class MediaLibraryService
 {
     private const ASSET_STATUSES = ['pending', 'uploading', 'processing', 'ready', 'failed', 'deleted'];
-    private const ASSET_TYPES = ['video', 'image', 'document', 'archive', 'attachment', 'caption', 'thumbnail'];
+    private const ASSET_TYPES = ['video', 'image', 'document', 'pdf', 'archive', 'attachment', 'caption', 'thumbnail'];
     private const VISIBILITIES = ['private', 'public'];
     private const VARIANT_TYPES = ['thumbnail', 'preview', 'transcode', 'stream_playlist', 'download'];
     private const CAPTION_FORMATS = ['vtt', 'srt'];

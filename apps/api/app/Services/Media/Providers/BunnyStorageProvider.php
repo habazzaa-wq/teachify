@@ -71,11 +71,26 @@ class BunnyStorageProvider implements MediaProvider
 
     public function deleteAsset(MediaAsset $asset): array
     {
+        $storageKey = $asset->bunny_storage_path ?: $asset->storage_key;
+
+        if (! $storageKey) {
+            return [
+                'provider' => 'bunny',
+                'provider_service' => 'storage',
+                'deleted' => true,
+                'storage_key' => null,
+                'skipped' => true,
+                'reason' => 'No storage key on asset.',
+            ];
+        }
+
+        app(\App\Services\Bunny\Contracts\BunnyStorageInterface::class)->deleteFile($storageKey);
+
         return [
             'provider' => 'bunny',
             'provider_service' => 'storage',
             'deleted' => true,
-            'storage_key' => $asset->storage_key,
+            'storage_key' => $storageKey,
         ];
     }
 

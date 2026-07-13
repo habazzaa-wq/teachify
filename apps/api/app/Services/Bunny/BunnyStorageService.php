@@ -304,7 +304,7 @@ class BunnyStorageService implements BunnyStorageInterface
             'method' => 'PUT',
             'upload_url' => $this->client->storageZoneUrl($normalized),
             'headers' => [
-                'AccessKey' => $this->client->settings()->api_key,
+                'AccessKey' => $this->client->settings()->storage_zone_password,
                 'Content-Type' => $options['mime_type'] ?? 'application/octet-stream',
             ],
         ];
@@ -324,7 +324,7 @@ class BunnyStorageService implements BunnyStorageInterface
             'uploaded_chunks' => $uploadedChunks,
             'upload_url' => $this->client->storageZoneUrl($normalized),
             'headers' => [
-                'AccessKey' => $this->client->settings()->api_key,
+                'AccessKey' => $this->client->settings()->storage_zone_password,
             ],
         ];
     }

@@ -7,8 +7,10 @@ import { Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useUploadManagerStore } from "../store";
 import { uploadEngine } from "../services";
+import { hashPool } from "../services/hashPool";
 import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManager, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
 import { MEDIA_QUERY_KEY } from "../../constants";
+import { BUNNY_CENTER_QUERY_KEY } from "../../../bunny-center/constants";
 import { UploadManagerPanel } from "./UploadManagerPanel";
 import { UploadDragOverlay } from "./UploadDragOverlay";
 import { UPLOAD_LAUNCHER_COUNT_CAP } from "../constants";
@@ -31,9 +33,17 @@ export function UploadManager() {
   useUploadShortcuts();
   useUploadEngineBootstrap();
 
+  // Dispose the hash worker pool on unmount to avoid leaking workers.
+  useEffect(() => {
+    return () => {
+      hashPool.dispose();
+    };
+  }, []);
+
   useEffect(() => {
     const off = uploadEngine.registerInvalidator(() => {
       queryClient.invalidateQueries({ queryKey: [MEDIA_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [BUNNY_CENTER_QUERY_KEY] });
     });
     return off;
   }, [queryClient]);

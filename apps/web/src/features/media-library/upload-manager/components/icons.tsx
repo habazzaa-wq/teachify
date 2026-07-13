@@ -8,6 +8,7 @@ import {
   XCircle,
   Ban,
   RotateCw,
+  History,
   WifiOff,
   HardDrive,
   Lock,
@@ -41,6 +42,7 @@ export const UPLOAD_STATUS_ICONS: Record<UploadStatus, LucideIcon> = {
   failed: XCircle,
   cancelled: Ban,
   retrying: RotateCw,
+  recovering: History,
 };
 
 export const UPLOAD_ERROR_ICONS: Record<UploadErrorType, LucideIcon> = {

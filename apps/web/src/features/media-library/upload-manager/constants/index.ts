@@ -99,6 +99,7 @@ export const UPLOAD_STATUS_CONFIG: Record<UploadStatus, UploadStatusConfig> = {
   failed: { label: "فشل", tone: "danger", icon: "XCircle" },
   cancelled: { label: "ملغى", tone: "default", icon: "Ban" },
   retrying: { label: "إعادة المحاولة", tone: "warning", icon: "RotateCw" },
+  recovering: { label: "استرداد", tone: "info", icon: "History" },
 };
 
 /** Number of items rendered above/below the viewport in the virtualized queue. */

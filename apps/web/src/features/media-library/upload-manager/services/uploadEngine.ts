@@ -43,6 +43,11 @@ interface ActiveXhr {
   total: number;
 }
 
+interface SpeedSample {
+  bytes: number;
+  timestamp: number;
+}
+
 interface ItemRuntime {
   sessionId: string;
   uploadId: string;
@@ -53,6 +58,14 @@ interface ItemRuntime {
   chunkLoaded: Map<number, number>;
   items: Map<string, ActiveXhr>;
   retryTimers: Map<string, ReturnType<typeof setTimeout>>;
+  /** Rolling window of speed samples for real throughput calculation. */
+  speedSamples: SpeedSample[];
+  /** Epoch ms when this item's upload actually started. */
+  uploadStartedAt: number | null;
+  /** Last known total uploaded bytes (for delta calculation). */
+  lastUploadedBytes: number;
+  /** AbortController for the finalize request, so cancellation works during processing. */
+  finalizeAbort: AbortController | null;
 }
 
 function statusOf(id: string): UploadStatus | undefined {
@@ -136,6 +149,29 @@ class UploadEngine {
   private activeCount = 0;
   private invalidators: Array<() => void> = [];
   private recoveryRan = false;
+  private tabId = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  private channel: BroadcastChannel | null = null;
+
+  constructor() {
+    if (typeof BroadcastChannel !== "undefined") {
+      this.channel = new BroadcastChannel("upload-engine-sync");
+      this.channel.onmessage = (e) => {
+        if (e.data?.type === "upload-completed" || e.data?.type === "upload-failed") {
+          // Another tab finished an upload — invalidate media queries to pick it up.
+          this.emitSettled();
+        }
+      };
+    }
+  }
+
+  /** Broadcast to other tabs that an upload completed or failed. */
+  private broadcast(event: "upload-completed" | "upload-failed"): void {
+    try {
+      this.channel?.postMessage({ type: event, tabId: this.tabId });
+    } catch {
+      // ignore
+    }
+  }
 
   registerInvalidator(fn: () => void): () => void {
     this.invalidators.push(fn);
@@ -281,6 +317,10 @@ class UploadEngine {
       chunkLoaded: new Map(),
       items: new Map(),
       retryTimers: new Map(),
+      speedSamples: [],
+      uploadStartedAt: null,
+      lastUploadedBytes: 0,
+      finalizeAbort: null,
     };
     this.runtimes.set(item.id, runtime);
 
@@ -371,12 +411,31 @@ class UploadEngine {
 
       if (intent.uploadUrl) {
         await this.uploadChunks(id, runtime);
+
+        // Check if the item was paused/cancelled during chunk upload (e.g. offline).
+        const currentStatus = statusOf(id);
+        if (currentStatus === "paused" || currentStatus === "cancelled") return;
+
         this.setItem(id, { status: "processing" });
-        const res = await mediaLibraryService.finalizeResumable(intent.sessionId, {
-          size_bytes: runtime.session.size,
-          file_hash: runtime.session.fileHash ?? undefined,
-        });
-        this.completeItem(id, runtime, res.asset?.id ?? null, res.asset?.cdnUrl ?? null);
+
+        // Use an AbortController so cancel() can abort the finalize request.
+        const abort = new AbortController();
+        runtime.finalizeAbort = abort;
+
+        try {
+          const res = await mediaLibraryService.finalizeResumable(intent.sessionId, {
+            size_bytes: runtime.session.size,
+            file_hash: runtime.session.fileHash ?? undefined,
+          }, { signal: abort.signal });
+          this.completeItem(id, runtime, res.asset?.id ?? null, res.asset?.cdnUrl ?? null);
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            return; // cancelled during processing — already cleaned up
+          }
+          throw err;
+        } finally {
+          runtime.finalizeAbort = null;
+        }
       } else {
         const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File);
         this.completeItem(id, runtime, res.asset?.id ?? null, res.cdnUrl ?? res.asset?.cdnUrl ?? null);
@@ -408,6 +467,7 @@ class UploadEngine {
     uploadGuard.invalidateStorage();
     this.emitSettled();
     this.registerBackgroundSync();
+    this.broadcast("upload-completed");
   }
 
   private async uploadChunks(id: string, runtime: ItemRuntime): Promise<void> {
@@ -534,8 +594,7 @@ class UploadEngine {
 
       xhr.upload.onprogress = (e: ProgressEvent) => {
         if (!e.lengthComputable) return;
-        runtime.chunkLoaded.set(chunk.index, e.loaded);
-        this.updateProgress(id, runtime, this.estimateSpeed(blob.size, e.loaded));
+        this.updateChunkProgress(id, runtime, chunk.index, e.loaded);
       };
 
       xhr.onload = () => {
@@ -600,9 +659,53 @@ class UploadEngine {
     });
   }
 
-  private estimateSpeed(chunkSize: number, loaded: number): number | null {
-    if (loaded <= 0 || loaded >= chunkSize) return null;
-    return chunkSize; // rough per-chunk-rate proxy; smoothed in updateProgress
+  private updateChunkProgress(id: string, runtime: ItemRuntime, chunkIndex: number, loaded: number): void {
+    runtime.chunkLoaded.set(chunkIndex, loaded);
+
+    const now = Date.now();
+    if (!runtime.uploadStartedAt) {
+      runtime.uploadStartedAt = now;
+    }
+
+    const uploadedBytes =
+      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
+      Array.from(runtime.chunkLoaded.values()).reduce((a, b) => a + b, 0);
+
+    const deltaBytes = uploadedBytes - runtime.lastUploadedBytes;
+    runtime.lastUploadedBytes = uploadedBytes;
+
+    if (deltaBytes > 0 && now > runtime.uploadStartedAt) {
+      runtime.speedSamples.push({ bytes: deltaBytes, timestamp: now });
+
+      // Keep only the last 5 seconds of samples for a responsive rolling window.
+      const windowMs = 5_000;
+      const cutoff = now - windowMs;
+      while (runtime.speedSamples.length > 0 && runtime.speedSamples[0]!.timestamp < cutoff) {
+        runtime.speedSamples.shift();
+      }
+    }
+
+    this.updateProgress(id, runtime);
+  }
+
+  private computeSpeed(runtime: ItemRuntime): number {
+    const samples = runtime.speedSamples;
+    if (samples.length === 0) return 0;
+
+    const now = Date.now();
+    const windowMs = 5_000;
+    const cutoff = now - windowMs;
+    const recent = samples.filter((s) => s.timestamp >= cutoff);
+
+    if (recent.length === 0) return 0;
+
+    const totalBytes = recent.reduce((sum, s) => sum + s.bytes, 0);
+    const elapsedMs = now - recent[0]!.timestamp;
+
+    if (elapsedMs <= 0) return 0;
+
+    // bytes per second
+    return (totalBytes / elapsedMs) * 1_000;
   }
 
   private updateChunk(runtime: ItemRuntime, chunk: UploadChunk, patch: Partial<UploadChunk>): void {
@@ -613,7 +716,7 @@ class UploadEngine {
     this.patchSession(runtime.session);
   }
 
-  private updateProgress(id: string, runtime: ItemRuntime, instantSpeed?: number | null): void {
+  private updateProgress(id: string, runtime: ItemRuntime): void {
     const session = runtime.session;
     const uploadedBytes =
       runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
@@ -624,20 +727,24 @@ class UploadEngine {
     const completedChunks = session.completedChunks;
     const item = useUploadManagerStore.getState().items[id];
 
+    const rawSpeed = this.computeSpeed(runtime);
+    // Smooth the speed to avoid jittery display.
     const prevSpeed = item?.speed ?? 0;
-    let speed = prevSpeed;
-    if (instantSpeed && instantSpeed > 0) {
-      speed = prevSpeed
-        ? prevSpeed * (1 - UPLOAD_SPEED_SMOOTHING) + instantSpeed * UPLOAD_SPEED_SMOOTHING
-        : instantSpeed;
-    }
+    const smoothing = UPLOAD_SPEED_SMOOTHING;
+    const speed = prevSpeed
+      ? prevSpeed * (1 - smoothing) + rawSpeed * smoothing
+      : rawSpeed;
+
     if (speed > 0) networkMonitor.reportSpeed(speed);
 
-    const eta = speed > 0 ? (session.size - uploadedBytes) / speed : null;
+    const remaining = session.size - uploadedBytes;
+    const eta = speed > 0 ? remaining / speed : null;
 
     let warning = item?.warning ?? null;
     if (speed > 0 && speed < UPLOAD_SLOW_THRESHOLD && item?.warning?.type !== "large") {
       warning = { type: "slow", message: "سرعة الرفع منخفضة" };
+    } else if (speed >= UPLOAD_SLOW_THRESHOLD && item?.warning?.type === "slow") {
+      warning = null;
     }
 
     this.setItem(id, {
@@ -725,7 +832,8 @@ class UploadEngine {
       }
 
       const timer = setTimeout(() => {
-        this.runtimes.get(id)?.retryTimers.delete(id);
+        const rt = this.runtimes.get(id);
+        if (rt) rt.retryTimers.delete(id);
         const cur = useUploadManagerStore.getState().items[id];
         if (!cur || cur.status !== "retrying") return;
         if (!networkMonitor.isOnline()) {
@@ -756,6 +864,7 @@ class UploadEngine {
       this.patchSession(runtime.session);
     }
     this.emitSettled();
+    this.broadcast("upload-failed");
     toast.error("فشل رفع الملف", { description: `${current.filename}: ${message}` });
   }
 
@@ -788,6 +897,10 @@ class UploadEngine {
       }
       for (const timer of runtime.retryTimers.values()) clearTimeout(timer);
       runtime.retryTimers.clear();
+      if (runtime.finalizeAbort) {
+        runtime.finalizeAbort.abort();
+        runtime.finalizeAbort = null;
+      }
     }
     sessionStore.remove(id).catch(() => {});
     this.runtimes.delete(id);
@@ -820,6 +933,10 @@ class UploadEngine {
         handle.xhr.abort();
       }
       for (const timer of runtime.retryTimers.values()) clearTimeout(timer);
+      if (runtime.finalizeAbort) {
+        runtime.finalizeAbort.abort();
+        runtime.finalizeAbort = null;
+      }
     }
     sessionStore.remove(id).catch(() => {});
     this.runtimes.delete(id);
@@ -889,6 +1006,8 @@ class UploadEngine {
       }
       recovered += 1;
       this.hydrateFromRecord(record);
+      // Briefly show "recovering" while we reconcile with the server.
+      this.setItem(record.session.sessionId, { status: "recovering" });
       if (record.session.remoteSessionId != null) {
         reconciliations.push(this.reconcileWithServer(record.session.sessionId, record.session.remoteSessionId));
       }
@@ -897,6 +1016,14 @@ class UploadEngine {
     // Ask the backend which chunks it already holds so we only (re)upload the
     // missing ones after a refresh, crash or closed tab.
     await Promise.allSettled(reconciliations);
+
+    // Transition all recovering items to queued so processQueue picks them up.
+    const state = useUploadManagerStore.getState();
+    for (const id of state.order) {
+      if (state.items[id]?.status === "recovering") {
+        this.setItem(id, { status: "queued" });
+      }
+    }
 
     if (recovered > 0) {
       toast.info(`تم استئناف ${recovered} رفع غير مكتمل`, {
@@ -943,6 +1070,10 @@ class UploadEngine {
       chunkLoaded: new Map(),
       items: new Map(),
       retryTimers: new Map(),
+      speedSamples: [],
+      uploadStartedAt: null,
+      lastUploadedBytes: 0,
+      finalizeAbort: null,
     };
     this.runtimes.set(session.sessionId, runtime);
 

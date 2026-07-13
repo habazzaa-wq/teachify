@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class StorageUploadService
 {
-    private const STORAGE_ASSET_TYPES = ['image', 'document', 'archive', 'attachment', 'caption', 'thumbnail'];
+    private const STORAGE_ASSET_TYPES = ['image', 'document', 'pdf', 'archive', 'attachment', 'caption', 'thumbnail'];
 
     public function __construct(
         private readonly MediaLibraryService $media,

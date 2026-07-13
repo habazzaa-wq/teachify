@@ -9,7 +9,8 @@ export type UploadStatus =
   | "completed"
   | "failed"
   | "cancelled"
-  | "retrying";
+  | "retrying"
+  | "recovering";
 
 export type UploadErrorType =
   | "network"

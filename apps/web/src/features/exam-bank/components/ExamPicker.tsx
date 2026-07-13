@@ -69,7 +69,7 @@ function ExamPicker({
   const handleSelect = useCallback(
     (exam: Exam) => {
       if (mode === "single") {
-        onSelect({ id: exam.id, ids: [exam.id] });
+        onSelect({ id: exam.id, ids: [exam.id], title: exam.title });
         onClose();
         return;
       }
@@ -86,10 +86,11 @@ function ExamPicker({
   const handleConfirm = useCallback(() => {
     if (selectedIds.size > 0) {
       const ids = [...selectedIds];
-      if (ids[0] !== undefined) onSelect({ id: ids[0], ids });
+      const firstExam = exams.find((e) => e.id === ids[0]);
+      if (ids[0] !== undefined) onSelect({ id: ids[0], ids, title: firstExam?.title ?? "" });
       onClose();
     }
-  }, [selectedIds, onSelect, onClose]);
+  }, [selectedIds, exams, onSelect, onClose]);
 
   return (
     <AppDialog open={open} onOpenChange={onClose}>

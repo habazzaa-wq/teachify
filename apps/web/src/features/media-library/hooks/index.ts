@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { mediaLibraryService } from "../services";
 import { MEDIA_QUERY_KEY } from "../constants";
 import type { MediaAsset, MediaFilterParams } from "../types";
@@ -13,11 +14,25 @@ export function useMediaAssets(params?: MediaFilterParams) {
 }
 
 export function useMediaAsset(id: number | null) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: [MEDIA_QUERY_KEY, "assets", "detail", id],
     queryFn: () => mediaLibraryService.getAsset(id!),
     enabled: !!id,
   });
+
+  const assetFromCache = id
+    ? queryClient
+        .getQueriesData<{ data: MediaAsset[] }>({ queryKey: [MEDIA_QUERY_KEY, "assets", "list"] })
+        .flatMap(([, d]) => d?.data ?? [])
+        .find((a) => a.id === id) ?? null
+    : null;
+
+  return {
+    ...query,
+    data: query.data ?? assetFromCache,
+  };
 }
 
 export function useFolderTree() {
@@ -107,6 +122,11 @@ export function useDeleteAsset() {
   return useMutation({
     mutationFn: (id: number) => mediaLibraryService.deleteAsset(id),
     onSuccess: () => invalidateAll(qc),
+    onError: (error: Error) => {
+      toast.error("Failed to delete asset", {
+        description: error.message || "The asset could not be removed from the CDN. The local record was preserved.",
+      });
+    },
   });
 }
 
@@ -173,6 +193,11 @@ export function useBulkDelete() {
   return useMutation({
     mutationFn: (ids: number[]) => mediaLibraryService.bulkDelete(ids),
     onSuccess: () => invalidateAll(qc),
+    onError: (error: Error) => {
+      toast.error("Bulk delete failed", {
+        description: error.message || "Some assets could not be removed from the CDN.",
+      });
+    },
   });
 }
 

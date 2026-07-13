@@ -3,8 +3,7 @@
 namespace App\Services\Bunny;
 
 use App\Services\Bunny\Contracts\BunnyHealthInterface;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
+use App\Services\Bunny\Exceptions\BunnyServiceException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -172,16 +171,12 @@ class BunnyHealthService implements BunnyHealthInterface
     {
         try {
             $start = microtime(true);
-            $response = Http::timeout(5)
-                ->withHeaders(['AccessKey' => $this->client->settings()->api_key])
-                ->head($this->client->storageZoneUrl('/'));
+            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
             $latencyMs = (int) ((microtime(true) - $start) * 1000);
 
-            if ($response->successful()) {
-                return ['status' => self::HEALTH_STATUS_HEALTHY, 'latency_ms' => $latencyMs, 'http_status' => $response->status()];
-            }
-
-            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => "HTTP {$response->status()}", 'latency_ms' => $latencyMs];
+            return ['status' => self::HEALTH_STATUS_HEALTHY, 'latency_ms' => $latencyMs];
+        } catch (BunnyServiceException $e) {
+            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         } catch (Throwable $e) {
             return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         }
@@ -193,16 +188,12 @@ class BunnyHealthService implements BunnyHealthInterface
             $settings = $this->client->settings();
             $libraryId = (string) $settings->library_id;
             $start = microtime(true);
-            $response = Http::timeout(5)
-                ->withHeaders(['AccessKey' => $settings->stream_api_key])
-                ->head($this->client->streamBaseUrl().'/library/'.$libraryId);
+            $this->client->streamRequest('HEAD', "library/{$libraryId}", ['timeout' => 5, 'connect_timeout' => 5]);
             $latencyMs = (int) ((microtime(true) - $start) * 1000);
 
-            if ($response->successful()) {
-                return ['status' => self::HEALTH_STATUS_HEALTHY, 'latency_ms' => $latencyMs, 'http_status' => $response->status()];
-            }
-
-            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => "HTTP {$response->status()}", 'latency_ms' => $latencyMs];
+            return ['status' => self::HEALTH_STATUS_HEALTHY, 'latency_ms' => $latencyMs];
+        } catch (BunnyServiceException $e) {
+            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         } catch (Throwable $e) {
             return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         }
@@ -214,21 +205,21 @@ class BunnyHealthService implements BunnyHealthInterface
     private function verifyStorageCredentials(): array
     {
         try {
-            $response = Http::timeout(8)
-                ->withHeaders(['AccessKey' => $this->client->settings()->api_key])
-                ->get($this->client->storageZoneUrl('/'));
+            $this->client->storageRequest('GET', '/', ['timeout' => 8, 'connect_timeout' => 8]);
 
-            if ($response->successful()) {
-                return ['status' => self::HEALTH_STATUS_HEALTHY, 'error' => null];
+            return ['status' => self::HEALTH_STATUS_HEALTHY, 'error' => null];
+        } catch (BunnyServiceException $e) {
+            $code = $e->getCode();
+
+            if ($code === 401 || $code === 403) {
+                return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Storage zone password is unauthorized.'];
             }
 
-            if ($response->status() === 401 || $response->status() === 403) {
-                return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Storage API key is unauthorized.'];
+            if ($code === 0) {
+                return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Storage API connection timed out.'];
             }
 
-            return ['status' => self::HEALTH_STATUS_WARNING, 'error' => "Storage API returned HTTP {$response->status()}."];
-        } catch (ConnectionException $e) {
-            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Storage API connection timed out.'];
+            return ['status' => self::HEALTH_STATUS_WARNING, 'error' => "Storage API returned HTTP {$code}."];
         } catch (Throwable $e) {
             return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         }
@@ -243,21 +234,21 @@ class BunnyHealthService implements BunnyHealthInterface
             $settings = $this->client->settings();
             $libraryId = (string) $settings->library_id;
 
-            $response = Http::timeout(8)
-                ->withHeaders(['AccessKey' => $settings->stream_api_key])
-                ->get($this->client->streamBaseUrl().'/library/'.$libraryId);
+            $this->client->streamRequest('GET', "library/{$libraryId}", ['timeout' => 8, 'connect_timeout' => 8]);
 
-            if ($response->successful()) {
-                return ['status' => self::HEALTH_STATUS_HEALTHY, 'error' => null];
-            }
+            return ['status' => self::HEALTH_STATUS_HEALTHY, 'error' => null];
+        } catch (BunnyServiceException $e) {
+            $code = $e->getCode();
 
-            if ($response->status() === 401 || $response->status() === 403) {
+            if ($code === 401 || $code === 403) {
                 return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Stream API key is unauthorized.'];
             }
 
-            return ['status' => self::HEALTH_STATUS_WARNING, 'error' => "Stream API returned HTTP {$response->status()}."];
-        } catch (ConnectionException $e) {
-            return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Stream API connection timed out.'];
+            if ($code === 0) {
+                return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => 'Stream API connection timed out.'];
+            }
+
+            return ['status' => self::HEALTH_STATUS_WARNING, 'error' => "Stream API returned HTTP {$code}."];
         } catch (Throwable $e) {
             return ['status' => self::HEALTH_STATUS_CRITICAL, 'error' => $e->getMessage()];
         }
@@ -267,9 +258,7 @@ class BunnyHealthService implements BunnyHealthInterface
     {
         try {
             $start = microtime(true);
-            Http::timeout(5)
-                ->withHeaders(['AccessKey' => $this->client->settings()->api_key])
-                ->head($this->client->storageZoneUrl('/'));
+            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
 
             return (int) ((microtime(true) - $start) * 1000);
         } catch (Throwable $e) {
@@ -283,9 +272,7 @@ class BunnyHealthService implements BunnyHealthInterface
             $settings = $this->client->settings();
             $libraryId = (string) $settings->library_id;
             $start = microtime(true);
-            Http::timeout(5)
-                ->withHeaders(['AccessKey' => $settings->stream_api_key])
-                ->head($this->client->streamBaseUrl().'/library/'.$libraryId);
+            $this->client->streamRequest('HEAD', "library/{$libraryId}", ['timeout' => 5, 'connect_timeout' => 5]);
 
             return (int) ((microtime(true) - $start) * 1000);
         } catch (Throwable $e) {
@@ -296,11 +283,9 @@ class BunnyHealthService implements BunnyHealthInterface
     private function isStorageAvailable(): bool
     {
         try {
-            $response = Http::timeout(5)
-                ->withHeaders(['AccessKey' => $this->client->settings()->api_key])
-                ->head($this->client->storageZoneUrl('/'));
+            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
 
-            return $response->successful();
+            return true;
         } catch (Throwable $e) {
             return false;
         }
@@ -311,11 +296,9 @@ class BunnyHealthService implements BunnyHealthInterface
         try {
             $settings = $this->client->settings();
             $libraryId = (string) $settings->library_id;
-            $response = Http::timeout(5)
-                ->withHeaders(['AccessKey' => $settings->stream_api_key])
-                ->head($this->client->streamBaseUrl().'/library/'.$libraryId);
+            $this->client->streamRequest('HEAD', "library/{$libraryId}", ['timeout' => 5, 'connect_timeout' => 5]);
 
-            return $response->successful();
+            return true;
         } catch (Throwable $e) {
             return false;
         }

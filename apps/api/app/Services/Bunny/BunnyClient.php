@@ -14,17 +14,30 @@ use Throwable;
 
 class BunnyClient implements BunnyClientInterface
 {
-    private const STORAGE_BASE = 'https://storage.bunnycdn.com';
-
     private const STREAM_BASE = 'video.bunnycdn.com';
 
-    private const REGION_MAP = [
+    private const STREAM_REGION_MAP = [
         'uk' => 'uk.bunnycdn.com',
         'gb' => 'uk.bunnycdn.com',
         'sg' => 'sg.bunnycdn.com',
         'la' => 'la.bunnycdn.com',
         'ny' => 'ny.bunnycdn.com',
         'de' => 'video.bunnycdn.com',
+    ];
+
+    private const STORAGE_REGION_MAP = [
+        'de' => 'storage.bunnycdn.com',
+        'uk' => 'uk.storage.bunnycdn.com',
+        'gb' => 'uk.storage.bunnycdn.com',
+        'ny' => 'ny.storage.bunnycdn.com',
+        'la' => 'la.storage.bunnycdn.com',
+        'sg' => 'sg.storage.bunnycdn.com',
+        'se' => 'se.storage.bunnycdn.com',
+        'br' => 'br.storage.bunnycdn.com',
+        'jh' => 'jh.storage.bunnycdn.com',
+        'za' => 'jh.storage.bunnycdn.com',
+        'syd' => 'syd.storage.bunnycdn.com',
+        'au' => 'syd.storage.bunnycdn.com',
     ];
 
     private const REQUEST_TIMEOUT = 30;
@@ -55,7 +68,7 @@ class BunnyClient implements BunnyClientInterface
 
         return $this->executeRequest($method, $url, [
             'headers' => array_merge([
-                'AccessKey' => $settings->api_key,
+                'AccessKey' => $settings->storage_zone_password,
             ], $options['headers'] ?? []),
             'body' => $options['body'] ?? null,
             'timeout' => $options['timeout'] ?? self::REQUEST_TIMEOUT,
@@ -97,13 +110,14 @@ class BunnyClient implements BunnyClientInterface
     {
         $settings = $this->getSettings();
         $zone = $settings->storage_zone_name;
+        $host = $this->storageHost($settings->storage_zone_region);
 
-        return rtrim(self::STORAGE_BASE, '/').'/'.rtrim((string) $zone, '/').'/'.ltrim($path, '/');
+        return "https://{$host}/".rtrim((string) $zone, '/').'/'.ltrim($path, '/');
     }
 
     public function streamBaseUrl(?string $region = null): string
     {
-        $resolved = self::REGION_MAP[strtolower(trim((string) $region))] ?? self::STREAM_BASE;
+        $resolved = self::STREAM_REGION_MAP[strtolower(trim((string) $region))] ?? self::STREAM_BASE;
 
         return "https://{$resolved}";
     }
@@ -253,6 +267,13 @@ class BunnyClient implements BunnyClientInterface
         }
 
         return ['success' => true, 'status' => $response->status(), 'data' => $decoded];
+    }
+
+    private function storageHost(?string $region): string
+    {
+        $key = strtolower(trim((string) ($region ?: 'de')));
+
+        return self::STORAGE_REGION_MAP[$key] ?? self::STORAGE_REGION_MAP['de'];
     }
 
     private function getSettings(): PlatformBunnySetting

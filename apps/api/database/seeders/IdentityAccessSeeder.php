@@ -89,6 +89,14 @@ class IdentityAccessSeeder extends Seeder
             'question-categories.update',
             'question-categories.delete',
             'question-categories.restore',
+            'media.view',
+            'media.create',
+            'media.update',
+            'media.delete',
+            'media.upload',
+            'media.download',
+            'media.archive',
+            'media.manage',
         ],
         'admin' => [
             'users.view',
@@ -163,6 +171,14 @@ class IdentityAccessSeeder extends Seeder
             'question-categories.delete',
             'question-categories.restore',
             'news.manage',
+            'media.view',
+            'media.create',
+            'media.update',
+            'media.delete',
+            'media.upload',
+            'media.download',
+            'media.archive',
+            'media.manage',
         ],
         'instructor' => [
             'categories.view',
@@ -190,6 +206,9 @@ class IdentityAccessSeeder extends Seeder
             'exams.update',
             'banks.view',
             'question-categories.view',
+            'media.view',
+            'media.upload',
+            'media.download',
         ],
         'student' => [
             'categories.view',
@@ -201,6 +220,7 @@ class IdentityAccessSeeder extends Seeder
             'exams.view',
             'banks.view',
             'question-categories.view',
+            'media.view',
         ],
     ];
 

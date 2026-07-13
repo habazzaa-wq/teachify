@@ -30,15 +30,6 @@ class BunnyServiceProvider extends ServiceProvider
         $this->app->singleton(BunnyWebhookInterface::class, BunnyWebhookService::class);
         $this->app->singleton(BunnyHealthInterface::class, BunnyHealthService::class);
 
-        $this->app->singleton(BunnyClient::class, fn () => app(BunnyClientInterface::class));
-        $this->app->singleton(BunnyStorageService::class, fn () => app(BunnyStorageInterface::class));
-        $this->app->singleton(BunnyStreamService::class, fn () => app(BunnyStreamInterface::class));
-        $this->app->singleton(BunnyUsageService::class, fn () => app(BunnyUsageInterface::class));
-        $this->app->singleton(BunnyAnalyticsService::class, fn () => app(BunnyAnalyticsInterface::class));
-        $this->app->singleton(BunnySignedUrlService::class, fn () => app(BunnySignedUrlInterface::class));
-        $this->app->singleton(BunnyWebhookService::class, fn () => app(BunnyWebhookInterface::class));
-        $this->app->singleton(BunnyHealthService::class, fn () => app(BunnyHealthInterface::class));
-
         $this->app->singleton(BunnyQueueService::class);
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, memo } from "react";
+import { useState, useCallback, useRef, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PanelLeftClose,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
-import { useRenameAsset, useMoveAsset, useDeleteAsset, useBulkDelete, useBulkMove } from "../../hooks";
+import { useRenameAsset, useMoveAsset, useDeleteAsset, useBulkDelete, useBulkMove, useToggleFavorite, useTogglePin, useArchiveAsset, useDuplicateAsset } from "../../hooks";
 import { FolderExplorer } from "./FolderExplorer";
 import { AssetWorkspace } from "./AssetWorkspace";
 import { MediaInspector } from "./MediaInspector";
@@ -43,6 +43,16 @@ function ResizablePanel({
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (isDragging.current) {
+        isDragging.current = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
@@ -118,6 +128,10 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
   const deleteAsset = useDeleteAsset();
   const bulkDelete = useBulkDelete();
   const bulkMove = useBulkMove();
+  const toggleFavorite = useToggleFavorite();
+  const togglePin = useTogglePin();
+  const archiveAsset = useArchiveAsset();
+  const duplicateAsset = useDuplicateAsset();
 
   const selectedFolderId = useMediaWorkspaceStore((s) => s.selectedFolderId);
 
@@ -130,10 +144,12 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
     if (deleteTarget === "bulk") {
       bulkDelete.mutate([...selectedIds], {
         onSuccess: () => { setDeleteTarget(null); clearSelection(); },
+        onError: () => { setDeleteTarget(null); },
       });
     } else if (deleteTarget) {
       deleteAsset.mutate(deleteTarget.id, {
         onSuccess: () => { setDeleteTarget(null); setInspectorAssetId(null); },
+        onError: () => { setDeleteTarget(null); },
       });
     }
   }, [deleteTarget, bulkDelete, deleteAsset, selectedIds, clearSelection, setInspectorAssetId]);
@@ -209,6 +225,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
           onRenameAsset={setRenameTarget}
           onMoveAsset={setMoveTarget}
           onDeleteAsset={setDeleteTarget}
+          onDownloadAsset={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
           onBulkDelete={() => setDeleteTarget("bulk")}
           onBulkMove={() => setMoveTarget("bulk")}
         />
@@ -237,11 +254,11 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
                 onRename={setRenameTarget}
                 onMove={setMoveTarget}
                 onDelete={setDeleteTarget}
-                onArchive={() => {}}
-                onDuplicate={() => {}}
-                onDownload={() => {}}
-                onFavorite={() => {}}
-                onPin={() => {}}
+                onArchive={(asset) => archiveAsset.mutate(asset.id)}
+                onDuplicate={(asset) => duplicateAsset.mutate(asset.id)}
+                onDownload={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
+                onFavorite={(asset) => toggleFavorite.mutate(asset.id)}
+                onPin={(asset) => togglePin.mutate(asset.id)}
               />
             </ResizablePanel>
           </motion.div>

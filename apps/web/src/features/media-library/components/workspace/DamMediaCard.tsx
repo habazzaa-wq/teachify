@@ -188,7 +188,21 @@ function MediaCardBase({
   const isFailed = asset.status === "failed";
   const hasUsages = asset.usages && asset.usages.length > 0;
 
-  const handleClick = useCallback(() => onClick?.(asset), [asset, onClick]);
+  const lastClickTime = useRef(0);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const now = Date.now();
+      if (now - lastClickTime.current < 300) {
+        lastClickTime.current = 0;
+        onClick?.(asset);
+      } else {
+        lastClickTime.current = now;
+        onSelect?.(asset.id, !selected, e);
+      }
+    },
+    [asset, selected, onClick, onSelect],
+  );
   const handleSelect = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -238,7 +252,7 @@ function MediaCardBase({
         transition={{ duration: 0.15 }}
       >
         <StudioContextMenu items={contextMenuItems}>
-          <button
+          <div
             onClick={handleClick}
             className={cn(
               "group flex w-full items-center gap-3 rounded-lg border p-2 text-start transition-all duration-150",
@@ -318,7 +332,7 @@ function MediaCardBase({
             >
               {selected && <Check className="h-3.5 w-3.5" />}
             </button>
-          </button>
+          </div>
         </StudioContextMenu>
       </motion.div>
     );
@@ -334,7 +348,7 @@ function MediaCardBase({
         transition={{ duration: 0.15 }}
       >
         <StudioContextMenu items={contextMenuItems}>
-          <button
+          <div
             onClick={handleClick}
             className={cn(
               "group relative flex h-16 w-full items-center gap-2 rounded-lg border p-2 text-start transition-all duration-150",
@@ -363,7 +377,7 @@ function MediaCardBase({
             >
               {selected && <Check className="h-3 w-3" />}
             </button>
-          </button>
+          </div>
         </StudioContextMenu>
       </motion.div>
     );
@@ -383,7 +397,7 @@ function MediaCardBase({
       className={cn("group relative", selected && "z-10")}
     >
       <StudioContextMenu items={contextMenuItems}>
-          <button
+          <div
             onClick={handleClick}
             className={cn(
               "relative w-full cursor-pointer overflow-hidden rounded-xl border bg-card transition-all duration-200",
@@ -544,8 +558,8 @@ function MediaCardBase({
               </div>
             )}
           </div>
-        </button>
-      </StudioContextMenu>
+          </div>
+        </StudioContextMenu>
     </motion.div>
   );
 }

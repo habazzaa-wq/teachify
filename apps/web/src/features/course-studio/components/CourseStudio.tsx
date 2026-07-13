@@ -18,16 +18,33 @@ import { CourseStudioEditLectureDialog } from "./CourseStudioEditLectureDialog";
 import { CourseStudioCreateSectionDialog } from "./CourseStudioCreateSectionDialog";
 import { CourseStudioEditSectionDialog } from "./CourseStudioEditSectionDialog";
 import { CourseStudioContentPicker } from "./CourseStudioContentPicker";
+import { CourseStudioEditContentDialog } from "./CourseStudioEditContentDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
 import { useSectionsList, useCreateSectionAction, useUpdateSectionAction, useDeleteSectionAction, usePublishSectionAction, useArchiveSectionAction, useDuplicateSectionAction, useRestoreSectionAction, useReorderSectionsAction, useMoveSectionAction, useSelectAndScrollSection } from "../hooks/useSections";
-import { useLessons, useCreateLesson, useUpdateLesson, useDeleteLesson, usePublishLesson, useArchiveLesson, useDuplicateLesson, useRestoreLesson, useReorderLessons, useToggleFreePreview } from "@/features/lessons/hooks";
+import { useLessons, useCreateLesson, useUpdateLesson, useDeleteLesson, usePublishLesson, useArchiveLesson, useDuplicateLesson, useRestoreLesson, useReorderLessons, useToggleFreePreview, useAttachLessonVideo, useAttachLessonFile } from "@/features/lessons/hooks";
 import type { BreadcrumbItem } from "./CourseStudioBreadcrumb";
 import type { CourseModule, CreateCourseModulePayload, UpdateCourseModulePayload } from "@/features/course-modules/types";
 import type { CourseSection, CreateCourseSectionPayload, UpdateCourseSectionPayload } from "@/features/course-sections/types";
 import type { ContentItem, ContentItemType } from "@/features/course-content/types";
 import { CONTENT_TYPE_CONFIG } from "@/features/course-content/constants";
 import { ExamPicker } from "@/features/exam-bank";
+import { MediaPicker } from "@/features/media-library/components/MediaPicker";
+import type { MediaType } from "@/features/media-library/types";
+
+const MEDIA_PICKER_TYPES: Partial<Record<ContentItemType, MediaType[]>> = {
+  video: ["video"],
+  pdf: ["pdf", "document"],
+  audio: ["audio"],
+  resource: ["document", "zip", "file"],
+};
+
+const CONTENT_TO_LESSON_TYPE: Record<string, string> = {
+  video: "video",
+  pdf: "pdf",
+  audio: "audio",
+  resource: "text",
+};
 
 export type StudioMode = "loading" | "empty" | "ready";
 
@@ -81,6 +98,7 @@ function CourseStudio({
 }: CourseStudioProps) {
   const isMobile = useIsMobile();
   const store = useCourseStudioStore();
+  const [editContentItem, setEditContentItem] = useState<ContentItem | null>(null);
 
   const { data: lecturesData, isLoading: lecturesLoading } = useLectures(courseId ?? null);
   const lectures: CourseModule[] = (lecturesData?.data ?? []).sort(
@@ -134,6 +152,7 @@ function CourseStudio({
         order: lesson.order ?? 0,
         thumbnail: null,
         description: lesson.shortDescription ?? lesson.description,
+        examId: lesson.examId ?? null,
         createdAt: lesson.createdAt,
         updatedAt: lesson.updatedAt,
       } satisfies ContentItem));
@@ -176,6 +195,8 @@ function CourseStudio({
   const restoreLesson = useRestoreLesson();
   const reorderLessons = useReorderLessons();
   const toggleFreePreview = useToggleFreePreview();
+  const attachVideo = useAttachLessonVideo();
+  const attachFile = useAttachLessonFile();
 
   const { selectAndScroll } = useSelectAndScroll(
     store.selectLecture,
@@ -489,6 +510,11 @@ function CourseStudio({
         return;
       }
 
+      if (MEDIA_PICKER_TYPES[type]) {
+        store.openMediaPicker(type);
+        return;
+      }
+
       store.triggerExtension(type);
       const sectionId = store.selectedSectionId;
       const nextOrder = contentItems.length;
@@ -509,11 +535,11 @@ function CourseStudio({
         store.clearExtension();
       });
     },
-    [courseId, store.selectedSectionId, store.triggerExtension, store.clearExtension, contentItems.length, createLesson],
+    [courseId, store.selectedSectionId, store.openMediaPicker, store.triggerExtension, store.clearExtension, contentItems.length, createLesson],
   );
 
   const handleExamPicked = useCallback(
-    async (result: { id: string; ids: string[] }) => {
+    async (result: { id: string; ids: string[]; title: string }) => {
       if (!courseId || !store.selectedSectionId) return;
       const sectionId = store.selectedSectionId;
       const examId = result.id;
@@ -522,7 +548,7 @@ function CourseStudio({
           courseId,
           sectionId,
           data: {
-            title: "اختبار جديد",
+            title: result.title,
             lesson_type: "exam" as any,
             exam_id: Number(examId),
             sort_order: contentItems.length + 1,
@@ -537,6 +563,40 @@ function CourseStudio({
       }
     },
     [courseId, store.selectedSectionId, store.closeExamPicker, contentItems.length, createLesson],
+  );
+
+  const handleMediaSelected = useCallback(
+    async (result: { id: number; ids: number[] }) => {
+      if (!courseId || !store.selectedSectionId) return;
+      const sectionId = store.selectedSectionId;
+      const mediaAssetId = result.id;
+      const contentType = store.mediaPickerContentType;
+      const lessonType = (CONTENT_TO_LESSON_TYPE[contentType ?? "video"] ?? "video") as any;
+      const typeLabel = CONTENT_TYPE_CONFIG[contentType ?? "video"]?.label ?? "الوسائط";
+      try {
+        const lesson = await createLesson.mutateAsync({
+          courseId,
+          sectionId,
+          data: {
+            title: typeLabel,
+            lesson_type: lessonType,
+            sort_order: contentItems.length + 1,
+            status: "draft",
+          },
+        });
+        if (contentType === "video") {
+          await attachVideo.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId });
+        } else {
+          await attachFile.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId, title: typeLabel });
+        }
+        toast.success(`تم ربط ${typeLabel} بنجاح`);
+      } catch {
+        toast.error("فشل ربط الملف");
+      } finally {
+        store.closeMediaPicker();
+      }
+    },
+    [courseId, store.selectedSectionId, store.mediaPickerContentType, store.closeMediaPicker, contentItems.length, createLesson, attachVideo, attachFile],
   );
 
   /* Content action handlers — reuse existing lesson mutations directly */
@@ -610,16 +670,23 @@ function CourseStudio({
   );
 
   const handleEditContent = useCallback(
-    async (item: ContentItem) => {
-      if (!courseId || !store.selectedSectionId) return;
-      const newTitle = prompt("العنوان الجديد:", item.title);
-      if (!newTitle || newTitle === item.title) return;
-      try {
-        await updateLesson.mutateAsync({ courseId, sectionId: store.selectedSectionId, id: item.id, data: { title: newTitle } });
-        toast.success("تم تحديث العنوان بنجاح");
-      } catch { toast.error("فشل تحديث العنوان"); }
+    (item: ContentItem) => {
+      setEditContentItem(item);
     },
-    [courseId, store.selectedSectionId, updateLesson],
+    [],
+  );
+
+  const handleSaveContentTitle = useCallback(
+    async (newTitle: string) => {
+      if (!courseId || !store.selectedSectionId || !editContentItem) return;
+      try {
+        await updateLesson.mutateAsync({ courseId, sectionId: store.selectedSectionId, id: editContentItem.id, data: { title: newTitle } });
+        toast.success("تم تحديث العنوان بنجاح");
+      } catch { toast.error("فشل تحديث العنوان"); } finally {
+        setEditContentItem(null);
+      }
+    },
+    [courseId, store.selectedSectionId, editContentItem, updateLesson],
   );
 
   const handleReorderContent = useCallback(
@@ -968,6 +1035,22 @@ function CourseStudio({
         onSelect={handleExamPicked}
         mode="single"
         allowedStatuses={["published", "draft"]}
+      />
+
+      <MediaPicker
+        open={store.mediaPickerOpen}
+        onClose={store.closeMediaPicker}
+        onSelect={handleMediaSelected}
+        mode="single"
+        allowedTypes={MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"]}
+      />
+
+      <CourseStudioEditContentDialog
+        open={!!editContentItem}
+        item={editContentItem}
+        onClose={() => setEditContentItem(null)}
+        onSave={handleSaveContentTitle}
+        saving={updateLesson.isPending}
       />
     </motion.div>
   );

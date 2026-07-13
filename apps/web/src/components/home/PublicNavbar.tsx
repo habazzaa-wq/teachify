@@ -159,7 +159,7 @@ export function PublicNavbar() {
   const [activeSection, setActiveSection] = useState("/");
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -193,7 +193,6 @@ export function PublicNavbar() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
-            layout
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
               "relative mx-auto flex items-center justify-between rounded-[28px] border transition-all duration-500",
@@ -219,7 +218,6 @@ export function PublicNavbar() {
 
             {/* ── Logo ── */}
             <motion.div
-              layout
               transition={{ duration: 0.4 }}
               className="relative z-10 flex items-center"
             >

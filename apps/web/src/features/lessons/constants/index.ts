@@ -22,6 +22,8 @@ export const LESSON_TYPE_CONFIG: Record<LessonType, { label: string; color: stri
   pdf: { label: "PDF", color: "destructive" },
   external: { label: "خارجي", color: "warning" },
   live: { label: "مباشر", color: "success" },
+  exam: { label: "اختبار", color: "success" },
+  audio: { label: "صوت", color: "info" },
 };
 
 export const STATUS_OPTIONS = [
@@ -47,6 +49,8 @@ export const LESSON_TYPE_OPTIONS = [
   { value: "pdf", label: "PDF" },
   { value: "external", label: "خارجي" },
   { value: "live", label: "مباشر" },
+  { value: "exam", label: "اختبار" },
+  { value: "audio", label: "صوت" },
 ];
 
 export const FEATURED_OPTIONS = [

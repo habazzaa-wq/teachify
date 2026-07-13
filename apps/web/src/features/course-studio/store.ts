@@ -20,6 +20,8 @@ interface CourseStudioState {
   contentPickerOpen: boolean;
   activeExtensionType: ContentItemType | null;
   examPickerOpen: boolean;
+  mediaPickerOpen: boolean;
+  mediaPickerContentType: ContentItemType | null;
   createDialogOpen: boolean;
   editLecture: CourseModule | null;
   deleteConfirmLectureId: string | null;
@@ -42,6 +44,8 @@ interface CourseStudioState {
   closeContentPicker: () => void;
   openExamPicker: () => void;
   closeExamPicker: () => void;
+  openMediaPicker: (type: ContentItemType) => void;
+  closeMediaPicker: () => void;
   triggerExtension: (type: ContentItemType) => void;
   clearExtension: () => void;
   openCreateDialog: () => void;
@@ -71,6 +75,8 @@ export const useCourseStudioStore = create<CourseStudioState>()((set) => ({
   contentPickerOpen: false,
   activeExtensionType: null,
   examPickerOpen: false,
+  mediaPickerOpen: false,
+  mediaPickerContentType: null,
   createDialogOpen: false,
   editLecture: null,
   deleteConfirmLectureId: null,
@@ -93,6 +99,8 @@ export const useCourseStudioStore = create<CourseStudioState>()((set) => ({
   closeContentPicker: () => set({ contentPickerOpen: false }),
   openExamPicker: () => set({ contentPickerOpen: false, examPickerOpen: true }),
   closeExamPicker: () => set({ examPickerOpen: false }),
+  openMediaPicker: (type) => set({ contentPickerOpen: false, mediaPickerOpen: true, mediaPickerContentType: type }),
+  closeMediaPicker: () => set({ mediaPickerOpen: false, mediaPickerContentType: null }),
   triggerExtension: (type) => set({ activeExtensionType: type }),
   clearExtension: () => set({ activeExtensionType: null }),
   openCreateDialog: () => set({ createDialogOpen: true }),

@@ -75,9 +75,15 @@ function ExtensionPreview({ item }: { item: ContentItem }) {
         <Icon className={cn("h-14 w-14", meta.color)} />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-studio-fg">{meta.label}</h3>
-      <p className="max-w-sm text-sm text-studio-fg-muted">
-        هذا امتداد لاختيار {meta.label} موجود. يمكن ربط المحتوى من الوحدة المخصصة.
-      </p>
+      {item.mediaId ? (
+        <p className="max-w-sm text-sm text-studio-fg-muted">
+          تم ربط هذا المحتوى بوسائط من المكتبة.
+        </p>
+      ) : (
+        <p className="max-w-sm text-sm text-studio-fg-muted">
+          هذا امتداد لاختيار {meta.label} موجود. يمكن ربط المحتوى من الوحدة المخصصة.
+        </p>
+      )}
       {item.type === "external_link" && item.externalUrl && (
         <p className="mt-3 text-xs text-studio-fg-subtle truncate max-w-full">{item.externalUrl}</p>
       )}

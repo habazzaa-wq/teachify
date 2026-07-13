@@ -24,6 +24,7 @@ function formatLesson(raw: any): Lesson {
     notes: raw.notes ?? null,
     color: raw.color ?? null,
     icon: raw.icon ?? null,
+    examId: raw.examId != null ? String(raw.examId) : null,
     publishedAt: raw.publishedAt ?? null,
     course: raw.course ? { id: String(raw.course.id), title: raw.course.title, slug: raw.course.slug } : null,
     section: raw.section ? { id: String(raw.section.id), title: raw.section.title, slug: raw.section.slug } : null,
@@ -92,6 +93,7 @@ export const lessonsService = {
       notes: payload.notes,
       color: payload.color,
       icon: payload.icon,
+      exam_id: payload.exam_id,
     });
     return formatLesson(data.data);
   },
@@ -115,6 +117,7 @@ export const lessonsService = {
     if (payload.notes !== undefined) body.notes = payload.notes;
     if (payload.color !== undefined) body.color = payload.color;
     if (payload.icon !== undefined) body.icon = payload.icon;
+    if (payload.exam_id !== undefined) body.exam_id = payload.exam_id;
 
     const { data } = await api.put(`/courses/${courseId}/sections/${sectionId}/lessons/${id}`, body);
     return data.data ? formatLesson(data.data) : null;
@@ -127,6 +130,19 @@ export const lessonsService = {
   async publish(courseId: string, sectionId: string, id: string): Promise<Lesson | null> {
     const { data } = await api.patch(`/courses/${courseId}/sections/${sectionId}/lessons/${id}/publish`);
     return data.data ? formatLesson(data.data) : null;
+  },
+
+  async attachVideo(courseId: string, sectionId: string, id: string, mediaAssetId: number): Promise<void> {
+    await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${id}/video`, {
+      media_asset_id: mediaAssetId,
+    });
+  },
+
+  async attachFile(courseId: string, sectionId: string, id: string, mediaAssetId: number, title: string): Promise<void> {
+    await api.post(`/courses/${courseId}/sections/${sectionId}/lessons/${id}/files`, {
+      media_asset_id: mediaAssetId,
+      title,
+    });
   },
 
   async archive(courseId: string, sectionId: string, id: string): Promise<Lesson | null> {
