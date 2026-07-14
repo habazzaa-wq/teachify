@@ -1,16 +1,19 @@
 <?php
 
+$baseDomain = env('APP_BASE_DOMAIN', 'academy.test');
+$escapedBase = preg_quote($baseDomain, '~');
+
 return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://academy.test:3000,https://academy.test,https://api.academy.test'))),
+    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000'))),
 
     'allowed_origins_patterns' => [
-        '~https?://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*academy\.test(:\d+)?~',
-        '~https?://academy\.test(:\d+)?~',
+        '~https?://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*' . $escapedBase . '(:\d+)?~',
+        '~https?://' . $escapedBase . '(:\d+)?~',
     ],
 
     'allowed_headers' => ['*'],
