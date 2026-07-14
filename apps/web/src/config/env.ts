@@ -1,7 +1,8 @@
 const DEFAULT_DEV_API_URL = "http://localhost:8000";
 const API_SUBDOMAIN = "api";
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "academy.test"]);
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+const IS_PROD = process.env.NODE_ENV === "production" || !!process.env.VERCEL;
 
 type RuntimeApiLocation =
   | URL
@@ -80,7 +81,7 @@ export function resolveApiUrl(location?: RuntimeApiLocation): string {
     const { hostname, protocol } = runtimeLocation;
 
     // Local development — talk directly to the Laravel dev server
-    if (LOCAL_HOSTS.has(hostname) || hostname === BASE_DOMAIN) {
+    if (LOCAL_HOSTS.has(hostname)) {
       return DEFAULT_DEV_API_URL;
     }
 
