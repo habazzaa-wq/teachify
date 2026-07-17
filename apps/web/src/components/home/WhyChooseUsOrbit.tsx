@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type FC, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type FC, type MouseEvent } from "react";
 import { motion, useInView, useReducedMotion, useMotionValue, useSpring } from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
@@ -150,8 +150,8 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
           strokeWidth="1.4"
           strokeDasharray="3 12"
           style={{ transformOrigin: "500px 96px" }}
-          initial={{ opacity: 0, rotate: 0 }}
-          animate={isInView ? { opacity: 1, rotate: 360 } : {}}
+          initial={false}
+          animate={{ opacity: 1, rotate: 360 }}
           transition={{ opacity: { duration: 0.8, delay: 0.4 }, rotate: { duration: 22, repeat: Infinity, ease: "linear" } }}
         />
       )}
@@ -174,8 +174,8 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
               stroke="url(#oLine)"
               strokeWidth="2"
               strokeLinecap="round"
-              initial={reduced ? { opacity: 0.5 } : { pathLength: 0, opacity: 0.6 }}
-              animate={isInView ? { pathLength: 1, opacity: 0.6 } : {}}
+              initial={false}
+              animate={{ pathLength: 1, opacity: 0.6 }}
               transition={{ duration: 0.9, delay: 0.5 + i * 0.12, ease: "easeInOut" }}
             />
             {/* flowing energy dots */}
@@ -215,8 +215,8 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
       <motion.circle
         cx="500" cy="96" r="56"
         fill="url(#oHub)"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={isInView ? { scale: 1, opacity: 1 } : {}}
+        initial={false}
+        animate={{ scale: 1, opacity: 1 }}
         style={{ transformOrigin: "500px 96px" }}
         transition={{ type: "spring", stiffness: 120, damping: 12, delay: 0.3 }}
       />
@@ -239,14 +239,14 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
 /* ───────────────────────────────────────
    Node + card
    ─────────────────────────────────────── */
-function Node({ f, index, isInView, reduced, isDark }: { f: DisplayFeature; index: number; isInView: boolean; reduced: boolean; isDark: boolean }) {
+function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number; reduced: boolean; isDark: boolean }) {
   const Ill = illMap[f.ill]!;
   return (
     <motion.div
       className="absolute z-20"
       style={{ left: `${f.x}%`, top: `${f.y}%` }}
-      initial={{ opacity: 0, scale: 0.4 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : {}}
+      initial={false}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.55, delay: 0.8 + index * 0.12, type: "spring", stiffness: 140, damping: 14 }}
     >
       <div
@@ -283,10 +283,10 @@ function Node({ f, index, isInView, reduced, isDark }: { f: DisplayFeature; inde
         </motion.div>
 
         {/* centered label below */}
-        <div className="absolute left-1/2 top-[calc(100%+16px)] w-[210px] -translate-x-1/2 text-center">
+        <div className="absolute left-1/2 top-[calc(100%+16px)] w-[clamp(150px,17vw,220px)] -translate-x-1/2 px-1 text-center">
           <div className="mb-1 text-[11px] font-extrabold" style={{ color: index % 2 === 0 ? primary : secondary }}>{f.num}</div>
-          <h3 className="text-[13px] font-bold leading-snug sm:text-sm" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
-          <p className="mx-auto mt-1 max-w-[190px] text-[11px] leading-relaxed sm:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
+          <h3 className="text-[12px] font-bold leading-snug sm:text-[13px] lg:text-sm" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
+          <p className="mx-auto mt-1 max-w-[190px] text-[10.5px] leading-relaxed sm:text-[11px] lg:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
         </div>
       </div>
     </motion.div>
@@ -294,13 +294,14 @@ function Node({ f, index, isInView, reduced, isDark }: { f: DisplayFeature; inde
 }
 
 /* ───────────────────────────────────────
-   Mobile
-   ─────────────────────────────────────── */
-function Mobile({ isInView, isDark, features }: { isInView: boolean; isDark: boolean; features: DisplayFeature[] }) {
+    Responsive cards (phones → tablets, < lg)
+    ─────────────────────────────────────── */
+function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
   return (
-    <div className="mx-auto max-w-md px-4 lg:hidden">
-      <div className="relative mb-6 flex h-28 items-center justify-center">
-        <svg viewBox="0 0 200 110" className="h-full w-40" fill="none">
+    <div className="mx-auto max-w-6xl px-4 lg:hidden">
+      {/* hub */}
+      <div className="relative mb-7 flex h-24 items-center justify-center sm:mb-9 sm:h-28">
+        <svg viewBox="0 0 200 110" className="h-full w-36 sm:w-40" fill="none">
           <defs>
             <radialGradient id="mHub" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor={secondary} />
@@ -317,24 +318,27 @@ function Mobile({ isInView, isDark, features }: { isInView: boolean; isDark: boo
           ))}
         </svg>
       </div>
-      <div className="flex flex-col gap-3.5">
+
+      {/* responsive grid: 1 col on phones, 2 cols on small tablets/tablets */}
+      <div className="relative z-10 grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
         {features.map((f: DisplayFeature, i) => {
           const Ill = illMap[f.ill]!;
           return (
             <motion.div
               key={f.num}
-              initial={{ opacity: 0, y: 18 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              initial={false}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.3 + i * 0.1 }}
-              className="flex items-start gap-3 rounded-2xl border p-3.5"
+              className="flex items-start gap-3 rounded-2xl border p-3.5 sm:gap-3.5 sm:p-4"
               style={{ background: isDark ? "rgba(18,18,26,0.82)" : "rgba(255,255,255,0.88)", borderColor: `${i % 2 === 0 ? primary : secondary}1a`, boxShadow: `0 6px 18px rgba(0,0,0,${isDark ? "0.3" : "0.05"})` }}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${i % 2 === 0 ? primary : secondary}` }}>
-                <div className="h-6 w-6 text-primary"><Ill /></div>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${i % 2 === 0 ? primary : secondary}` }}>
+                <div className="h-6 w-6 text-primary sm:h-7 sm:w-7"><Ill /></div>
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
-                <h3 className="text-sm font-bold" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
-                <p className="mt-0.5 text-xs leading-relaxed" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
+                <div className="mb-0.5 text-[11px] font-extrabold" style={{ color: i % 2 === 0 ? primary : secondary }}>{f.num}</div>
+                <h3 className="text-sm font-bold leading-snug sm:text-[15px]" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
+                <p className="mt-0.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
               </div>
             </motion.div>
           );
@@ -419,14 +423,21 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const reduced = useReducedMotion() ?? false;
 
+  // Guarantee the section becomes visible even if the IntersectionObserver
+  // never fires (some mobile layouts / browsers). Content reveals on mount.
+  const [forceShow, setForceShow] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setForceShow(true), 400);
+    return () => window.clearTimeout(id);
+  }, []);
+  const show = isInView || forceShow;
+
   const { data } = usePublicWhyChooseUs();
   const src = settings ?? data ?? DEFAULT_WHY_CHOOSE_US;
 
-  if (src.isActive === false) return null;
-
-  const title = src.title || "لماذا تختارنا؟";
+  const title = src.title?.trim() || "لماذا تختارنا؟";
   const subtitle =
-    src.subtitle ||
+    src.subtitle?.trim() ||
     "من قلب المنظومة تشعّ كل ميزة — نظام متصل يحيط طالبك بكل ما يحتاجه للنجاح";
   const features = buildFeatures(src);
 
@@ -435,6 +446,9 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
   const my = useMotionValue(0);
   const rx = useSpring(my, { stiffness: 60, damping: 15 });
   const ry = useSpring(mx, { stiffness: 60, damping: 15 });
+
+  if (src.isActive === false) return null;
+
   const onMove = (e: MouseEvent<HTMLDivElement>) => {
     if (reduced) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -458,10 +472,10 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
 
       {/* title */}
       <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.55 }}>
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold sm:text-sm" style={{ background: isDark ? `linear-gradient(135deg, ${primary}18, ${secondary}10)` : `linear-gradient(135deg, ${primary}12, ${secondary}08)`, color: primary, border: `1px solid ${primary}22` }}>{title}</span>
         </motion.div>
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.55, delay: 0.16 }} className="mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666" }}>
+        <motion.p initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.16 }} className="mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666" }}>
           {subtitle}
         </motion.p>
       </div>
@@ -477,16 +491,16 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
           style={{ perspective: 1200, rotateX: rx, rotateY: ry }}
         >
           <div className="relative h-full w-full" style={{ transformStyle: "preserve-3d" }}>
-            <Connectors isDark={isDark} isInView={isInView} reduced={reduced} features={features} />
+            <Connectors isDark={isDark} isInView={show} reduced={reduced} features={features} />
             {features.map((f, i) => (
-              <Node key={f.num} f={f} index={i} isInView={isInView} reduced={reduced} isDark={isDark} />
+              <Node key={f.num} f={f} index={i} reduced={reduced} isDark={isDark} />
             ))}
           </div>
         </motion.div>
       </div>
 
-      {/* mobile */}
-      <Mobile isInView={isInView} isDark={isDark} features={features} />
+      {/* phones & tablets (< lg) */}
+      <CardsGrid isDark={isDark} features={features} />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28" style={{ background: isDark ? "linear-gradient(to top, #0C0A12, transparent)" : "linear-gradient(to top, #F0E8DC, transparent)" }} />
     </section>

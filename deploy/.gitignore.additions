@@ -1,0 +1,20 @@
+# Teachify SaaS .gitignore Additions
+# Append these to the root .gitignore if not already present
+
+# --- Deployment artifacts ---
+deploy/nginx/teachify.conf
+*.pem
+*.key
+
+# --- Environment files (ensure these are never committed) ---
+apps/api/.env
+apps/api/.env.local
+apps/api/.env.production
+apps/web/.env.local
+apps/web/.env.production
+
+# --- PM2 / process manager ---
+.pm2/
+
+# --- Certbot ---
+certbot/

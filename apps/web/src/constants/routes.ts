@@ -4,6 +4,7 @@
 export const routes = {
   // Public
   home: "/",
+  publicCourse: "/courses",
   // Auth
   login: "/login",
   tenantLogin: "/tenant-login",

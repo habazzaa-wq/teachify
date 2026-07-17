@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PlatformBunnySetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class CourseResource extends JsonResource
 {
+    private static ?string $cdnBaseUrl = null;
+
     public function toArray(Request $request): array
     {
         $primaryInstructor = $this->primaryInstructor;
@@ -20,8 +23,8 @@ class CourseResource extends JsonResource
             'shortDescription' => $this->short_description,
             'description' => $this->description,
             'fullDescription' => $this->full_description,
-            'thumbnail' => $this->thumbnail_path,
-            'coverImage' => $this->cover_image_path,
+            'thumbnail' => $this->proxyUrl($this->thumbnail_path),
+            'coverImage' => $this->proxyUrl($this->cover_image_path),
             'status' => $this->status,
             'visibility' => $this->visibility,
             'difficulty' => $this->difficulty,
@@ -66,5 +69,35 @@ class CourseResource extends JsonResource
             'createdAt' => $this->created_at->toIso8601String(),
             'updatedAt' => $this->updated_at->toIso8601String(),
         ];
+    }
+
+    private function proxyUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        $cdnBase = self::$cdnBaseUrl ??= self::resolveCdnBaseUrl();
+
+        if ($cdnBase && str_starts_with($url, $cdnBase)) {
+            $storagePath = substr($url, strlen($cdnBase) + 1);
+
+            return route('media.serve', $storagePath);
+        }
+
+        return $url;
+    }
+
+    private static function resolveCdnBaseUrl(): ?string
+    {
+        $settings = PlatformBunnySetting::active();
+
+        if (! $settings) {
+            return null;
+        }
+
+        $config = $settings->toProviderConfig('storage');
+
+        return rtrim((string) ($config['cdn_base_url'] ?? ''), '/');
     }
 }

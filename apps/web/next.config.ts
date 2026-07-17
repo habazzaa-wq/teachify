@@ -3,9 +3,13 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  allowedDevOrigins: ["academy.test", "*.academy.test"],
+  ...(isDev && {
+    allowedDevOrigins: ["academy.test", "*.academy.test"],
+  }),
   images: {
     remotePatterns: [
       {
@@ -15,6 +19,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    if (!isDev) return [];
     return [
       {
         source: "/api/:path*",

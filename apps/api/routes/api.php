@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\v1\Media\MediaLibraryController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryFolderController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryMetricsController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
+use App\Http\Controllers\Api\v1\Media\MediaProxyController;
 use App\Http\Controllers\Api\v1\Media\MediaUploadController;
 use App\Http\Controllers\Api\v1\Media\VideoPlaybackController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
@@ -119,6 +120,20 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
+    Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
+        ->where('path', '.*')
+        ->middleware('throttle:120,1')
+        ->name('media.serve');
+
+    // Public course routes (no auth required)
+    Route::get('/public/courses/{slug}', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'show']);
+    Route::get('/public/courses/{slug}/modules', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'modules']);
+    Route::get('/public/courses/{slug}/related', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'related']);
+
+    // Enrollment check (requires auth)
+    Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
+        Route::get('/public/courses/{slug}/enrollment', [\App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController::class, 'show']);
+    });
 
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');

@@ -73,27 +73,6 @@ return [
             'replace_placeholders' => true,
         ],
 
-        'slack' => [
-            'driver' => 'slack',
-            'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
-            'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_LEVEL', 'critical'),
-            'replace_placeholders' => true,
-        ],
-
-        'papertrail' => [
-            'driver' => 'monolog',
-            'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => env('LOG_PAPERTRAIL_HANDLER', SyslogUdpHandler::class),
-            'handler_with' => [
-                'host' => env('PAPERTRAIL_URL'),
-                'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
-            ],
-            'processors' => [PsrLogMessageProcessor::class],
-        ],
-
         'stderr' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
@@ -130,7 +109,7 @@ return [
         'bunny' => [
             'driver' => 'daily',
             'path' => storage_path('logs/bunny.log'),
-            'level' => env('LOG_BUNNY_LEVEL', 'debug'),
+            'level' => env('LOG_BUNNY_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
         ],
@@ -138,7 +117,7 @@ return [
         'usage' => [
             'driver' => 'daily',
             'path' => storage_path('logs/usage.log'),
-            'level' => env('LOG_USAGE_LEVEL', 'debug'),
+            'level' => env('LOG_USAGE_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
         ],

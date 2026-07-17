@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             IdentityAccessSeeder::class,
             SuperAdminUserSeeder::class,
+            ExamBankSeeder::class,
+            CourseSeeder::class,
+            MediaIntegrationSeeder::class,
+            LessonAssessmentSeeder::class,
         ]);
     }
 }

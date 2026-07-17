@@ -81,6 +81,7 @@ class IdentifyTenant
             || $request->is('api/v1/tenant/auth/refresh')
             || $request->is('api/v1/tenant/auth/forgot-password')
             || $request->is('api/v1/tenant/auth/reset-password')
+            || $request->is('api/v1/media/serve/*')
             // Catch-all: match by path suffix in case the API prefix
             // is not applied (e.g., Laravel 13+ default behaviour).
             || str_ends_with($path, '/tenant/auth/login')

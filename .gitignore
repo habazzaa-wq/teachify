@@ -22,8 +22,10 @@ apps/api/public/storage
 
 # --- Environment ---
 .env
-.env.*
+.env.local
+.env.backup
 !.env.example
+!.env.production
 
 # --- IDE ---
 .idea/
@@ -68,3 +70,7 @@ apps/web/next-env.d.ts
 # --- Temp / debug ---
 tmp/
 tmp_cookies.txt
+
+# --- Deployment ---
+*.pem
+*.key

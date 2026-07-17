@@ -20,9 +20,10 @@ class PublicWhyChooseUsController extends Controller
         $values = $setting?->values ?? [];
         $wcu = $values['whyChooseUs'] ?? [];
 
+        $title = trim($wcu['title'] ?? '');
         $whyChooseUs = [
             'isActive' => $wcu['isActive'] ?? true,
-            'title' => $wcu['title'] ?? 'لماذا تختارنا؟',
+            'title' => $title !== '' ? $title : 'لماذا تختارنا؟',
             'subtitle' => $wcu['subtitle'] ?? '',
             'features' => $wcu['features'] ?? [],
         ];
