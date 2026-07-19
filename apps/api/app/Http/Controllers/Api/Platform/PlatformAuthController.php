@@ -39,7 +39,11 @@ class PlatformAuthController extends Controller
         $user = $request->user();
         $platformAdmin = $user->platformAdmin()
             ->where('status', 'active')
-            ->firstOrFail();
+            ->first();
+
+        if (! $platformAdmin) {
+            return response()->json(['message' => 'Platform admin profile not found.'], 403);
+        }
 
         return response()->json([
             'user' => $this->userPayload($user),
