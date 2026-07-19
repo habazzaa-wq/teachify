@@ -425,7 +425,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('/integrations/{tenantIntegration}', [TenantIntegrationController::class, 'destroy']);
 
         // Exam Bank routes
-        Route::prefix('exam-bank')->group(function () {
+        Route::prefix('exam-bank')->name('exam-bank.')->group(function () {
             Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
             Route::apiResource('questions', QuestionController::class);
             Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
