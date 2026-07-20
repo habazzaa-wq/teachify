@@ -13,12 +13,20 @@ import {
   AppCardContent,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { Check, CreditCard } from "lucide-react";
-import {
-  PLANS,
-  BILLING_STATUS_OPTIONS,
-} from "../../constants";
+import { Check, CreditCard, Loader2 } from "lucide-react";
+import { usePlans } from "@/features/platform-plans";
+import { BILLING_STATUS_OPTIONS } from "../../constants";
 import type { BillingStatus } from "../../types";
+
+interface WizardPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  storage: number;
+  users: number;
+  trialDays: number;
+}
 
 interface CreateSubscriptionTabProps {
   data: {
@@ -34,15 +42,56 @@ interface CreateSubscriptionTabProps {
 }
 
 function CreateSubscriptionTab({ data, errors, onChange }: CreateSubscriptionTabProps) {
+  const plansQuery = usePlans({ status: "active" });
+
+  const plans: WizardPlan[] = useMemo(() => {
+    if (!plansQuery.data?.data) return [];
+    return plansQuery.data.data.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: p.monthlyPrice,
+      currency: p.currency,
+      storage: p.limits.storage ?? 0,
+      users: (p.limits.students ?? 0) + (p.limits.instructors ?? 0) + (p.limits.admins ?? 0),
+      trialDays: p.trialDays,
+    }));
+  }, [plansQuery.data]);
+
   const selectedPlan = useMemo(
-    () => PLANS.find((p) => p.id === data.planId),
-    [data.planId],
+    () => plans.find((p) => p.id === data.planId),
+    [data.planId, plans],
   );
 
   const billingOptions = useMemo(
     () => BILLING_STATUS_OPTIONS.filter((o) => o.value !== "all"),
     [],
   );
+
+  if (plansQuery.isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">جاري تحميل الباقات...</p>
+      </div>
+    );
+  }
+
+  if (plansQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <p className="text-sm text-destructive">حدث خطأ أثناء تحميل الباقات</p>
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3">
+        <CreditCard className="h-10 w-10 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">لا توجد باقات نشطة. قم بإنشاء باقة أولاً من صفحة الباقات.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -51,7 +100,7 @@ function CreateSubscriptionTab({ data, errors, onChange }: CreateSubscriptionTab
           الخطة الحالية <span className="text-destructive">*</span>
         </label>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {PLANS.map((plan) => (
+          {plans.map((plan) => (
             <button
               key={plan.id}
               type="button"
