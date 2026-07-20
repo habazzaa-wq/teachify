@@ -149,10 +149,10 @@ class PlatformPlanController extends Controller
             'monthlyPrice', 'yearlyPrice', 'displayOrder', 'trialDays',
         ])->mapWithKeys(fn ($v, $k) => [
             [
-                'monthly_price' => 'monthly_price',
-                'yearly_price' => 'yearly_price',
-                'display_order' => 'display_order',
-                'trial_days' => 'trial_days',
+                'monthlyPrice' => 'monthly_price',
+                'yearlyPrice' => 'yearly_price',
+                'displayOrder' => 'display_order',
+                'trialDays' => 'trial_days',
             ][$k] => $v,
         ])->all();
 

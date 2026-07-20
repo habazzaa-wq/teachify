@@ -26,15 +26,16 @@ function mapPlanFromApi(raw: Record<string, unknown>): PremiumPlan {
     recommended: Boolean(raw.recommended),
     visible: Boolean(raw.visible),
     status: raw.status as PremiumPlan["status"],
-    limits: (raw.limits as PremiumPlan["limits"]) ?? {
+    limits: {
       admins: null, instructors: null, students: null, courses: null,
       sections: null, lessons: null, videos: null, certificates: null,
       quizzes: null, assignments: null, discussionThreads: null,
       bookmarks: null, notes: null, notificationsPerMonth: null,
       apiRequests: null, storage: null, bandwidth: null,
       maximumUploadSize: null, maximumVideoDuration: null,
-    },
-    features: (raw.features as PremiumPlan["features"]) ?? {
+      ...((raw.limits as Record<string, unknown>) ?? {}),
+    } as PremiumPlan["limits"],
+    features: {
       courses: false, certificates: false, assignments: false, quizzes: false,
       discussions: false, notes: false, bookmarks: false,
       basicAnalytics: false, advancedAnalytics: false,
@@ -43,21 +44,25 @@ function mapPlanFromApi(raw: Record<string, unknown>): PremiumPlan {
       auditLogs: false, activityLogs: false, apiAccess: false, webhooks: false,
       smtp: false, stripe: false, paypal: false, zoom: false, googleMeet: false, microsoftTeams: false,
       aiAssistant: false, aiGrading: false, aiAnalytics: false,
-    },
-    videoStorage: (raw.video_storage as PremiumPlan["videoStorage"]) ?? {
+      ...((raw.features as Record<string, unknown>) ?? {}),
+    } as PremiumPlan["features"],
+    videoStorage: {
       storageLimit: 0, storageUsed: 0, bandwidthLimit: 0, bandwidthUsed: 0,
       videosLimit: 0, videosUsed: 0, maximumUploadSize: 0, maximumVideoDuration: 0,
       allowedFormats: ["mp4"], allowedQualities: ["720"],
-    },
-    branding: (raw.branding as PremiumPlan["branding"]) ?? {
+      ...((raw.video_storage as Record<string, unknown>) ?? {}),
+    } as PremiumPlan["videoStorage"],
+    branding: {
       color: "#6366f1", gradient: "from-indigo-500 to-purple-600", icon: "rocket",
       recommendedRibbon: false, popularRibbon: false,
-    },
-    integrations: (raw.integrations as PremiumPlan["integrations"]) ?? {
+      ...((raw.branding as Record<string, unknown>) ?? {}),
+    } as PremiumPlan["branding"],
+    integrations: {
       allowBunnyStorage: false, allowBunnyStream: false, allowSmtp: false,
       allowStripe: false, allowPaypal: false, allowZoom: false,
       allowMicrosoftTeams: false, allowGoogleMeet: false,
-    },
+      ...((raw.integrations as Record<string, unknown>) ?? {}),
+    } as PremiumPlan["integrations"],
     createdAt: raw.created_at as string,
     updatedAt: raw.updated_at as string,
   };

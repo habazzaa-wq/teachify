@@ -57,8 +57,7 @@ const PlansTableRow = memo(function PlansTableRow({
   const statusConfig = PLAN_STATUS_CONFIG[plan.status];
   const isChecked = selectedIds?.includes(plan.id) ?? false;
 
-  const handleCheck = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCheck = useCallback(() => {
     if (!onSelectionChange) return;
     const next = isChecked
       ? selectedIds!.filter((id) => id !== plan.id)
@@ -69,7 +68,7 @@ const PlansTableRow = memo(function PlansTableRow({
   return (
     <AppTableRow className="group cursor-pointer" onClick={() => onEdit(plan)}>
       <AppTableCell onClick={(e) => e.stopPropagation()}>
-        <AppCheckbox checked={isChecked} onCheckedChange={handleCheck as never} />
+        <AppCheckbox checked={isChecked} onCheckedChange={handleCheck} />
       </AppTableCell>
       <AppTableCell>
         <div className="flex items-center gap-2">
@@ -157,7 +156,7 @@ function PlansTable(props: PlansTableProps) {
             <AppTableHead className="w-10">
               <AppCheckbox
                 checked={allSelected}
-                onCheckedChange={toggleAll as never}
+                onCheckedChange={toggleAll}
               />
             </AppTableHead>
             <AppTableHead className="w-12">اللون</AppTableHead>
