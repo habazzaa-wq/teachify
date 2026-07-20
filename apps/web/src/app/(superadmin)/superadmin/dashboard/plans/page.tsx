@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Plus, RefreshCw, Download, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import SuperAdminGuard from "@/components/auth/SuperAdminGuard";
 import {
   AppPage,
@@ -118,6 +119,17 @@ function PlansPage() {
         createPlan.mutate(data, {
           onSuccess: () => {
             setDrawerOpen(false);
+            toast.success(drawerMode === "create" ? "تم إنشاء الباقة بنجاح" : "تم نسخ الباقة بنجاح");
+          },
+          onError: (err: any) => {
+            const fieldErrors = err?.fieldErrors as Record<string, string[]> | undefined;
+            const msg = err?.message || "فشل حفظ الباقة";
+            if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+              const details = Object.values(fieldErrors).flat().join(" • ");
+              toast.error(msg, { description: details });
+            } else {
+              toast.error(msg);
+            }
           },
         });
       } else if (selectedPlanId) {
@@ -126,6 +138,17 @@ function PlansPage() {
           {
             onSuccess: () => {
               setDrawerOpen(false);
+              toast.success("تم تحديث الباقة بنجاح");
+            },
+            onError: (err: any) => {
+              const fieldErrors = err?.fieldErrors as Record<string, string[]> | undefined;
+              const msg = err?.message || "فشل تحديث الباقة";
+              if (fieldErrors && Object.keys(fieldErrors).length > 0) {
+                const details = Object.values(fieldErrors).flat().join(" • ");
+                toast.error(msg, { description: details });
+              } else {
+                toast.error(msg);
+              }
             },
           },
         );
@@ -145,10 +168,15 @@ function PlansPage() {
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedIds.length === 0) return;
+    const count = selectedIds.length;
     bulkDeletePlans.mutate(selectedIds, {
       onSuccess: () => {
         setBulkDeleteOpen(false);
         setSelectedIds([]);
+        toast.success(`تم حذف ${count} باقة بنجاح`);
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "فشل حذف الباقات");
       },
     });
   }, [selectedIds, bulkDeletePlans]);
@@ -159,6 +187,10 @@ function PlansPage() {
       onSuccess: () => {
         setDeleteOpen(false);
         setDeleteTarget(null);
+        toast.success("تم حذف الباقة بنجاح");
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "فشل حذف الباقة");
       },
     });
   }, [deleteTarget, deletePlan]);

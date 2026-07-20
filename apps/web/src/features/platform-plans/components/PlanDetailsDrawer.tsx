@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { X, Save } from "lucide-react";
+import { toast } from "sonner";
 import {
   AppButton,
   AppTabs,
@@ -14,6 +15,7 @@ import {
 import { cn } from "@/lib/cn";
 import { usePlan } from "../hooks/usePlans";
 import type { PremiumPlan, PlanLimits, PlanFeatures, PlanVideoStorage, PlanBranding, PlanIntegrations } from "../types";
+import { planFormSchema } from "../validators";
 import { PlanGeneralTab } from "./PlanGeneralTab";
 import { PlanLimitsTab } from "./PlanLimitsTab";
 import { PlanFeaturesTab } from "./PlanFeaturesTab";
@@ -93,6 +95,7 @@ function PlanDetailsDrawer({
 
   const [formData, setFormData] = useState<Partial<PremiumPlan>>(effectiveData);
   const [activeTab, setActiveTab] = useState("general");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isCreate && !isDuplicate && fetchedPlan) {
@@ -140,6 +143,23 @@ function PlanDetailsDrawer({
   }, [onOpenChange]);
 
   const handleSave = useCallback(() => {
+    const result = planFormSchema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path.join(".");
+        if (path && !errors[path]) {
+          errors[path] = issue.message;
+        }
+      });
+      setFieldErrors(errors);
+      setActiveTab("general");
+      toast.error("يرجى تصحيح الأخطاء التالية", {
+        description: Object.values(errors).join(" • "),
+      });
+      return;
+    }
+    setFieldErrors({});
     onSave?.(formData);
   }, [onSave, formData]);
 
@@ -235,7 +255,7 @@ function PlanDetailsDrawer({
             <>
               {activeTab === "general" && (
                 <div className="p-6">
-                  <PlanGeneralTab data={formData} onChange={handleChange} />
+                  <PlanGeneralTab data={formData} onChange={handleChange} errors={fieldErrors} />
                 </div>
               )}
               {activeTab === "limits" && (
