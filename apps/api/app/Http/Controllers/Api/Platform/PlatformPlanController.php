@@ -15,18 +15,20 @@ class PlatformPlanController extends Controller
     {
         $query = PlatformPlan::query();
 
-        if ($search = $request->string('search')) {
-            $q = $search->value();
-            $query->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', "%{$q}%")
-                    ->orWhere('slug', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
-            });
+        if ($search = $request->input('search')) {
+            $q = is_string($search) ? $search : '';
+            if ($q !== '') {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('name', 'like', "%{$q}%")
+                        ->orWhere('slug', 'like', "%{$q}%")
+                        ->orWhere('description', 'like', "%{$q}%");
+                });
+            }
         }
 
-        if ($status = $request->string('status')) {
-            $sv = $status->value();
-            if ($sv !== 'all') {
+        if ($status = $request->input('status')) {
+            $sv = is_string($status) ? $status : '';
+            if ($sv !== '' && $sv !== 'all') {
                 $query->where('status', $sv);
             }
         }
