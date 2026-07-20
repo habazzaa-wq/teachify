@@ -105,7 +105,7 @@ if $WEB_CHANGED; then
   cd "$WEB"
 
   log "  → npm ci"
-  npm ci --omit=dev --silent 2>/dev/null || npm install --omit=dev
+  npm ci --silent 2>/dev/null || npm install
   ok "npm install done"
 
   log "  → npm run build"
