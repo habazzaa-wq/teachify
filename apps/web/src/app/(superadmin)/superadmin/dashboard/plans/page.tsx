@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import SuperAdminGuard from "@/components/auth/SuperAdminGuard";
@@ -22,6 +23,7 @@ import {
   useDeletePlan,
   useBulkDeletePlans,
 } from "@/features/platform-plans/hooks/usePlans";
+import { PLANS_QUERY_KEY } from "@/features/platform-plans/constants";
 import { PlanMetricCards } from "@/features/platform-plans/components/PlanMetricCards";
 import { PlansToolbar } from "@/features/platform-plans/components/PlansToolbar";
 import { PlansTable } from "@/features/platform-plans/components/PlansTable";
@@ -53,6 +55,7 @@ function exportPlansToCSV(plans: PremiumPlan[]) {
 }
 
 function PlansPage() {
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PlanStatus | "all">("all");
   const [sort, setSort] = useState("displayOrder");
@@ -118,6 +121,7 @@ function PlansPage() {
       if (drawerMode === "create" || drawerMode === "duplicate") {
         createPlan.mutate(data, {
           onSuccess: () => {
+            qc.invalidateQueries({ queryKey: [PLANS_QUERY_KEY] });
             setDrawerOpen(false);
             toast.success(drawerMode === "create" ? "تم إنشاء الباقة بنجاح" : "تم نسخ الباقة بنجاح");
           },
@@ -137,6 +141,7 @@ function PlansPage() {
           { id: selectedPlanId, data },
           {
             onSuccess: () => {
+              qc.invalidateQueries({ queryKey: [PLANS_QUERY_KEY] });
               setDrawerOpen(false);
               toast.success("تم تحديث الباقة بنجاح");
             },
@@ -154,7 +159,7 @@ function PlansPage() {
         );
       }
     },
-    [drawerMode, selectedPlanId, createPlan, updatePlan],
+    [drawerMode, selectedPlanId, createPlan, updatePlan, qc],
   );
 
   const handleDelete = useCallback((plan: PremiumPlan) => {
@@ -171,6 +176,7 @@ function PlansPage() {
     const count = selectedIds.length;
     bulkDeletePlans.mutate(selectedIds, {
       onSuccess: () => {
+        qc.invalidateQueries({ queryKey: [PLANS_QUERY_KEY] });
         setBulkDeleteOpen(false);
         setSelectedIds([]);
         toast.success(`تم حذف ${count} باقة بنجاح`);
@@ -179,12 +185,13 @@ function PlansPage() {
         toast.error(err?.message || "فشل حذف الباقات");
       },
     });
-  }, [selectedIds, bulkDeletePlans]);
+  }, [selectedIds, bulkDeletePlans, qc]);
 
   const confirmDelete = useCallback(() => {
     if (!deleteTarget) return;
     deletePlan.mutate(deleteTarget.id, {
       onSuccess: () => {
+        qc.invalidateQueries({ queryKey: [PLANS_QUERY_KEY] });
         setDeleteOpen(false);
         setDeleteTarget(null);
         toast.success("تم حذف الباقة بنجاح");
@@ -193,7 +200,7 @@ function PlansPage() {
         toast.error(err?.message || "فشل حذف الباقة");
       },
     });
-  }, [deleteTarget, deletePlan]);
+  }, [deleteTarget, deletePlan, qc]);
 
   const handleArchive = useCallback(
     (plan: PremiumPlan) => archivePlan.mutate(plan.id),
