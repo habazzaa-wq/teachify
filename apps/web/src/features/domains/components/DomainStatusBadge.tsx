@@ -35,7 +35,7 @@ const DNS_MAP: Record<DnsStatus, { label: string; icon: "check" | "cross" | "spi
   unconfigured: { label: "غير مهيأ",   icon: "cross",   variant: "secondary" },
 };
 
-const SSL_MAP: Record<SslStatus, { label: string; dot: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
+const SSL_MAP: Record<SslStatus, { label: string; dot: string; variant: "success" | "warning" | "destructive" | "secondary" | "outline" }> = {
   active:  { label: "صالح",       dot: "bg-emerald-500", variant: "success" },
   pending: { label: "قيد الإصدار", dot: "bg-amber-500",   variant: "warning" },
   expired: { label: "منتهي",      dot: "bg-destructive",  variant: "destructive" },
