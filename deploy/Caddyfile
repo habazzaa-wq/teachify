@@ -1,10 +1,11 @@
 # Teachify SaaS - Caddy Production Configuration
 # Place in /etc/caddy/Caddyfile
+# Uses PHP-FPM (not php artisan serve or Octane)
 # Caddy handles automatic SSL for all custom domains via on-demand TLS
 
 {
     on_demand_tls {
-        ask http://127.0.0.1:8000/api/v1/platform/domain-check?secret={env.CADDY_ASK_SECRET}
+        ask http://teachify.tech/api/v1/platform/domain-check?secret={env.CADDY_ASK_SECRET}
         interval 10s
         burst 10
     }
@@ -14,6 +15,27 @@
             roll_size 100mb
             roll_keep 5
         }
+    }
+}
+
+# ──────────────────────────────────────────────
+# HTTP listener
+# - Domain validation endpoint (on-demand TLS ask)
+# - ACME challenges
+# - Everything else redirects to HTTPS
+# ──────────────────────────────────────────────
+:80 {
+    handle /api/v1/platform/domain-check {
+        root * /var/www/teachify/apps/api/public
+        php_fastcgi unix//run/php/php8.4-fpm.sock
+    }
+
+    handle /.well-known/acme-challenge/* {
+        root * /var/www/teachify/certbot
+    }
+
+    handle {
+        redir https://{host}{uri} permanent
     }
 }
 
@@ -40,20 +62,16 @@ teachify.tech, *.teachify.tech {
     }
 
     handle /api/* {
-        reverse_proxy 127.0.0.1:8000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
+        root * /var/www/teachify/apps/api/public
+        php_fastcgi unix//run/php/php8.4-fpm.sock {
+            root /var/www/teachify/apps/api/public
         }
     }
 
     handle /sanctum/* {
-        reverse_proxy 127.0.0.1:8000 {
-            header_up Host {host}
-            header_up X-Forwarded-Host {host}
-            header_up X-Forwarded-Proto {scheme}
+        root * /var/www/teachify/apps/api/public
+        php_fastcgi unix//run/php/php8.4-fpm.sock {
+            root /var/www/teachify/apps/api/public
         }
     }
 
@@ -108,20 +126,16 @@ https:// {
     }
 
     handle /api/* {
-        reverse_proxy 127.0.0.1:8000 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
+        root * /var/www/teachify/apps/api/public
+        php_fastcgi unix//run/php/php8.4-fpm.sock {
+            root /var/www/teachify/apps/api/public
         }
     }
 
     handle /sanctum/* {
-        reverse_proxy 127.0.0.1:8000 {
-            header_up Host {host}
-            header_up X-Forwarded-Host {host}
-            header_up X-Forwarded-Proto {scheme}
+        root * /var/www/teachify/apps/api/public
+        php_fastcgi unix//run/php/php8.4-fpm.sock {
+            root /var/www/teachify/apps/api/public
         }
     }
 

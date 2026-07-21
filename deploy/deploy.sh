@@ -10,7 +10,7 @@ DB_NAME="teachify"
 DB_USER="teachify_user"
 DB_PASS="CHANGE_ME"  # Change this before running!
 DOMAIN="teachify.tech"
-PHP_VERSION="8.3"
+PHP_VERSION="8.4"
 
 echo "=== Teachify SaaS Deployment ==="
 echo ""
