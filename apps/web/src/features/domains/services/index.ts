@@ -153,7 +153,7 @@ export const domainsService = {
     // No manual action needed.
   },
 
-  async bulkEnableHttps(): Promise<void> {
+  async bulkEnableHttps(ids: string[]): Promise<void> {
     // HTTPS is handled automatically by Caddy on-demand TLS.
   },
 
