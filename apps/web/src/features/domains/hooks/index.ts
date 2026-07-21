@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { domainsService } from "../services";
+import { platformDomainsService } from "../services/platformDomainsService";
 import { DOMAINS_QUERY_KEY } from "../constants";
 import type { DomainsFilterParams, CreateDomainPayload, PlatformDomain } from "../types";
 
@@ -163,6 +164,128 @@ export interface DomainDashboardMetrics {
 
 export function useDomainMetrics() {
   const domainsQuery = useDomains();
+  const domains = domainsQuery.data?.data ?? [];
+
+  const metrics = useMemo<DomainDashboardMetrics>(() => {
+    if (domains.length === 0) {
+      return { total: 0, active: 0, pendingDns: 0, sslIssuing: 0, sslErrors: 0, suspended: 0 };
+    }
+    return {
+      total: domains.length,
+      active: domains.filter((d) => d.status === "active").length,
+      pendingDns: domains.filter((d) => d.dnsStatus === "pending").length,
+      sslIssuing: domains.filter((d) => d.ssl.status === "pending").length,
+      sslErrors: domains.filter((d) => d.ssl.status === "error" || d.ssl.status === "expired").length,
+      suspended: domains.filter((d) => d.status === "removed" || !d.active).length,
+    };
+  }, [domains]);
+
+  return {
+    metrics,
+    isLoading: domainsQuery.isLoading,
+  };
+}
+
+const PLATFORM_DOMAINS_QUERY_KEY = "platform-domains";
+
+export function usePlatformDomains(params?: DomainsFilterParams) {
+  return useQuery({
+    queryKey: [PLATFORM_DOMAINS_QUERY_KEY, "list", params],
+    queryFn: () => platformDomainsService.list(params),
+    select: (data) => data,
+  });
+}
+
+export function usePlatformDomain(id: string | null) {
+  return useQuery({
+    queryKey: [PLATFORM_DOMAINS_QUERY_KEY, "detail", id],
+    queryFn: () => platformDomainsService.getById(id!),
+    enabled: !!id,
+  });
+}
+
+export function usePlatformCreateDomain() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateDomainPayload) => platformDomainsService.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformDeleteDomain() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => platformDomainsService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformBulkDeleteDomains() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => platformDomainsService.bulkDelete(ids),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformBulkEnableHttps() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => platformDomainsService.bulkEnableHttps(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformBulkDisableDomains() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => platformDomainsService.bulkDisable(ids),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformBulkMakePrimary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => platformDomainsService.bulkMakePrimary(ids),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformRenewSsl() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => platformDomainsService.renewSsl(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformRefreshStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => platformDomainsService.refreshStatus(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
+    },
+  });
+}
+
+export function usePlatformDomainMetrics() {
+  const domainsQuery = usePlatformDomains();
   const domains = domainsQuery.data?.data ?? [];
 
   const metrics = useMemo<DomainDashboardMetrics>(() => {

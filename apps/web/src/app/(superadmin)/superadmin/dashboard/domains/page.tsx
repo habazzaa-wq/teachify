@@ -24,16 +24,16 @@ import {
 } from "@/components/ui";
 import { formatDate, formatDateTime } from "@/lib/format";
 import {
-  useDomains,
-  useDomainMetrics,
-  useCreateDomain,
-  useRenewSsl,
-  useRefreshStatus,
-  useDeleteDomain,
-  useBulkDeleteDomains,
-  useBulkEnableHttps,
-  useBulkDisableDomains,
-  useBulkMakePrimary,
+  usePlatformDomains as useDomains,
+  usePlatformDomainMetrics as useDomainMetrics,
+  usePlatformCreateDomain as useCreateDomain,
+  usePlatformRenewSsl as useRenewSsl,
+  usePlatformRefreshStatus as useRefreshStatus,
+  usePlatformDeleteDomain as useDeleteDomain,
+  usePlatformBulkDeleteDomains as useBulkDeleteDomains,
+  usePlatformBulkEnableHttps as useBulkEnableHttps,
+  usePlatformBulkDisableDomains as useBulkDisableDomains,
+  usePlatformBulkMakePrimary as useBulkMakePrimary,
 } from "@/features/domains/hooks";
 import { STATUS_OPTIONS, SSL_OPTIONS, DNS_OPTIONS, SORT_OPTIONS } from "@/features/domains/constants";
 import { DomainMetricCards } from "@/features/domains/components/DomainMetricCards";

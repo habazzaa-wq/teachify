@@ -11,7 +11,7 @@ import {
   AppTabsTrigger,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { useDomain, useRefreshStatus, useRenewSsl } from "@/features/domains/hooks";
+import { usePlatformDomain as useDomain, usePlatformRefreshStatus as useRefreshStatus, usePlatformRenewSsl as useRenewSsl } from "@/features/domains/hooks";
 import {
   DomainHero,
   DomainSidebar,

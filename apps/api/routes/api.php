@@ -66,6 +66,7 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
+use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
@@ -498,6 +499,13 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
         Route::post('/tenants/bulk/delete', [TenantController::class, 'bulkDestroy']);
         Route::get('/audit-logs', [PlatformAuditController::class, 'index']);
         Route::apiResource('admins', PlatformAdminController::class);
+
+        Route::get('/domains', [PlatformDomainController::class, 'index']);
+        Route::post('/domains', [PlatformDomainController::class, 'store']);
+        Route::get('/domains/{tenantDomain}', [PlatformDomainController::class, 'show']);
+        Route::put('/domains/{tenantDomain}', [PlatformDomainController::class, 'update']);
+        Route::delete('/domains/{tenantDomain}', [PlatformDomainController::class, 'destroy']);
+        Route::post('/domains/bulk/delete', [PlatformDomainController::class, 'bulkDestroy']);
 
         Route::prefix('bunny-settings')->group(function () {
             Route::get('/', [PlatformBunnySettingController::class, 'index']);
