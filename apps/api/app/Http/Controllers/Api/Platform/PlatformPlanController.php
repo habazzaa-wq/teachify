@@ -145,40 +145,34 @@ class PlatformPlanController extends Controller
             'name', 'slug', 'description', 'badge',
         ])->all();
 
-        $numericMap = collect($validated)->only([
-            'monthlyPrice', 'yearlyPrice', 'displayOrder', 'trialDays',
-        ])->mapWithKeys(fn ($v, $k) => [
-            [
-                'monthlyPrice' => 'monthly_price',
-                'yearlyPrice' => 'yearly_price',
-                'displayOrder' => 'display_order',
-                'trialDays' => 'trial_days',
-            ][$k] => $v,
-        ])->all();
+        $numericMap = collect([
+            'monthlyPrice' => 'monthly_price',
+            'yearlyPrice' => 'yearly_price',
+            'displayOrder' => 'display_order',
+            'trialDays' => 'trial_days',
+        ])->filter(fn ($dbCol, $inputKey) => array_key_exists($inputKey, $validated))
+          ->mapWithKeys(fn ($dbCol, $inputKey) => [$dbCol => $validated[$inputKey]])
+          ->all();
 
-        $boolMap = collect($validated)->only([
-            'trialEnabled', 'recommended', 'visible',
-        ])->mapWithKeys(fn ($v, $k) => [
-            [
-                'trialEnabled' => 'trial_enabled',
-                'recommended' => 'recommended',
-                'visible' => 'visible',
-            ][$k] => $v,
-        ])->all();
+        $boolMap = collect([
+            'trialEnabled' => 'trial_enabled',
+            'recommended' => 'recommended',
+            'visible' => 'visible',
+        ])->filter(fn ($dbCol, $inputKey) => array_key_exists($inputKey, $validated))
+          ->mapWithKeys(fn ($dbCol, $inputKey) => [$dbCol => $validated[$inputKey]])
+          ->all();
 
-        $jsonMap = collect($validated)->only([
-            'status', 'currency', 'limits', 'features', 'videoStorage', 'branding', 'integrations',
-        ])->mapWithKeys(fn ($v, $k) => [
-            [
-                'status' => 'status',
-                'currency' => 'currency',
-                'limits' => 'limits',
-                'features' => 'features',
-                'videoStorage' => 'video_storage',
-                'branding' => 'branding',
-                'integrations' => 'integrations',
-            ][$k] => $v,
-        ])->all();
+        $jsonMap = collect([
+            'status' => 'status',
+            'currency' => 'currency',
+            'limits' => 'limits',
+            'features' => 'features',
+            'videoStorage' => 'video_storage',
+            'branding' => 'branding',
+            'integrations' => 'integrations',
+        ])->filter(fn ($dbCol, $inputKey) => array_key_exists($inputKey, $validated))
+          ->mapWithKeys(fn ($dbCol, $inputKey) => [$dbCol => $validated[$inputKey]])
+          ->all();
 
         $platformPlan->fill(array_merge($map, $numericMap, $boolMap, $jsonMap))->save();
 
