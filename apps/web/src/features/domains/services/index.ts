@@ -76,7 +76,7 @@ export const domainsService = {
   async getMetrics(): Promise<DomainsMetricData> {
     try {
       const { data } = await api.get("/domains");
-      const domains = (data.domains ?? []).map(mapDomain);
+      const domains: PlatformDomain[] = (data.domains ?? []).map(mapDomain);
       return {
         totalDomains: domains.length,
         primaryDomains: domains.filter((d) => d.isPrimary).length,
