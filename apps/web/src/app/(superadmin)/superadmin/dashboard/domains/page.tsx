@@ -164,6 +164,22 @@ function DomainsPage() {
     [renewSsl],
   );
 
+  const handleEdit = useCallback((domain: PlatformDomain) => {
+    router.push(`/superadmin/dashboard/domains/${domain.id}/edit`);
+  }, [router]);
+
+  const handleCopy = useCallback((domain: PlatformDomain) => {
+    navigator.clipboard.writeText(domain.domain);
+  }, []);
+
+  const handleOpen = useCallback((domain: PlatformDomain) => {
+    window.open(`https://${domain.domain}`, "_blank", "noopener,noreferrer");
+  }, []);
+
+  const handleMakePrimary = useCallback((domain: PlatformDomain) => {
+    console.log("make primary", domain.id);
+  }, []);
+
   const handleDelete = useCallback((domain: PlatformDomain) => {
     setDeleteTarget(domain);
     setDeleteOpen(true);
@@ -259,14 +275,18 @@ function DomainsPage() {
           <DomainRowActions
             domain={row}
             onView={() => handleViewDetails(row)}
+            onEdit={() => handleEdit(row)}
             onRefreshStatus={() => handleRefreshStatus(row)}
             onRenewSsl={() => handleRenewSsl(row)}
+            onCopy={() => handleCopy(row)}
+            onOpen={() => handleOpen(row)}
+            onMakePrimary={() => handleMakePrimary(row)}
             onDelete={() => handleDelete(row)}
           />
         ),
       },
     ],
-    [handleViewDetails, handleRefreshStatus, handleRenewSsl, handleDelete],
+    [handleViewDetails, handleEdit, handleRefreshStatus, handleRenewSsl, handleCopy, handleOpen, handleMakePrimary, handleDelete],
   );
 
   const filters = useMemo<DataTableFilter[]>(
@@ -346,8 +366,12 @@ function DomainsPage() {
         <DomainRowActions
           domain={row}
           onView={() => handleViewDetails(row)}
+          onEdit={() => handleEdit(row)}
           onRefreshStatus={() => handleRefreshStatus(row)}
           onRenewSsl={() => handleRenewSsl(row)}
+          onCopy={() => handleCopy(row)}
+          onOpen={() => handleOpen(row)}
+          onMakePrimary={() => handleMakePrimary(row)}
           onDelete={() => handleDelete(row)}
         />
       </div>
@@ -366,7 +390,7 @@ function DomainsPage() {
         )}
       </div>
     </div>
-  ), [handleViewDetails, handleRefreshStatus, handleRenewSsl, handleDelete]);
+  ), [handleViewDetails, handleEdit, handleRefreshStatus, handleRenewSsl, handleCopy, handleOpen, handleMakePrimary, handleDelete]);
 
   return (
     <SuperAdminGuard>
