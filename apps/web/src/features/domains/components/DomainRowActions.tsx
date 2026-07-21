@@ -14,6 +14,8 @@ import {
   MoreHorizontal,
   Globe,
   Server,
+  Pencil,
+  Star,
 } from "lucide-react";
 import {
   AppDropdownMenu,
@@ -27,16 +29,24 @@ import type { PlatformDomain } from "../types";
 interface DomainRowActionsProps {
   domain: PlatformDomain;
   onView: () => void;
+  onEdit: () => void;
   onRefreshStatus: () => void;
   onRenewSsl: () => void;
+  onCopy: () => void;
+  onOpen: () => void;
+  onMakePrimary: () => void;
   onDelete: () => void;
 }
 
 const DomainRowActions = memo(function DomainRowActions({
   domain,
   onView,
+  onEdit,
   onRefreshStatus,
   onRenewSsl,
+  onCopy,
+  onOpen,
+  onMakePrimary,
   onDelete,
 }: DomainRowActionsProps) {
   const [copied, setCopied] = useState(false);
@@ -85,6 +95,10 @@ const DomainRowActions = memo(function DomainRowActions({
           <Eye className="h-4 w-4" />
           عرض التفاصيل
         </AppDropdownMenuItem>
+        <AppDropdownMenuItem onClick={onEdit}>
+          <Pencil className="h-4 w-4" />
+          تعديل
+        </AppDropdownMenuItem>
         <AppDropdownMenuSeparator />
         <AppDropdownMenuItem onClick={onRefreshStatus}>
           <RefreshCw className="h-4 w-4" />
@@ -101,11 +115,11 @@ const DomainRowActions = memo(function DomainRowActions({
           عرض السجلات
         </AppDropdownMenuItem>
         <AppDropdownMenuSeparator />
-        <AppDropdownMenuItem onClick={handleCopyDomain}>
+        <AppDropdownMenuItem onClick={onCopy}>
           {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
           {copied ? "تم النسخ" : "نسخ النطاق"}
         </AppDropdownMenuItem>
-        <AppDropdownMenuItem onClick={handleOpenWebsite}>
+        <AppDropdownMenuItem onClick={onOpen}>
           <Globe className="h-4 w-4" />
           فتح الموقع
         </AppDropdownMenuItem>
@@ -118,6 +132,10 @@ const DomainRowActions = memo(function DomainRowActions({
           {dnsCopied ? "تم النسخ" : "نسخ سجلات DNS"}
         </AppDropdownMenuItem>
         <AppDropdownMenuSeparator />
+        <AppDropdownMenuItem onClick={onMakePrimary}>
+          <Star className="h-4 w-4" />
+          جعل أساسي
+        </AppDropdownMenuItem>
         <AppDropdownMenuItem onClick={(e) => e.stopPropagation()}>
           <Ban className="h-4 w-4" />
           إيقاف مؤقت
