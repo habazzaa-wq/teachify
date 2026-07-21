@@ -416,8 +416,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/domains', [TenantDomainController::class, 'index']);
         Route::post('/domains', [TenantDomainController::class, 'store']);
+        Route::get('/domains/{tenantDomain}', [TenantDomainController::class, 'show']);
+        Route::get('/domains/{tenantDomain}/status', [TenantDomainController::class, 'status']);
         Route::put('/domains/{tenantDomain}', [TenantDomainController::class, 'update']);
-        Route::post('/domains/{tenantDomain}/verify', [TenantDomainController::class, 'verify']);
         Route::delete('/domains/{tenantDomain}', [TenantDomainController::class, 'destroy']);
 
         Route::get('/integrations', [TenantIntegrationController::class, 'index']);
@@ -551,6 +552,42 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
 
 Route::get('/diag/ping', function () {
     return response()->json(['ok' => true, 'time' => now()->toIso8601String()]);
+});
+
+Route::get('/v1/platform/domain-check', function (\Illuminate\Http\Request $request) {
+    $ip = $request->ip();
+    if ($ip !== '127.0.0.1' && $ip !== '::1') {
+        return response()->json(['allowed' => false], 403);
+    }
+
+    $secret = config('services.caddy.ask_secret');
+    if ($secret === '' || $secret === null) {
+        return response()->json(['allowed' => false], 500);
+    }
+    if ($request->query('secret') !== $secret) {
+        return response()->json(['allowed' => false], 403);
+    }
+
+    $domain = $request->query('domain');
+
+    if (!is_string($domain) || $domain === '') {
+        return response()->json(['allowed' => false], 400);
+    }
+
+    $tenantDomain = \App\Models\TenantDomain::query()
+        ->where('domain', $domain)
+        ->whereIn('status', ['dns_verified', 'ssl_requested', 'ssl_issued', 'active'])
+        ->first();
+
+    if (!$tenantDomain) {
+        return response()->json(['allowed' => false], 404);
+    }
+
+    if (!$tenantDomain->tenant || $tenantDomain->tenant->status !== 'active') {
+        return response()->json(['allowed' => false], 404);
+    }
+
+    return response()->json(['allowed' => true]);
 });
 
 use App\Http\Controllers\Api\v1\Platform\BunnyDebugController;

@@ -4,6 +4,28 @@
 module.exports = {
   apps: [
     {
+      name: "teachify-laravel",
+      script: "php",
+      args: "artisan serve --host=127.0.0.1 --port=8000",
+      cwd: "./apps/api",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "256M",
+      env: {
+        APP_ENV: "production",
+        APP_DEBUG: "false",
+      },
+      error_file: "./logs/laravel-error.log",
+      out_file: "./logs/laravel-out.log",
+      merge_logs: true,
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      exp_backoff_restart_delay: 100,
+      max_restarts: 10,
+      min_uptime: "5s",
+    },
+    {
       name: "teachify-next",
       script: "node_modules/.bin/next",
       args: "start -p 3000",

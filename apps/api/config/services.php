@@ -4,6 +4,13 @@ return [
 
     'platform' => [
         'domain' => env('PLATFORM_DOMAIN', 'platform-domain'),
+        'server_ip' => env('SERVER_IP', ''),
+        'server_ipv6' => env('SERVER_IPV6', ''),
+    ],
+
+    'caddy' => [
+        'admin_url' => env('CADDY_ADMIN_URL', 'http://127.0.0.1:2019'),
+        'ask_secret' => env('CADDY_ASK_SECRET', ''),
     ],
 
     /*

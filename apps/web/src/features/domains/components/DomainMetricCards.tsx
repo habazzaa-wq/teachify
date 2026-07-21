@@ -1,73 +1,64 @@
 "use client";
 
-import { Globe, CheckCircle, Clock, ShieldAlert, HeartPulse, XCircle, Gauge } from "lucide-react";
+import { Globe, CheckCircle, Clock, ShieldAlert, ShieldX, Ban } from "lucide-react";
 import { AppMetricCard } from "@/components/ui";
-import type { DomainsMetricData } from "../types";
+import type { DomainDashboardMetrics } from "../hooks";
 
 interface DomainMetricCardsProps {
-  data?: DomainsMetricData;
+  metrics: DomainDashboardMetrics;
   loading?: boolean;
 }
 
-function DomainMetricCards({ data, loading }: DomainMetricCardsProps) {
+function DomainMetricCards({ metrics, loading }: DomainMetricCardsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <AppMetricCard
         title="إجمالي النطاقات"
-        value={data?.totalDomains ?? 0}
+        value={metrics.total}
         icon={Globe}
         color="primary"
         loading={loading}
         delay={0}
       />
       <AppMetricCard
-        title="النطاقات الأساسية"
-        value={data?.primaryDomains ?? 0}
+        title="النطاقات النشطة"
+        value={metrics.active}
         icon={CheckCircle}
         color="success"
         loading={loading}
         delay={50}
       />
       <AppMetricCard
-        title="بانتظار التحقق"
-        value={data?.pendingVerification ?? 0}
+        title="بانتظار DNS"
+        value={metrics.pendingDns}
         icon={Clock}
         color="warning"
         loading={loading}
         delay={100}
       />
       <AppMetricCard
-        title="SSL وشيك الانتهاء"
-        value={data?.sslExpiringSoon ?? 0}
+        title="SSL قيد الإصدار"
+        value={metrics.sslIssuing}
         icon={ShieldAlert}
-        color="destructive"
+        color="warning"
         loading={loading}
         delay={150}
       />
       <AppMetricCard
-        title="نطاقات سليمة"
-        value={data?.healthyDomains ?? 0}
-        icon={HeartPulse}
-        color="success"
+        title="أخطاء SSL"
+        value={metrics.sslErrors}
+        icon={ShieldX}
+        color="destructive"
         loading={loading}
         delay={200}
       />
       <AppMetricCard
-        title="نطاقات فاشلة"
-        value={data?.failedDomains ?? 0}
-        icon={XCircle}
-        color="destructive"
-        loading={loading}
-        delay={250}
-      />
-      <AppMetricCard
-        title="متوسط زمن الاستجابة"
-        value={data?.averageResponseTime ?? 0}
-        suffix=" ms"
-        icon={Gauge}
+        title="موقوفة"
+        value={metrics.suspended}
+        icon={Ban}
         color="info"
         loading={loading}
-        delay={300}
+        delay={250}
       />
     </div>
   );

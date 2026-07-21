@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, ShieldCheck } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import {
   AppTable,
   AppTableHeader,
@@ -10,18 +10,15 @@ import {
   AppTableHead,
   AppTableCell,
   AppBadge,
-  AppButton,
 } from "@/components/ui";
 import { DNS_STATUS_CONFIG } from "../constants";
-import type { DnsRecord, DnsStatus } from "../types";
+import type { DnsRecord } from "../types";
 
 interface DomainDNSTabProps {
   records: DnsRecord[];
-  onVerify?: () => void;
-  verifying?: boolean;
 }
 
-function DomainDNSTab({ records, onVerify, verifying }: DomainDNSTabProps) {
+function DomainDNSTab({ records }: DomainDNSTabProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyValue = (id: string, value: string) => {
@@ -32,17 +29,9 @@ function DomainDNSTab({ records, onVerify, verifying }: DomainDNSTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold">سجلات DNS</h3>
-          <p className="text-xs text-muted-foreground">أضف هذه السجلات إلى مزود DNS الخاص بك</p>
-        </div>
-        {onVerify && (
-          <AppButton variant="outline" size="sm" onClick={onVerify} loading={verifying}>
-            <ShieldCheck className="h-4 w-4" />
-            التحقق من DNS
-          </AppButton>
-        )}
+      <div>
+        <h3 className="text-sm font-semibold">سجلات DNS</h3>
+        <p className="text-xs text-muted-foreground">أضف هذه السجلات إلى مزود DNS الخاص بك</p>
       </div>
 
       {records.length === 0 ? (
@@ -126,7 +115,7 @@ function DomainDNSTab({ records, onVerify, verifying }: DomainDNSTabProps) {
           <li>سجّل الدخول إلى لوحة تحكم مزود DNS الخاص بك</li>
           <li>أضف السجلات الموضحة أعلاه مع القيم المحددة</li>
           <li>قد يستغرق نشر التغييرات من 5 دقائق إلى 24 ساعة</li>
-          <li>بعد إضافة السجلات، انقر على &quot;التحقق من DNS&quot;</li>
+          <li>سيتم التحقق تلقائياً من سجلات DNS</li>
         </ol>
       </div>
     </div>

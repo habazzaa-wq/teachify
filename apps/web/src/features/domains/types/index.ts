@@ -124,3 +124,5 @@ export interface DomainsMetricData {
   failedDomains: number;
   averageResponseTime: number;
 }
+
+export * from "./detail";
