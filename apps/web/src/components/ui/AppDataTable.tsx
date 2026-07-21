@@ -223,11 +223,11 @@ function SortHeader({
   );
 }
 
-function LoadingSkeleton({
+function LoadingSkeleton<T>({
   columns,
   rows = 5,
 }: {
-  columns: DataTableColumn<unknown>[];
+  columns: DataTableColumn<T>[];
   rows?: number;
 }) {
   return (
