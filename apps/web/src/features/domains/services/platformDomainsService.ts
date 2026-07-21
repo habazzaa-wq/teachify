@@ -107,7 +107,7 @@ export const platformDomainsService = {
     await platformApi.post("/domains/bulk/delete", { ids });
   },
 
-  async bulkEnableHttps(): Promise<void> {
+  async bulkEnableHttps(_ids: string[]): Promise<void> {
     // HTTPS is handled automatically by Caddy on-demand TLS.
   },
 

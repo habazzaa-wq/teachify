@@ -237,7 +237,7 @@ export function usePlatformBulkDeleteDomains() {
 export function usePlatformBulkEnableHttps() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => platformDomainsService.bulkEnableHttps(),
+    mutationFn: (ids: string[]) => platformDomainsService.bulkEnableHttps(ids),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [PLATFORM_DOMAINS_QUERY_KEY] });
     },
