@@ -50,7 +50,7 @@ function getAccessToken(): string | null {
   }
 }
 
-const PUBLIC_ENDPOINTS = ["/tenant/by-domain", "/public/news", "/public/hero", "/auth/login", "sanctum/csrf-cookie", "/auth/refresh", "/health", "/tenant/auth/login", "/tenant/auth/refresh", "/tenant/auth/forgot-password", "/tenant/auth/reset-password"];
+const PUBLIC_ENDPOINTS = ["/tenant/by-domain", "/public/news", "/public/hero", "/public/educational-stages", "/auth/login", "sanctum/csrf-cookie", "/auth/refresh", "/health", "/tenant/auth/login", "/tenant/auth/refresh", "/tenant/auth/forgot-password", "/tenant/auth/reset-password"];
 
 function isPublicEndpoint(url?: string): boolean {
   if (!url) return false;

@@ -13,6 +13,26 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PublicCourseController extends Controller
 {
+    public function index(): JsonResponse
+    {
+        $tenantId = currentTenant()->id;
+
+        $courses = Course::query()
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'published')
+            ->where('visibility', 'public')
+            ->with(['primaryInstructor.user', 'tags', 'categories'])
+            ->withCount(['enrollments', 'sections', 'lessons'])
+            ->orderByDesc('featured')
+            ->orderByRaw('COALESCE(published_at, created_at) DESC')
+            ->limit(12)
+            ->get();
+
+        return response()->json([
+            'data' => CourseResource::collection($courses),
+        ]);
+    }
+
     public function show(string $slug): JsonResponse
     {
         $tenantId = currentTenant()->id;

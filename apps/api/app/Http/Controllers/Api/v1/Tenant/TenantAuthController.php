@@ -39,7 +39,7 @@ class TenantAuthController extends Controller
 
         $remember = $request->boolean('remember', false);
 
-        $result = $auth->login($tenant, $request->input('email'), $request->input('password'));
+        $result = $auth->login($tenant, $request->input('email'), $request->input('phone'), $request->input('password'));
 
         // Re-apply remember me preference
         Auth::login($result['user'], $remember);
@@ -253,6 +253,7 @@ class TenantAuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'is_platform_super_admin' => $user->isPlatformSuperAdmin(),
+                'avatar' => $membership->avatar ?? $user->avatar ?? null,
             ],
             'tenant' => [
                 'id' => $tenant->id,

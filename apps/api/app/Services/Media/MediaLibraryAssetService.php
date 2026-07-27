@@ -418,6 +418,9 @@ class MediaLibraryAssetService
 
     /**
      * Delete the remote object from Bunny. Throws on failure.
+     *
+     * If the resource is already gone (404), it is treated as successfully
+     * deleted so the caller can still clean up the local database record.
      */
     private function deleteFromBunny(MediaAsset $asset, string $providerService): void
     {
@@ -427,8 +430,23 @@ class MediaLibraryAssetService
 
         $start = microtime(true);
 
-        $this->manager->providerFor($asset->provider, $providerService)
-            ->deleteAsset($asset);
+        try {
+            $this->manager->providerFor($asset->provider, $providerService)
+                ->deleteAsset($asset);
+        } catch (\Throwable $e) {
+            if ($e instanceof BunnyServiceException && $e->getCode() === 404) {
+                Log::channel('bunny')->warning('Bunny resource already deleted (404), cleaning up local record', [
+                    'asset_id' => $asset->id,
+                    'service' => $providerService,
+                    'storage_key' => $asset->bunny_storage_path ?: $asset->storage_key,
+                    'video_id' => $asset->bunny_video_id ?: $asset->external_id,
+                ]);
+
+                return;
+            }
+
+            throw $e;
+        }
 
         $duration = round((microtime(true) - $start) * 1000, 1);
 

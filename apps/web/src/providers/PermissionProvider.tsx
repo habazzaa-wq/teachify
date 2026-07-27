@@ -23,8 +23,8 @@ const PermissionContext = createContext<PermissionProviderValue | null>(null);
  * hiding actions, pages, or sidebar items.
  */
 export function PermissionProvider({ children }: { children: React.ReactNode }) {
-  const permissions = useTenantStore((state) => state.permissions);
-  const roles = useTenantStore((state) => state.roles);
+  const permissions = useTenantStore((state) => state.permissions ?? []);
+  const roles = useTenantStore((state) => state.roles ?? []);
 
   const value = useMemo<PermissionProviderValue>(() => {
     const permissionSet = new Set(permissions.map((p) => p.slug));

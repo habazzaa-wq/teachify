@@ -12,55 +12,69 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, x: 16 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
+  hidden: { opacity: 0, x: 12 },
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
+  },
 };
 
 export function LearningOutcomes({ outcomes }: LearningOutcomesProps) {
-  if (!outcomes.length) {
-    return null;
-  }
+  if (!outcomes.length) return null;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="mb-10"
-    >
-      <h2 className="section-title-accent mb-6 text-lg font-semibold tracking-tight">
-        ماذا ستتعلم في هذه الدورة؟
-      </h2>
+    <section>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          ماذا ستتعلم في هذه الدورة؟
+        </h2>
+      </div>
 
       <motion.div
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-40px" }}
-        className="grid gap-3 sm:grid-cols-2"
+        className="grid gap-2.5 sm:grid-cols-2"
       >
         {outcomes.map((outcome, index) => (
           <motion.div
             key={index}
             variants={item}
             className={cn(
-              "flex items-start gap-3 rounded-xl border border-border/50 bg-card/60 p-4",
-              "transition-colors duration-200 hover:border-primary/20 hover:bg-primary/5",
+              "flex items-start gap-3 rounded-2xl border border-border/30 bg-card/40 p-4",
+              "transition-all duration-300 hover:border-emerald-500/20 hover:bg-emerald-500/[0.02] hover:shadow-sm",
             )}
           >
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <motion.div
+              initial={{ scale: 0, rotate: -45 }}
+              whileInView={{ scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 15,
+                delay: 0.1 + index * 0.04,
+              }}
+              className="mt-0.5 shrink-0"
+            >
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+            </motion.div>
             <span className="text-sm leading-relaxed text-muted-foreground">
               {outcome}
             </span>
           </motion.div>
         ))}
       </motion.div>
-    </motion.section>
+    </section>
   );
 }

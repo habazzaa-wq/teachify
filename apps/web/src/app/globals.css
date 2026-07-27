@@ -942,3 +942,118 @@
     animation: none;
   }
 }
+
+/* ───────── Course Detail Page Utility Classes ───────── */
+@layer components {
+  .course-page {
+    background-color: var(--course-page-bg);
+    color: var(--course-text-primary);
+    min-height: 100vh;
+  }
+
+  .course-card {
+    background-color: var(--course-card-bg);
+    border: 1px solid var(--course-card-border);
+    border-radius: 0.875rem;
+    box-shadow: var(--course-card-shadow);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+
+  .course-card:hover {
+    box-shadow: 0 4px 20px rgba(120, 90, 60, 0.08);
+  }
+
+  .dark .course-card:hover {
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .course-header {
+    background-color: var(--course-header-bg);
+    border-bottom: 1px solid var(--course-header-border);
+    box-shadow: var(--course-header-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .course-accent-text {
+    color: var(--course-accent);
+  }
+
+  .course-accent-bg {
+    background-color: var(--course-accent);
+  }
+
+  .course-badge {
+    background-color: var(--course-badge-bg);
+    color: var(--course-badge-text);
+  }
+
+  .course-text-primary {
+    color: var(--course-text-primary);
+  }
+
+  .course-text-secondary {
+    color: var(--course-text-secondary);
+  }
+
+  .course-progress-track {
+    background-color: var(--course-progress-track);
+  }
+}
+
+/* ───────── Course Detail Page Tokens ───────── */
+@layer base {
+  :root {
+    --course-page-bg: #FAF8F5;
+    --course-card-bg: #FFFFFF;
+    --course-card-border: rgba(0, 0, 0, 0.04);
+    --course-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(120, 90, 60, 0.06);
+    --course-text-primary: #1a1510;
+    --course-text-secondary: #7a7168;
+    --course-text-tertiary: #9CA3AF;
+    --course-accent: #D87B63;
+    --course-accent-secondary: #FFB50E;
+    --course-accent-glow: rgba(216, 123, 99, 0.15);
+    --course-accent-glow-strong: rgba(216, 123, 99, 0.25);
+    --course-header-bg: rgba(255, 255, 255, 0.85);
+    --course-header-border: rgba(0, 0, 0, 0.04);
+    --course-header-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(120, 90, 60, 0.06);
+    --course-hero-gradient-from: #FAF8F5;
+    --course-hero-gradient-via: #F7F4EF;
+    --course-hero-gradient-to: #F3EFE8;
+    --course-section-bg: #FFFFFF;
+    --course-badge-bg: rgba(216, 123, 99, 0.1);
+    --course-badge-text: #D87B63;
+    --course-border-subtle: rgba(0, 0, 0, 0.04);
+    --course-progress-track: rgba(0, 0, 0, 0.06);
+    --course-icon-bg: rgba(216, 123, 99, 0.1);
+    --course-icon-bg-hover: rgba(216, 123, 99, 0.18);
+  }
+
+  .dark {
+    --course-page-bg: #08060e;
+    --course-card-bg: #16141e;
+    --course-card-border: rgba(255, 255, 255, 0.04);
+    --course-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.25);
+    --course-text-primary: #EDEAE4;
+    --course-text-secondary: #8a8290;
+    --course-text-tertiary: #8a8290;
+    --course-accent: #D87B63;
+    --course-accent-secondary: #FFB50E;
+    --course-accent-glow: rgba(216, 123, 99, 0.25);
+    --course-accent-glow-strong: rgba(216, 123, 99, 0.4);
+    --course-header-bg: rgba(8, 6, 14, 0.85);
+    --course-header-border: rgba(255, 255, 255, 0.04);
+    --course-header-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --course-hero-gradient-from: #121418;
+    --course-hero-gradient-via: #14161a;
+    --course-hero-gradient-to: #16181d;
+    --course-section-bg: #16141e;
+    --course-badge-bg: rgba(216, 123, 99, 0.15);
+    --course-badge-text: #D87B63;
+    --course-border-subtle: rgba(255, 255, 255, 0.04);
+    --course-progress-track: rgba(255, 255, 255, 0.06);
+    --course-icon-bg: rgba(216, 123, 99, 0.15);
+    --course-icon-bg-hover: rgba(216, 123, 99, 0.25);
+  }
+}

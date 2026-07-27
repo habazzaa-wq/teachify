@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { COURSE_FAQS_DEFAULT } from "../constants";
 import type { CourseFAQ } from "../types";
 
-interface CourseFAQProps {
+interface FAQSectionProps {
   faqs?: CourseFAQ[];
 }
 
@@ -25,10 +25,10 @@ function FAQItem({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border transition-colors duration-200",
+        "overflow-hidden rounded-2xl border transition-all duration-200",
         isOpen
-          ? "border-primary/20 bg-primary/5"
-          : "border-border/50 bg-card/60 hover:border-border",
+          ? "border-primary/15 bg-primary/[0.03]"
+          : "border-border/30 bg-card/40 hover:border-border/50",
       )}
     >
       <button
@@ -54,11 +54,7 @@ function FAQItem({
               : "bg-muted text-muted-foreground",
           )}
         >
-          {isOpen ? (
-            <Minus className="h-3.5 w-3.5" />
-          ) : (
-            <Plus className="h-3.5 w-3.5" />
-          )}
+          {isOpen ? <Minus className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
         </motion.div>
       </button>
 
@@ -70,10 +66,8 @@ function FAQItem({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="border-t border-border/40 px-4 pb-4 pt-3">
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {answer}
-              </p>
+            <div className="border-t border-border/25 px-4 pb-4 pt-3">
+              <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
             </div>
           </motion.div>
         )}
@@ -82,35 +76,32 @@ function FAQItem({
   );
 }
 
-export function CourseFAQ({ faqs }: CourseFAQProps) {
+export function FAQSection({ faqs }: FAQSectionProps) {
   const items = faqs && faqs.length > 0 ? faqs : COURSE_FAQS_DEFAULT;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="mb-10"
-    >
-      <h2 className="section-title-accent mb-6 text-lg font-semibold tracking-tight">
-        الأسئلة الشائعة
-      </h2>
+    <section>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
+          <HelpCircle className="h-5 w-5 text-rose-500/70" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          الأسئلة الشائعة
+        </h2>
+      </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {items.map((faq, index) => (
           <FAQItem
             key={index}
             question={faq.question}
             answer={faq.answer}
             isOpen={openIndex === index}
-            onToggle={() =>
-              setOpenIndex(openIndex === index ? null : index)
-            }
+            onToggle={() => setOpenIndex(openIndex === index ? null : index)}
           />
         ))}
       </div>
-    </motion.section>
+    </section>
   );
 }

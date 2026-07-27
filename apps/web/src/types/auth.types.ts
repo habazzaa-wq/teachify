@@ -1,7 +1,8 @@
 import type { ApiMessageResponse } from "./common.types";
 
 export interface LoginRequest {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 }
 
@@ -14,6 +15,7 @@ export interface AuthUser {
   name: string;
   email: string;
   is_platform_super_admin: boolean;
+  avatar?: string | null;
 }
 
 export interface AuthTenant {

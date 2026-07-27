@@ -52,7 +52,6 @@ class TenantUserService
         $user = $existingUser ?? User::create([
             'name' => $data['name'],
             'email' => $email,
-            'phone' => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
             'avatar' => $data['avatar'] ?? null,
             'locale' => $data['locale'] ?? config('app.locale', 'ar'),
@@ -89,7 +88,7 @@ class TenantUserService
     {
         $tenantUser = $this->repository->findByIdOrFail($id);
 
-        $userData = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'avatar', 'locale', 'timezone']));
+        $userData = array_intersect_key($data, array_flip(['name', 'email', 'avatar', 'locale', 'timezone']));
         if (! empty($userData)) {
             if (isset($userData['email'])) {
                 $userData['email'] = mb_strtolower(trim($userData['email']));

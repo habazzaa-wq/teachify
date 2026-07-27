@@ -12,12 +12,12 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, scale: 0.95 },
+  hidden: { opacity: 0, scale: 0.96 },
   show: {
     opacity: 1,
     scale: 1,
@@ -26,40 +26,37 @@ const item = {
 };
 
 export function TargetAudience({ audience }: TargetAudienceProps) {
-  if (!audience.length) {
-    return null;
-  }
+  if (!audience.length) return null;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="mb-10"
-    >
-      <h2 className="section-title-accent mb-6 text-lg font-semibold tracking-tight">
-        لمن هذه الدورة؟
-      </h2>
+    <section>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
+          <Users className="h-5 w-5 text-sky-500/70" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          لمن هذه الدورة؟
+        </h2>
+      </div>
 
       <motion.div
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-40px" }}
-        className="grid gap-3 sm:grid-cols-2"
+        className="grid gap-2.5 sm:grid-cols-2"
       >
         {audience.map((item_text, index) => (
           <motion.div
             key={index}
             variants={item}
             className={cn(
-              "flex items-center gap-3 rounded-xl border border-border/50 bg-card/60 p-4",
-              "transition-colors duration-200 hover:border-primary/20 hover:bg-primary/5",
+              "flex items-center gap-3 rounded-2xl border border-border/30 bg-card/40 p-4",
+              "transition-all duration-300 hover:border-sky-500/15 hover:bg-sky-500/[0.02] hover:shadow-sm",
             )}
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <Users className="h-4 w-4 text-primary" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/10">
+              <Users className="h-4 w-4 text-sky-500" />
             </div>
             <span className="text-sm leading-relaxed text-muted-foreground">
               {item_text}
@@ -67,6 +64,6 @@ export function TargetAudience({ audience }: TargetAudienceProps) {
           </motion.div>
         ))}
       </motion.div>
-    </motion.section>
+    </section>
   );
 }

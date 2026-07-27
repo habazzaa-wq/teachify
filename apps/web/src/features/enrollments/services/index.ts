@@ -60,4 +60,12 @@ export const enrollmentsService = {
     const { data } = await api.get(`/enrollments/${id}`);
     return data.enrollment ? formatEnrollment(data.enrollment) : null;
   },
+
+  async create(courseId: string, tenantUserId: string): Promise<Enrollment> {
+    const { data } = await api.post(`/courses/${courseId}/enrollments`, {
+      tenant_user_id: Number(tenantUserId),
+      status: "active",
+    });
+    return formatEnrollment(data.enrollment);
+  },
 };

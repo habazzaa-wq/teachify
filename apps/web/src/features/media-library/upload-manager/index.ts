@@ -15,7 +15,6 @@ export { useNetworkStatus } from "./hooks";
 export { useUploadEngineBootstrap } from "./hooks";
 
 export { uploadEngine, uploadGuard, networkMonitor } from "./services";
-export { UPLOAD_PERMISSION } from "./services";
 
 export { useUploadManagerStore, useUploadItem } from "./store";
 

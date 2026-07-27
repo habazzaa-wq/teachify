@@ -82,7 +82,7 @@ class CourseResource extends JsonResource
         if ($cdnBase && str_starts_with($url, $cdnBase)) {
             $storagePath = substr($url, strlen($cdnBase) + 1);
 
-            return route('media.serve', $storagePath);
+            return route('media.serve', $storagePath, false);
         }
 
         return $url;

@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCan } from "@/hooks/useCan";
-import { uploadEngine, UPLOAD_PERMISSION } from "../services";
+import { useCanAny } from "@/hooks/useCan";
+import { uploadEngine, UPLOAD_PERMISSIONS } from "../services";
 import { extractFilesFromClipboard } from "../utils/files";
 
 /** Ctrl/⌘+V paste of images, screenshots and clipboard files. */
 export function useUploadPaste() {
-  const canUpload = useCan(UPLOAD_PERMISSION);
+  const canUpload = useCanAny([...UPLOAD_PERMISSIONS]);
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {

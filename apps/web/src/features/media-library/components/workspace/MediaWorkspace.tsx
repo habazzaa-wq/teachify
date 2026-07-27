@@ -8,6 +8,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   GripVertical,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
@@ -20,6 +21,17 @@ import { DeleteDialog } from "../DeleteDialog";
 import { MoveDialog } from "../MoveDialog";
 import { UploadDrawer } from "../UploadDrawer";
 import type { MediaAsset } from "../../types";
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 interface MediaWorkspaceProps {
   className?: string;
@@ -102,6 +114,7 @@ function ResizablePanel({
 }
 
 function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
+  const isMobile = useIsMobile();
   const {
     leftPanelOpen,
     leftPanelWidth,
@@ -122,6 +135,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
   const [renameTarget, setRenameTarget] = useState<MediaAsset | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MediaAsset | "bulk" | null>(null);
   const [moveTarget, setMoveTarget] = useState<MediaAsset | "bulk" | null>(null);
+  const [deleteAllIds, setDeleteAllIds] = useState<number[] | null>(null);
 
   const renameAsset = useRenameAsset();
   const moveAsset = useMoveAsset();
@@ -142,9 +156,10 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
 
   const handleDeleteConfirm = useCallback(() => {
     if (deleteTarget === "bulk") {
-      bulkDelete.mutate([...selectedIds], {
-        onSuccess: () => { setDeleteTarget(null); clearSelection(); },
-        onError: () => { setDeleteTarget(null); },
+      const ids = deleteAllIds ?? [...selectedIds];
+      bulkDelete.mutate(ids, {
+        onSuccess: () => { setDeleteTarget(null); setDeleteAllIds(null); clearSelection(); },
+        onError: () => { setDeleteTarget(null); setDeleteAllIds(null); },
       });
     } else if (deleteTarget) {
       deleteAsset.mutate(deleteTarget.id, {
@@ -152,7 +167,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
         onError: () => { setDeleteTarget(null); },
       });
     }
-  }, [deleteTarget, bulkDelete, deleteAsset, selectedIds, clearSelection, setInspectorAssetId]);
+  }, [deleteTarget, bulkDelete, deleteAsset, selectedIds, clearSelection, setInspectorAssetId, deleteAllIds]);
 
   const handleMoveConfirm = useCallback((folderId: number | null) => {
     if (moveTarget === "bulk") {
@@ -165,6 +180,142 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
   }, [moveTarget, bulkMove, moveAsset, selectedIds, clearSelection]);
 
   const handleFolderId = typeof selectedFolderId === "number" ? selectedFolderId : null;
+
+  const handleDeleteAll = useCallback((ids: number[]) => {
+    setDeleteAllIds(ids);
+    setDeleteTarget("bulk");
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className={cn("flex h-full flex-col overflow-hidden rounded-xl border bg-background", className)}>
+        {/* Center Panel only on mobile */}
+        <div className="relative flex-1 overflow-hidden">
+          <AssetWorkspace
+            onUpload={() => setUploadOpen(true)}
+            onCreateFolder={() => setCreateFolderOpen(true)}
+            onRenameAsset={setRenameTarget}
+            onMoveAsset={setMoveTarget}
+            onDeleteAsset={setDeleteTarget}
+            onDownloadAsset={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
+            onBulkDelete={() => setDeleteTarget("bulk")}
+            onBulkMove={() => setMoveTarget("bulk")}
+            onDeleteAll={handleDeleteAll}
+          />
+        </div>
+
+        {/* Mobile Left Panel Overlay */}
+        <AnimatePresence>
+          {leftPanelOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setLeftPanelOpen(false)}
+              />
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed inset-y-0 start-0 z-50 w-72 max-w-[85vw] overflow-hidden border-e bg-background shadow-xl"
+              >
+                <div className="flex items-center justify-between border-b px-3 py-2.5">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    المكتبة
+                  </h2>
+                  <button
+                    onClick={() => setLeftPanelOpen(false)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <FolderExplorer />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Right Panel Overlay */}
+        <AnimatePresence>
+          {rightPanelOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setRightPanelOpen(false)}
+              />
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed inset-y-0 end-0 z-50 w-80 max-w-[85vw] overflow-hidden border-s bg-background shadow-xl"
+              >
+                <div className="flex items-center justify-between border-b px-4 py-2.5">
+                  <h3 className="text-sm font-semibold">التفاصيل</h3>
+                  <button
+                    onClick={() => setRightPanelOpen(false)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <MediaInspector
+                  assetId={inspectorAssetId}
+                  onClose={() => setRightPanelOpen(false)}
+                  onRename={setRenameTarget}
+                  onMove={setMoveTarget}
+                  onDelete={setDeleteTarget}
+                  onArchive={(asset) => archiveAsset.mutate(asset.id)}
+                  onDuplicate={(asset) => duplicateAsset.mutate(asset.id)}
+                  onDownload={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
+                  onFavorite={(asset) => toggleFavorite.mutate(asset.id)}
+                  onPin={(asset) => togglePin.mutate(asset.id)}
+                />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Dialogs */}
+        <UploadDrawer
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          folderId={handleFolderId}
+        />
+
+        <RenameDialog
+          open={!!renameTarget}
+          onOpenChange={() => setRenameTarget(null)}
+          onSave={handleRenameSave}
+          currentTitle={renameTarget?.title ?? renameTarget?.originalName}
+          saving={renameAsset.isPending}
+        />
+
+        <DeleteDialog
+          open={!!deleteTarget}
+          onOpenChange={() => { setDeleteTarget(null); setDeleteAllIds(null); }}
+          onConfirm={handleDeleteConfirm}
+          title={deleteTarget && deleteTarget !== "bulk" ? (deleteTarget.title ?? deleteTarget.originalName ?? undefined) : undefined}
+          itemCount={deleteTarget === "bulk" ? (deleteAllIds?.length ?? selectedIds.size) : 1}
+          loading={bulkDelete.isPending || deleteAsset.isPending}
+        />
+
+        <MoveDialog
+          open={!!moveTarget}
+          onOpenChange={() => setMoveTarget(null)}
+          onMove={handleMoveConfirm}
+          loading={bulkMove.isPending || moveAsset.isPending}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex h-full overflow-hidden rounded-xl border bg-background", className)}>
@@ -228,6 +379,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
           onDownloadAsset={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
           onBulkDelete={() => setDeleteTarget("bulk")}
           onBulkMove={() => setMoveTarget("bulk")}
+          onDeleteAll={handleDeleteAll}
         />
       </div>
 
@@ -282,10 +434,10 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
 
       <DeleteDialog
         open={!!deleteTarget}
-        onOpenChange={() => setDeleteTarget(null)}
+        onOpenChange={() => { setDeleteTarget(null); setDeleteAllIds(null); }}
         onConfirm={handleDeleteConfirm}
         title={deleteTarget && deleteTarget !== "bulk" ? (deleteTarget.title ?? deleteTarget.originalName ?? undefined) : undefined}
-        itemCount={deleteTarget === "bulk" ? selectedIds.size : 1}
+        itemCount={deleteTarget === "bulk" ? (deleteAllIds?.length ?? selectedIds.size) : 1}
         loading={bulkDelete.isPending || deleteAsset.isPending}
       />
 

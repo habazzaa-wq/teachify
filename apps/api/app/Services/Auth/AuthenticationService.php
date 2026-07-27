@@ -28,14 +28,31 @@ class AuthenticationService
      *
      * @throws ValidationException
      */
-    public function login(Tenant $tenant, string $email, string $password): array
+    public function login(Tenant $tenant, ?string $email, ?string $phone, string $password): array
     {
-        $normalizedEmail = $this->emails->normalize($email);
-        $user = User::query()->where('email', $normalizedEmail)->first();
+        $user = null;
+
+        if ($phone && $email) {
+            $normalizedEmail = $this->emails->normalize($email);
+            $user = User::query()
+                ->where('email', $normalizedEmail)
+                ->first();
+
+            if (! $user) {
+                $user = $this->resolveUserByPhone($phone, $tenant);
+            }
+        } elseif ($phone) {
+            $user = $this->resolveUserByPhone($phone, $tenant);
+        } elseif ($email) {
+            $normalizedEmail = $this->emails->normalize($email);
+            $user = User::query()->where('email', $normalizedEmail)->first();
+        }
+
+        $identifier = $phone ?? ($email ?? 'unknown');
 
         if (! $user || ! Hash::check($password, $user->password)) {
-            event(new LoginFailed($tenant->id, $normalizedEmail));
-            $this->audit->record('login_failed', ['tenant_id' => $tenant->id, 'email' => $normalizedEmail]);
+            event(new LoginFailed($tenant->id, $identifier));
+            $this->audit->record('login_failed', ['tenant_id' => $tenant->id, 'email' => $identifier]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -44,7 +61,7 @@ class AuthenticationService
         $membership = $this->memberships->activeMembership($user, $tenant);
 
         if (! $membership) {
-            event(new LoginFailed($tenant->id, $normalizedEmail, $user->id));
+            event(new LoginFailed($tenant->id, $identifier, $user->id));
             $this->audit->record('login_rejected_membership', ['tenant_id' => $tenant->id, 'user_id' => $user->id]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
@@ -118,5 +135,42 @@ class AuthenticationService
             request()->session()->invalidate();
             request()->session()->regenerateToken();
         }
+    }
+
+    private function resolveUserByPhone(string $phone, Tenant $tenant): ?User
+    {
+        $candidates = User::query()
+            ->where('phone', $phone)
+            ->get();
+
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        if ($candidates->count() === 1) {
+            return $candidates->first();
+        }
+
+        $tenantUserIds = TenantUser::query()
+            ->where('tenant_id', $tenant->id)
+            ->whereIn('user_id', $candidates->pluck('id'))
+            ->where('status', 'active')
+            ->pluck('user_id');
+
+        if ($tenantUserIds->isNotEmpty()) {
+            $tenantUsersWithRoles = TenantUser::query()
+                ->where('tenant_id', $tenant->id)
+                ->whereIn('user_id', $tenantUserIds)
+                ->whereHas('roles', fn ($q) => $q->where('slug', '!=', 'student'))
+                ->pluck('user_id');
+
+            if ($tenantUsersWithRoles->isNotEmpty()) {
+                return $candidates->first(fn ($u) => $tenantUsersWithRoles->contains($u->id));
+            }
+
+            return $candidates->first(fn ($u) => $tenantUserIds->contains($u->id));
+        }
+
+        return $candidates->first();
     }
 }

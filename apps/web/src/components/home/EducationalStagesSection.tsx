@@ -7,18 +7,14 @@ import {
   ArrowLeft,
   ChevronDown,
   BookOpen,
-  Trophy,
-  Palette,
-  Lightbulb,
-  Rocket,
   Sparkles,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
 import type { StageItem } from "@/features/homepage/educational-stages/types";
 
-const stageIcons = [BookOpen, GraduationCap, Trophy, Palette, Lightbulb, Rocket];
-const accents = ["#D87B63", "#7C5CFC", "#22C55E", "#06B6D4", "#EC4899", "#F97316"];
+const stageIcons = [BookOpen, GraduationCap];
+const accents = ["#D87B63", "#FFB50E"];
 
 const INITIAL_VISIBLE = 3;
 
@@ -234,7 +230,7 @@ export function EducationalStagesSection() {
     <section
       ref={ref}
       dir="rtl"
-      className="relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
+      className="relative w-full overflow-hidden pb-10 sm:pb-14 lg:pb-20 pt-6 sm:pt-8 lg:pt-10"
     >
       {/* bg */}
       <div
@@ -261,7 +257,7 @@ export function EducationalStagesSection() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         {/* header */}
-        <div className="mb-8 text-center sm:mb-12">
+        <div className="mb-6 text-center sm:mb-10">
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={isInView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
             <span
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold sm:text-sm"

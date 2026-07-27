@@ -19,7 +19,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 const card = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
     y: 0,
@@ -28,19 +28,11 @@ const card = {
 };
 
 export function RelatedCourses({ courses }: RelatedCoursesProps) {
-  if (!courses.length) {
-    return null;
-  }
+  if (!courses.length) return null;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="mb-10"
-    >
-      <h2 className="section-title-accent mb-6 text-lg font-semibold tracking-tight">
+    <section>
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mb-6">
         الدورات ذات الصلة
       </h2>
 
@@ -49,8 +41,7 @@ export function RelatedCourses({ courses }: RelatedCoursesProps) {
         className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin lg:grid lg:grid-cols-3 lg:overflow-x-auto"
       >
         {courses.map((course) => {
-          const diffColors =
-            DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
+          const diffColors = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
 
           return (
             <motion.a
@@ -58,8 +49,8 @@ export function RelatedCourses({ courses }: RelatedCoursesProps) {
               variants={card}
               href={`/courses/${course.slug}`}
               className={cn(
-                "group flex w-72 shrink-0 flex-col overflow-hidden rounded-xl border border-border/50 bg-card/60",
-                "transition-all duration-300 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5",
+                "group flex w-72 shrink-0 flex-col overflow-hidden rounded-2xl border border-border/30 bg-card/40",
+                "transition-all duration-300 hover:border-primary/15 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5",
                 "lg:w-auto lg:flex-col",
               )}
             >
@@ -96,9 +87,7 @@ export function RelatedCourses({ courses }: RelatedCoursesProps) {
                 </h3>
 
                 {course.instructor && (
-                  <p className="text-xs text-muted-foreground">
-                    {course.instructor.name}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{course.instructor.name}</p>
                 )}
 
                 <div className="mt-auto flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -108,13 +97,11 @@ export function RelatedCourses({ courses }: RelatedCoursesProps) {
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {course.duration
-                      ? `${Math.round(course.duration / 60)} س`
-                      : "—"}
+                    {course.duration ? `${Math.round(course.duration / 60)} س` : "—"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-border/40 pt-3">
+                <div className="flex items-center justify-between border-t border-border/30 pt-3">
                   {course.pricingType === "free" ? (
                     <AppBadge variant="success" className="text-[10px]">
                       مجاني
@@ -146,6 +133,6 @@ export function RelatedCourses({ courses }: RelatedCoursesProps) {
           );
         })}
       </div>
-    </motion.section>
+    </section>
   );
 }

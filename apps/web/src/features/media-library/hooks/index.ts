@@ -188,14 +188,34 @@ export function useArchiveAsset() {
   });
 }
 
+const BULK_DELETE_CHUNK_SIZE = 15;
+const BULK_DELETE_TIMEOUT = 60_000;
+
 export function useBulkDelete() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ids: number[]) => mediaLibraryService.bulkDelete(ids),
+    mutationFn: async (ids: number[]) => {
+      const chunks: number[][] = [];
+      for (let i = 0; i < ids.length; i += BULK_DELETE_CHUNK_SIZE) {
+        chunks.push(ids.slice(i, i + BULK_DELETE_CHUNK_SIZE));
+      }
+
+      let lastError: Error | null = null;
+      for (const chunk of chunks) {
+        try {
+          await mediaLibraryService.bulkDelete(chunk, BULK_DELETE_TIMEOUT);
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+        }
+      }
+      if (lastError) {
+        throw lastError;
+      }
+    },
     onSuccess: () => invalidateAll(qc),
     onError: (error: Error) => {
-      toast.error("Bulk delete failed", {
-        description: error.message || "Some assets could not be removed from the CDN.",
+      toast.error("فشل الحذف", {
+        description: error.message || "لم يتم حذف بعض الملفات. حاول مرة أخرى.",
       });
     },
   });

@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\v1\Auth\InvitationController;
 use App\Http\Controllers\Api\v1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\v1\Auth\RoleController;
 use App\Http\Controllers\Api\v1\Auth\TenantUserController;
+use App\Http\Controllers\Api\v1\StudentController;
+use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
@@ -115,6 +117,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
+    Route::post('/public/register', [\App\Http\Controllers\Api\v1\PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
@@ -128,6 +131,7 @@ Route::prefix('v1')->group(function () {
         ->name('media.serve');
 
     // Public course routes (no auth required)
+    Route::get('/public/courses', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'index']);
     Route::get('/public/courses/{slug}', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'show']);
     Route::get('/public/courses/{slug}/modules', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'modules']);
     Route::get('/public/courses/{slug}/related', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'related']);
@@ -399,6 +403,20 @@ Route::prefix('v1')->group(function () {
         Route::put('/users/{user}', [TenantUserController::class, 'update']);
         Route::patch('/users/{user}', [TenantUserController::class, 'update']);
         Route::delete('/users/{user}', [TenantUserController::class, 'destroy']);
+        Route::get('/students/metrics', [StudentController::class, 'metrics']);
+        Route::post('/students', [StudentController::class, 'store']);
+        Route::post('/students/invite', [StudentController::class, 'invite']);
+        Route::post('/students/bulk-destroy', [StudentController::class, 'bulkDestroy']);
+        Route::delete('/students/{student}', [StudentController::class, 'destroy']);
+        Route::get('/students/{student}', [StudentController::class, 'show']);
+        Route::get('/students/{student}/enrollments', [StudentController::class, 'enrollments']);
+        Route::get('/students/{student}/analytics', [StudentController::class, 'analytics']);
+        Route::get('/students', [StudentController::class, 'index']);
+
+        // Student profile (logged-in student self-service)
+        Route::get('/student/profile', [StudentProfileController::class, 'profile']);
+        Route::post('/student/profile/avatar', [StudentProfileController::class, 'updateAvatar']);
+
         Route::get('/permissions', [RoleController::class, 'permissions']);
         Route::get('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'index']);
         Route::put('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'update']);
