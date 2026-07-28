@@ -1,7 +1,8 @@
 import type { ApiMessageResponse } from "./common.types";
 
 export interface LoginRequest {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 }
 
