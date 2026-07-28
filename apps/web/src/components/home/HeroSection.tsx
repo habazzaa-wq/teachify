@@ -812,7 +812,7 @@ export function HeroSection() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
            </div>
           )}
         </motion.div>
