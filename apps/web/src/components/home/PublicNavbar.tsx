@@ -114,7 +114,7 @@ function NavLinkItem({
           "relative z-10 transition-colors duration-300",
           isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
         )}>{label}</span>
-      </motion.div>
+      </div>
     </Link>
   );
 }
