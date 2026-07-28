@@ -9,14 +9,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-    'https://teachify.tech',
-    'https://www.teachify.tech'
-],
+    'allowed_origins' => [],
 
     'allowed_origins_patterns' => [
-        '~https?://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*' . $escapedBase . '(:\d+)?~',
-        '~https?://' . $escapedBase . '(:\d+)?~',
+        // Platform domain and all subdomains (e.g. teachify.tech, *.teachify.tech)
+        '~^https?://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*' . $escapedBase . '(:\d+)?$~i',
+        '~^https?://' . $escapedBase . '(:\d+)?$~i',
+
+        // Custom / arbitrary domains (unlimited)
+        '~^https?://[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.?$~i',
     ],
 
     'allowed_headers' => ['*'],
