@@ -97,7 +97,6 @@ export { AppMetricCard, type AppMetricCardProps } from "./AppMetricCard";
 export { AppChartCard, type AppChartCardProps } from "./AppChartCard";
 export { AppBreadcrumb, type AppBreadcrumbItem, type AppBreadcrumbProps } from "./AppBreadcrumb";
 export { AppOfflineBanner } from "./AppOfflineBanner";
-export { AppDataTable, type AppDataTableProps, type DataTableColumn, type DataTableFilter, type DataTableSortOption, type DataTablePagination } from "./AppDataTable";
 export { AppDrawer, type AppDrawerProps } from "./AppDrawer";
 export { AppCommandPalette, type AppCommandPaletteProps, type CommandItem } from "./AppCommandPalette";
 export { AppNotificationMenu, type AppNotificationMenuProps, type NotificationItem } from "./AppNotificationMenu";

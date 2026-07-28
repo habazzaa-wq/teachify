@@ -42,7 +42,7 @@ export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   }, [status]);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" || status === "idle") {
       router.replace(routes.superadminLogin);
       return;
     }

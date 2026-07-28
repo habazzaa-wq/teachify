@@ -70,17 +70,9 @@ function getBrowserLocation(): RuntimeApiLocation | undefined {
 /**
  * Resolves the API origin for browser, server, and middleware runtimes.
  *
- * Local Next development always talks to the local Laravel dev server.
- *
- * In the browser (no `location` arg), the API is always called on the **same
- * origin** as the current page.  Caddy's catch-all block routes /api/* and
- * /sanctum/* to PHP‑FPM for every domain (platform, wildcard subdomain, or
- * arbitrary custom domain), so the Host header naturally carries the correct
- * tenant domain and tenant resolution works without extra headers.
- *
- * When called with an explicit `location` (server / middleware context) the
- * configured NEXT_PUBLIC_API_URL is used so the middleware never depends on
- * external DNS or on‑demand TLS for internal lookups.
+ * Local Next development always talks to the local Laravel server. Platform and
+ * tenant domains derive the API host from the current request protocol and the
+ * configured base domain, so both current and future tenants use one API origin.
  */
 export function resolveApiUrl(location?: RuntimeApiLocation): string {
   const runtimeLocation = normalizeLocation(location ?? getBrowserLocation());
@@ -93,17 +85,19 @@ export function resolveApiUrl(location?: RuntimeApiLocation): string {
       return DEFAULT_DEV_API_URL;
     }
 
-    // Server-side / middleware context — use the configured API URL for
-    // internal communication (no DNS / TLS dependency on custom domains).
-    if (location) {
-      return stripTrailingSlash(process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_DEV_API_URL);
+    // Tenant subdomain: Caddy routes /api/* and /sanctum/* to Laravel
+    // on the same origin, so use the current hostname directly.
+    // e.g. https://hazem.academy.test → https://hazem.academy.test
+    // This avoids CORS, mixed-content, and self-signed certificate issues.
+    //
+    // When called with an explicit `location` param (middleware / server),
+    // fall back to the direct Laravel URL — no TLS needed between services.
+    if (hostname.endsWith(`.${BASE_DOMAIN}`)) {
+      if (location) {
+        return DEFAULT_DEV_API_URL;
+      }
+      return `${protocol}//${hostname}`;
     }
-
-    // Client-side — Caddy routes /api/* and /sanctum/* to Laravel on
-    // the same origin for every domain (platform, subdomain, custom).
-    // The Host header always contains the correct tenant domain,
-    // so tenant resolution from the hostname works natively.
-    return `${protocol}//${hostname}`;
   }
 
   return stripTrailingSlash(process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_DEV_API_URL);

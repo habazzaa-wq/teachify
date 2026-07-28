@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, Menu, X, LogIn, UserPlus,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
@@ -30,7 +30,32 @@ const navLinks = [
 ];
 
 function DecoOrbs() {
-  return null;
+  const prefersReducedMotion = useReducedMotion();
+  if (prefersReducedMotion) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <motion.div
+        className="absolute -top-16 -start-16 h-32 w-32 rounded-full opacity-20 blur-3xl"
+        style={{ backgroundColor: primary }}
+        animate={{
+          x: [0, 20, -10, 0],
+          y: [0, -15, 10, 0],
+          scale: [1, 1.1, 0.95, 1],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute -bottom-20 -end-20 h-40 w-40 rounded-full opacity-20 blur-3xl"
+        style={{ backgroundColor: secondary }}
+        animate={{
+          x: [0, -25, 15, 0],
+          y: [0, 20, -10, 0],
+          scale: [1, 0.9, 1.05, 1],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+    </div>
+  );
 }
 
 function ThemeBtn({ scrolled }: { scrolled: boolean }) {
@@ -38,14 +63,17 @@ function ThemeBtn({ scrolled }: { scrolled: boolean }) {
   const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.12, rotate: theme === "light" ? -15 : 15 }}
+      whileTap={{ scale: 0.88 }}
       onClick={toggleTheme}
-      className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-200 active:scale-90 hover:scale-110 group"
+      className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 group"
       style={{
         backgroundColor: scrolled ? undefined : theme === "light" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
       }}
       aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
     >
+      {/* Default border */}
       <span
         className="absolute inset-0 rounded-2xl transition-all duration-500"
         style={{
@@ -54,6 +82,7 @@ function ThemeBtn({ scrolled }: { scrolled: boolean }) {
             : "inset 0 0 0 1px rgba(255,255,255,0.12)",
         }}
       />
+      {/* Hover: bg = secondary, border = primary */}
       <span
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
         style={{
@@ -62,14 +91,20 @@ function ThemeBtn({ scrolled }: { scrolled: boolean }) {
           boxShadow: `0 0 24px ${primary}40`,
         }}
       />
-      <div className="relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300">
+      <motion.div
+        key={theme}
+        initial={{ rotate: -180, scale: 0 }}
+        animate={{ rotate: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+        className="relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300"
+      >
         {theme === "light" ? (
           <Moon className="h-[18px] w-[18px]" />
         ) : (
           <Sun className="h-[18px] w-[18px]" />
         )}
-      </div>
-    </button>
+      </motion.div>
+    </motion.button>
   );
 }
 
@@ -81,15 +116,21 @@ function NavLinkItem({
 }) {
   return (
     <Link href={href} onClick={onClick} className="group relative">
-      <div className="relative flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200 active:scale-95">
+      <motion.div
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
+        className="relative flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-300"
+      >
         {isActive ? (
           <>
-            <span
+            <motion.span
+              layoutId="nav-bg"
               className="absolute inset-0 rounded-2xl"
               style={{
                 backgroundColor: primary,
                 boxShadow: `0 4px 24px ${primary}50`,
               }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
             />
             <span
               className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -108,13 +149,13 @@ function NavLinkItem({
         )}
         <Icon className={cn(
           "h-4 w-4 relative z-10 transition-all duration-300",
-          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
+          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00] group-hover:scale-110",
         )} />
         <span className={cn(
           "relative z-10 transition-colors duration-300",
           isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
         )}>{label}</span>
-      </div>
+      </motion.div>
     </Link>
   );
 }
@@ -494,11 +535,11 @@ export function PublicNavbar() {
                       </button>
                     </motion.div>
 
-                    <div>
+                    <motion.div whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95, y: 0 }}>
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-5 py-2 text-sm font-semibold text-white transition-all duration-200 active:scale-95 hover:scale-105"
+                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl px-5 py-2 text-sm font-semibold text-white transition-all duration-300"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px ${primary}45`,
@@ -515,16 +556,18 @@ export function PublicNavbar() {
                         <span className="relative z-10">إنشاء حساب</span>
                         <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />
                       </button>
-                    </div>
+                    </motion.div>
                   </>
                 )}
               </div>
 
               {/* Mobile trigger */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setMobileOpen(true)}
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-2xl md:hidden transition-all duration-200 active:scale-90 hover:scale-110 group",
+                  "flex h-10 w-10 items-center justify-center rounded-2xl md:hidden transition-all duration-300 group",
                   scrolled ? "hover:bg-accent/60" : "",
                 )}
                 style={!scrolled ? { backgroundColor: "rgba(255,255,255,0.06)" } : {}}
@@ -539,7 +582,7 @@ export function PublicNavbar() {
                   }}
                 />
                 <Menu className="h-5 w-5 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </div>
@@ -558,11 +601,13 @@ export function PublicNavbar() {
               onClick={closeMobile}
               aria-hidden="true"
             >
-              <div
+              <motion.div
                 className="absolute inset-0"
                 style={{
                   background: `radial-gradient(ellipse at 80% 20%, ${primary}25, transparent 60%)`,
                 }}
+                animate={{ opacity: [0.4, 0.8, 0.4] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               />
             </motion.div>
 
@@ -578,19 +623,28 @@ export function PublicNavbar() {
               aria-label="القائمة الجانبية"
             >
               <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-                <div
+                <motion.div
                   className="absolute -top-20 -end-20 h-60 w-60 rounded-full blur-3xl"
                   style={{ backgroundColor: `${primary}12` }}
+                  animate={{ scale: [1, 1.2, 1], x: [0, -10, 0], y: [0, 10, 0] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
                 />
-                <div
+                <motion.div
                   className="absolute -bottom-20 -start-20 h-60 w-60 rounded-full blur-3xl"
                   style={{ backgroundColor: `${secondary}10` }}
+                  animate={{ scale: [1.1, 1, 1.1], x: [0, 10, 0], y: [0, -10, 0] }}
+                  transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
                 />
               </div>
 
               {/* Header */}
               <div className="relative flex items-center justify-between border-b px-5 py-5" style={{ borderColor: `${primary}15` }}>
-                <div className="flex items-center gap-2.5">
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.12 }}
+                  className="flex items-center gap-2.5"
+                >
                   {logo ? (
                     <Image src={logo} alt="" width={90} height={26} className="h-6 w-auto" />
                   ) : (
@@ -599,10 +653,12 @@ export function PublicNavbar() {
                     </div>
                   )}
                   <span className="text-sm font-bold" style={{ color: primary }}>{tenantName}</span>
-                </div>
-                <button
+                </motion.div>
+                <motion.button
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={closeMobile}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-90 group"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground transition-all group"
                   style={{ backgroundColor: `${primary}08` }}
                   aria-label="إغلاق القائمة"
                 >
@@ -615,7 +671,7 @@ export function PublicNavbar() {
                     }}
                   />
                   <X className="h-[18px] w-[18px] relative z-10 group-hover:text-[#2D1B00] transition-colors" />
-                </button>
+                </motion.button>
               </div>
 
               {/* Links */}
@@ -624,7 +680,13 @@ export function PublicNavbar() {
                   {navLinks.map(({ label, href, icon: Icon }, i) => {
                     const isActive = activeSection === href;
                     return (
-                      <div key={href}>
+                      <motion.div
+                        key={href}
+                        custom={i}
+                        initial={{ x: 60, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.07, type: "spring", stiffness: 240, damping: 22 }}
+                      >
                         <Link
                           href={href}
                           onClick={() => { setActiveSection(href); closeMobile(); }}
@@ -637,6 +699,7 @@ export function PublicNavbar() {
                         >
                           {isActive ? (
                             <>
+                              {/* Hover: border = secondary */}
                               <span
                                 className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                                 style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
@@ -644,6 +707,7 @@ export function PublicNavbar() {
                             </>
                           ) : (
                             <>
+                              {/* Hover: bg = secondary, border = primary */}
                               <span
                                 className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
                                 style={{
@@ -661,18 +725,27 @@ export function PublicNavbar() {
                           )} />
                           <span className="relative z-10 group-hover:text-[#2D1B00] transition-colors">{label}</span>
                           {isActive && (
-                            <span className="me-auto relative z-10">
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="me-auto relative z-10"
+                            >
                               <ChevronLeft className="h-4 w-4 opacity-70" />
-                            </span>
+                            </motion.span>
                           )}
                         </Link>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
 
                 {/* Auth in mobile */}
-                <div className="mt-8 space-y-3">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                  className="mt-8 space-y-3"
+                >
                   {isLoggedIn ? (
                     <div className="space-y-3">
                       <div
@@ -770,7 +843,7 @@ export function PublicNavbar() {
                       </button>
                     </>
                   )}
-                </div>
+                </motion.div>
               </div>
 
               <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none" />

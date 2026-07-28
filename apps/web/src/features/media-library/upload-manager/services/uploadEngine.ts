@@ -16,6 +16,7 @@ import {
   UPLOAD_RETRY_MAX_DELAY,
   UPLOAD_SPEED_SMOOTHING,
   UPLOAD_SLOW_THRESHOLD,
+  UPLOAD_PERMISSION,
   UPLOAD_SESSION_TTL,
   UPLOAD_SYNC_TAG,
   CHUNK_MAX_RETRIES,
@@ -1131,5 +1132,6 @@ class UploadEngine {
 
 export const uploadEngine = new UploadEngine();
 export { uploadGuard } from "./uploadGuard";
+export { UPLOAD_PERMISSION };
 export { networkMonitor } from "./networkMonitor";
 export type { UploadSource };

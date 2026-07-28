@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCanAny } from "@/hooks/useCan";
+import { useCan } from "@/hooks/useCan";
 import { useUploadManagerStore } from "../store";
-import { uploadEngine, UPLOAD_PERMISSIONS } from "../services";
+import { uploadEngine, UPLOAD_PERMISSION } from "../services";
 import { extractFilesFromDataTransfer, hasFilesInDataTransfer } from "../utils/files";
 
 /**
@@ -12,7 +12,7 @@ import { extractFilesFromDataTransfer, hasFilesInDataTransfer } from "../utils/f
  * workspace without modifying the workspace itself.
  */
 export function useUploadDragDrop() {
-  const canUpload = useCanAny([...UPLOAD_PERMISSIONS]);
+  const canUpload = useCan(UPLOAD_PERMISSION);
   const setDragDepth = useUploadManagerStore((s) => s.setDragDepth);
 
   useEffect(() => {

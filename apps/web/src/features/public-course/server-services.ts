@@ -25,16 +25,10 @@ async function serverFetch<T>(path: string): Promise<T> {
       ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
       ...(tenantDomain ? { "X-Tenant-Domain": tenantDomain } : {}),
     },
-    cache: "no-store",
+    next: { revalidate: 300 },
   });
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error(`[serverFetch] ${res.status} ${path}`, {
-      tenantId,
-      tenantDomain,
-      body: body.slice(0, 500),
-    });
     throw new Error(`API ${res.status}: ${path}`);
   }
 
@@ -193,8 +187,7 @@ export const publicCourseServerService = {
     try {
       const json = await serverFetch<{ data: Raw }>(`/public/courses/${slug}`);
       return json.data ? formatCourse(json.data) : null;
-    } catch (err) {
-      console.error(`[getBySlug] Failed for slug "${slug}":`, err);
+    } catch {
       return null;
     }
   },

@@ -8,12 +8,12 @@ interface DomainVerificationFlowProps {
   status: VerificationStatus;
 }
 
-const STEPS: { key: VerificationStatus; label: string; description: string }[] = [
-  { key: "pending", label: "قيد الانتظار", description: "في انتظار التحقق من سجل DNS" },
-  { key: "dns_found", label: "تم العثور على DNS", description: "تم التحقق من سجل DNS بنجاح" },
-  { key: "ssl_requested", label: "جاري إصدار شهادة SSL", description: "تم طلب شهادة SSL من Caddy" },
-  { key: "ssl_issued", label: "تم إصدار شهادة SSL", description: "تم إصدار شهادة SSL بنجاح" },
-  { key: "active", label: "نشط", description: "النطاق جاهز للاستخدام" },
+const STEPS: { key: VerificationStatus; label: string }[] = [
+  { key: "pending", label: "قيد الانتظار" },
+  { key: "dns_found", label: "تم العثور على DNS" },
+  { key: "ssl_requested", label: "تم طلب SSL" },
+  { key: "ssl_issued", label: "تم إصدار SSL" },
+  { key: "active", label: "نشط" },
 ];
 
 function DomainVerificationFlow({ status }: DomainVerificationFlowProps) {
@@ -21,12 +21,7 @@ function DomainVerificationFlow({ status }: DomainVerificationFlowProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">حالة التحقق</h4>
-        {status !== "active" && (
-          <span className="text-xs text-muted-foreground">يتم التحقق تلقائياً</span>
-        )}
-      </div>
+      <h4 className="text-sm font-semibold">حالة التحقق</h4>
       <div className="relative">
         {STEPS.map((step, idx) => {
           const isCompleted = idx < currentIdx;
@@ -61,9 +56,6 @@ function DomainVerificationFlow({ status }: DomainVerificationFlowProps) {
                   isPending && "text-muted-foreground",
                 )}>
                   {step.label}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {step.description}
                 </p>
               </div>
             </div>

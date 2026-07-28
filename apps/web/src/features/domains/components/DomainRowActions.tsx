@@ -1,21 +1,18 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo } from "react";
 import {
   Eye,
+  Pencil,
+  ShieldCheck,
   RefreshCw,
   Shield,
   Copy,
-  Check,
   ExternalLink,
-  FileText,
-  Ban,
+  Star,
   Trash2,
   MoreHorizontal,
-  Globe,
-  Server,
-  Pencil,
-  Star,
+  ScrollText,
 } from "lucide-react";
 import {
   AppDropdownMenu,
@@ -30,6 +27,7 @@ interface DomainRowActionsProps {
   domain: PlatformDomain;
   onView: () => void;
   onEdit: () => void;
+  onVerify: () => void;
   onRefreshStatus: () => void;
   onRenewSsl: () => void;
   onCopy: () => void;
@@ -42,6 +40,7 @@ const DomainRowActions = memo(function DomainRowActions({
   domain,
   onView,
   onEdit,
+  onVerify,
   onRefreshStatus,
   onRenewSsl,
   onCopy,
@@ -49,97 +48,58 @@ const DomainRowActions = memo(function DomainRowActions({
   onMakePrimary,
   onDelete,
 }: DomainRowActionsProps) {
-  const [copied, setCopied] = useState(false);
-  const [dnsCopied, setDnsCopied] = useState(false);
-
-  const handleCopyDomain = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(domain.domain);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [domain.domain]);
-
-  const handleOpenWebsite = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://${domain.domain}`, "_blank", "noopener,noreferrer");
-  }, [domain.domain]);
-
-  const handleOpenAdmin = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://${domain.domain}/admin`, "_blank", "noopener,noreferrer");
-  }, [domain.domain]);
-
-  const handleCopyDnsRecords = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    const records = domain.dnsRecords
-      .map((r) => `${r.type}\t${r.host}\t${r.value}\t${r.ttl}`)
-      .join("\n");
-    navigator.clipboard.writeText(records || "No DNS records");
-    setDnsCopied(true);
-    setTimeout(() => setDnsCopied(false), 2000);
-  }, [domain.dnsRecords]);
-
   return (
     <AppDropdownMenu>
       <AppDropdownMenuTrigger asChild>
         <button
           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
           aria-label="خيارات النطاق"
-          onClick={(e) => e.stopPropagation()}
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </AppDropdownMenuTrigger>
-      <AppDropdownMenuContent align="end" className="w-52">
+      <AppDropdownMenuContent align="end" className="w-48">
         <AppDropdownMenuItem onClick={onView}>
           <Eye className="h-4 w-4" />
-          عرض التفاصيل
+          عرض
         </AppDropdownMenuItem>
         <AppDropdownMenuItem onClick={onEdit}>
           <Pencil className="h-4 w-4" />
           تعديل
         </AppDropdownMenuItem>
         <AppDropdownMenuSeparator />
+        {domain.verificationStatus !== "active" && (
+          <AppDropdownMenuItem onClick={onVerify}>
+            <ShieldCheck className="h-4 w-4" />
+            التحقق من DNS
+          </AppDropdownMenuItem>
+        )}
         <AppDropdownMenuItem onClick={onRefreshStatus}>
           <RefreshCw className="h-4 w-4" />
-          فحص DNS الآن
+          تحديث الحالة
         </AppDropdownMenuItem>
         {domain.ssl.status !== "active" && (
           <AppDropdownMenuItem onClick={onRenewSsl}>
             <Shield className="h-4 w-4" />
-            إعادة محاولة SSL
+            تجديد SSL
           </AppDropdownMenuItem>
         )}
-        <AppDropdownMenuItem onClick={onView}>
-          <FileText className="h-4 w-4" />
-          عرض السجلات
-        </AppDropdownMenuItem>
         <AppDropdownMenuSeparator />
         <AppDropdownMenuItem onClick={onCopy}>
-          {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-          {copied ? "تم النسخ" : "نسخ النطاق"}
+          <Copy className="h-4 w-4" />
+          نسخ النطاق
         </AppDropdownMenuItem>
         <AppDropdownMenuItem onClick={onOpen}>
-          <Globe className="h-4 w-4" />
-          فتح الموقع
+          <ExternalLink className="h-4 w-4" />
+          فتح النطاق
         </AppDropdownMenuItem>
-        <AppDropdownMenuItem onClick={handleOpenAdmin}>
-          <Server className="h-4 w-4" />
-          فتح لوحة التحكم
-        </AppDropdownMenuItem>
-        <AppDropdownMenuItem onClick={handleCopyDnsRecords}>
-          {dnsCopied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-          {dnsCopied ? "تم النسخ" : "نسخ سجلات DNS"}
-        </AppDropdownMenuItem>
+        {!domain.isPrimary && (
+          <AppDropdownMenuItem onClick={onMakePrimary}>
+            <Star className="h-4 w-4" />
+            تعيين كأساسي
+          </AppDropdownMenuItem>
+        )}
         <AppDropdownMenuSeparator />
-        <AppDropdownMenuItem onClick={onMakePrimary}>
-          <Star className="h-4 w-4" />
-          جعل أساسي
-        </AppDropdownMenuItem>
-        <AppDropdownMenuItem onClick={(e) => e.stopPropagation()}>
-          <Ban className="h-4 w-4" />
-          إيقاف مؤقت
-        </AppDropdownMenuItem>
         <AppDropdownMenuItem
           onClick={onDelete}
           className="text-destructive focus:text-destructive"

@@ -1,9 +1,9 @@
 export * from "./types";
 export * from "./constants";
 export * from "./validators";
+export * from "./mock";
 export * from "./hooks";
 export * from "./services";
-export * from "./components/DomainStatusBadge";
 export * from "./components/DomainMetricCards";
 export * from "./components/DomainsToolbar";
 export * from "./components/DomainsTable";
@@ -21,4 +21,3 @@ export * from "./components/DomainLoadingState";
 export * from "./components/DomainErrorState";
 export * from "./components/DomainHealthWidget";
 export * from "./components/DomainVerificationFlow";
-export * from "./components/detail";

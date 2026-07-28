@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { Plus, Download, Trash2 } from "lucide-react";
 import SuperAdminGuard from "@/components/auth/SuperAdminGuard";
 import {
@@ -15,43 +14,39 @@ import {
   AppDropdownMenuContent,
   AppDropdownMenuItem,
   AppDropdownMenuSeparator,
-  AppTooltip,
-  AppTooltipTrigger,
-  AppTooltipContent,
-  AppTooltipProvider,
-  type DataTableColumn,
-  type DataTableFilter,
 } from "@/components/ui";
-import { formatDate, formatDateTime } from "@/lib/format";
 import {
-  usePlatformDomains as useDomains,
-  usePlatformDomainMetrics as useDomainMetrics,
-  usePlatformCreateDomain as useCreateDomain,
-  usePlatformRenewSsl as useRenewSsl,
-  usePlatformRefreshStatus as useRefreshStatus,
-  usePlatformDeleteDomain as useDeleteDomain,
-  usePlatformBulkDeleteDomains as useBulkDeleteDomains,
-  usePlatformBulkEnableHttps as useBulkEnableHttps,
-  usePlatformBulkDisableDomains as useBulkDisableDomains,
-  usePlatformBulkMakePrimary as useBulkMakePrimary,
+  useDomains,
+  useDomainsMetrics,
+  useCreateDomain,
+  useVerifyDomain,
+  useRenewSsl,
+  useRefreshStatus,
+  useMakePrimary,
+  useDeleteDomain,
+  useBulkDeleteDomains,
+  useBulkVerifyDomains,
+  useBulkEnableHttps,
+  useBulkDisableDomains,
+  useBulkMakePrimary,
 } from "@/features/domains/hooks";
-import { STATUS_OPTIONS, SSL_OPTIONS, DNS_OPTIONS, SORT_OPTIONS } from "@/features/domains/constants";
 import { DomainMetricCards } from "@/features/domains/components/DomainMetricCards";
-import { DomainStatusBadge } from "@/features/domains/components/DomainStatusBadge";
-import { DomainRowActions } from "@/features/domains/components/DomainRowActions";
+import { DomainsToolbar } from "@/features/domains/components/DomainsToolbar";
+import { DomainsTable } from "@/features/domains/components/DomainsTable";
 import { DomainCreateDrawer } from "@/features/domains/components/DomainCreateDrawer";
+import { DomainDetailsDrawer } from "@/features/domains/components/DomainDetailsDrawer";
 import { DomainDeleteDialog } from "@/features/domains/components/DomainDeleteDialog";
 import { DomainEmptyState } from "@/features/domains/components/DomainEmptyState";
 import { DomainLoadingState } from "@/features/domains/components/DomainLoadingState";
 import { DomainErrorState } from "@/features/domains/components/DomainErrorState";
-import { AppDataTable } from "@/components/ui/AppDataTable";
-import type { PlatformDomain, DomainStatus, SslStatus, DnsStatus, CreateDomainPayload } from "@/features/domains/types";
+import type { PlatformDomain, DomainStatus, DomainType, SslStatus, VerificationStatus, CreateDomainPayload } from "@/features/domains/types";
 
 function exportDomainsToCSV(domains: PlatformDomain[]) {
-  const headers = ["النطاق", "العميل", "الحالة", "DNS", "SSL", "الصحة", "آخر فحص"];
+  const headers = ["النطاق", "العميل", "النوع", "أساسي", "الحالة", "SSL", "DNS", "التحقق", "الصحة", "تاريخ الإنشاء"];
   const rows = domains.map((d) => [
-    d.domain, d.tenantName, d.status, d.dnsStatus, d.ssl.status,
-    d.health.status, d.health.lastChecked ?? "",
+    d.domain, d.tenantName, d.type, d.isPrimary ? "نعم" : "لا",
+    d.status, d.ssl.status, d.dnsStatus, d.verificationStatus,
+    `${d.health.overall}%`, new Date(d.createdAt).toLocaleDateString("ar"),
   ]);
   const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -63,49 +58,16 @@ function exportDomainsToCSV(domains: PlatformDomain[]) {
   URL.revokeObjectURL(url);
 }
 
-function RelativeTime({ date }: { date: string | null }) {
-  if (!date) return <span className="text-xs text-muted-foreground">—</span>;
-
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  let relative = "";
-  if (diffMin < 1) relative = "الآن";
-  else if (diffMin < 60) relative = `منذ ${diffMin} د`;
-  else if (diffHr < 24) relative = `منذ ${diffHr} س`;
-  else if (diffDay < 30) relative = `منذ ${diffDay} ي`;
-  else relative = formatDate(date);
-
-  return (
-    <AppTooltipProvider delayDuration={200}>
-      <AppTooltip>
-        <AppTooltipTrigger asChild>
-          <span className="cursor-help text-xs text-muted-foreground tabular-nums">
-            {relative}
-          </span>
-        </AppTooltipTrigger>
-        <AppTooltipContent side="top">
-          <p className="text-xs">{formatDateTime(date)}</p>
-        </AppTooltipContent>
-      </AppTooltip>
-    </AppTooltipProvider>
-  );
-}
-
 function DomainsPage() {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<DomainStatus | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<DomainType | "all">("all");
   const [sslFilter, setSslFilter] = useState<SslStatus | "all">("all");
-  const [dnsFilter, setDnsFilter] = useState<DnsStatus | "all">("all");
-  const [tenantFilter, setTenantFilter] = useState("all");
-  const [sort, setSort] = useState("domain");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [verificationFilter, setVerificationFilter] = useState<VerificationStatus | "all">("all");
+  const [sort, setSort] = useState("createdAt");
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PlatformDomain | null>(null);
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
@@ -114,45 +76,59 @@ function DomainsPage() {
   const params = useMemo(() => ({
     search,
     status: statusFilter,
+    type: typeFilter,
     sslStatus: sslFilter,
-  }), [search, statusFilter, sslFilter]);
+    verificationStatus: verificationFilter,
+    sort: sort as "domain" | "createdAt" | "tenantName" | "type",
+  }), [search, statusFilter, typeFilter, sslFilter, verificationFilter, sort]);
 
   const domainsQuery = useDomains(params);
-  const { metrics: dashboardMetrics, isLoading: metricsLoading } = useDomainMetrics();
+  const metricsQuery = useDomainsMetrics();
   const createDomain = useCreateDomain();
+  const verifyDomain = useVerifyDomain();
   const renewSsl = useRenewSsl();
   const refreshStatus = useRefreshStatus();
+  const makePrimary = useMakePrimary();
   const deleteDomain = useDeleteDomain();
   const bulkDelete = useBulkDeleteDomains();
+  const bulkVerify = useBulkVerifyDomains();
   const bulkEnableHttps = useBulkEnableHttps();
   const bulkDisable = useBulkDisableDomains();
   const bulkMakePrimary = useBulkMakePrimary();
 
-  const allDomains = domainsQuery.data?.data ?? [];
-  const isLoading = domainsQuery.isLoading;
+  const domains = domainsQuery.data?.data ?? [];
+  const isLoading = domainsQuery.isLoading || metricsQuery.isLoading;
   const isError = domainsQuery.isError;
 
-  const tenants = useMemo(() => {
-    const map = new Map<string, { id: string; name: string }>();
-    allDomains.forEach((d) => {
-      if (!map.has(d.tenantId)) map.set(d.tenantId, { id: d.tenantId, name: d.tenantName });
-    });
-    return Array.from(map.values());
-  }, [allDomains]);
+  const openCreateDrawer = useCallback(() => {
+    setCreateDrawerOpen(true);
+  }, []);
 
-  const domains = useMemo(() => {
-    let result = allDomains;
-    if (tenantFilter !== "all") {
-      result = result.filter((d) => d.tenantId === tenantFilter);
-    }
-    return result;
-  }, [allDomains, tenantFilter]);
+  const openViewDrawer = useCallback((domain: PlatformDomain) => {
+    setSelectedDomainId(domain.id);
+    setDetailsDrawerOpen(true);
+  }, []);
 
-  const openCreateDrawer = useCallback(() => setCreateDrawerOpen(true), []);
+  const openEditDrawer = useCallback((domain: PlatformDomain) => {
+    setSelectedDomainId(domain.id);
+    setDetailsDrawerOpen(true);
+  }, []);
 
-  const handleViewDetails = useCallback((domain: PlatformDomain) => {
-    router.push(`/superadmin/dashboard/domains/${domain.id}`);
-  }, [router]);
+  const handleCreateSave = useCallback(
+    (data: CreateDomainPayload) => {
+      createDomain.mutate(data, {
+        onSuccess: () => {
+          setCreateDrawerOpen(false);
+        },
+      });
+    },
+    [createDomain],
+  );
+
+  const handleVerify = useCallback(
+    (domain: PlatformDomain) => verifyDomain.mutate(domain.id),
+    [verifyDomain],
+  );
 
   const handleRefreshStatus = useCallback(
     (domain: PlatformDomain) => refreshStatus.mutate(domain.id),
@@ -164,10 +140,6 @@ function DomainsPage() {
     [renewSsl],
   );
 
-  const handleEdit = useCallback((domain: PlatformDomain) => {
-    router.push(`/superadmin/dashboard/domains/${domain.id}/edit`);
-  }, [router]);
-
   const handleCopy = useCallback((domain: PlatformDomain) => {
     navigator.clipboard.writeText(domain.domain);
   }, []);
@@ -176,9 +148,10 @@ function DomainsPage() {
     window.open(`https://${domain.domain}`, "_blank", "noopener,noreferrer");
   }, []);
 
-  const handleMakePrimary = useCallback((domain: PlatformDomain) => {
-    console.log("make primary", domain.id);
-  }, []);
+  const handleMakePrimary = useCallback(
+    (domain: PlatformDomain) => makePrimary.mutate(domain.id),
+    [makePrimary],
+  );
 
   const handleDelete = useCallback((domain: PlatformDomain) => {
     setDeleteTarget(domain);
@@ -195,156 +168,30 @@ function DomainsPage() {
     });
   }, [deleteTarget, deleteDomain]);
 
-  const handleCreateSave = useCallback(
-    (data: CreateDomainPayload) => {
-      createDomain.mutate(data, { onSuccess: () => setCreateDrawerOpen(false) });
+  const handleBulkAction = useCallback(
+    (action: string) => {
+      if (selectedDomains.length === 0) return;
+      switch (action) {
+        case "delete":
+          setBulkDeleteOpen(true);
+          return;
+        case "verify":
+          bulkVerify.mutate(selectedDomains);
+          break;
+        case "https":
+          bulkEnableHttps.mutate(selectedDomains);
+          break;
+        case "disable":
+          bulkDisable.mutate(selectedDomains);
+          break;
+        case "primary":
+          bulkMakePrimary.mutate(selectedDomains);
+          break;
+      }
+      setSelectedDomains([]);
     },
-    [createDomain],
+    [selectedDomains, bulkDelete, bulkVerify, bulkEnableHttps, bulkDisable, bulkMakePrimary],
   );
-
-  const columns = useMemo<DataTableColumn<PlatformDomain>[]>(
-    () => [
-      {
-        id: "domain",
-        label: "النطاق",
-        sortable: true,
-        render: (row) => (
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-mono text-sm font-medium truncate">{row.domain}</span>
-            {row.isPrimary && (
-              <span className="shrink-0 rounded bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                أساسي
-              </span>
-            )}
-          </div>
-        ),
-        mobileRender: (row) => (
-          <div>
-            <p className="font-mono text-sm font-medium">{row.domain}</p>
-            <p className="text-xs text-muted-foreground">{row.tenantName}</p>
-          </div>
-        ),
-      },
-      {
-        id: "tenantName",
-        label: "العميل",
-        sortable: true,
-        hidden: "md",
-        render: (row) => (
-          <span className="text-sm text-muted-foreground">{row.tenantName}</span>
-        ),
-      },
-      {
-        id: "status",
-        label: "الحالة",
-        sortable: true,
-        render: (row) => <DomainStatusBadge type="status" value={row.status} />,
-      },
-      {
-        id: "dnsStatus",
-        label: "DNS",
-        sortable: false,
-        render: (row) => <DomainStatusBadge type="dns" value={row.dnsStatus} />,
-        hidden: "lg",
-      },
-      {
-        id: "ssl",
-        label: "SSL",
-        sortable: false,
-        render: (row) => <DomainStatusBadge type="ssl" value={row.ssl.status} />,
-      },
-      {
-        id: "health",
-        label: "الصحة",
-        sortable: false,
-        render: (row) => <DomainStatusBadge type="health" value={row.health.status} />,
-        hidden: "lg",
-      },
-      {
-        id: "lastCheck",
-        label: "آخر فحص",
-        sortable: false,
-        render: (row) => <RelativeTime date={row.health.lastChecked} />,
-        hidden: "md",
-      },
-      {
-        id: "actions",
-        label: "",
-        className: "w-10",
-        render: (row) => (
-          <DomainRowActions
-            domain={row}
-            onView={() => handleViewDetails(row)}
-            onEdit={() => handleEdit(row)}
-            onRefreshStatus={() => handleRefreshStatus(row)}
-            onRenewSsl={() => handleRenewSsl(row)}
-            onCopy={() => handleCopy(row)}
-            onOpen={() => handleOpen(row)}
-            onMakePrimary={() => handleMakePrimary(row)}
-            onDelete={() => handleDelete(row)}
-          />
-        ),
-      },
-    ],
-    [handleViewDetails, handleEdit, handleRefreshStatus, handleRenewSsl, handleCopy, handleOpen, handleMakePrimary, handleDelete],
-  );
-
-  const filters = useMemo<DataTableFilter[]>(
-    () => [
-      { id: "status", label: "الحالة", options: STATUS_OPTIONS },
-      {
-        id: "ssl.status",
-        label: "SSL",
-        options: SSL_OPTIONS,
-        accessor: (row) => (row as PlatformDomain).ssl.status,
-      },
-      { id: "dnsStatus", label: "DNS", options: DNS_OPTIONS },
-      {
-        id: "tenantId",
-        label: "العميل",
-        options: [
-          { value: "all", label: "جميع العملاء" },
-          ...tenants.map((t) => ({ value: t.id, label: t.name })),
-        ],
-      },
-    ],
-    [tenants],
-  );
-
-  const sortOptions = useMemo(
-    () => SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
-    [],
-  );
-
-  const handleSortChange = useCallback((value: string) => {
-    if (sort === value) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSort(value);
-      setSortDir("asc");
-    }
-  }, [sort]);
-
-  const handleFilterChange = useCallback((filterId: string, value: string) => {
-    switch (filterId) {
-      case "status": setStatusFilter(value as DomainStatus | "all"); break;
-      case "ssl.status": setSslFilter(value as SslStatus | "all"); break;
-      case "dnsStatus": setDnsFilter(value as DnsStatus | "all"); break;
-      case "tenantId": setTenantFilter(value); break;
-    }
-  }, []);
-
-  const activeFilters = useMemo(() => ({
-    status: statusFilter,
-    "ssl.status": sslFilter,
-    dnsStatus: dnsFilter,
-    tenantId: tenantFilter,
-  }), [statusFilter, sslFilter, dnsFilter, tenantFilter]);
-
-  const handleBulkDelete = useCallback(() => {
-    if (selectedDomains.length === 0) return;
-    setBulkDeleteOpen(true);
-  }, [selectedDomains]);
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedDomains.length === 0) return;
@@ -355,42 +202,6 @@ function DomainsPage() {
       },
     });
   }, [selectedDomains, bulkDelete]);
-
-  const renderMobileCard = useCallback((row: PlatformDomain) => (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-start justify-between">
-        <div className="min-w-0">
-          <p className="font-mono text-sm font-medium truncate">{row.domain}</p>
-          <p className="text-xs text-muted-foreground">{row.tenantName}</p>
-        </div>
-        <DomainRowActions
-          domain={row}
-          onView={() => handleViewDetails(row)}
-          onEdit={() => handleEdit(row)}
-          onRefreshStatus={() => handleRefreshStatus(row)}
-          onRenewSsl={() => handleRenewSsl(row)}
-          onCopy={() => handleCopy(row)}
-          onOpen={() => handleOpen(row)}
-          onMakePrimary={() => handleMakePrimary(row)}
-          onDelete={() => handleDelete(row)}
-        />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <DomainStatusBadge type="status" value={row.status} />
-        <DomainStatusBadge type="dns" value={row.dnsStatus} />
-        <DomainStatusBadge type="ssl" value={row.ssl.status} />
-        <DomainStatusBadge type="health" value={row.health.status} />
-      </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-        <span>آخر فحص: <RelativeTime date={row.health.lastChecked} /></span>
-        {row.isPrimary && (
-          <span className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-            أساسي
-          </span>
-        )}
-      </div>
-    </div>
-  ), [handleViewDetails, handleEdit, handleRefreshStatus, handleRenewSsl, handleCopy, handleOpen, handleMakePrimary, handleDelete]);
 
   return (
     <SuperAdminGuard>
@@ -407,25 +218,28 @@ function DomainsPage() {
                   </AppButton>
                 </AppDropdownMenuTrigger>
                 <AppDropdownMenuContent align="end" className="w-48">
-                  <AppDropdownMenuItem onClick={() => bulkEnableHttps.mutate(selectedDomains)}>
+                  <AppDropdownMenuItem onClick={() => handleBulkAction("verify")}>
+                    تحقق
+                  </AppDropdownMenuItem>
+                  <AppDropdownMenuItem onClick={() => handleBulkAction("https")}>
                     تفعيل HTTPS
                   </AppDropdownMenuItem>
-                  <AppDropdownMenuItem onClick={() => bulkMakePrimary.mutate(selectedDomains)}>
+                  <AppDropdownMenuItem onClick={() => handleBulkAction("primary")}>
                     تعيين كأساسي
                   </AppDropdownMenuItem>
                   <AppDropdownMenuSeparator />
-                  <AppDropdownMenuItem onClick={() => bulkDisable.mutate(selectedDomains)}>
+                  <AppDropdownMenuItem onClick={() => handleBulkAction("disable")}>
                     تعطيل
                   </AppDropdownMenuItem>
                   <AppDropdownMenuItem
-                    onClick={handleBulkDelete}
+                    onClick={() => handleBulkAction("delete")}
                     className="text-destructive focus:text-destructive"
                   >
                     حذف
                   </AppDropdownMenuItem>
                 </AppDropdownMenuContent>
               </AppDropdownMenu>
-              <AppButton variant="outline" size="sm" onClick={() => exportDomainsToCSV(allDomains)}>
+              <AppButton variant="outline" size="sm" onClick={() => exportDomainsToCSV(domains)}>
                 <Download className="h-4 w-4" />
                 تصدير
               </AppButton>
@@ -441,8 +255,8 @@ function DomainsPage() {
 
         <AppSection>
           <DomainMetricCards
-            metrics={dashboardMetrics}
-            loading={metricsLoading}
+            data={metricsQuery.data}
+            loading={metricsQuery.isLoading}
           />
         </AppSection>
 
@@ -451,17 +265,35 @@ function DomainsPage() {
             <DomainErrorState onRetry={() => domainsQuery.refetch()} />
           ) : isLoading ? (
             <DomainLoadingState />
-          ) : allDomains.length === 0 && !search ? (
+          ) : domains.length === 0 && !search && statusFilter === "all" && typeFilter === "all" ? (
             <DomainEmptyState onCreate={openCreateDrawer} />
           ) : (
             <>
+              <div className="mb-4">
+                <DomainsToolbar
+                  search={search}
+                  onSearchChange={setSearch}
+                  statusFilter={statusFilter}
+                  onStatusChange={setStatusFilter}
+                  typeFilter={typeFilter}
+                  onTypeChange={setTypeFilter}
+                  sslFilter={sslFilter}
+                  onSslChange={setSslFilter}
+                  verificationFilter={verificationFilter}
+                  onVerificationChange={setVerificationFilter}
+                  sort={sort}
+                  onSortChange={setSort}
+                  onRefresh={() => domainsQuery.refetch()}
+                  refreshing={domainsQuery.isRefetching}
+                />
+              </div>
               {selectedDomains.length > 0 && (
                 <div className="mb-4 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-2">
                   <span className="text-sm text-muted-foreground">
                     تم تحديد <span className="font-semibold text-foreground">{selectedDomains.length}</span> نطاق
                   </span>
                   <div className="mr-auto flex items-center gap-2">
-                    <AppButton variant="destructive" size="sm" onClick={handleBulkDelete} loading={bulkDelete.isPending}>
+                    <AppButton variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} loading={bulkDelete.isPending}>
                       <Trash2 className="h-4 w-4" />
                       حذف المحددة
                     </AppButton>
@@ -471,31 +303,25 @@ function DomainsPage() {
                   </div>
                 </div>
               )}
-              <AppDataTable
-                columns={columns}
-                data={domains}
-                rowKey={(row) => row.id}
-                searchPlaceholder="بحث عن نطاق أو عميل..."
-                searchValue={search}
-                onSearchChange={setSearch}
-                searchKeys={["domain", "tenantName"]}
-                filters={filters}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                sortOptions={sortOptions}
-                sortValue={sort}
-                sortDirection={sortDir}
-                onSortChange={handleSortChange}
-                onSortDirectionChange={setSortDir}
-                onRowClick={handleViewDetails}
-                renderMobileCard={renderMobileCard}
-                refreshButton
-                onRefresh={() => domainsQuery.refetch()}
-                refreshing={domainsQuery.isRefetching}
-                emptyTitle="لا توجد نتائج مطابقة"
-                emptyDescription="جرّب تغيير معايير البحث أو الفلترة."
-                totalLabel={`إجمالي ${domains.length} نطاق`}
+              <DomainsTable
+                domains={domains}
+                selectedIds={selectedDomains}
+                onSelectionChange={setSelectedDomains}
+                onView={openViewDrawer}
+                onEdit={openEditDrawer}
+                onVerify={handleVerify}
+                onRefreshStatus={handleRefreshStatus}
+                onRenewSsl={handleRenewSsl}
+                onCopy={handleCopy}
+                onOpen={handleOpen}
+                onMakePrimary={handleMakePrimary}
+                onDelete={handleDelete}
               />
+              {domains.length > 0 && (
+                <p className="mt-3 text-xs text-center text-muted-foreground/60">
+                  إجمالي {domains.length} نطاق
+                </p>
+              )}
             </>
           )}
         </AppSection>
@@ -505,6 +331,12 @@ function DomainsPage() {
           onOpenChange={setCreateDrawerOpen}
           onSave={handleCreateSave}
           saving={createDomain.isPending}
+        />
+
+        <DomainDetailsDrawer
+          open={detailsDrawerOpen}
+          onOpenChange={setDetailsDrawerOpen}
+          domainId={selectedDomainId}
         />
 
         <DomainDeleteDialog

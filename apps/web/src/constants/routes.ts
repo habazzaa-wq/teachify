@@ -15,7 +15,6 @@ export const routes = {
   dashboardSections: "/teacher/sections",
   dashboardLessons: "/teacher/lessons",
   dashboardStudents: "/teacher/students",
-  dashboardStudentDetail: "/teacher/students/[studentId]",
   dashboardContent: "/teacher/content",
   dashboardMedia: "/teacher/media",
   dashboardExams: "/teacher/exams",

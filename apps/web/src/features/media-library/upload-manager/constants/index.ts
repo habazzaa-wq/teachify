@@ -20,13 +20,8 @@ export const UPLOAD_SLOW_THRESHOLD = 50_000;
 /** Files larger than this surface a size warning. */
 export const UPLOAD_LARGE_FILE_BYTES = 500_000_000;
 
-/** Permission slugs required to enqueue uploads (RBAC). Matches backend MediaLibraryPolicy@upload. */
-export const UPLOAD_PERMISSIONS = [
-  "media.upload",
-  "media.create",
-  "courses.update",
-  "courses.create",
-] as const;
+/** Permission slug required to enqueue uploads (RBAC). */
+export const UPLOAD_PERMISSION = "media.upload";
 
 /* ------------------------------------------------------------------ *
  * Chunk engine tuning

@@ -39,8 +39,9 @@ class PlatformBunnySettingService
      * Persist settings, verifying credentials first when present.
      *
      * @param array<string, mixed> $data
+     * @return array<string, mixed>
      */
-    public function updateSettings(array $data, User $actor): PlatformBunnySetting
+    public function updateSettings(array $data, User $actor): array
     {
         $settings = $this->repository->getActive() ?? new PlatformBunnySetting();
 
@@ -227,8 +228,9 @@ class PlatformBunnySettingService
      * Rotate secrets: regenerate the signed URL secret and optionally replace keys.
      *
      * @param array<string, mixed> $data
+     * @return array<string, mixed>
      */
-    public function rotateSecrets(array $data, User $actor): PlatformBunnySetting
+    public function rotateSecrets(array $data, User $actor): array
     {
         $settings = $this->repository->getOrNew();
 
@@ -291,8 +293,10 @@ class PlatformBunnySettingService
 
     /**
      * Disable the Bunny integration without deleting credentials.
+     *
+     * @return array<string, mixed>
      */
-    public function disableIntegration(User $actor): PlatformBunnySetting
+    public function disableIntegration(User $actor): array
     {
         $settings = $this->repository->getOrNew();
         $settings->enabled = false;
@@ -306,8 +310,10 @@ class PlatformBunnySettingService
 
     /**
      * Delete only the credentials (Danger Zone).
+     *
+     * @return array<string, mixed>
      */
-    public function deleteCredentials(User $actor): PlatformBunnySetting
+    public function deleteCredentials(User $actor): array
     {
         $settings = $this->repository->deleteCredentials();
 
@@ -318,8 +324,10 @@ class PlatformBunnySettingService
 
     /**
      * Reset the entire configuration to platform defaults (Danger Zone).
+     *
+     * @return array<string, mixed>
      */
-    public function resetConfiguration(User $actor): PlatformBunnySetting
+    public function resetConfiguration(User $actor): array
     {
         $settings = $this->repository->reset();
 

@@ -201,8 +201,8 @@ export const mediaLibraryService = {
     return data.data ? formatAsset(data.data) : null;
   },
 
-  async bulkDelete(ids: number[], timeout?: number): Promise<void> {
-    await api.post("/media-library/assets/bulk/delete", { ids }, timeout ? { timeout } : undefined);
+  async bulkDelete(ids: number[]): Promise<void> {
+    await api.post("/media-library/assets/bulk/delete", { ids });
   },
 
   async bulkRestore(ids: number[]): Promise<void> {

@@ -80,19 +80,11 @@ export const VERIFICATION_OPTIONS = [
   { value: "active", label: "نشط" },
 ];
 
-export const DNS_OPTIONS = [
-  { value: "all", label: "جميع حالات DNS" },
-  { value: "verified", label: "موثّق" },
-  { value: "pending", label: "قيد التحقق" },
-  { value: "failed", label: "فشل" },
-  { value: "unconfigured", label: "غير مهيأ" },
-];
-
 export const SORT_OPTIONS = [
+  { value: "createdAt", label: "تاريخ الإنشاء" },
   { value: "domain", label: "النطاق" },
   { value: "tenantName", label: "اسم العميل" },
-  { value: "health.lastChecked", label: "آخر فحص" },
-  { value: "status", label: "الحالة" },
+  { value: "type", label: "النوع" },
 ];
 
 export const DNS_RECORD_TYPES = ["A", "AAAA", "CNAME", "TXT", "MX", "NS"] as const;

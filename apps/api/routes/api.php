@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Api\Platform\BunnyCenter\BunnyCenterController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
-use App\Http\Controllers\Api\Platform\PlatformPlanController;
 use App\Http\Controllers\Api\v1\Access\CourseAccessController;
 use App\Http\Controllers\Api\v1\Access\LessonAccessController;
 use App\Http\Controllers\Api\v1\Audit\ActivityLogController;
@@ -21,8 +20,6 @@ use App\Http\Controllers\Api\v1\Auth\InvitationController;
 use App\Http\Controllers\Api\v1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\v1\Auth\RoleController;
 use App\Http\Controllers\Api\v1\Auth\TenantUserController;
-use App\Http\Controllers\Api\v1\StudentController;
-use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
@@ -68,7 +65,6 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
-use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
@@ -117,7 +113,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
-    Route::post('/public/register', [\App\Http\Controllers\Api\v1\PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
@@ -131,7 +126,6 @@ Route::prefix('v1')->group(function () {
         ->name('media.serve');
 
     // Public course routes (no auth required)
-    Route::get('/public/courses', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'index']);
     Route::get('/public/courses/{slug}', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'show']);
     Route::get('/public/courses/{slug}/modules', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'modules']);
     Route::get('/public/courses/{slug}/related', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'related']);
@@ -403,20 +397,6 @@ Route::prefix('v1')->group(function () {
         Route::put('/users/{user}', [TenantUserController::class, 'update']);
         Route::patch('/users/{user}', [TenantUserController::class, 'update']);
         Route::delete('/users/{user}', [TenantUserController::class, 'destroy']);
-        Route::get('/students/metrics', [StudentController::class, 'metrics']);
-        Route::post('/students', [StudentController::class, 'store']);
-        Route::post('/students/invite', [StudentController::class, 'invite']);
-        Route::post('/students/bulk-destroy', [StudentController::class, 'bulkDestroy']);
-        Route::delete('/students/{student}', [StudentController::class, 'destroy']);
-        Route::get('/students/{student}', [StudentController::class, 'show']);
-        Route::get('/students/{student}/enrollments', [StudentController::class, 'enrollments']);
-        Route::get('/students/{student}/analytics', [StudentController::class, 'analytics']);
-        Route::get('/students', [StudentController::class, 'index']);
-
-        // Student profile (logged-in student self-service)
-        Route::get('/student/profile', [StudentProfileController::class, 'profile']);
-        Route::post('/student/profile/avatar', [StudentProfileController::class, 'updateAvatar']);
-
         Route::get('/permissions', [RoleController::class, 'permissions']);
         Route::get('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'index']);
         Route::put('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'update']);
@@ -435,9 +415,8 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/domains', [TenantDomainController::class, 'index']);
         Route::post('/domains', [TenantDomainController::class, 'store']);
-        Route::get('/domains/{tenantDomain}', [TenantDomainController::class, 'show']);
-        Route::get('/domains/{tenantDomain}/status', [TenantDomainController::class, 'status']);
         Route::put('/domains/{tenantDomain}', [TenantDomainController::class, 'update']);
+        Route::post('/domains/{tenantDomain}/verify', [TenantDomainController::class, 'verify']);
         Route::delete('/domains/{tenantDomain}', [TenantDomainController::class, 'destroy']);
 
         Route::get('/integrations', [TenantIntegrationController::class, 'index']);
@@ -518,13 +497,6 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
         Route::get('/audit-logs', [PlatformAuditController::class, 'index']);
         Route::apiResource('admins', PlatformAdminController::class);
 
-        Route::get('/domains', [PlatformDomainController::class, 'index']);
-        Route::post('/domains', [PlatformDomainController::class, 'store']);
-        Route::get('/domains/{tenantDomain}', [PlatformDomainController::class, 'show']);
-        Route::put('/domains/{tenantDomain}', [PlatformDomainController::class, 'update']);
-        Route::delete('/domains/{tenantDomain}', [PlatformDomainController::class, 'destroy']);
-        Route::post('/domains/bulk/delete', [PlatformDomainController::class, 'bulkDestroy']);
-
         Route::prefix('bunny-settings')->group(function () {
             Route::get('/', [PlatformBunnySettingController::class, 'index']);
             Route::get('/health', [PlatformBunnySettingController::class, 'health']);
@@ -548,20 +520,6 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
             Route::get('/tenants/{tenant}/verify', [UsageController::class, 'verify']);
         });
 
-        Route::prefix('plans')->group(function () {
-            Route::get('/metrics', [PlatformPlanController::class, 'metrics']);
-            Route::post('/bulk/delete', [PlatformPlanController::class, 'bulkDestroy']);
-            Route::post('/{platformPlan}/activate', [PlatformPlanController::class, 'activate']);
-            Route::post('/{platformPlan}/deactivate', [PlatformPlanController::class, 'deactivate']);
-            Route::post('/{platformPlan}/archive', [PlatformPlanController::class, 'archive']);
-            Route::post('/{platformPlan}/duplicate', [PlatformPlanController::class, 'duplicate']);
-            Route::get('/', [PlatformPlanController::class, 'index']);
-            Route::post('/', [PlatformPlanController::class, 'store']);
-            Route::get('/{platformPlan}', [PlatformPlanController::class, 'show']);
-            Route::put('/{platformPlan}', [PlatformPlanController::class, 'update']);
-            Route::delete('/{platformPlan}', [PlatformPlanController::class, 'destroy']);
-        });
-
         Route::prefix('bunny-center')->group(function () {
             Route::get('/metrics', [BunnyCenterController::class, 'metrics']);
             Route::get('/health', [BunnyCenterController::class, 'health']);
@@ -578,42 +536,6 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
 
 Route::get('/diag/ping', function () {
     return response()->json(['ok' => true, 'time' => now()->toIso8601String()]);
-});
-
-Route::get('/v1/platform/domain-check', function (\Illuminate\Http\Request $request) {
-    $ip = $request->ip();
-    if ($ip !== '127.0.0.1' && $ip !== '::1') {
-        return response()->json(['allowed' => false], 403);
-    }
-
-    $secret = config('services.caddy.ask_secret');
-    if ($secret === '' || $secret === null) {
-        return response()->json(['allowed' => false], 500);
-    }
-    if ($request->query('secret') !== $secret) {
-        return response()->json(['allowed' => false], 403);
-    }
-
-    $domain = $request->query('domain');
-
-    if (!is_string($domain) || $domain === '') {
-        return response()->json(['allowed' => false], 400);
-    }
-
-    $tenantDomain = \App\Models\TenantDomain::query()
-        ->where('domain', $domain)
-        ->whereIn('status', ['dns_verified', 'ssl_requested', 'ssl_issued', 'active'])
-        ->first();
-
-    if (!$tenantDomain) {
-        return response()->json(['allowed' => false], 404);
-    }
-
-    if (!$tenantDomain->tenant || $tenantDomain->tenant->status !== 'active') {
-        return response()->json(['allowed' => false], 404);
-    }
-
-    return response()->json(['allowed' => true]);
 });
 
 use App\Http\Controllers\Api\v1\Platform\BunnyDebugController;

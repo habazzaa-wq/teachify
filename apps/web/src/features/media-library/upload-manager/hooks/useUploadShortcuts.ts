@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCanAny } from "@/hooks/useCan";
+import { useCan } from "@/hooks/useCan";
 import { useUploadManagerStore } from "../store";
-import { UPLOAD_PERMISSIONS } from "../services";
+import { UPLOAD_PERMISSION } from "../services";
 
 export type UploadPickerMode = "file" | "folder";
 
@@ -16,7 +16,7 @@ export const UPLOAD_PICK_EVENT = "upload-manager:pick";
  * - Esc             → cancel the drag overlay
  */
 export function useUploadShortcuts() {
-  const canUpload = useCanAny([...UPLOAD_PERMISSIONS]);
+  const canUpload = useCan(UPLOAD_PERMISSION);
   const setDragDepth = useUploadManagerStore((s) => s.setDragDepth);
   const setOpen = useUploadManagerStore((s) => s.setOpen);
 

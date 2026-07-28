@@ -73,7 +73,6 @@ class IdentifyTenant
 
         return $request->is('api/platform/*')
             || $request->is('api/v1/platform/*')
-            || $request->is('api/diag/ping')
             || $request->is('api/v1/certificates/verify/*')
             || $request->is('api/v1/integrations/bunny/webhooks')
             || $request->is('api/v1/tenant/by-domain')

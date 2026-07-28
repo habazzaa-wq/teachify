@@ -11,8 +11,8 @@ class SuperAdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = config('seeders.superadmin.email', 'admin@platform.com');
-        $password = config('seeders.superadmin.password', 'change_me');
+        $email = env('SUPERADMIN_EMAIL', 'admin@platform.com');
+        $password = env('SUPERADMIN_PASSWORD', 'change_me');
 
         $user = User::query()->updateOrCreate(
             ['email' => $email],
@@ -32,7 +32,5 @@ class SuperAdminUserSeeder extends Seeder
                 'granted_by_user_id' => null,
             ],
         );
-
-        $this->command->info("Super Admin seeded: {$email}");
     }
 }

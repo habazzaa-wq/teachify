@@ -15,8 +15,6 @@ import {
   ArrowUp,
   ArrowDown,
   RefreshCw,
-  CheckSquare,
-  Trash2,
 } from "lucide-react";
 import {
   StudioContextMenu,
@@ -45,11 +43,9 @@ interface WorkspaceToolbarProps {
   onUpload: () => void;
   onCreateFolder: () => void;
   onRefresh: () => void;
-  onSelectAll?: () => void;
-  onDeleteAll?: () => void;
 }
 
-function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh, onSelectAll, onDeleteAll }: WorkspaceToolbarProps) {
+function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh }: WorkspaceToolbarProps) {
   const {
     viewMode, setViewMode,
     groupBy, setGroupBy,
@@ -90,16 +86,16 @@ function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh, on
   })), [setGroupBy]);
 
   return (
-    <div className="flex flex-col gap-2 border-b bg-background px-3 py-2 sm:px-4 sm:py-2.5">
+    <div className="flex flex-col gap-2 border-b bg-background px-4 py-2.5">
       {/* Top row: Search + actions */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         {/* Search */}
-        <div className="relative min-w-0 flex-1 sm:max-w-md">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
           <input
             value={filters.search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث..."
+            placeholder="بحث بالاسم، الوسوم، النوع..."
             className="w-full rounded-lg border bg-muted/30 py-2 pe-9 ps-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             aria-label="بحث في الوسائط"
           />
@@ -113,49 +109,46 @@ function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh, on
           )}
         </div>
 
-        {/* Filter selects - hidden on very small screens, shown on sm+ */}
-        <div className="hidden items-center gap-2 sm:flex">
-          {/* Type filter */}
+        {/* Type filter */}
+        <select
+          value={filters.type}
+          onChange={(e) => setTypeFilter(e.target.value as typeof filters.type)}
+          className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        >
+          {TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        {/* Status filter */}
+        <select
+          value={filters.status}
+          onChange={(e) => setStatusFilter(e.target.value as typeof filters.status)}
+          className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        {/* Sort */}
+        <div className="flex items-center gap-0">
           <select
-            value={filters.type}
-            onChange={(e) => setTypeFilter(e.target.value as typeof filters.type)}
-            className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value as typeof sortField)}
+            className="h-9 rounded-e-lg border border-e-0 bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           >
-            {TYPE_OPTIONS.map((opt) => (
+            {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-
-          {/* Status filter */}
-          <select
-            value={filters.status}
-            onChange={(e) => setStatusFilter(e.target.value as typeof filters.status)}
-            className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          <button
+            onClick={toggleSortDirection}
+            className="flex h-9 w-9 items-center justify-center rounded-s-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title={sortDirection === "asc" ? "تصاعدي" : "تنازلي"}
           >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-
-          {/* Sort */}
-          <div className="flex items-center gap-0">
-            <select
-              value={sortField}
-              onChange={(e) => setSortField(e.target.value as typeof sortField)}
-              className="h-9 rounded-e-lg border border-e-0 bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <button
-              onClick={toggleSortDirection}
-              className="flex h-9 w-9 items-center justify-center rounded-s-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              title={sortDirection === "asc" ? "تصاعدي" : "تنازلي"}
-            >
-              {sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
-            </button>
-          </div>
+            {sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+          </button>
         </div>
 
         {/* View mode */}
@@ -188,30 +181,6 @@ function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh, on
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Select All */}
-        {onSelectAll && totalAssets > 0 && (
-          <button
-            onClick={onSelectAll}
-            className="flex h-9 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent"
-            title="تحديد الكل"
-          >
-            <CheckSquare className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">تحديد الكل</span>
-          </button>
-        )}
-
-        {/* Delete All */}
-        {onDeleteAll && totalAssets > 0 && (
-          <button
-            onClick={onDeleteAll}
-            className="flex h-9 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
-            title="مسح الكل"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">مسح الكل</span>
-          </button>
-        )}
-
         {/* Refresh */}
         <button
           onClick={onRefresh}
@@ -241,7 +210,7 @@ function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh, on
       </div>
 
       {/* Second row: Active filters + summary */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">
           {totalAssets} {totalAssets === 1 ? "ملف" : "ملف"}
         </span>

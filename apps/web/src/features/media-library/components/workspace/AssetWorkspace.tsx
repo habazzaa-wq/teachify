@@ -22,7 +22,6 @@ interface AssetWorkspaceProps {
   onDownloadAsset: (asset: MediaAsset) => void;
   onBulkDelete: () => void;
   onBulkMove: () => void;
-  onDeleteAll?: (ids: number[]) => void;
 }
 
 function groupAssets(assets: MediaAsset[], groupBy: string): Map<string, MediaAsset[]> {
@@ -85,7 +84,6 @@ function AssetWorkspaceBase({
   onDownloadAsset,
   onBulkDelete,
   onBulkMove,
-  onDeleteAll,
 }: AssetWorkspaceProps) {
   const {
     selectedFolderId,
@@ -95,7 +93,6 @@ function AssetWorkspaceBase({
     sortDirection,
     selectedIds,
     selectAsset,
-    selectAll,
     clearSelection,
     setInspectorAssetId,
     filters,
@@ -159,14 +156,6 @@ function AssetWorkspaceBase({
     selectAsset(id, assets.findIndex((a) => a.id === id), !!e?.shiftKey, !!e?.ctrlKey || !!e?.metaKey, assetIds);
   }, [assets, selectAsset]);
 
-  const handleSelectAll = useCallback(() => {
-    selectAll(assets.map((a) => a.id));
-  }, [assets, selectAll]);
-
-  const handleDeleteAll = useCallback(() => {
-    onDeleteAll?.(assets.map((a) => a.id));
-  }, [assets, onDeleteAll]);
-
   const grouped = useMemo(() => groupAssets(assets, groupBy), [assets, groupBy]);
 
   const breadcrumbItems = useMemo(() => {
@@ -185,8 +174,6 @@ function AssetWorkspaceBase({
         onUpload={onUpload}
         onCreateFolder={onCreateFolder}
         onRefresh={() => refetch()}
-        onSelectAll={handleSelectAll}
-        onDeleteAll={handleDeleteAll}
       />
 
       {/* Breadcrumbs */}
@@ -197,7 +184,7 @@ function AssetWorkspaceBase({
       )}
 
       {/* Asset grid/list */}
-        <div className="flex-1 overflow-y-auto px-2 pb-24 pt-3 sm:px-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-24 pt-3">
         {isError ? (
           <StudioGenericError onRetry={() => refetch()} />
         ) : isLoading ? (

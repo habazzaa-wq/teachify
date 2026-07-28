@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/cn";
-import { ListChecks } from "lucide-react";
 
 interface CourseRequirementsProps {
   requirements: string[];
@@ -12,39 +11,38 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 8 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: "easeOut" as const },
-  },
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
 };
 
 export function CourseRequirements({ requirements }: CourseRequirementsProps) {
-  if (!requirements.length) return null;
+  if (!requirements.length) {
+    return null;
+  }
 
   return (
-    <section>
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
-          <ListChecks className="h-5 w-5 text-violet-500/70" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-          متطلبات الدورة
-        </h2>
-      </div>
+    <motion.section
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="mb-10"
+    >
+      <h2 className="section-title-accent mb-6 text-lg font-semibold tracking-tight">
+        متطلبات الدورة
+      </h2>
 
       <motion.ul
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-40px" }}
-        className="rounded-2xl border border-border/30 bg-card/40 p-5"
+        className="rounded-xl border border-border/50 bg-card/60 p-5"
       >
         {requirements.map((req, index) => (
           <motion.li
@@ -52,10 +50,11 @@ export function CourseRequirements({ requirements }: CourseRequirementsProps) {
             variants={item}
             className={cn(
               "flex items-start gap-4 py-3",
-              index !== requirements.length - 1 && "border-b border-border/25",
+              index !== requirements.length - 1 &&
+                "border-b border-border/40",
             )}
           >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-600 dark:text-violet-400">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
               {index + 1}
             </span>
             <span className="pt-0.5 text-sm leading-relaxed text-muted-foreground">
@@ -64,6 +63,6 @@ export function CourseRequirements({ requirements }: CourseRequirementsProps) {
           </motion.li>
         ))}
       </motion.ul>
-    </section>
+    </motion.section>
   );
 }

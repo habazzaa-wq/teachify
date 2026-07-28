@@ -32,6 +32,7 @@ interface DomainsTableProps {
   onSelectionChange?: (ids: string[]) => void;
   onView: (domain: PlatformDomain) => void;
   onEdit: (domain: PlatformDomain) => void;
+  onVerify: (domain: PlatformDomain) => void;
   onRefreshStatus: (domain: PlatformDomain) => void;
   onRenewSsl: (domain: PlatformDomain) => void;
   onCopy: (domain: PlatformDomain) => void;
@@ -46,6 +47,7 @@ const DomainsTableRow = memo(function DomainsTableRow({
   onSelectionChange,
   onView,
   onEdit,
+  onVerify,
   onRefreshStatus,
   onRenewSsl,
   onCopy,
@@ -58,6 +60,7 @@ const DomainsTableRow = memo(function DomainsTableRow({
   onSelectionChange?: (ids: string[]) => void;
   onView: (domain: PlatformDomain) => void;
   onEdit: (domain: PlatformDomain) => void;
+  onVerify: (domain: PlatformDomain) => void;
   onRefreshStatus: (domain: PlatformDomain) => void;
   onRenewSsl: (domain: PlatformDomain) => void;
   onCopy: (domain: PlatformDomain) => void;
@@ -81,6 +84,7 @@ const DomainsTableRow = memo(function DomainsTableRow({
   const sslConfig = SSL_STATUS_CONFIG[domain.ssl.status];
   const dnsConfig = DNS_STATUS_CONFIG[domain.dnsStatus];
   const verificationConfig = VERIFICATION_STATUS_CONFIG[domain.verificationStatus];
+  const healthConfig = HEALTH_STATUS_CONFIG[domain.health.status];
 
   const copyDomain = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -197,6 +201,7 @@ const DomainsTableRow = memo(function DomainsTableRow({
           domain={domain}
           onView={() => onView(domain)}
           onEdit={() => onEdit(domain)}
+          onVerify={() => onVerify(domain)}
           onRefreshStatus={() => onRefreshStatus(domain)}
           onRenewSsl={() => onRenewSsl(domain)}
           onCopy={() => onCopy(domain)}

@@ -38,25 +38,25 @@ function BulkActionsBarBase({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="fixed bottom-4 start-1/2 z-50 -translate-x-1/2 sm:bottom-6"
+          className="fixed bottom-6 start-1/2 z-50 -translate-x-1/2"
         >
-          <div className="flex max-w-[calc(100vw-2rem)] items-center gap-1 rounded-xl border bg-background/95 px-2 py-2 shadow-2xl backdrop-blur-xl sm:gap-1.5 sm:rounded-2xl sm:px-4 sm:py-2.5">
+          <div className="flex items-center gap-1.5 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-2xl backdrop-blur-xl">
             <button
               onClick={onClear}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               title="إلغاء التحديد"
             >
               <X className="h-4 w-4" />
             </button>
 
-            <span className="mx-0.5 shrink-0 text-sm font-semibold tabular-nums sm:mx-1">
+            <span className="mx-1 text-sm font-semibold tabular-nums">
               {selectedCount}
             </span>
-            <span className="me-1 hidden shrink-0 text-xs text-muted-foreground sm:inline sm:me-2">
+            <span className="me-2 text-xs text-muted-foreground">
               {selectedCount === 1 ? "محدد" : "محددين"}
             </span>
 
-            <div className="hidden h-5 w-px bg-border sm:block" />
+            <div className="h-5 w-px bg-border" />
 
             <ActionButton icon={Download} label="تحميل" onClick={onDownload} />
             <ActionButton icon={FolderInput} label="نقل" onClick={onMove} />

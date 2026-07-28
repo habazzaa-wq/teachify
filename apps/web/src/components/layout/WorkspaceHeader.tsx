@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -11,20 +10,12 @@ import {
   Moon,
   Menu,
   GraduationCap,
-  User,
-  Settings,
-  LogOut,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
-import type { StudioDropdownItem } from "@/components/studio/overlays/StudioDropdown";
 import { useUiStore } from "@/stores/ui.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useCurrentUser } from "@/hooks/useAuthStatus";
-import { useAuth } from "@/providers/AuthProvider";
-import { routes } from "@/constants/routes";
-import { cn } from "@/lib/cn";
 
 const headerMotion = {
   initial: { y: -16, opacity: 0 },
@@ -33,14 +24,11 @@ const headerMotion = {
 };
 
 export function WorkspaceHeader() {
-  const router = useRouter();
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
   const setGlobalSearchOpen = useWorkspaceStore((s) => s.setGlobalSearchOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
   const { tenant } = useActiveTenant();
-  const { user } = useCurrentUser();
-  const { logout } = useAuth();
 
   const tenantName = tenant?.name ?? "مساحة العمل";
 
@@ -51,32 +39,6 @@ export function WorkspaceHeader() {
   const handleMobileMenuToggle = useCallback(() => {
     setMobileMenuOpen(true);
   }, [setMobileMenuOpen]);
-
-  const handleDropdownSelect = useCallback(
-    (item: StudioDropdownItem) => {
-      switch (item.value) {
-        case "profile":
-          router.push(routes.dashboardProfile);
-          break;
-        case "settings":
-          router.push(routes.dashboardSettings);
-          break;
-        case "logout":
-          void logout();
-          break;
-      }
-    },
-    [logout, router],
-  );
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  };
 
   return (
     <motion.header
@@ -159,68 +121,20 @@ export function WorkspaceHeader() {
         {/* User menu */}
         <StudioDropdown
           trigger={
-            <div
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full bg-studio-navbar-contrast text-studio-navbar text-sm font-semibold transition-all overflow-hidden",
-                "hover:ring-2 hover:ring-studio-ring/50 hover:ring-offset-2 hover:ring-offset-studio-glass-toolbar",
-              )}
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-studio-navbar-contrast text-studio-navbar text-sm font-semibold transition-all"
               aria-label="القائمة الشخصية"
             >
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span aria-hidden="true">
-                  {user?.name ? getInitials(user.name) : "U"}
-                </span>
-              )}
-            </div>
+              <span aria-hidden="true">U</span>
+            </button>
           }
           items={[
-            {
-              header: true,
-              label: user?.name ?? "",
-              description: user?.email ?? "",
-              value: "user-header",
-              icon: (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-studio-navbar-contrast text-studio-navbar text-sm font-bold shrink-0">
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt=""
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <span>{user?.name ? getInitials(user.name) : "U"}</span>
-                  )}
-                </div>
-              ),
-            },
+            { label: "الملف الشخصي", icon: <Search className="h-4 w-4" /> },
+            { label: "الإعدادات", icon: <Search className="h-4 w-4" /> },
             { separator: true },
-            {
-              label: "الملف الشخصي",
-              value: "profile",
-              icon: <User className="h-4 w-4" />,
-            },
-            {
-              label: "الإعدادات",
-              value: "settings",
-              icon: <Settings className="h-4 w-4" />,
-            },
-            { separator: true },
-            {
-              label: "تسجيل الخروج",
-              value: "logout",
-              danger: true,
-              icon: <LogOut className="h-4 w-4" />,
-            },
+            { label: "تسجيل الخروج", danger: true, icon: <Search className="h-4 w-4" /> },
           ]}
-          onSelect={handleDropdownSelect}
           align="end"
-          className="w-64"
         />
 
         {/* Mobile menu toggle */}

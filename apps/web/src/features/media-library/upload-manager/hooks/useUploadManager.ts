@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { useCanAny } from "@/hooks/useCan";
+import { useCan } from "@/hooks/useCan";
 import { useUploadManagerStore } from "../store";
-import { uploadEngine, UPLOAD_PERMISSIONS } from "../services";
+import { uploadEngine, UPLOAD_PERMISSION } from "../services";
 import type { UploadItem, UploadSource, UploadManagerStats } from "../types";
 
 export function useUploadManager() {
-  const canUpload = useCanAny([...UPLOAD_PERMISSIONS]);
+  const canUpload = useCan(UPLOAD_PERMISSION);
 
   const enqueueFiles = useCallback(
     (files: File[], opts?: { folderId?: number | null; source?: UploadSource }) => {

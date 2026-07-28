@@ -4,7 +4,7 @@ import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/get-query-client";
 import { publicCourseServerService } from "@/features/public-course/server-services";
 import { PUBLIC_COURSE_QUERY_KEY } from "@/features/public-course/constants";
-import { CourseDetailPage } from "@/features/course-detail/components/CourseDetailPage";
+import { PublicCoursePage } from "@/features/public-course/components/PublicCoursePage";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -51,6 +51,10 @@ export default async function CourseSlugPage({ params }: PageProps) {
       queryFn: () => publicCourseServerService.getModules(slug),
     }),
     queryClient.prefetchQuery({
+      queryKey: [PUBLIC_COURSE_QUERY_KEY, "related", slug],
+      queryFn: () => publicCourseServerService.getRelated(slug),
+    }),
+    queryClient.prefetchQuery({
       queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug],
       queryFn: () => publicCourseServerService.checkEnrollment(slug),
     }),
@@ -58,7 +62,7 @@ export default async function CourseSlugPage({ params }: PageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <CourseDetailPage slug={slug} />
+      <PublicCoursePage slug={slug} />
     </HydrationBoundary>
   );
 }

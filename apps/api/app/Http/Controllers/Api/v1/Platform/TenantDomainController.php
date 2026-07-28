@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v1\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\TenantDomain;
-use App\Services\Domain\DomainCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -43,47 +42,12 @@ class TenantDomainController extends Controller
             'type' => $validated['type'],
             'is_primary' => $validated['is_primary'] ?? false,
             'status' => 'pending',
-            'verification_type' => 'auto',
-            'verification_token' => 'teachify-' . bin2hex(random_bytes(16)),
-            'expected_ip' => config('services.platform.server_ip'),
         ]);
 
         return response()->json([
-            'message' => 'Domain added. DNS verification will start automatically.',
+            'message' => 'Domain added.',
             'domain' => $domain,
-            'dns_instructions' => $validated['type'] === 'custom_domain' ? [
-                'type' => 'A',
-                'host' => $validated['domain'],
-                'value' => config('services.platform.server_ip'),
-                'ttl' => 3600,
-                'note' => 'You can also use a CNAME record pointing to ' . config('services.platform.domain'),
-            ] : null,
         ], 201);
-    }
-
-    public function show(TenantDomain $tenantDomain): JsonResponse
-    {
-        abort_if($tenantDomain->tenant_id !== currentTenant()->id, 404);
-
-        return response()->json([
-            'domain' => $tenantDomain->load('verificationLogs'),
-        ]);
-    }
-
-    public function status(TenantDomain $tenantDomain): JsonResponse
-    {
-        abort_if($tenantDomain->tenant_id !== currentTenant()->id, 404);
-
-        $tenantDomain->refresh();
-
-        return response()->json([
-            'domain' => $tenantDomain,
-            'verification' => [
-                'dns_ready' => in_array($tenantDomain->status, ['dns_verified', 'active']),
-                'ssl_ready' => $tenantDomain->ssl_status === 'active',
-                'active' => $tenantDomain->status === 'active',
-            ],
-        ]);
     }
 
     public function update(Request $request, TenantDomain $tenantDomain): JsonResponse
@@ -92,6 +56,7 @@ class TenantDomainController extends Controller
 
         $validated = $request->validate([
             'is_primary' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['pending', 'active', 'failed', 'removed'])],
         ]);
 
         if ($validated['is_primary'] ?? false) {
@@ -101,7 +66,7 @@ class TenantDomainController extends Controller
                 ->update(['is_primary' => false]);
         }
 
-        $tenantDomain->fill(collect($validated)->only(['is_primary'])->all())->save();
+        $tenantDomain->fill(collect($validated)->only(['is_primary', 'status'])->all())->save();
 
         return response()->json([
             'message' => 'Domain updated.',
@@ -117,9 +82,24 @@ class TenantDomainController extends Controller
             return response()->json(['message' => 'Cannot delete the primary domain.'], 422);
         }
 
-        app(DomainCacheService::class)->invalidateDomain($tenantDomain);
         $tenantDomain->delete();
 
         return response()->json(['message' => 'Domain removed.']);
+    }
+
+    public function verify(TenantDomain $tenantDomain): JsonResponse
+    {
+        abort_if($tenantDomain->tenant_id !== currentTenant()->id, 404);
+
+        $tenantDomain->forceFill([
+            'verified_at' => now(),
+            'status' => 'active',
+            'dns_checked_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Domain verified.',
+            'domain' => $tenantDomain->refresh(),
+        ]);
     }
 }
