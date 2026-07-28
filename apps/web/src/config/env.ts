@@ -85,14 +85,17 @@ export function resolveApiUrl(location?: RuntimeApiLocation): string {
       return DEFAULT_DEV_API_URL;
     }
 
-    // Tenant subdomain: Caddy routes /api/* and /sanctum/* to Laravel
-    // on the same origin, so use the current hostname directly.
+    // Tenant subdomains and the apex platform domain: Caddy routes /api/*
+    // and /sanctum/* to Laravel on the same origin, so use the current
+    // hostname directly.  This avoids CORS, mixed-content, and self-signed
+    // certificate issues.
+    //
     // e.g. https://hazem.academy.test → https://hazem.academy.test
-    // This avoids CORS, mixed-content, and self-signed certificate issues.
+    //      https://teachify.tech      → https://teachify.tech
     //
     // When called with an explicit `location` param (middleware / server),
     // fall back to the direct Laravel URL — no TLS needed between services.
-    if (hostname.endsWith(`.${BASE_DOMAIN}`)) {
+    if (hostname === BASE_DOMAIN || hostname.endsWith(`.${BASE_DOMAIN}`)) {
       if (location) {
         return DEFAULT_DEV_API_URL;
       }
