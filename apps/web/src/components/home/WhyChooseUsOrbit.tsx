@@ -310,9 +310,10 @@ export function WhyChooseUsOrbit({
 
   const [activeIdx, setActiveIdx] = useState(0);
   const active = features[activeIdx] ?? features[0];
-  const activeConfig = FEATURE_CONFIG[active.ill];
 
-  if (src.isActive === false) return null;
+  if (src.isActive === false || !active) return null;
+
+  const activeConfig = FEATURE_CONFIG[active.ill];
 
   const accentWarm = isDark ? "rgba(216,123,99,0.06)" : "rgba(216,123,99,0.04)";
   const accentCool = isDark ? "rgba(255,181,14,0.04)" : "rgba(255,181,14,0.03)";
