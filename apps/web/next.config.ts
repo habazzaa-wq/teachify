@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
     ],
   },
   async rewrites() {
@@ -28,6 +32,10 @@ const nextConfig: NextConfig = {
       {
         source: "/sanctum/:path*",
         destination: "http://localhost:8000/sanctum/:path*",
+      },
+      {
+        source: "/storage/:path*",
+        destination: "http://localhost:8000/storage/:path*",
       },
     ];
   },

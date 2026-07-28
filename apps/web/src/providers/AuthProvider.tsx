@@ -190,6 +190,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Only redirect if user was previously authenticated (had a session).
+      // Guests on public pages should not be redirected to login on a 401.
+      if (!useAuthStore.getState().user) {
+        return;
+      }
+
       clearAuth();
       clearTenant();
       invalidateSession(queryClient);
