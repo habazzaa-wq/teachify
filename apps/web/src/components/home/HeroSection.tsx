@@ -88,8 +88,22 @@ function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "s
   return <div className="rounded-sm" style={{ width: size, height: size, backgroundColor: color }} />;
 }
 
+function HeroSkeleton() {
+  return (
+    <section className="relative w-full overflow-hidden" dir="rtl" style={{ minHeight: 560 }}>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5] to-[#EFEAE1]" />
+      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-0 pb-6 sm:pb-10">
+        <div className="mb-5 mt-16 h-12 w-72 animate-pulse rounded-lg bg-black/10" />
+        <div className="relative mx-auto h-[340px] w-[340px]">
+          <div className="absolute inset-0 rounded-full bg-black/10 animate-pulse" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HeroSection() {
-  const { data: hero } = usePublicHero();
+  const { data: hero, isLoading } = usePublicHero();
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
   const [phoneHovered, setPhoneHovered] = useState(false);
@@ -97,6 +111,7 @@ export function HeroSection() {
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
+  if (isLoading) return <HeroSkeleton />;
   if (!hero?.isActive) return null;
 
   const title = hero.title || `مرحباً بكم في ${tenantName}`;
@@ -633,19 +648,14 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 208px), calc(-50% + 56px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 18 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-in fade-in duration-300">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
                 <Gift className="h-5 w-5 text-white" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
-            </motion.div>
+            </div>
           </div>
           )}
 
@@ -655,12 +665,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 152px), calc(-50% + 152px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.58, type: "spring", stiffness: 300, damping: 18 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-in fade-in duration-300">
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
                   <Facebook className="h-5 w-5 text-white" />
@@ -669,7 +674,7 @@ export function HeroSection() {
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
-            </motion.div>
+            </div>
           </div>
           )}
 
@@ -679,19 +684,14 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 56px), calc(-50% + 208px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.66, type: "spring", stiffness: 300, damping: 18 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-in fade-in duration-300">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
                 <MessageCircle className="h-5 w-5 text-white" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
-            </motion.div>
+            </div>
           </div>
           )}
 
@@ -701,12 +701,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 56px), calc(-50% + 208px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.74, type: "spring", stiffness: 300, damping: 18 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-in fade-in duration-300">
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
                   <Youtube className="h-5 w-5 text-white" />
@@ -715,7 +710,7 @@ export function HeroSection() {
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
-            </motion.div>
+            </div>
           </div>
           )}
 
@@ -725,19 +720,14 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 152px), calc(-50% + 152px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.82, type: "spring", stiffness: 300, damping: 18 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-in fade-in duration-300">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
                 <Star className="h-5 w-5 text-white" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
-            </motion.div>
+            </div>
           </div>
           )}
 
@@ -747,11 +737,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 208px), calc(-50% + 56px))" }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.9, type: "spring", stiffness: 300, damping: 18 }}
-              className="relative flex flex-col items-center"
+            <div className="relative flex flex-col items-center animate-in fade-in duration-300"
               onMouseEnter={() => setPhoneHovered(true)}
               onMouseLeave={() => setPhoneHovered(false)}
             >
