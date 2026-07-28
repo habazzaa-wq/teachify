@@ -64,6 +64,7 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationPreferenceController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
+use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
@@ -531,6 +532,18 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
             Route::get('/storage-history', [BunnyCenterController::class, 'storageHistory']);
             Route::get('/bandwidth-history', [BunnyCenterController::class, 'bandwidthHistory']);
             Route::get('/views-history', [BunnyCenterController::class, 'viewsHistory']);
+        });
+
+        Route::prefix('domains')->group(function () {
+            Route::get('/', [PlatformDomainController::class, 'index']);
+            Route::post('/', [PlatformDomainController::class, 'store']);
+            Route::get('/{tenantDomain}', [PlatformDomainController::class, 'show']);
+            Route::put('/{tenantDomain}', [PlatformDomainController::class, 'update']);
+            Route::delete('/{tenantDomain}', [PlatformDomainController::class, 'destroy']);
+            Route::post('/{tenantDomain}/verify', [PlatformDomainController::class, 'verify']);
+            Route::post('/{tenantDomain}/refresh-status', [PlatformDomainController::class, 'refreshStatus']);
+            Route::post('/{tenantDomain}/renew-ssl', [PlatformDomainController::class, 'renewSsl']);
+            Route::post('/bulk/delete', [PlatformDomainController::class, 'bulkDelete']);
         });
     });
 

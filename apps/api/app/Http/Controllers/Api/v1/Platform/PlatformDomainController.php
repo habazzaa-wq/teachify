@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v1\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\TenantDomain;
-use App\Services\Domain\DomainCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,26 +13,23 @@ class PlatformDomainController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = TenantDomain::query()
-            ->with('tenant:id,name')
-            ->orderBy('is_primary', 'desc')
+            ->with('tenant')
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('domain', 'like', "%{$search}%")
-                    ->orWhereHas('tenant', function ($tq) use ($search) {
-                        $tq->where('name', 'like', "%{$search}%");
-                    });
+                  ->orWhereHas('tenant', fn($t) => $t->where('name', 'like', "%{$search}%"));
             });
         }
 
-        if ($request->filled('status') && $request->input('status') !== 'all') {
-            $query->where('status', $request->input('status'));
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
-        if ($request->filled('ssl_status') && $request->input('ssl_status') !== 'all') {
-            $query->where('ssl_status', $request->input('ssl_status'));
+        if ($request->filled('tenant_id')) {
+            $query->where('tenant_id', $request->tenant_id);
         }
 
         return response()->json([
@@ -43,23 +39,21 @@ class PlatformDomainController extends Controller
 
     public function show(TenantDomain $tenantDomain): JsonResponse
     {
-        return response()->json([
-            'domain' => $tenantDomain->load('tenant:id,name', 'verificationLogs'),
-        ]);
+        $tenantDomain->load('tenant');
+        return response()->json(['domain' => $tenantDomain]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'tenant_id' => ['required', 'integer', 'exists:tenants,id'],
+            'tenant_id' => ['required', 'exists:tenants,id'],
             'domain' => ['required', 'string', 'max:255', 'unique:tenant_domains,domain'],
             'type' => ['required', Rule::in(['platform_subdomain', 'custom_domain', 'wildcard'])],
             'is_primary' => ['sometimes', 'boolean'],
         ]);
 
         if ($validated['is_primary'] ?? false) {
-            TenantDomain::query()
-                ->where('tenant_id', $validated['tenant_id'])
+            TenantDomain::where('tenant_id', $validated['tenant_id'])
                 ->where('is_primary', true)
                 ->update(['is_primary' => false]);
         }
@@ -70,14 +64,13 @@ class PlatformDomainController extends Controller
             'type' => $validated['type'],
             'is_primary' => $validated['is_primary'] ?? false,
             'status' => 'pending',
-            'verification_type' => 'auto',
-            'verification_token' => 'teachify-' . bin2hex(random_bytes(16)),
-            'expected_ip' => config('services.platform.server_ip'),
         ]);
 
+        $domain->load('tenant');
+
         return response()->json([
-            'message' => 'Domain added. DNS verification will start automatically.',
-            'domain' => $domain->load('tenant:id,name'),
+            'message' => 'Domain created.',
+            'domain' => $domain,
         ], 201);
     }
 
@@ -85,20 +78,22 @@ class PlatformDomainController extends Controller
     {
         $validated = $request->validate([
             'is_primary' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', Rule::in(['pending', 'dns_verified', 'active', 'failed', 'removed'])],
         ]);
 
         if ($validated['is_primary'] ?? false) {
-            TenantDomain::query()
-                ->where('tenant_id', $tenantDomain->tenant_id)
+            TenantDomain::where('tenant_id', $tenantDomain->tenant_id)
                 ->where('is_primary', true)
+                ->where('id', '!=', $tenantDomain->id)
                 ->update(['is_primary' => false]);
         }
 
-        $tenantDomain->fill(collect($validated)->only(['is_primary'])->all())->save();
+        $tenantDomain->fill(collect($validated)->only(['is_primary', 'status'])->all())->save();
+        $tenantDomain->load('tenant');
 
         return response()->json([
             'message' => 'Domain updated.',
-            'domain' => $tenantDomain->refresh()->load('tenant:id,name'),
+            'domain' => $tenantDomain->refresh(),
         ]);
     }
 
@@ -108,23 +103,48 @@ class PlatformDomainController extends Controller
             return response()->json(['message' => 'Cannot delete the primary domain.'], 422);
         }
 
-        app(DomainCacheService::class)->invalidateDomain($tenantDomain);
         $tenantDomain->delete();
 
         return response()->json(['message' => 'Domain removed.']);
     }
 
-    public function bulkDestroy(Request $request): JsonResponse
+    public function verify(TenantDomain $tenantDomain): JsonResponse
+    {
+        $tenantDomain->forceFill([
+            'verified_at' => now(),
+            'status' => 'active',
+            'dns_checked_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Domain verified.',
+            'domain' => $tenantDomain->refresh(),
+        ]);
+    }
+
+    public function refreshStatus(TenantDomain $tenantDomain): JsonResponse
+    {
+        $tenantDomain->load('tenant');
+        return response()->json(['domain' => $tenantDomain]);
+    }
+
+    public function renewSsl(TenantDomain $tenantDomain): JsonResponse
+    {
+        $tenantDomain->load('tenant');
+        return response()->json(['domain' => $tenantDomain]);
+    }
+
+    public function bulkDelete(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'ids' => ['required', 'array'],
-            'ids.*' => ['integer', 'exists:tenant_domains,id'],
+            'ids.*' => ['exists:tenant_domains,id'],
         ]);
 
         TenantDomain::whereIn('id', $validated['ids'])
             ->where('is_primary', false)
             ->delete();
 
-        return response()->json(['message' => 'Domains deleted.']);
+        return response()->json(['message' => 'Domains removed.']);
     }
 }

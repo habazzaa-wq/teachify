@@ -104,6 +104,7 @@ export interface CreateDomainPayload {
 
 export interface DomainsFilterParams {
   search?: string;
+  tenantId?: string;
   status?: DomainStatus | "all";
   type?: DomainType | "all";
   sslStatus?: SslStatus | "all";

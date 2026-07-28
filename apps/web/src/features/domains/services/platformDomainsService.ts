@@ -63,10 +63,12 @@ export const platformDomainsService = {
     if (params?.search) query.search = params.search;
     if (params?.status && params.status !== "all") query.status = params.status;
     if (params?.sslStatus && params.sslStatus !== "all") query.ssl_status = params.sslStatus;
+    if (params?.type && params.type !== "all") query.type = params.type;
+    if (params?.tenantId) query.tenant_id = params.tenantId;
 
     const { data } = await platformApi.get("/domains", { params: query });
     const domains = (data.domains ?? []).map(mapDomain);
-    return { data: domains, total: domains.length };
+    return { data: domains, total: data.total ?? domains.length };
   },
 
   async getById(id: string): Promise<PlatformDomain | null> {
@@ -134,5 +136,37 @@ export const platformDomainsService = {
   async makePrimary(id: string): Promise<PlatformDomain | null> {
     const { data: result } = await platformApi.put(`/domains/${id}`, { is_primary: true });
     return result.domain ? mapDomain(result.domain) : null;
+  },
+
+  async verify(id: string): Promise<PlatformDomain | null> {
+    const { data: result } = await platformApi.post(`/domains/${id}/verify`);
+    return result.domain ? mapDomain(result.domain) : null;
+  },
+
+  async bulkVerify(ids: string[]): Promise<void> {
+    for (const id of ids) {
+      await platformApi.post(`/domains/${id}/verify`);
+    }
+  },
+
+  async getMetrics(): Promise<DomainsMetricData> {
+    const { data } = await platformApi.get("/domains");
+    const domains: PlatformDomain[] = (data.domains ?? []).map(mapDomain);
+    const totalDomains = domains.length;
+    const primaryDomains = domains.filter((d) => d.isPrimary).length;
+    const pendingVerification = domains.filter((d) => d.status === "pending").length;
+    const sslExpiringSoon = domains.filter((d) => d.ssl.remainingDays > 0 && d.ssl.remainingDays <= 30).length;
+    const healthyDomains = domains.filter((d) => d.health.status === "healthy").length;
+    const failedDomains = domains.filter((d) => d.status === "failed").length;
+
+    return {
+      totalDomains,
+      primaryDomains,
+      pendingVerification,
+      sslExpiringSoon,
+      healthyDomains,
+      failedDomains,
+      averageResponseTime: 0,
+    };
   },
 };
