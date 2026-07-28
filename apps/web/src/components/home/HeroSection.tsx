@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Facebook,
   Youtube,
@@ -95,7 +95,6 @@ export function HeroSection() {
   const [phoneHovered, setPhoneHovered] = useState(false);
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
-  const prefersReducedMotion = useReducedMotion();
 
   if (!hero?.isActive) return null;
 
@@ -128,7 +127,6 @@ export function HeroSection() {
         }}
       />
 
-      {!prefersReducedMotion && (<>
       {/* ── Gradient orbs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {orbs.map((orb, i) => (
@@ -504,7 +502,6 @@ export function HeroSection() {
           </div>
         ))}
       </div>
-      </>)}
 
       {/* ── Content ── */}
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-0 pb-6 sm:pb-10">
