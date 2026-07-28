@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Facebook,
   Youtube,
@@ -93,6 +93,7 @@ export function HeroSection() {
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
   const [phoneHovered, setPhoneHovered] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
@@ -127,6 +128,7 @@ export function HeroSection() {
         }}
       />
 
+      {!prefersReducedMotion && (<>
       {/* ── Gradient orbs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         {orbs.map((orb, i) => (
@@ -502,6 +504,7 @@ export function HeroSection() {
           </div>
         ))}
       </div>
+      </>)}
 
       {/* ── Content ── */}
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-0 pb-6 sm:pb-10">
@@ -619,6 +622,7 @@ export function HeroSection() {
             <img
               src={hero.teacherImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face"}
               alt={hero.teacherName || "المعلم"}
+              loading="lazy"
               className="h-full w-full object-cover"
             />
           </div>

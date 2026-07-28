@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, Menu, X, LogIn, UserPlus,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
@@ -30,6 +30,10 @@ const navLinks = [
 ];
 
 function DecoOrbs() {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) return null;
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <motion.div
@@ -122,13 +126,13 @@ function NavLinkItem({
         {isActive ? (
           <>
             <motion.span
-              layoutId="nav-bg"
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
               className="absolute inset-0 rounded-2xl"
               style={{
                 backgroundColor: primary,
                 boxShadow: `0 4px 24px ${primary}50`,
               }}
-              transition={{ type: "spring", stiffness: 400, damping: 28 }}
             />
             <span
               className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
