@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LazyMotion, m, domAnimation, AnimatePresence } from "framer-motion";
 import {
   Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useUiStore } from "@/stores/ui.store";
+import { cn } from "@/lib/cn";
 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
@@ -20,6 +22,7 @@ const navLinks = [
 ];
 
 export function MobileSecondaryNav() {
+  const pathname = usePathname();
   const { data: hero } = usePublicHero();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
@@ -46,7 +49,6 @@ export function MobileSecondaryNav() {
         className="md:hidden relative w-full"
         style={{ background: isDark ? darkBgGrad : lightBgGrad }}
       >
-        {/* Subtle hero-like decorative orbs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <m.div
             className="absolute -top-10 -start-10 h-24 w-24 rounded-full blur-3xl"
@@ -63,106 +65,144 @@ export function MobileSecondaryNav() {
         </div>
 
         <div className="relative z-10 px-4 pb-3 pt-2">
-          {/* ── Nav bar ── */}
-          <div
-            className="flex items-center gap-2 rounded-2xl border p-1.5 shadow-lg backdrop-blur-md"
-            style={{
-              backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
-              borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
-            }}
-          >
-            {/* ── Plus toggle ── */}
-            <m.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300"
+          <div className="relative">
+            {/* ── Nav bar ── */}
+            <div
+              className="relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
               style={{
-                backgroundColor: mobileIconsOpen ? primary : `${primary}15`,
-                color: mobileIconsOpen ? "#fff" : primary,
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
               }}
             >
-              <Plus
-                className="h-5 w-5 transition-transform duration-300"
-                style={{ transform: mobileIconsOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+              <div
+                className="pointer-events-none absolute -top-px inset-x-4 h-px opacity-60"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${primary}, ${secondary}, ${primary}, transparent)`,
+                }}
               />
-            </m.button>
 
-            {/* ── Nav items ── */}
-            <div className="flex items-center gap-0.5 overflow-x-auto flex-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200"
-                  style={{ color: "hsl(var(--foreground))" }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Toggle icons vertical list ── */}
-          <AnimatePresence>
-            {mobileIconsOpen && (
-              <m.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden mt-2"
+              {/* ── Plus toggle ── */}
+              <m.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300"
+                style={{
+                  backgroundColor: mobileIconsOpen ? primary : `${primary}12`,
+                  color: mobileIconsOpen ? "#fff" : primary,
+                  boxShadow: mobileIconsOpen ? `0 2px 12px ${primary}40` : undefined,
+                }}
               >
-                <div
-                  className="flex flex-col gap-2 rounded-2xl border p-3 shadow-lg backdrop-blur-md"
+                <span
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{
-                    backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
-                    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
+                    border: `2px solid ${secondary}`,
+                    boxShadow: `0 0 16px ${secondary}35`,
                   }}
-                >
-                  {mobileIconItems.filter((item) => item.visible !== false).map((item) => {
-                    const iconContent = (
-                      <div className="flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-200 hover:scale-[1.02]"
-                        style={{ cursor: item.href || item.key === "phone" ? "pointer" : "default" }}
-                      >
-                        {/* Icon - exact same style as desktop orbiting icons */}
-                        <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"
-                          style={{
-                            backgroundColor: item.color,
-                            borderColor: item.borderColor,
-                          }}
-                        >
-                          <item.icon className="h-5 w-5 text-white" />
-                        </div>
-                        <span
-                          className="whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md"
-                          style={{ backgroundColor: `${item.color}dd` }}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-                    );
+                />
+                <Plus
+                  className="h-5 w-5 transition-transform duration-300"
+                  style={{ transform: mobileIconsOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+                />
+              </m.button>
 
-                    if (item.href) {
-                      return (
-                        <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
-                          {iconContent}
-                        </a>
-                      );
-                    }
-                    if (item.key === "phone") {
-                      return (
-                        <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
-                          {iconContent}
-                        </a>
-                      );
-                    }
-                    return <div key={item.key}>{iconContent}</div>;
-                  })}
-                </div>
-              </m.div>
-            )}
-          </AnimatePresence>
+              <div className="flex-1 flex items-center gap-0.5 overflow-x-auto">
+                {navLinks.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={cn(
+                        "relative whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition-all duration-200",
+                        isActive ? "text-white" : "text-foreground/70 hover:text-foreground",
+                      )}
+                      style={{
+                        backgroundColor: isActive ? primary : "transparent",
+                        boxShadow: isActive ? `0 2px 12px ${primary}35` : undefined,
+                      }}
+                    >
+                      {isActive && (
+                        <m.span
+                          layoutId="mobileNavPill"
+                          className="absolute inset-0 rounded-xl"
+                          style={{ backgroundColor: primary }}
+                          transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        />
+                      )}
+                      <span className="relative z-10">{link.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Icons floating overlay ── */}
+            <AnimatePresence>
+              {mobileIconsOpen && (
+                <m.div
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute end-0 start-0 z-50 mt-2"
+                >
+                  <div
+                    className="rounded-2xl border shadow-2xl backdrop-blur-xl p-3"
+                    style={{
+                      backgroundColor: isDark ? "rgba(22,24,29,0.97)" : "rgba(255,255,255,0.97)",
+                      borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
+                      boxShadow: isDark
+                        ? `0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)`
+                        : `0 20px 60px rgba(216,123,99,0.15), 0 0 0 1px rgba(216,123,99,0.08)`,
+                    }}
+                  >
+                    <div className="flex flex-col gap-1">
+                      {mobileIconItems.filter((item) => item.visible !== false).map((item) => {
+                        const iconContent = (
+                          <div
+                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:scale-[1.02]"
+                            style={{ cursor: item.href || item.key === "phone" ? "pointer" : "default" }}
+                          >
+                            <div
+                              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl"
+                              style={{
+                                backgroundColor: item.color,
+                                borderColor: item.borderColor,
+                              }}
+                            >
+                              <item.icon className="h-5 w-5 text-white" />
+                            </div>
+                            <span
+                              className="whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md"
+                              style={{ backgroundColor: `${item.color}dd` }}
+                            >
+                              {item.label}
+                            </span>
+                          </div>
+                        );
+
+                        if (item.href) {
+                          return (
+                            <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
+                              {iconContent}
+                            </a>
+                          );
+                        }
+                        if (item.key === "phone") {
+                          return (
+                            <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
+                              {iconContent}
+                            </a>
+                          );
+                        }
+                        return <div key={item.key}>{iconContent}</div>;
+                      })}
+                    </div>
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </LazyMotion>
