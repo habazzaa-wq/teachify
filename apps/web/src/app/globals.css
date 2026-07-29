@@ -857,8 +857,8 @@
 }
 
 @keyframes hero-glow-pulse {
-  0%, 100% { box-shadow: 0 0 24px var(--hero-glow, rgba(216,123,99,0.25)), 0 0 48px var(--hero-glow, rgba(216,123,99,0.10)); }
-  50% { box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.40)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.18)); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 @keyframes hero-ring-rotate {
@@ -867,7 +867,7 @@
 }
 
 .hero-avatar-ring {
-  animation: hero-glow-pulse 4s ease-in-out infinite;
+  box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.30)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.12));
 }
 
 .hero-dashed-ring {

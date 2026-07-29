@@ -265,6 +265,7 @@ export function PublicNavbar() {
           "sticky top-0 z-50 w-full transition-all duration-700",
           scrolled ? "py-2" : "py-4",
         )}
+        style={{ willChange: "transform" }}
         role="banner"
       >
         <AnimatePresence>

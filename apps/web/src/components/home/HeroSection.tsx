@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Facebook,
@@ -96,11 +97,14 @@ export function HeroSection() {
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
-  if (!hero?.isActive) return null;
+  const title = hero?.title || `مرحباً بكم في ${tenantName}`;
+  const social = hero?.socialLinks;
+  const icons = hero?.icons;
 
-  const title = hero.title || `مرحباً بكم في ${tenantName}`;
-  const social = hero.socialLinks;
-  const icons = hero.icons;
+  const heroImage = hero?.teacherImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face";
+  const heroName = hero?.teacherName || "المعلم";
+
+  if (hero && !hero.isActive) return null;
 
   const lightBg =
     "radial-gradient(ellipse at 50% 30%, #FAF8F5 0%, #F7F4EF 40%, #F3EFE8 80%, #EFEAE1 100%)";
@@ -507,11 +511,11 @@ export function HeroSection() {
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-0 pb-6 sm:pb-10">
 
         {/* ── Floating badge pills ── */}
-        {hero.badge2Text && (
+        {hero?.badge2Text && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 18 }}
+            transition={{ type: "spring", stiffness: 200, damping: 18 }}
             className="absolute top-3 start-3 z-20 sm:top-4 sm:start-4 lg:top-5 lg:start-6"
           >
             <div
@@ -540,11 +544,11 @@ export function HeroSection() {
           </motion.div>
         )}
 
-        {hero.badge1Text && (
+        {hero?.badge1Text && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.45, type: "spring", stiffness: 200, damping: 18 }}
+            transition={{ type: "spring", stiffness: 200, damping: 18 }}
             className="absolute bottom-3 end-3 z-20 sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6"
           >
             <div
@@ -602,7 +606,7 @@ export function HeroSection() {
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.6, type: "spring", stiffness: 180, damping: 20 }}
+          transition={{ duration: 0.4, type: "spring", stiffness: 180, damping: 20 }}
           className="relative mx-auto h-[340px] w-[340px]"
         >
           {/* Glow behind image */}
@@ -616,10 +620,13 @@ export function HeroSection() {
 
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-orange-400 shadow-2xl">
-            <img
-              src={hero.teacherImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face"}
-              alt={hero.teacherName || "المعلم"}
-              className="h-full w-full object-cover"
+            <Image
+              src={heroImage}
+              alt={heroName}
+              fill
+              priority
+              sizes="340px"
+              className="object-cover"
             />
           </div>
 
@@ -632,7 +639,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="flex flex-col items-center"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
@@ -654,7 +661,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.58, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="flex flex-col items-center"
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
@@ -678,7 +685,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.66, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="flex flex-col items-center"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
@@ -700,7 +707,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.74, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="flex flex-col items-center"
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
@@ -724,7 +731,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.82, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="flex flex-col items-center"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
@@ -746,7 +753,7 @@ export function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.9, type: "spring", stiffness: 300, damping: 18 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="relative flex flex-col items-center"
               onMouseEnter={() => setPhoneHovered(true)}
               onMouseLeave={() => setPhoneHovered(false)}
