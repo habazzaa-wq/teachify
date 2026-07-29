@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { LazyMotion, m, domAnimation, AnimatePresence } from "framer-motion";
 import {
   Facebook,
   Youtube,
@@ -13,6 +14,10 @@ import {
   Clock,
   MessageCircle,
   Gift,
+  Plus,
+  Home,
+  Layers,
+  BookOpen,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -94,6 +99,7 @@ export function HeroSection() {
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
   const [phoneHovered, setPhoneHovered] = useState(false);
+  const [mobileIconsOpen, setMobileIconsOpen] = useState(false);
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
@@ -104,6 +110,22 @@ export function HeroSection() {
   const heroImage = hero?.teacherImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face";
   const heroName = hero?.teacherName || "المعلم";
 
+  const navLinks = [
+    { label: "الرئيسية", href: "/", icon: Home },
+    { label: "المراحل", href: "/stages", icon: Layers },
+    { label: "الكورسات", href: "/courses", icon: BookOpen },
+    { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
+  ];
+
+  const mobileIconItems = [
+    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: "#F0B8A8", visible: icons?.gifts?.visible },
+    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: "#FFE0A0", visible: icons?.facebook?.visible, href: social?.facebook },
+    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: "#F0B8A8", visible: icons?.chat?.visible },
+    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: "#FFE0A0", visible: icons?.youtube?.visible, href: social?.youtube },
+    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: "#F0B8A8", visible: icons?.bestStudents?.visible },
+    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: "#FFE0A0", visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
+  ];
+
   if (hero && !hero.isActive) return null;
 
   const lightBg =
@@ -112,6 +134,7 @@ export function HeroSection() {
     "radial-gradient(ellipse at 50% 30%, #121418 0%, #14161a 40%, #16181d 80%, #181a1f 100%)";
 
   return (
+    <LazyMotion features={domAnimation}>
     <section
       className="hero-section relative w-full overflow-hidden"
       dir="rtl"
@@ -512,7 +535,7 @@ export function HeroSection() {
 
         {/* ── Floating badge pills ── */}
         {hero?.badge2Text && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
@@ -541,11 +564,11 @@ export function HeroSection() {
               </div>
               <span style={{ color: secondary }}>{hero.badge2Text}</span>
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {hero?.badge1Text && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
@@ -574,11 +597,11 @@ export function HeroSection() {
               </div>
               <span style={{ color: primary }}>{hero.badge1Text}</span>
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── Title ── */}
-        <motion.h1
+        <m.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -600,10 +623,10 @@ export function HeroSection() {
             }
             return <span style={{ color: primary }}>{fullTitle}</span>;
           })()}
-        </motion.h1>
+        </m.h1>
 
         {/* ── Profile circle wrapper: 340×340 ── */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, type: "spring", stiffness: 180, damping: 20 }}
@@ -630,13 +653,15 @@ export function HeroSection() {
             />
           </div>
 
+          {/* ── Desktop orbiting icons ── */}
+          <div className="hidden md:block">
           {/* ── Icon 1: الهدايا — 15° ── */}
           {icons?.gifts?.visible !== false && (
           <div
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 208px), calc(-50% + 56px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -648,7 +673,7 @@ export function HeroSection() {
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
-            </motion.div>
+            </m.div>
           </div>
           )}
 
@@ -658,7 +683,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 152px), calc(-50% + 152px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -672,7 +697,7 @@ export function HeroSection() {
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
-            </motion.div>
+            </m.div>
           </div>
           )}
 
@@ -682,7 +707,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% + 56px), calc(-50% + 208px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -694,7 +719,7 @@ export function HeroSection() {
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
-            </motion.div>
+            </m.div>
           </div>
           )}
 
@@ -704,7 +729,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 56px), calc(-50% + 208px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -718,7 +743,7 @@ export function HeroSection() {
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
-            </motion.div>
+            </m.div>
           </div>
           )}
 
@@ -728,7 +753,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 152px), calc(-50% + 152px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -740,7 +765,7 @@ export function HeroSection() {
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
-            </motion.div>
+            </m.div>
           </div>
           )}
 
@@ -750,7 +775,7 @@ export function HeroSection() {
             className="absolute z-10"
             style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 208px), calc(-50% + 56px))" }}
           >
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -783,7 +808,7 @@ export function HeroSection() {
 
               <AnimatePresence>
                 {phoneHovered && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: -8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
@@ -826,14 +851,115 @@ export function HeroSection() {
                         <span className="text-[11px] text-gray-500">راسلنا على الواتساب</span>
                       </div>
                     </a>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </m.div>
            </div>
           )}
-        </motion.div>
-      </div>
-    </section>
+          </div>
+         </m.div>
+       </div>
+
+       {/* ── Mobile: secondary nav + icons toggle ── */}
+       <div className="md:hidden w-full mt-4 px-4">
+         <div
+           className="flex items-center gap-2 rounded-2xl border p-1.5 shadow-lg backdrop-blur-md"
+           style={{
+             backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
+             borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
+           }}
+         >
+           {/* ── Plus toggle ── */}
+           <m.button
+             whileTap={{ scale: 0.9 }}
+             onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
+             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300"
+             style={{
+               backgroundColor: mobileIconsOpen ? primary : `${primary}15`,
+               color: mobileIconsOpen ? "#fff" : primary,
+             }}
+           >
+             <Plus
+               className="h-5 w-5 transition-transform duration-300"
+               style={{ transform: mobileIconsOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+             />
+           </m.button>
+
+           {/* ── Nav items ── */}
+           <div className="flex items-center gap-0.5 overflow-x-auto flex-1">
+             {navLinks.map((link) => (
+               <Link
+                 key={link.href}
+                 href={link.href}
+                 className="whitespace-nowrap rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200"
+                 style={{
+                   color: "hsl(var(--foreground))",
+                 }}
+               >
+                 {link.label}
+               </Link>
+             ))}
+           </div>
+         </div>
+
+         {/* ── Toggle icons vertical list ── */}
+         <AnimatePresence>
+           {mobileIconsOpen && (
+             <m.div
+               initial={{ opacity: 0, height: 0 }}
+               animate={{ opacity: 1, height: "auto" }}
+               exit={{ opacity: 0, height: 0 }}
+               transition={{ duration: 0.25, ease: "easeInOut" }}
+               className="overflow-hidden mt-2"
+             >
+               <div
+                 className="flex flex-col gap-1.5 rounded-2xl border p-2 shadow-lg backdrop-blur-md"
+                 style={{
+                   backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)",
+                   borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
+                 }}
+               >
+                 {mobileIconItems.filter((item) => item.visible !== false).map((item) => {
+                   const content = (
+                     <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:scale-[1.02]"
+                       style={{ cursor: item.href ? "pointer" : "default" }}
+                     >
+                       <div
+                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2"
+                         style={{
+                           backgroundColor: item.color,
+                           borderColor: item.borderColor,
+                         }}
+                       >
+                         <item.icon className="h-4 w-4 text-white" />
+                       </div>
+                       <span className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>{item.label}</span>
+                     </div>
+                   );
+
+                   if (item.href) {
+                     return (
+                       <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
+                         {content}
+                       </a>
+                     );
+                   }
+                   if (item.key === "phone") {
+                     return (
+                       <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
+                         {content}
+                       </a>
+                     );
+                   }
+                   return <div key={item.key}>{content}</div>;
+                 })}
+               </div>
+             </m.div>
+           )}
+         </AnimatePresence>
+       </div>
+     </section>
+    </LazyMotion>
   );
 }
