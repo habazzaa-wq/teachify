@@ -44,6 +44,7 @@ export function MobileSecondaryNav() {
   const hasIcons = visibleIcons.length > 0;
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="md:hidden px-4 pb-1.5 pt-0.5">
       <div className="relative">
         {/* ── Nav bar ── */}
@@ -174,5 +175,6 @@ export function MobileSecondaryNav() {
         </AnimatePresence>
       </div>
     </div>
+    </LazyMotion>
   );
 }

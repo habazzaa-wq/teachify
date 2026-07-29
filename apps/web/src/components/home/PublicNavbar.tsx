@@ -513,7 +513,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-2 max-md:py-1 text-sm max-md:text-xs font-semibold transition-all duration-300"
+                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-xs font-semibold transition-all duration-300"
                         style={{
                           color: scrolled ? "hsl(var(--foreground))" : "hsl(var(--foreground) / 0.9)",
                           border: `1px solid ${scrolled ? "hsl(var(--border))" : `${primary}35`}`,
@@ -529,7 +529,7 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 max-md:h-3.5 max-md:w-3.5 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
+                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
                         <span className="relative z-10 group-hover:text-[#2D1B00] transition-colors">تسجيل الدخول</span>
                       </button>
                     </m.div>
@@ -538,7 +538,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-2.5 max-md:py-1 text-sm max-md:text-xs font-semibold text-white transition-all duration-300"
+                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-white transition-all duration-300"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px ${primary}45`,
@@ -551,7 +551,7 @@ export function PublicNavbar() {
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                         <span className="absolute -top-1 -start-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
                         <span className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
-                        <Sparkles className="h-4 w-4 relative z-10" />
+                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
                         <span className="relative z-10">إنشاء حساب</span>
                         <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />
                       </button>
