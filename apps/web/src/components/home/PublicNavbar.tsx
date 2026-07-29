@@ -339,7 +339,7 @@ export function PublicNavbar() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
-                    className="text-lg font-bold tracking-tight"
+                    className="text-lg font-bold tracking-tight max-md:hidden"
                     style={{ color: primary }}
                   >
                     {tenantName}

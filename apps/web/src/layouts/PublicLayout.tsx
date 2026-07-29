@@ -1,17 +1,26 @@
-"use client";
+import dynamic from "next/dynamic";
 
-import { NewsTicker } from "@/components/home/NewsTicker";
-import { PublicNavbar } from "@/components/home/PublicNavbar";
+const NewsTicker = dynamic(
+  () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
+  { ssr: true }
+);
 
-/**
- * Public academy shell: news ticker first, then content + footer.
- * Used for unauthenticated marketing/landing/public academy pages.
- */
+const PublicNavbar = dynamic(
+  () => import("@/components/home/PublicNavbar").then((m) => m.PublicNavbar),
+  { ssr: true }
+);
+
+const MobileSecondaryNav = dynamic(
+  () => import("@/components/home/MobileSecondaryNav").then((m) => m.MobileSecondaryNav),
+  { ssr: true }
+);
+
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <NewsTicker />
       <PublicNavbar />
+      <MobileSecondaryNav />
 
       <main className="flex-1">{children}</main>
 
