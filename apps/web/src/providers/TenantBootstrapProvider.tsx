@@ -14,6 +14,8 @@ import { TenantBootstrapError } from "@/components/system/TenantBootstrapError";
 import { isSuperAdminPath } from "@/constants/routes";
 import { env } from "@/config/env";
 
+const MAX_RETRIES = 3;
+
 export function TenantBootstrapProvider({
   children,
   serverHostname,
@@ -33,13 +35,11 @@ export function TenantBootstrapProvider({
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
 
   useEffect(() => {
-    // If we are on platform domain, super admin, or the not-found page itself, we are good
     if (platform || isSuperAdmin || pathname === "/tenant-not-found") {
       setBootstrapStatus("resolved");
       return;
     }
 
-    // If we have tenant context from server, use it
     if (tenantContext) {
       setTenantBootstrap({
         id: tenantContext.id,
@@ -53,7 +53,6 @@ export function TenantBootstrapProvider({
       return;
     }
 
-    // Fallback for development if no middleware is active
     if (process.env.NODE_ENV === "development" && hostname === "localhost" && env.devTenant) {
         setTenantBootstrap({
           id: env.devTenant.id,
@@ -76,25 +75,42 @@ export function TenantBootstrapProvider({
         return;
     }
 
-    // If we reach here and we are not on platform, it means tenant resolution failed in middleware
-    // but the request still reached here (shouldn't happen with proper middleware)
     if (!platform && !isSuperAdmin && !tenantContext) {
-      setBootstrapStatus("not-found");
+      setBootstrapStatus("loading");
+
+      const attempt = (attempts: number) => {
+        fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Tenant not found");
+            return res.json();
+          })
+          .then((data) => {
+            if (data && data.status === "active") {
+              setTenantBootstrap({
+                id: data.id,
+                name: data.name,
+                slug: data.slug,
+                domain: data.domain,
+                status: data.status,
+                branding: data.branding,
+                subdomain: getTenantSubdomain(hostname),
+              });
+            } else {
+              setBootstrapStatus("not-found");
+            }
+          })
+          .catch(() => {
+            if (attempts < MAX_RETRIES) {
+              setTimeout(() => attempt(attempts + 1), 1000 * Math.pow(2, attempts));
+            } else {
+              setBootstrapStatus("not-found");
+            }
+          });
+      };
+
+      attempt(0);
     }
   }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus]);
-
-  // Fallback: if bootstrap stays idle for too long, force to not-found
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (bootstrapStatus === "idle") {
-      timeoutRef.current = setTimeout(() => {
-        setBootstrapStatus("not-found");
-      }, 8000);
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [bootstrapStatus, setBootstrapStatus]);
 
   if (bootstrapStatus === "loading" || bootstrapStatus === "idle") {
     return <TenantLoading />;
