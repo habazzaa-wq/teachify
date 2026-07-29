@@ -1,4 +1,5 @@
 const DEFAULT_DEV_API_URL = "http://localhost:8000";
+const DEFAULT_INTERNAL_API_URL = process.env.INTERNAL_API_URL ?? "http://127.0.0.1";
 const API_SUBDOMAIN = "api";
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -97,6 +98,12 @@ export function resolveApiUrl(location?: RuntimeApiLocation): string {
         return DEFAULT_DEV_API_URL;
       }
       return `${protocol}//${hostname}`;
+    }
+
+    // Custom domain called from server-side (middleware/edge): use internal URL
+    // to avoid TLS cert validation issues in the edge runtime sandbox.
+    if (location) {
+      return DEFAULT_INTERNAL_API_URL;
     }
   }
 
