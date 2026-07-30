@@ -128,16 +128,30 @@ class BunnyStorageProvider implements MediaProvider
             ->whereIn('status', ['pending', 'active'])
             ->first();
 
-        if (! $integration) {
-            $platform = PlatformBunnySetting::active();
+        $platform = PlatformBunnySetting::active();
 
-            if ($platform && $platform->hasStorageCredentials()) {
-                return $platform->toProviderConfig('storage');
+        if ($integration) {
+            $config = $integration->config ?? [];
+
+            // If the tenant integration config already has storage credentials,
+            // use it directly. Otherwise fall back to the platform-wide settings.
+            if (! empty($config['upload_base_url']) && ! empty($config['client_upload_key'])) {
+                return $config;
             }
 
-            throw new RuntimeException('Bunny Storage integration is not configured for this tenant.');
+            // Merge platform settings underneath tenant-specific config so that
+            // per-tenant overrides (e.g. paths) still apply.
+            if ($platform && $platform->hasStorageCredentials()) {
+                return array_merge($platform->toProviderConfig('storage'), $config);
+            }
+
+            return $config;
         }
 
-        return $integration->config ?? [];
+        if ($platform && $platform->hasStorageCredentials()) {
+            return $platform->toProviderConfig('storage');
+        }
+
+        throw new RuntimeException('Bunny Storage integration is not configured for this tenant.');
     }
 }
