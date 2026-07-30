@@ -360,10 +360,13 @@ class ResumableUploadService
 
         try {
             $asset = $this->pushToBunny($session, $assembledAbs);
-        } finally {
-            // Always purge temporary artifacts, even when Bunny rejects us.
-            $this->purgeTemporaryArtifacts($session, $assembledAbs);
+        } catch (\Throwable $e) {
+            // Keep the assembled file and chunk artifacts so the caller can
+            // retry finalize. purgeTemporaryArtifacts runs only on success.
+            throw $e;
         }
+
+        $this->purgeTemporaryArtifacts($session, $assembledAbs);
 
         $session->forceFill([
             'status' => 'completed',
