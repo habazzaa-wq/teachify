@@ -1,4 +1,4 @@
-import api, { ensureCsrfCookie } from "./axios";
+import api from "./axios";
 import type {
   CurrentUserResponse,
   LoginRequest,
@@ -9,12 +9,7 @@ import type {
 } from "@/types/auth.types";
 
 export const authService = {
-  async getCsrfCookie(): Promise<void> {
-    await ensureCsrfCookie();
-  },
-
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    await ensureCsrfCookie();
     const { data } = await api.post<LoginResponse>("/tenant/auth/login", payload);
     return data;
   },

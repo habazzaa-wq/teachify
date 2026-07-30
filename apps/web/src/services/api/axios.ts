@@ -137,6 +137,7 @@ export async function ensureCsrfCookie(): Promise<void> {
   try {
     await axios.get(`${resolveApiUrl()}/sanctum/csrf-cookie`, {
       withCredentials: true,
+      timeout: 5_000,
     });
   } catch {
     // CSRF cookie is not critical for token-based auth.
