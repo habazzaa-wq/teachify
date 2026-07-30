@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import Image from "next/image";
+import { m, useInView, useReducedMotion } from "framer-motion";
 import {
   GraduationCap,
   ArrowLeft,
@@ -62,12 +63,12 @@ function StageCard({
       {/* ── Angled image area ── */}
       <div className="relative h-52 w-full sm:h-56" style={{ clipPath: "polygon(0 0, 100% 0, 100% 82%, 0 100%)" }}>
         {stage.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={stage.image}
             alt={stage.name}
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-contain transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (
           <div
@@ -193,7 +194,7 @@ function StageCard({
 
   if (stage.link) {
     return (
-      <motion.a
+      <m.a
         {...anim}
         href={stage.link}
         target="_blank"
@@ -202,14 +203,14 @@ function StageCard({
         style={{ perspective: "800px" }}
       >
         {card}
-      </motion.a>
+      </m.a>
     );
   }
 
   return (
-    <motion.div {...anim} style={{ perspective: "800px" }}>
+    <m.div {...anim} style={{ perspective: "800px" }}>
       {card}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -234,7 +235,7 @@ export function EducationalStagesSection() {
     <section
       ref={ref}
       dir="rtl"
-      className="relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
+      className="section-lazy relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
     >
       {/* bg */}
       <div
@@ -262,7 +263,7 @@ export function EducationalStagesSection() {
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         {/* header */}
         <div className="mb-8 text-center sm:mb-12">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={isInView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
+          <m.div initial={{ opacity: 0, scale: 0.9 }} animate={isInView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
             <span
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold sm:text-sm"
               style={{
@@ -274,9 +275,9 @@ export function EducationalStagesSection() {
               <Sparkles className="h-3.5 w-3.5" />
               المسار التعليمي
             </span>
-          </motion.div>
+          </m.div>
 
-          <motion.h2
+          <m.h2
             initial={{ opacity: 0, y: 14 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.05 }}
@@ -287,9 +288,9 @@ export function EducationalStagesSection() {
             <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(135deg, ${getAccent(0)}, ${getAccent(1)})` }}>
               الدراسية
             </span>
-          </motion.h2>
+          </m.h2>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 14 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -297,7 +298,7 @@ export function EducationalStagesSection() {
             style={{ color: isDark ? "#8a8290" : "#7a7168" }}
           >
             استكشف المراحل الدراسية التي نقدّمها لبناء مستقبلك التعليمي
-          </motion.p>
+          </m.p>
         </div>
 
         {/* grid — all cards equal */}
@@ -309,7 +310,7 @@ export function EducationalStagesSection() {
 
         {/* show more */}
         {hasMore ? (
-          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.5 }} className="mt-10 flex justify-center sm:mt-14">
+          <m.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.5 }} className="mt-10 flex justify-center sm:mt-14">
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -332,7 +333,7 @@ export function EducationalStagesSection() {
               )}
               <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
             </button>
-          </motion.div>
+          </m.div>
         ) : null}
       </div>
 
