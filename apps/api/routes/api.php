@@ -75,8 +75,10 @@ use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicWhyChooseUsController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicSubjectController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
+use App\Http\Controllers\Api\v1\Tenant\SubjectController;
 use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
@@ -119,6 +121,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
+    Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
     Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
@@ -413,6 +416,9 @@ Route::prefix('v1')->group(function () {
 
         Route::apiResource('teacher/educational-stages', EducationalStageController::class)->names('teacher.educational-stages');
         Route::post('/teacher/educational-stages/reorder', [EducationalStageController::class, 'reorder']);
+
+        Route::apiResource('teacher/subjects', SubjectController::class)->names('teacher.subjects');
+        Route::post('/teacher/subjects/reorder', [SubjectController::class, 'reorder']);
 
         Route::get('/domains', [TenantDomainController::class, 'index']);
         Route::post('/domains', [TenantDomainController::class, 'store']);

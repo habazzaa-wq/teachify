@@ -57,6 +57,14 @@ class CourseResource extends JsonResource
                 'name' => $primaryInstructor->user?->name,
                 'avatar' => $primaryInstructor->avatar ?? $primaryInstructor->user?->avatar,
             ] : null,
+            'educationalStage' => $this->educationalStage ? [
+                'id' => (string) $this->educationalStage->id,
+                'name' => $this->educationalStage->name,
+            ] : null,
+            'subject' => $this->subject ? [
+                'id' => (string) $this->subject->id,
+                'name' => $this->subject->name,
+            ] : null,
             'category' => $this->categories->first() ? [
                 'id' => (string) $this->categories->first()->id,
                 'name' => $this->categories->first()->name,

@@ -18,6 +18,7 @@ export const routes = {
   dashboardContent: "/teacher/content",
   dashboardMedia: "/teacher/media",
   dashboardExams: "/teacher/exams",
+  dashboardSubjects: "/teacher/subjects",
   dashboardDiscussions: "/teacher/discussions",
   dashboardNotifications: "/teacher/notifications",
   dashboardAnalytics: "/teacher/analytics",

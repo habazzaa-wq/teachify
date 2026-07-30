@@ -35,6 +35,10 @@ function CourseCreateDrawer({
   saving,
   categories = [],
 }: CourseCreateDrawerProps) {
+  const { data: stagesData } = useEducationalStagesList();
+  const { data: subjectsData } = useSubjectsList();
+  const stages = stagesData?.data ?? [];
+  const subjects = subjectsData?.data ?? [];
   const [formData, setFormData] = useState<CreateCoursePayload>({
     title: "",
     subtitle: "",
@@ -49,6 +53,8 @@ function CourseCreateDrawer({
     currency: "SAR",
     certificateEnabled: false,
     categoryIds: [],
+    educationalStageId: null,
+    subjectId: null,
     requirements: [],
     learningOutcomes: [],
     targetAudience: [],
@@ -257,6 +263,53 @@ function CourseCreateDrawer({
                 </div>
               </div>
             </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                التصنيف
+              </h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-stage">المرحلة الدراسية</Label>
+                    <AppSelect
+                      value={formData.educationalStageId != null ? String(formData.educationalStageId) : ""}
+                      onValueChange={(val) => updateField("educationalStageId", val ? Number(val) : null)}
+                    >
+                      <AppSelectTrigger id="create-stage" className="h-9">
+                        <AppSelectValue placeholder="اختر المرحلة الدراسية" />
+                      </AppSelectTrigger>
+                      <AppSelectContent>
+                        <AppSelectItem value="">بدون مرحلة</AppSelectItem>
+                        {stages.filter((s) => s.is_active).map((s) => (
+                          <AppSelectItem key={s.id} value={String(s.id)}>
+                            {s.name}
+                          </AppSelectItem>
+                        ))}
+                      </AppSelectContent>
+                    </AppSelect>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-subject">المادة</Label>
+                    <AppSelect
+                      value={formData.subjectId != null ? String(formData.subjectId) : ""}
+                      onValueChange={(val) => updateField("subjectId", val ? Number(val) : null)}
+                    >
+                      <AppSelectTrigger id="create-subject" className="h-9">
+                        <AppSelectValue placeholder="اختر المادة" />
+                      </AppSelectTrigger>
+                      <AppSelectContent>
+                        <AppSelectItem value="">بدون مادة</AppSelectItem>
+                        {subjects.filter((s) => s.is_active).map((s) => (
+                          <AppSelectItem key={s.id} value={String(s.id)}>
+                            {s.name}
+                          </AppSelectItem>
+                        ))}
+                      </AppSelectContent>
+                    </AppSelect>
+                  </div>
+                </div>
+              </div>
 
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">

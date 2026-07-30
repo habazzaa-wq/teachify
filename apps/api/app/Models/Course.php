@@ -46,6 +46,8 @@ class Course extends Model
         'requirements',
         'learning_outcomes',
         'target_audience',
+        'educational_stage_id',
+        'subject_id',
         'published_at',
         'archived_at',
     ];
@@ -182,5 +184,15 @@ class Course extends Model
     public function discussionThreads(): HasMany
     {
         return $this->hasMany(DiscussionThread::class);
+    }
+
+    public function educationalStage(): BelongsTo
+    {
+        return $this->belongsTo(EducationalStage::class);
+    }
+
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class);
     }
 }

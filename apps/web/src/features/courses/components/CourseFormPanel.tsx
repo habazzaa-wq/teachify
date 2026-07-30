@@ -17,6 +17,8 @@ import { COURSE_NON_FILTER_VISIBILITY_OPTIONS, COURSE_NON_FILTER_DIFFICULTY_OPTI
 import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType } from "../types";
 import { CourseImageUploader } from "./CourseImageUploader";
 import { useCourseTags } from "../hooks/useCourseTags";
+import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
+import { useSubjectsList } from "@/features/subjects/hooks";
 
 const nonLangOptions = LANGUAGE_OPTIONS.filter((l) => l.value !== "all");
 
@@ -129,6 +131,10 @@ function CourseFormPanel({
   footerNote,
 }: CourseFormPanelProps) {
   const { data: tags = [] } = useCourseTags();
+  const { data: stagesData } = useEducationalStagesList();
+  const { data: subjectsData } = useSubjectsList();
+  const stages = stagesData?.data ?? [];
+  const subjects = subjectsData?.data ?? [];
   const [formData, setFormData] = useState<CreateCoursePayload>(EMPTY_FORM);
 
   useEffect(() => {
@@ -265,6 +271,53 @@ function CourseFormPanel({
                   ))}
                 </AppSelectContent>
               </AppSelect>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              التصنيف
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="form-stage">المرحلة الدراسية</Label>
+                <AppSelect
+                  value={formData.educationalStageId != null ? String(formData.educationalStageId) : ""}
+                  onValueChange={(val) => updateField("educationalStageId", val ? Number(val) : null)}
+                >
+                  <AppSelectTrigger id="form-stage" className="h-9">
+                    <AppSelectValue placeholder="اختر المرحلة الدراسية" />
+                  </AppSelectTrigger>
+                  <AppSelectContent>
+                    <AppSelectItem value="">بدون مرحلة</AppSelectItem>
+                    {stages.filter((s) => s.is_active).map((s) => (
+                      <AppSelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </AppSelectItem>
+                    ))}
+                  </AppSelectContent>
+                </AppSelect>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="form-subject">المادة</Label>
+                <AppSelect
+                  value={formData.subjectId != null ? String(formData.subjectId) : ""}
+                  onValueChange={(val) => updateField("subjectId", val ? Number(val) : null)}
+                >
+                  <AppSelectTrigger id="form-subject" className="h-9">
+                    <AppSelectValue placeholder="اختر المادة" />
+                  </AppSelectTrigger>
+                  <AppSelectContent>
+                    <AppSelectItem value="">بدون مادة</AppSelectItem>
+                    {subjects.filter((s) => s.is_active).map((s) => (
+                      <AppSelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </AppSelectItem>
+                    ))}
+                  </AppSelectContent>
+                </AppSelect>
+              </div>
             </div>
           </div>
 

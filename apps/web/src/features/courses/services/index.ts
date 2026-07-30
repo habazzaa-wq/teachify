@@ -37,6 +37,8 @@ function formatCourse(raw: any): Course {
     learningOutcomes: raw.learningOutcomes ?? [],
     targetAudience: raw.targetAudience ?? [],
     instructor: raw.instructor ? { id: String(raw.instructor.id), name: raw.instructor.name, avatar: raw.instructor.avatar ?? null } : null,
+    educationalStage: raw.educationalStage ? { id: String(raw.educationalStage.id), name: raw.educationalStage.name } : null,
+    subject: raw.subject ? { id: String(raw.subject.id), name: raw.subject.name } : null,
     category: raw.category ? { id: String(raw.category.id), name: raw.category.name, slug: raw.category.slug } : null,
     studentsCount: raw.studentsCount ?? 0,
     sectionsCount: raw.sectionsCount ?? 0,
@@ -112,6 +114,8 @@ export const coursesService = {
       seo_title: payload.seoTitle,
       seo_description: payload.seoDescription,
       seo_keywords: payload.seoKeywords,
+      educational_stage_id: payload.educationalStageId,
+      subject_id: payload.subjectId,
       category_ids: payload.categoryIds,
       tag_ids: payload.tagIds,
       requirements: payload.requirements,
@@ -146,6 +150,8 @@ export const coursesService = {
     if (payload.seoTitle !== undefined) body.seo_title = payload.seoTitle;
     if (payload.seoDescription !== undefined) body.seo_description = payload.seoDescription;
     if (payload.seoKeywords !== undefined) body.seo_keywords = payload.seoKeywords;
+    if (payload.educationalStageId !== undefined) body.educational_stage_id = payload.educationalStageId;
+    if (payload.subjectId !== undefined) body.subject_id = payload.subjectId;
     if (payload.categoryIds !== undefined) body.category_ids = payload.categoryIds;
     if (payload.tagIds !== undefined) body.tag_ids = payload.tagIds;
     if (payload.requirements !== undefined) body.requirements = payload.requirements;

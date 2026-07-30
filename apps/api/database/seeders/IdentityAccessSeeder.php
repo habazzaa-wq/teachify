@@ -174,6 +174,7 @@ class IdentityAccessSeeder extends Seeder
             'question-categories.restore',
             'news.manage',
             'stages.manage',
+            'subjects.manage',
             'media.view',
             'media.create',
             'media.update',

@@ -27,7 +27,7 @@ class CourseRepository
 
     protected function defaultEagerLoads(): array
     {
-        return ['primaryInstructor.user', 'categories'];
+        return ['primaryInstructor.user', 'categories', 'educationalStage', 'subject'];
     }
 
     public function withEnrollmentsCount(Builder $query): Builder

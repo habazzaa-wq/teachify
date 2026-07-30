@@ -278,6 +278,8 @@ class CourseController extends Controller
             'learning_outcomes.*' => ['string', 'max:500'],
             'target_audience' => ['nullable', 'array'],
             'target_audience.*' => ['string', 'max:500'],
+            'educational_stage_id' => ['nullable', 'integer', 'exists:educational_stages,id'],
+            'subject_id' => ['nullable', 'integer', 'exists:subjects,id'],
             'category_ids' => ['sometimes', 'array'],
             'category_ids.*' => ['integer'],
             'tag_ids' => ['sometimes', 'array'],

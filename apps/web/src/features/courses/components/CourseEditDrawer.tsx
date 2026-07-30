@@ -39,6 +39,8 @@ function CourseEditDrawer({
       price: course.price,
       currency: course.currency,
       tagIds: course.tags.map((t) => Number(t.id)),
+      educationalStageId: course.educationalStage ? Number(course.educationalStage.id) : null,
+      subjectId: course.subject ? Number(course.subject.id) : null,
       requirements: course.requirements,
       learningOutcomes: course.learningOutcomes,
       targetAudience: course.targetAudience,

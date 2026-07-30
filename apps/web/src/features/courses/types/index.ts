@@ -37,6 +37,14 @@ export interface Course {
   requirements: string[];
   learningOutcomes: string[];
   targetAudience: string[];
+  educationalStage: {
+    id: string;
+    name: string;
+  } | null;
+  subject: {
+    id: string;
+    name: string;
+  } | null;
   instructor: {
     id: string;
     name: string;
@@ -79,6 +87,8 @@ export interface CreateCoursePayload {
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
+  educationalStageId?: number | null;
+  subjectId?: number | null;
   categoryIds?: number[];
   tagIds?: number[];
   requirements?: string[];
@@ -110,6 +120,8 @@ export interface UpdateCoursePayload {
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
+  educationalStageId?: number | null;
+  subjectId?: number | null;
   categoryIds?: number[];
   tagIds?: number[];
   requirements?: string[];

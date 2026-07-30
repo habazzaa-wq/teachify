@@ -18,6 +18,7 @@ import {
   User,
   Award,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -195,6 +196,13 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith("/teacher/exams")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => router.push(routes.dashboardExams)}
+              />
+              <StudioSidebarItem
+                icon={<BookOpen className="h-4 w-4" />}
+                label="المواد"
+                active={pathname.startsWith("/teacher/subjects")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.dashboardSubjects)}
               />
               <StudioSidebarItem
                 icon={<Layout className="h-4 w-4" />}
