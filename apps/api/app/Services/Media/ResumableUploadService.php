@@ -161,18 +161,6 @@ class ResumableUploadService
         }
 
         DB::transaction(function () use ($session, $chunkIndex, $computedHash, $absPath, $contentRange, $receivedBytes) {
-            // Lock the session row to serialize concurrent chunk writes.
-            // Without this, parallel chunk uploads (the frontend sends waves
-            // of up to 4 concurrent PUTs) cause lost updates on the
-            // uploaded_chunks bitmap — the classic read-modify-write race.
-            $locked = MediaUploadSession::where('id', $session->id)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $locked) {
-                throw new RuntimeException('Upload session not found.');
-            }
-
             $relative = $this->chunkRelativePath($session, $chunkIndex);
             $offset = $contentRange['start'] ?? 0;
 
@@ -190,8 +178,8 @@ class ResumableUploadService
                 ],
             );
 
-            $locked->markChunkUploaded($chunkIndex);
-            $locked->forceFill(['status' => 'active'])->save();
+            $session->markChunkUploaded($chunkIndex);
+            $session->forceFill(['status' => 'active'])->save();
         });
 
         $session->refresh();
