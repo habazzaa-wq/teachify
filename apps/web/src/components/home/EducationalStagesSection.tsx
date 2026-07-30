@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { m, useInView, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 import {
   GraduationCap,
   ArrowLeft,
@@ -218,8 +218,6 @@ function StageCard({
 export function EducationalStagesSection() {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
-  const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
   const reduced = useReducedMotion() ?? false;
   const [expanded, setExpanded] = useState(false);
 
@@ -233,7 +231,6 @@ export function EducationalStagesSection() {
 
   return (
     <section
-      ref={ref}
       dir="rtl"
       className="section-lazy relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
     >
@@ -263,7 +260,7 @@ export function EducationalStagesSection() {
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         {/* header */}
         <div className="mb-8 text-center sm:mb-12">
-          <m.div initial={{ opacity: 0, scale: 0.9 }} animate={isInView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
+          <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
             <span
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold sm:text-sm"
               style={{
@@ -279,7 +276,7 @@ export function EducationalStagesSection() {
 
           <m.h2
             initial={{ opacity: 0, y: 14 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
             className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
             style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}
@@ -292,7 +289,7 @@ export function EducationalStagesSection() {
 
           <m.p
             initial={{ opacity: 0, y: 14 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mx-auto mt-2.5 max-w-md text-sm leading-relaxed"
             style={{ color: isDark ? "#8a8290" : "#7a7168" }}
