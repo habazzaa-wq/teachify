@@ -9,9 +9,8 @@ import {
   ArrowDown,
   BookOpen,
   MoreHorizontal,
-  ImagePlus,
-  X,
 } from "lucide-react";
+import { cn } from "@/lib/cn";
 import {
   AppPage,
   AppPageHeader,
@@ -45,17 +44,28 @@ import {
   useDeleteSubject,
   useReorderSubjects,
 } from "@/features/subjects/hooks";
-import { mediaLibraryService } from "@/features/media-library/services";
-import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
+import { IconPicker } from "@/features/subjects/components/IconPicker";
 import type { SubjectInput, SubjectRecord } from "@/features/subjects/types";
 
 const emptyForm: SubjectInput = {
   name: "",
   description: "",
-  image: "",
+  icon: null,
   is_active: true,
   sort_order: 0,
 };
+
+function SubjectIcon({ name, className }: { name: string | null; className?: string }) {
+  if (!name) return <BookOpen className={cn("h-5 w-5", className)} />;
+  const icons: Record<string, React.ComponentType<{ className?: string }>> = {
+    BookOpen, BookMarked, BookText, Calculator, Sigma, Hash,
+    FlaskConical, Beaker, Atom, Dna, Globe, Map, Landmark, Scroll,
+    Palette, Paintbrush, Music, Dumbbell, Monitor, Code, Brain,
+    Heart, Languages, GraduationCap, Leaf, Microscope, Telescope, Pen, Compass,
+  };
+  const Icon = icons[name];
+  return Icon ? <Icon className={cn("h-5 w-5", className)} /> : <BookOpen className={cn("h-5 w-5", className)} />;
+}
 
 function SubjectFormDialog({
   open,
@@ -73,7 +83,7 @@ function SubjectFormDialog({
       ? {
           name: initial.name,
           description: initial.description ?? "",
-          image: initial.image ?? "",
+          icon: initial.icon ?? null,
           is_active: initial.is_active,
           sort_order: initial.sort_order,
         }
@@ -86,7 +96,7 @@ function SubjectFormDialog({
     const payload: SubjectInput = {
       name: form.name,
       description: form.description ? form.description : null,
-      image: form.image ? form.image : null,
+      icon: form.icon || null,
       is_active: form.is_active,
       sort_order: form.sort_order,
     };
@@ -132,48 +142,11 @@ function SubjectFormDialog({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">شعار المادة</label>
-            {form.image ? (
-              <div className="relative mb-3 overflow-hidden rounded-xl border border-border">
-                <div className="relative aspect-[16/9] w-full">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={form.image}
-                    alt={form.name}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, image: "" })}
-                  className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
-                  aria-label="إزالة الشعار"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-2">
-              <ChooseMediaButton
-                mode="single"
-                allowedTypes={["image"]}
-                label={form.image ? "تغيير الشعار" : "اختيار شعار"}
-                onSelect={async (result) => {
-                  const asset = await mediaLibraryService.getAsset(result.id);
-                  if (asset?.cdnUrl) {
-                    setForm({ ...form, image: asset.cdnUrl });
-                  }
-                }}
-              />
-              <span className="text-xs text-muted-foreground">أو</span>
-              <AppInput
-                dir="ltr"
-                value={form.image ?? ""}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="https://..."
-                className="max-w-[260px] flex-1"
-              />
-            </div>
+            <label className="mb-2 block text-sm font-medium">أيقونة المادة</label>
+            <IconPicker
+              value={form.icon ?? null}
+              onChange={(icon) => setForm({ ...form, icon })}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -298,19 +271,8 @@ export default function SubjectsPage() {
                 </div>
 
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                    {item.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                        <ImagePlus className="h-5 w-5" />
-                      </div>
-                    )}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
+                    <SubjectIcon name={item.icon} />
                   </div>
                   <div className="min-w-0">
                     <div className="truncate font-medium text-foreground">

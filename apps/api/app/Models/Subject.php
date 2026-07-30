@@ -16,6 +16,7 @@ class Subject extends Model
         'created_by_tenant_user_id',
         'name',
         'description',
+        'icon',
         'image',
         'is_active',
         'sort_order',

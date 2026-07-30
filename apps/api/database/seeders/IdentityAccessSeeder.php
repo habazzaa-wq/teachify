@@ -20,6 +20,7 @@ class IdentityAccessSeeder extends Seeder
             'tenant.manage',
             'news.manage',
             'stages.manage',
+            'subjects.manage',
             'users.view',
             'users.invite',
             'users.manage',

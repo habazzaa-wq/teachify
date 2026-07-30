@@ -16,7 +16,7 @@ class PublicSubjectController extends Controller
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get(['id', 'name', 'description', 'image']);
+            ->get(['id', 'name', 'description', 'image', 'icon']);
 
         return response()->json(['items' => $items]);
     }

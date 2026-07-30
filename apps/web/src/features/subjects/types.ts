@@ -4,7 +4,7 @@ export interface SubjectRecord {
   created_by_tenant_user_id: number | null;
   name: string;
   description: string | null;
-  image: string | null;
+  icon: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -15,7 +15,7 @@ export interface SubjectRecord {
 export interface SubjectInput {
   name: string;
   description?: string | null;
-  image?: string | null;
+  icon?: string | null;
   is_active?: boolean;
   sort_order?: number;
 }
