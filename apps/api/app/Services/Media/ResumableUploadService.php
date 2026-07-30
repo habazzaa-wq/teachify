@@ -161,6 +161,18 @@ class ResumableUploadService
         }
 
         DB::transaction(function () use ($session, $chunkIndex, $computedHash, $absPath, $contentRange, $receivedBytes) {
+            // Lock the session row to serialize concurrent chunk writes.
+            // Without this, parallel chunk uploads (the frontend sends waves
+            // of up to 4 concurrent PUTs) cause lost updates on the
+            // uploaded_chunks bitmap — the classic read-modify-write race.
+            $locked = MediaUploadSession::where('id', $session->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked) {
+                throw new RuntimeException('Upload session not found.');
+            }
+
             $relative = $this->chunkRelativePath($session, $chunkIndex);
             $offset = $contentRange['start'] ?? 0;
 
@@ -178,8 +190,8 @@ class ResumableUploadService
                 ],
             );
 
-            $session->markChunkUploaded($chunkIndex);
-            $session->forceFill(['status' => 'active'])->save();
+            $locked->markChunkUploaded($chunkIndex);
+            $locked->forceFill(['status' => 'active'])->save();
         });
 
         $session->refresh();
@@ -202,8 +214,17 @@ class ResumableUploadService
     {
         $this->assertAccessible($session);
 
-        $uploaded = $session->uploaded_chunks ?? [];
+        // Use the actual chunk records from the database for the authoritative
+        // bitmap, not the session's potentially stale uploaded_chunks column.
+        // Parallel chunk uploads can cause lost updates on the JSON bitmap,
+        // but the individual chunk rows are always correct.
         $total = $session->total_chunks;
+        $uploaded = $session->chunks()
+            ->where('status', 'uploaded')
+            ->pluck('chunk_index')
+            ->sort()
+            ->values()
+            ->all();
 
         $remaining = [];
         $nextChunk = null;
@@ -251,12 +272,18 @@ class ResumableUploadService
         }
 
         $total = $session->total_chunks;
-        $uploaded = $session->uploaded_chunks ?? [];
+        $chunks = $session->chunks()->orderBy('chunk_index')->get();
 
-        if ($total <= 0 || count($uploaded) < $total) {
+        // Use the actual chunk records from the database rather than the
+        // session's uploaded_chunks bitmap. The bitmap is prone to lost
+        // updates under parallel chunk uploads (race condition), but the
+        // individual chunk rows are always stored correctly (unique constraint
+        // + row-level locking in receiveChunk).
+        if ($total <= 0 || $chunks->count() < $total) {
+            $uploadedIndices = $chunks->pluck('chunk_index')->all();
             $missing = [];
             for ($i = 0; $i < $total; $i += 1) {
-                if (! in_array($i, $uploaded, true)) {
+                if (! in_array($i, $uploadedIndices, true)) {
                     $missing[] = $i;
                 }
             }
@@ -264,8 +291,6 @@ class ResumableUploadService
                 'chunks' => ['Upload is incomplete. Missing chunks: '.implode(', ', $missing)],
             ]);
         }
-
-        $chunks = $session->chunks()->orderBy('chunk_index')->get();
 
         // Verify offsets are contiguous (starting at 0) and cover the full file.
         $expectedOffset = 0;
