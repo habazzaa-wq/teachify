@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LazyMotion, m, domMax, AnimatePresence, useReducedMotion } from "framer-motion";
+import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
@@ -58,7 +58,7 @@ function DecoOrbs() {
   );
 }
 
-function ThemeBtn({ scrolled }: { scrolled: boolean }) {
+function ThemeBtn() {
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
 
@@ -69,17 +69,15 @@ function ThemeBtn({ scrolled }: { scrolled: boolean }) {
       onClick={toggleTheme}
       className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 group"
       style={{
-        backgroundColor: scrolled ? undefined : theme === "light" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
+        backgroundColor: undefined,
       }}
       aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
     >
       {/* Default border */}
       <span
-        className="absolute inset-0 rounded-2xl transition-all duration-500"
+        className="absolute inset-0 rounded-2xl"
         style={{
-          boxShadow: scrolled
-            ? `inset 0 0 0 1px hsl(var(--border))`
-            : "inset 0 0 0 1px rgba(255,255,255,0.12)",
+          boxShadow: `inset 0 0 0 1px hsl(var(--border))`,
         }}
       />
       {/* Hover: bg = secondary, border = primary */}
@@ -163,7 +161,6 @@ function NavLinkItem({
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
-  const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("/");
 
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -235,12 +232,6 @@ export function PublicNavbar() {
   );
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
@@ -256,51 +247,28 @@ export function PublicNavbar() {
   const tenantName = tenant?.name ?? "أكاديميتي";
 
   return (
-    <LazyMotion features={domMax}>
     <>
       <header
-        className={cn(
-          "sticky top-0 z-50 w-full transition-all duration-700",
-          scrolled ? "py-2" : "py-4",
-        )}
-        style={{ willChange: "transform" }}
+        className="sticky top-0 z-50 w-full py-2"
         role="banner"
       >
-        <AnimatePresence>
-          {scrolled && (
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent"
-            />
-          )}
-        </AnimatePresence>
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <m.div
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className={cn(
-              "relative mx-auto flex items-center justify-between rounded-[28px] border transition-all duration-500",
-              scrolled
-                ? "h-14 bg-background/75 backdrop-blur-2xl px-3"
-                : "h-16 border-transparent bg-transparent px-0",
-            )}
-            style={scrolled ? {
+          <div
+            className="relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
+            style={{
               borderColor: `${primary}30`,
               boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px ${primary}15`,
-            } : {}}
+            }}
           >
-            {scrolled && <DecoOrbs />}
+            <DecoOrbs />
 
-            {scrolled && (
-              <div
-                className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
-                style={{
-                  background: `linear-gradient(135deg, ${primary}50, transparent 40%, transparent 60%, ${secondary}40)`,
-                }}
-              />
-            )}
+            <div
+              className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
+              style={{
+                background: `linear-gradient(135deg, ${primary}50, transparent 40%, transparent 60%, ${secondary}40)`,
+              }}
+            />
 
             {/* ── Logo ── */}
             <m.div
@@ -334,17 +302,9 @@ export function PublicNavbar() {
                     />
                   </m.div>
                 )}
-                {!scrolled && (
-                  <m.span
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    className="text-lg font-bold tracking-tight max-md:hidden"
-                    style={{ color: primary }}
-                  >
-                    {tenantName}
-                  </m.span>
-                )}
+                <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
+                  {tenantName}
+                </span>
               </Link>
             </m.div>
 
@@ -368,7 +328,7 @@ export function PublicNavbar() {
 
             {/* ── Right actions ── */}
             <div className="relative z-10 flex items-center gap-1.5 sm:gap-2">
-              <ThemeBtn scrolled={scrolled} />
+              <ThemeBtn />
 
               {/* Desktop auth */}
               <div className="flex items-center gap-1 sm:gap-2">
@@ -515,9 +475,9 @@ export function PublicNavbar() {
                         onClick={() => setLoginOpen(true)}
                         className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-xs font-semibold transition-all duration-300"
                         style={{
-                          color: scrolled ? "hsl(var(--foreground))" : "hsl(var(--foreground) / 0.9)",
-                          border: `1px solid ${scrolled ? "hsl(var(--border))" : `${primary}35`}`,
-                          backgroundColor: scrolled ? "hsl(var(--background) / 0.5)" : `${primary}08`,
+                          color: "hsl(var(--foreground))",
+                          border: `1px solid hsl(var(--border))`,
+                          backgroundColor: "hsl(var(--background) / 0.5)",
                         }}
                       >
                         <span
@@ -561,7 +521,7 @@ export function PublicNavbar() {
               </div>
 
             </div>
-          </m.div>
+          </div>
         </div>
       </header>
 
@@ -589,6 +549,5 @@ export function PublicNavbar() {
         onClose={() => setProfileDrawerOpen(false)}
       />
     </>
-    </LazyMotion>
   );
 }
