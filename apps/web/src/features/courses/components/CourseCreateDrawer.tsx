@@ -17,6 +17,8 @@ import {
 } from "@/components/ui";
 import { COURSE_NON_FILTER_VISIBILITY_OPTIONS, COURSE_NON_FILTER_DIFFICULTY_OPTIONS, COURSE_NON_FILTER_PRICING_OPTIONS, LANGUAGE_OPTIONS } from "../constants";
 import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType } from "../types";
+import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
+import { useSubjectsList } from "@/features/subjects/hooks";
 
 interface CourseCreateDrawerProps {
   open: boolean;
