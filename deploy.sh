@@ -55,17 +55,10 @@ if $API_CHANGED; then
   log "Fixing .env.production values..."
   cd "$API"
 
-  # Ensure DB_PASSWORD is quoted (handles # in password)
-  if grep -q '^DB_PASSWORD=.*#' .env.production 2>/dev/null; then
-    # Password contains # but is not quoted
-    sed -i 's/^DB_PASSWORD=\(.*[^"]\)$/\1/' .env.production 2>/dev/null || true
-    # Re-check if still unquoted with #
-    if grep -q '^DB_PASSWORD=.*#' .env.production 2>/dev/null && ! grep -q '^DB_PASSWORD=".*#.*"$' .env.production 2>/dev/null; then
-      sed -i '/^DB_PASSWORD=/s/^DB_PASSWORD=\(.*\)/DB_PASSWORD="\1"/' .env.production
-      warn "DB_PASSWORD was unquoted with # — fixed"
-    fi
-  fi
-
+  # Remove .env.production so it doesn't override the real .env values
+  # when Laravel loads .env.{APP_ENV} on top of .env. The .env file is
+  # the single source of truth for all runtime configuration.
+  rm -f "$API/.env.production" && ok ".env.production removed (live .env takes precedence)" || true
   ok ".env.production checked"
 fi
 
