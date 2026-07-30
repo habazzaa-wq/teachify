@@ -50,6 +50,12 @@ function formatCourse(raw: Raw): PublicCourse {
           avatar: raw.instructor.avatar ?? null,
         }
       : null,
+    educationalStage: raw.educationalStage
+      ? { id: String(raw.educationalStage.id), name: raw.educationalStage.name }
+      : null,
+    subject: raw.subject
+      ? { id: String(raw.subject.id), name: raw.subject.name }
+      : null,
     category: raw.category
       ? {
           id: String(raw.category.id),
