@@ -183,8 +183,7 @@ function StageCard({
 
   const anim = {
     initial: motionProps,
-    whileInView: { opacity: 1, y: 0, rotateX: 0 },
-    viewport: { once: true, margin: "-40px" as const },
+    animate: { opacity: 1, y: 0, rotateX: 0 },
     transition: {
       duration: 0.55,
       delay: (index % INITIAL_VISIBLE) * 0.1,
@@ -307,7 +306,7 @@ export function EducationalStagesSection() {
 
         {/* show more */}
         {hasMore ? (
-          <m.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.5 }} className="mt-10 flex justify-center sm:mt-14">
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mt-10 flex justify-center sm:mt-14">
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
