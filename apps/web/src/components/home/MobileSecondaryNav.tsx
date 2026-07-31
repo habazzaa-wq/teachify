@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
 } from "lucide-react";
@@ -14,15 +14,23 @@ import { cn } from "@/lib/cn";
 const primary = "#D87B63";
 const secondary = "#FFB50E";
 
-const navLinks = [
+type NavLink = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  scrollTarget?: string;
+};
+
+const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
-  { label: "المراحل", href: "/stages", icon: Layers },
+  { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
   { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
 export function MobileSecondaryNav() {
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
   const { data: hero } = usePublicHero();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
@@ -84,10 +92,34 @@ export function MobileSecondaryNav() {
           <div className="flex-1 flex items-center gap-0.5 overflow-x-auto">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
+              const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                if (link.scrollTarget && pathname === "/") {
+                  e.preventDefault();
+                  const targetId = link.scrollTarget;
+                  const scroll = () => {
+                    const el = document.getElementById(targetId);
+                    if (!el) return false;
+                    el.scrollIntoView({
+                      behavior: prefersReducedMotion ? "auto" : "smooth",
+                      block: "start",
+                    });
+                    return true;
+                  };
+                  if (scroll()) return;
+                  let tries = 0;
+                  const timer = window.setInterval(() => {
+                    tries += 1;
+                    if (scroll() || tries >= 5) {
+                      window.clearInterval(timer);
+                    }
+                  }, 120);
+                }
+              };
               return (
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={handleClick}
                   className={cn(
                     "relative whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
                     isActive ? "text-white" : "text-foreground/70 hover:text-foreground",

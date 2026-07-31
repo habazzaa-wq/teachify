@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, LogIn,
@@ -22,9 +23,16 @@ import { cn } from "@/lib/cn";
 const primary = "#D87B63";
 const secondary = "#FFB50E";
 
-const navLinks = [
+type NavLink = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  scrollTarget?: string;
+};
+
+const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
-  { label: "المراحل", href: "/stages", icon: Layers },
+  { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
   { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
@@ -110,7 +118,7 @@ function NavLinkItem({
   href, label, icon: Icon, isActive, onClick,
 }: {
   href: string; label: string; icon: React.ElementType;
-  isActive: boolean; onClick: () => void;
+  isActive: boolean; onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <Link href={href} onClick={onClick} className="group relative">
@@ -161,6 +169,8 @@ function NavLinkItem({
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState("/");
 
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -196,6 +206,31 @@ export function PublicNavbar() {
     clearAuth();
     setProfileDropdownOpen(false);
   }, [clearAuth]);
+
+  const scrollToSection = useCallback(
+    (targetId: string) => {
+      const scroll = () => {
+        const el = document.getElementById(targetId);
+        if (!el) return false;
+        el.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start",
+        });
+        return true;
+      };
+
+      if (scroll()) return;
+
+      let tries = 0;
+      const timer = window.setInterval(() => {
+        tries += 1;
+        if (scroll() || tries >= 5) {
+          window.clearInterval(timer);
+        }
+      }, 120);
+    },
+    [prefersReducedMotion],
+  );
 
   const handleLoginSuccess = useCallback(
     (data: { name: string; avatar?: string | null }) => {
@@ -321,7 +356,15 @@ export function PublicNavbar() {
                   label={link.label}
                   icon={link.icon}
                   isActive={activeSection === link.href}
-                  onClick={() => setActiveSection(link.href)}
+                  onClick={(e) => {
+                    if (link.scrollTarget) {
+                      if (pathname === "/") {
+                        e.preventDefault();
+                        scrollToSection(link.scrollTarget);
+                      }
+                    }
+                    setActiveSection(link.href);
+                  }}
                 />
               ))}
             </nav>

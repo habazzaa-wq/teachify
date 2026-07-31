@@ -247,8 +247,9 @@ export function EducationalStagesSection() {
   return (
     <LazyMotion features={domAnimation}>
       <section
+        id="educational-stages"
         dir="rtl"
-        className="section-lazy relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
+        className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-14 lg:py-20"
       >
       {/* bg */}
       <div
