@@ -3,12 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { heroService } from "./services";
+import { heroKeys } from "./query-keys";
 import type { HeroSettings } from "./types";
-
-export const heroKeys = {
-  public: ["hero", "public"] as const,
-  settings: ["hero", "settings"] as const,
-};
 
 export function usePublicHero() {
   return useQuery({

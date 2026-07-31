@@ -1,6 +1,10 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { HeroSection } from "@/components/home/HeroSection";
+import { heroKeys } from "@/features/homepage/hero/query-keys";
+import { heroServerService } from "@/features/homepage/hero/server-services";
+import { getQueryClient } from "@/lib/get-query-client";
 
 const WhyChooseUsOrbit = dynamic(
   () => import("@/components/home/WhyChooseUsOrbit").then((m) => m.WhyChooseUsOrbit),
@@ -22,9 +26,16 @@ function SectionFallback({ className }: { className?: string }) {
   );
 }
 
-function HomePage() {
+async function HomePage() {
+  const queryClient = getQueryClient();
+
+  const hero = await heroServerService.getPublicHero();
+  if (hero) {
+    queryClient.setQueryData(heroKeys.public, hero);
+  }
+
   return (
-    <>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <HeroSection />
       <Suspense fallback={<SectionFallback />}>
         <WhyChooseUsOrbit />
@@ -32,7 +43,7 @@ function HomePage() {
       <Suspense fallback={<SectionFallback />}>
         <EducationalStagesSection />
       </Suspense>
-    </>
+    </HydrationBoundary>
   );
 }
 

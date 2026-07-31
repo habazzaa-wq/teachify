@@ -13,6 +13,7 @@ import {
   Clock,
   MessageCircle,
   Gift,
+  User,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -165,9 +166,7 @@ export function HeroSection() {
   const social = hero?.socialLinks;
   const icons = hero?.icons;
 
-  const heroImage =
-    toAbsoluteAssetUrl(hero?.teacherImage) ??
-    "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face";
+  const heroImage = toAbsoluteAssetUrl(hero?.teacherImage);
   const heroName = hero?.teacherName || "المعلم";
 
   if (hero && !hero.isActive) return null;
@@ -686,15 +685,21 @@ export function HeroSection() {
 
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-orange-400 shadow-2xl">
-            <Image
-              src={heroImage}
-              alt={heroName}
-              fill
-              priority
-              sizes="340px"
-              className="object-cover"
-              fetchPriority="high"
-            />
+            {heroImage ? (
+              <Image
+                src={heroImage}
+                alt={heroName}
+                fill
+                priority
+                sizes="340px"
+                className="object-cover"
+                fetchPriority="high"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-white/10">
+                <User className="h-24 w-24 text-white/25" />
+              </div>
+            )}
           </div>
 
           {/* ── Desktop orbiting icons ── */}
