@@ -16,7 +16,8 @@ type Raw = Record<string, any>;
 async function serverFetch<T>(path: string): Promise<T> {
   const h = await headers();
   const tenantId = h.get("x-tenant-id") ?? "";
-  const tenantDomain = h.get("x-tenant-domain") ?? "";
+  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(":")[0];
+  const tenantDomain = h.get("x-tenant-domain") ?? host;
 
   const url = `${resolveApiBaseUrl()}${path}`;
 
