@@ -9,10 +9,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-    'https://teachify.tech',
-    'https://www.teachify.tech'
-],
+    'allowed_origins' => array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'https://teachify.tech,https://www.teachify.tech')))),
 
     'allowed_origins_patterns' => [
         '~https?://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*' . $escapedBase . '(:\d+)?~',

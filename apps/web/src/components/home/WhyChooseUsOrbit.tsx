@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FC, type MouseEvent } from "react";
-import { motion, useInView, useReducedMotion, useMotionValue, useSpring } from "framer-motion";
+import { m, useInView, useReducedMotion, useMotionValue, useSpring } from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
 import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } from "@/features/homepage/why-choose-us/types";
@@ -143,7 +143,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
 
       {/* rotating dashed ring around hub */}
       {!reduced && (
-        <motion.circle
+        <m.circle
           cx="500" cy="96" r="74"
           fill="none"
           stroke={isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"}
@@ -168,7 +168,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
         return (
           <g key={`c-${i}`}>
             {/* base line draws in */}
-            <motion.path
+            <m.path
               d={d}
               fill="none"
               stroke="url(#oLine)"
@@ -180,7 +180,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
             />
             {/* flowing energy dots */}
             {!reduced && (
-              <motion.path
+              <m.path
                 d={d}
                 fill="none"
                 stroke={secondary}
@@ -197,7 +197,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
             )}
             {/* moving spark */}
             {!reduced && (
-              <motion.circle
+              <m.circle
                 r="3.2"
                 fill={secondary}
                 initial={{ opacity: 0 }}
@@ -205,14 +205,14 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
                 transition={{ duration: 2.4, delay: 1 + i * 0.2, repeat: Infinity, repeatDelay: 1.5 }}
               >
                 <animateMotion dur="2.4s" repeatCount="indefinite" path={d} begin={`${1 + i * 0.2}s`} />
-              </motion.circle>
+              </m.circle>
             )}
           </g>
         );
       })}
 
       {/* hub core */}
-      <motion.circle
+      <m.circle
         cx="500" cy="96" r="56"
         fill="url(#oHub)"
         initial={false}
@@ -220,7 +220,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
         style={{ transformOrigin: "500px 96px" }}
         transition={{ type: "spring", stiffness: 120, damping: 12, delay: 0.3 }}
       />
-      <motion.circle
+      <m.circle
         cx="500" cy="96" r="56"
         fill="none"
         stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)"}
@@ -242,7 +242,7 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
 function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number; reduced: boolean; isDark: boolean }) {
   const Ill = illMap[f.ill]!;
   return (
-    <motion.div
+    <m.div
       className="absolute z-20"
       style={{ left: `${f.x}%`, top: `${f.y}%` }}
       initial={false}
@@ -253,7 +253,7 @@ function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number;
         className="relative"
         style={{ transform: "translate(-50%,-50%)" }}
       >
-        <motion.div
+        <m.div
           animate={reduced ? {} : { y: [0, -6, 0] }}
           transition={{ duration: 4, repeat: Infinity, delay: index * 0.3 }}
         >
@@ -270,7 +270,7 @@ function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number;
           >
             {/* pulse ring */}
             {!reduced && (
-              <motion.span
+              <m.span
                 className="pointer-events-none absolute inset-0 rounded-full"
                 style={{ border: `1.5px solid ${index % 2 === 0 ? primary : secondary}` }}
                 initial={{ scale: 1, opacity: 0.5 }}
@@ -280,7 +280,7 @@ function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number;
             )}
             <div className="h-8 w-8 text-primary sm:h-9 sm:w-9"><Ill /></div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* centered label below */}
         <div className="absolute left-1/2 top-[calc(100%+16px)] w-[clamp(150px,17vw,220px)] -translate-x-1/2 px-1 text-center">
@@ -289,7 +289,7 @@ function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number;
           <p className="mx-auto mt-1 max-w-[190px] text-[10.5px] leading-relaxed sm:text-[11px] lg:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -324,7 +324,7 @@ function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFea
         {features.map((f: DisplayFeature, i) => {
           const Ill = illMap[f.ill]!;
           return (
-            <motion.div
+            <m.div
               key={f.num}
               initial={false}
               animate={{ opacity: 1, y: 0 }}
@@ -340,7 +340,7 @@ function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFea
                 <h3 className="text-sm font-bold leading-snug sm:text-[15px]" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
                 <p className="mt-0.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
               </div>
-            </motion.div>
+            </m.div>
           );
         })}
       </div>
@@ -401,7 +401,7 @@ function BackgroundDecor({ isDark, reduced }: { isDark: boolean; reduced: boolea
       {/* floating accent dots */}
       {!reduced &&
         floatDots.map((p, i) => (
-          <motion.span
+          <m.span
             key={i}
             className="absolute rounded-full"
             style={{ left: p.x, top: p.y, width: p.s, height: p.s, background: p.c, opacity: 0.16 }}
@@ -461,7 +461,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
   };
 
   return (
-    <section ref={ref} dir="rtl" className="relative w-full overflow-hidden py-12 sm:py-16 lg:py-24">
+    <section ref={ref} dir="rtl" className="section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24">
       <IllDefs />
       <div className="absolute inset-0" style={{ background: isDark ? "radial-gradient(ellipse at 50% 40%, #15131C 0%, #100E16 45%, #0C0A12 100%)" : "radial-gradient(ellipse at 50% 40%, #FBF6F0 0%, #F6EFE6 45%, #F0E8DC 100%)" }} />
       <div className="pointer-events-none absolute -start-10 top-10 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${primary}0c, transparent 70%)` }} />
@@ -472,12 +472,12 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
 
       {/* title */}
       <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+        <m.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold sm:text-sm" style={{ background: isDark ? `linear-gradient(135deg, ${primary}18, ${secondary}10)` : `linear-gradient(135deg, ${primary}12, ${secondary}08)`, color: primary, border: `1px solid ${primary}22` }}>{title}</span>
-        </motion.div>
-        <motion.p initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.16 }} className="mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666" }}>
+        </m.div>
+        <m.p initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.16 }} className="mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666" }}>
           {subtitle}
-        </motion.p>
+        </m.p>
       </div>
 
       {/* desktop orbit */}
@@ -486,7 +486,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
         onMouseMove={onMove}
         onMouseLeave={onLeave}
       >
-        <motion.div
+        <m.div
           className="relative mx-auto aspect-[10/7] w-full"
           style={{ perspective: 1200, rotateX: rx, rotateY: ry }}
         >
@@ -496,7 +496,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
               <Node key={f.num} f={f} index={i} reduced={reduced} isDark={isDark} />
             ))}
           </div>
-        </motion.div>
+        </m.div>
       </div>
 
       {/* phones & tablets (< lg) */}

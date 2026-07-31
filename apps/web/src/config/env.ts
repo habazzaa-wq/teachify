@@ -100,11 +100,12 @@ export function resolveApiUrl(location?: RuntimeApiLocation): string {
       return `${protocol}//${hostname}`;
     }
 
-    // Custom domain called from server-side (middleware/edge): use internal URL
-    // to avoid TLS cert validation issues in the edge runtime sandbox.
+    // Custom domain — same origin in the browser (Caddy routes /api/* to
+    // Laravel for all domains), internal URL for server-side rendering.
     if (location) {
       return DEFAULT_INTERNAL_API_URL;
     }
+    return `${protocol}//${hostname}`;
   }
 
   return stripTrailingSlash(process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_DEV_API_URL);

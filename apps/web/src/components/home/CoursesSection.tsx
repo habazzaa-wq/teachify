@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { LazyMotion, m, domAnimation, useInView, useReducedMotion } from "framer-motion";
 import {
   Users,
   Clock,
@@ -345,7 +345,7 @@ function CourseCard({
   };
 
   return (
-    <motion.div
+    <m.div
       {...anim}
       style={{ perspective: "800px" }}
     >
@@ -355,7 +355,7 @@ function CourseCard({
       >
         {card}
       </Link>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -377,6 +377,7 @@ export function CoursesSection() {
   const visible = expanded ? all : all.slice(0, INITIAL_VISIBLE);
 
   return (
+    <LazyMotion features={domAnimation}>
     <section
       ref={ref}
       dir="rtl"
@@ -422,7 +423,7 @@ export function CoursesSection() {
             { x: "50%", y: "5%", s: 4, c: primary, d: 2.4 },
             { x: "45%", y: "95%", s: 5, c: secondary, d: 0.3 },
           ].map((d, i) => (
-            <motion.span
+            <m.span
               key={i}
               className="absolute rounded-full"
               style={{ left: d.x, top: d.y, width: d.s, height: d.s, background: d.c, opacity: 0.15 }}
@@ -436,7 +437,7 @@ export function CoursesSection() {
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         {/* ── Header ── */}
         <div className="mb-8 text-center sm:mb-12">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.4 }}
@@ -455,9 +456,9 @@ export function CoursesSection() {
               <Sparkles className="h-3.5 w-3.5" />
               الكورسات المتاحة
             </span>
-          </motion.div>
+          </m.div>
 
-          <motion.h2
+          <m.h2
             initial={{ opacity: 0, y: 14 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.05 }}
@@ -471,9 +472,9 @@ export function CoursesSection() {
             >
               كورساتنا
             </span>
-          </motion.h2>
+          </m.h2>
 
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 14 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -481,7 +482,7 @@ export function CoursesSection() {
             style={{ color: isDark ? "#8a8290" : "#7a7168" }}
           >
             مجموعة متنوعة من الكورسات الاحترافية المصممة لتطوير مهاراتك وبناء مستقبلك
-          </motion.p>
+          </m.p>
         </div>
 
         {/* ── Loading skeleton ── */}
@@ -525,7 +526,7 @@ export function CoursesSection() {
 
         {/* ── Show more / less ── */}
         {hasMore && !isLoading && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
@@ -561,7 +562,7 @@ export function CoursesSection() {
                 }`}
               />
             </button>
-          </motion.div>
+          </m.div>
         )}
       </div>
 
@@ -575,5 +576,6 @@ export function CoursesSection() {
         }}
       />
     </section>
+    </LazyMotion>
   );
 }

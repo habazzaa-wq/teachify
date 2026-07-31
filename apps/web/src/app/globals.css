@@ -98,101 +98,6 @@
   }
 
   .dark {
-    --background: 210 20% 8%;
-    --foreground: 210 40% 96%;
-
-    --card: 210 18% 11%;
-    --card-foreground: 210 40% 96%;
-
-    --popover: 210 18% 11%;
-    --popover-foreground: 210 40% 96%;
-
-    --primary: 230 65% 55%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 15% 16%;
-    --secondary-foreground: 210 40% 90%;
-
-    --muted: 210 12% 16%;
-    --muted-foreground: 220 10% 62%;
-
-    --accent: 210 18% 16%;
-    --accent-foreground: 210 40% 96%;
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 210 40% 96%;
-
-    --success: 160 70% 42%;
-    --success-foreground: 210 40% 96%;
-
-    --warning: 35 90% 50%;
-    --warning-foreground: 210 40% 96%;
-
-    --border: 210 12% 19%;
-    --input: 210 12% 19%;
-    --ring: 230 65% 55%;
-
-    --sidebar: 210 18% 10%;
-    --sidebar-foreground: 210 40% 94%;
-    --sidebar-accent: 210 14% 14%;
-    --sidebar-border: 210 10% 16%;
-    --sidebar-ring: 230 65% 55%;
-
-    --chart-1: 230 65% 55%;
-    --chart-2: 160 70% 42%;
-    --chart-3: 35 90% 50%;
-    --chart-4: 190 75% 45%;
-    --chart-5: 280 65% 65%;
-
-    --emerald: 160 70% 42%;
-    --emerald-foreground: 210 40% 96%;
-    --blue: 230 65% 55%;
-    --blue-foreground: 210 40% 98%;
-    --amber: 35 90% 50%;
-    --amber-foreground: 210 40% 96%;
-    --purple: 280 65% 65%;
-    --purple-foreground: 210 40% 96%;
-
-    --studio-bg: 0 0% 10%;
-    --studio-surface: 0 0% 13%;
-    --studio-soft: 0 0% 16%;
-    --studio-border: 0 0% 19%;
-    --studio-muted: 0 0% 14%;
-    --studio-fg: 30 8% 88%;
-    --studio-fg-muted: 30 3% 52%;
-    --studio-fg-subtle: 30 3% 38%;
-    --studio-accent: 180 25% 45%;
-    --studio-accent-fg: 0 0% 10%;
-    --studio-accent-soft: 180 20% 12%;
-    --studio-accent-border: 180 25% 30%;
-    --studio-ring: 180 25% 45%;
-    --studio-secondary: 220 12% 24%;
-    --studio-secondary-soft: 0 0% 18%;
-    --studio-secondary-border: 0 0% 26%;
-    --studio-sidebar-hover: 0 0% 18%;
-    --studio-glass: 0 0% 13% / 0.6;
-    --studio-glass-border: 0 0% 19% / 0.5;
-    --studio-glass-toolbar: 220 25% 18% / 1;
-    --studio-glass-toolbar-fg: 0 0% 100%;
-    --studio-glass-toolbar-fg-muted: 0 0% 80%;
-    --studio-glass-toolbar-border: 0 0% 100% / 0.18;
-    --studio-glass-toolbar-soft: 0 0% 100% / 0.1;
-    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.18;
-    --studio-navbar: 220 25% 18%;
-    --studio-navbar-contrast: 0 0% 100%;
-    --studio-glass-sidebar: 0 0% 12% / 0.8;
-    --studio-glass-dialog: 0 0% 13% / 0.85;
-    --studio-glass-floating: 0 0% 13% / 0.9;
-    --studio-overlay: 0 0% 0% / 0.5;
-    --studio-skeleton: 0 0% 16%;
-    --studio-skeleton-shine: 0 0% 20%;
-    --studio-info: 210 60% 55%;
-    --studio-success: 160 60% 45%;
-    --studio-warning: 35 85% 55%;
-    --studio-danger: 0 65% 55%;
-  }
-
-  .dark {
     --background: 225 30% 8%;
     --foreground: 210 40% 96%;
 
@@ -801,6 +706,35 @@
   }
 }
 
+/* ───────── Mobile performance: pause decorative hero animations ───────── */
+@media (max-width: 768px) {
+  .hero-bg-orb,
+  .hero-bg-shape,
+  .hero-bg-math,
+  .hero-bg-dot,
+  .hero-bg-line {
+    animation: none !important;
+  }
+  .hero-bg-orb {
+    opacity: var(--orb-opacity, 0.12) !important;
+  }
+  .hero-bg-shape {
+    opacity: 0.2 !important;
+  }
+  .hero-bg-math {
+    opacity: var(--math-opacity, 0.12) !important;
+  }
+  .hero-bg-dot {
+    opacity: var(--dot-opacity, 0.15) !important;
+  }
+}
+
+/* ───────── Content-visibility: skip rendering offscreen sections ───────── */
+.section-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
+}
+
 @keyframes float-soft {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -884,6 +818,7 @@
 
 /* — Hero background decorations — */
 .hero-bg-orb {
+  will-change: transform;
   animation: hero-orb-float var(--orb-duration, 12s) ease-in-out infinite;
   animation-delay: var(--orb-delay, 0s);
 }
@@ -895,6 +830,7 @@
 }
 
 .hero-bg-shape {
+  will-change: transform;
   animation: hero-shape-drift var(--shape-duration, 15s) ease-in-out infinite;
   animation-delay: var(--shape-delay, 0s);
 }
@@ -906,6 +842,7 @@
 }
 
 .hero-bg-math {
+  will-change: transform;
   animation: hero-math-bob var(--math-duration, 9s) ease-in-out infinite;
   animation-delay: var(--math-delay, 0s);
 }
@@ -915,6 +852,7 @@
 }
 
 .hero-bg-dot {
+  will-change: transform;
   animation: hero-dot-pulse var(--dot-duration, 6s) ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
@@ -938,7 +876,9 @@
   .hero-dashed-ring,
   .hero-bg-orb,
   .hero-bg-shape,
-  .hero-bg-math {
-    animation: none;
+  .hero-bg-math,
+  .hero-bg-dot,
+  .hero-bg-line {
+    animation: none !important;
   }
 }

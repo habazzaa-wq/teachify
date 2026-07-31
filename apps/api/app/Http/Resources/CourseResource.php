@@ -72,6 +72,7 @@ class CourseResource extends JsonResource
             ] : null,
             'studentsCount' => $this->enrollments_count ?? $this->enrollments()->count(),
             'sectionsCount' => $this->sections_count ?? $this->sections()->count(),
+            'lessonsCount' => $this->lessons_count ?? $this->lessons()->count(),
             'publishedAt' => $this->published_at?->toIso8601String(),
             'archivedAt' => $this->archived_at?->toIso8601String(),
             'createdAt' => $this->created_at->toIso8601String(),

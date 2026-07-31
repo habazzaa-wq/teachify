@@ -2,11 +2,10 @@
 
 use App\Http\Controllers\Api\Platform\BunnyCenter\BunnyCenterController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
+use App\Http\Controllers\Api\Platform\Usage\UsageController;
 use App\Http\Controllers\Api\v1\Access\CourseAccessController;
 use App\Http\Controllers\Api\v1\Access\LessonAccessController;
-use App\Http\Controllers\Api\v1\Audit\ActivityLogController;
-use App\Http\Controllers\Api\v1\Audit\AuditLogController;
-use App\Http\Controllers\Api\v1\Audit\PlatformAuditController;
+use App\Http\Controllers\Api\v1\Access\MatrixController;
 use App\Http\Controllers\Api\v1\Analytics\CourseAnalyticsController;
 use App\Http\Controllers\Api\v1\Analytics\LearnerAnalyticsController;
 use App\Http\Controllers\Api\v1\Analytics\TenantAnalyticsController;
@@ -14,13 +13,15 @@ use App\Http\Controllers\Api\v1\Assignments\AssignmentGradingController;
 use App\Http\Controllers\Api\v1\Assignments\AssignmentResultController;
 use App\Http\Controllers\Api\v1\Assignments\AssignmentSubmissionController;
 use App\Http\Controllers\Api\v1\Assignments\LessonAssignmentController;
+use App\Http\Controllers\Api\v1\Audit\ActivityLogController;
+use App\Http\Controllers\Api\v1\Audit\AuditLogController;
+use App\Http\Controllers\Api\v1\Audit\PlatformAuditController;
 use App\Http\Controllers\Api\v1\Auth\AuthController;
 use App\Http\Controllers\Api\v1\Auth\CurrentUserController;
 use App\Http\Controllers\Api\v1\Auth\InvitationController;
 use App\Http\Controllers\Api\v1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\v1\Auth\RoleController;
 use App\Http\Controllers\Api\v1\Auth\TenantUserController;
-use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateVerificationController;
@@ -39,12 +40,17 @@ use App\Http\Controllers\Api\v1\Courses\TagController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionPostController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionReportController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionThreadController;
+use App\Http\Controllers\Api\v1\ExamBank\ExamAnalyticsController;
+use App\Http\Controllers\Api\v1\ExamBank\ExamController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
+use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
+use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
 use App\Http\Controllers\Api\v1\Learning\LessonBookmarkController;
 use App\Http\Controllers\Api\v1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\v1\Learning\ProgressController;
-use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryFolderController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryMetricsController;
@@ -52,11 +58,6 @@ use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaProxyController;
 use App\Http\Controllers\Api\v1\Media\MediaUploadController;
 use App\Http\Controllers\Api\v1\Media\VideoPlaybackController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
-use App\Http\Controllers\Api\v1\ExamBank\ExamController;
-use App\Http\Controllers\Api\v1\ExamBank\ExamAnalyticsController;
 use App\Http\Controllers\Api\v1\Media\VideoStatusController;
 use App\Http\Controllers\Api\v1\Media\VideoUploadController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationController;
@@ -69,20 +70,22 @@ use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
-use App\Http\Controllers\Api\Platform\Usage\UsageController;
-use App\Http\Controllers\Api\v1\PublicTenantController;
-use App\Http\Controllers\Api\v1\PublicNewsController;
-use App\Http\Controllers\Api\v1\PublicHeroController;
-use App\Http\Controllers\Api\v1\PublicWhyChooseUsController;
+use App\Http\Controllers\Api\v1\Public\PublicCourseController;
+use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicHeroController;
+use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
-use App\Http\Controllers\Api\v1\Tenant\NewsController;
-use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
-use App\Http\Controllers\Api\v1\Tenant\SubjectController;
+use App\Http\Controllers\Api\v1\PublicTenantController;
+use App\Http\Controllers\Api\v1\PublicWhyChooseUsController;
 use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizResultController;
+use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
+use App\Http\Controllers\Api\v1\Tenant\NewsController;
+use App\Http\Controllers\Api\v1\Tenant\SubjectController;
+use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -121,6 +124,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
+    Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
@@ -130,13 +134,14 @@ Route::prefix('v1')->group(function () {
         ->name('media.serve');
 
     // Public course routes (no auth required)
-    Route::get('/public/courses/{slug}', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'show']);
-    Route::get('/public/courses/{slug}/modules', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'modules']);
-    Route::get('/public/courses/{slug}/related', [\App\Http\Controllers\Api\v1\Public\PublicCourseController::class, 'related']);
+    Route::get('/public/courses', [PublicCourseController::class, 'index']);
+    Route::get('/public/courses/{slug}', [PublicCourseController::class, 'show']);
+    Route::get('/public/courses/{slug}/modules', [PublicCourseController::class, 'modules']);
+    Route::get('/public/courses/{slug}/related', [PublicCourseController::class, 'related']);
 
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
-        Route::get('/public/courses/{slug}/enrollment', [\App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController::class, 'show']);
+        Route::get('/public/courses/{slug}/enrollment', [PublicEnrollmentCheckController::class, 'show']);
     });
 
     Route::prefix('auth')->group(function () {
@@ -402,9 +407,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('/users/{user}', [TenantUserController::class, 'update']);
         Route::delete('/users/{user}', [TenantUserController::class, 'destroy']);
         Route::get('/permissions', [RoleController::class, 'permissions']);
-        Route::get('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'index']);
-        Route::put('/permissions/matrix', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'update']);
-        Route::post('/permissions/matrix/clone', [\App\Http\Controllers\Api\v1\Access\MatrixController::class, 'clone']);
+        Route::get('/permissions/matrix', [MatrixController::class, 'index']);
+        Route::put('/permissions/matrix', [MatrixController::class, 'update']);
+        Route::post('/permissions/matrix/clone', [MatrixController::class, 'clone']);
         Route::apiResource('roles', RoleController::class);
 
         Route::get('/settings', [TenantSettingController::class, 'index']);

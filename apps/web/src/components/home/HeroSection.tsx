@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { LazyMotion, m, domAnimation, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import {
   Facebook,
   Youtube,
@@ -23,6 +23,70 @@ function WhatsAppIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
     </svg>
+  );
+}
+
+function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/homepage/hero/types").HeroSocialLinks | undefined; icons: import("@/features/homepage/hero/types").HeroIcons | undefined }) {
+  const [phoneHovered, setPhoneHovered] = useState(false);
+  return (
+    <div className="absolute z-10" style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 208px), calc(-50% + 56px))" }}>
+      <m.div
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 18 }}
+        className="relative flex flex-col items-center"
+        onMouseEnter={() => setPhoneHovered(true)}
+        onMouseLeave={() => setPhoneHovered(false)}
+      >
+        <div className="flex flex-col items-center">
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer"
+            style={{
+              backgroundColor: secondary,
+              borderColor: "#FFE0A0",
+              boxShadow: phoneHovered ? `0 0 20px ${secondary}60, 0 8px 25px rgba(0,0,0,0.3)` : undefined,
+            }}
+          >
+            <Phone className="h-5 w-5 text-white" />
+          </div>
+          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300" style={{ backgroundColor: phoneHovered ? secondary : `${secondary}dd` }}>
+            {icons?.phone?.label || "رقم الهاتف"}
+          </span>
+        </div>
+        <AnimatePresence>
+          {phoneHovered && (
+            <m.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute top-full mt-3 min-w-[220px] overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl"
+              style={{ direction: "rtl", boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)" }}
+            >
+              <a href={social?.phone ? `tel:${social.phone}` : "#"} className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-amber-50 hover:to-orange-50">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110" style={{ backgroundColor: `${secondary}20` }}>
+                  <PhoneCall className="h-5 w-5" style={{ color: secondary }} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-gray-800">اتصل بنا</span>
+                  <span className="text-[11px] text-gray-500">دعم فني مباشر</span>
+                </div>
+              </a>
+              <div className="mx-4 h-px bg-gradient-to-l from-transparent via-gray-200 to-transparent" />
+              <a href={social?.whatsapp ? `https://wa.me/${social.whatsapp.replace(/[^0-9]/g, "")}` : social?.phone ? `https://wa.me/${social.phone.replace(/[^0-9]/g, "")}` : "#"} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-green-50 hover:to-emerald-50">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10 transition-transform duration-200 group-hover:scale-110">
+                  <WhatsAppIcon className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-gray-800">محادثة واتساب</span>
+                  <span className="text-[11px] text-gray-500">راسلنا على الواتساب</span>
+                </div>
+              </a>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </m.div>
+    </div>
   );
 }
 
@@ -93,7 +157,6 @@ export function HeroSection() {
   const { data: hero } = usePublicHero();
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
-  const [phoneHovered, setPhoneHovered] = useState(false);
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
@@ -112,7 +175,6 @@ export function HeroSection() {
     "radial-gradient(ellipse at 50% 30%, #121418 0%, #14161a 40%, #16181d 80%, #181a1f 100%)";
 
   return (
-    <LazyMotion features={domAnimation}>
     <section
       className="hero-section relative w-full overflow-hidden"
       dir="rtl"
@@ -628,6 +690,7 @@ export function HeroSection() {
               priority
               sizes="340px"
               className="object-cover"
+              fetchPriority="high"
             />
           </div>
 
@@ -748,98 +811,11 @@ export function HeroSection() {
           )}
 
           {/* ── Icon 6: رقم الهاتف — 165° ── */}
-          {icons?.phone?.visible !== false && (
-          <div
-            className="absolute z-10"
-            style={{ left: "50%", top: "50%", transform: "translate(calc(-50% - 208px), calc(-50% + 56px))" }}
-          >
-            <m.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 18 }}
-              className="relative flex flex-col items-center"
-              onMouseEnter={() => setPhoneHovered(true)}
-              onMouseLeave={() => setPhoneHovered(false)}
-            >
-              <div className="flex flex-col items-center">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer"
-                  style={{
-                    backgroundColor: secondary,
-                    borderColor: "#FFE0A0",
-                    boxShadow: phoneHovered
-                      ? `0 0 20px ${secondary}60, 0 8px 25px rgba(0,0,0,0.3)`
-                      : undefined,
-                  }}
-                >
-                  <Phone className="h-5 w-5 text-white" />
-                </div>
-                <span
-                  className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300"
-                  style={{
-                    backgroundColor: phoneHovered ? secondary : `${secondary}dd`,
-                  }}
-                >
-                  {icons?.phone?.label || "رقم الهاتف"}
-                </span>
-              </div>
-
-              <AnimatePresence>
-                {phoneHovered && (
-                  <m.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute top-full mt-3 min-w-[220px] overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-xl"
-                    style={{
-                      direction: "rtl",
-                      boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)",
-                    }}
-                  >
-                    <a
-                      href={social?.phone ? `tel:${social.phone}` : "#"}
-                      className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-amber-50 hover:to-orange-50"
-                    >
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-                        style={{ backgroundColor: `${secondary}20` }}
-                      >
-                        <PhoneCall className="h-5 w-5" style={{ color: secondary }} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-800">اتصل بنا</span>
-                        <span className="text-[11px] text-gray-500">دعم فني مباشر</span>
-                      </div>
-                    </a>
-
-                    <div className="mx-4 h-px bg-gradient-to-l from-transparent via-gray-200 to-transparent" />
-
-                    <a
-                      href={social?.whatsapp ? `https://wa.me/${social.whatsapp.replace(/[^0-9]/g, "")}` : social?.phone ? `https://wa.me/${social.phone.replace(/[^0-9]/g, "")}` : "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-green-50 hover:to-emerald-50"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10 transition-transform duration-200 group-hover:scale-110">
-                        <WhatsAppIcon className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-800">محادثة واتساب</span>
-                        <span className="text-[11px] text-gray-500">راسلنا على الواتساب</span>
-                      </div>
-                    </a>
-                  </m.div>
-                )}
-              </AnimatePresence>
-            </m.div>
-           </div>
-          )}
+          {icons?.phone?.visible !== false && <PhoneIconWithTooltip social={social} icons={icons} />}
           </div>
          </m.div>
        </div>
 
      </section>
-    </LazyMotion>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LazyMotion, m, domAnimation, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import {
   Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
 } from "lucide-react";
@@ -44,7 +44,6 @@ export function MobileSecondaryNav() {
   const hasIcons = visibleIcons.length > 0;
 
   return (
-    <LazyMotion features={domAnimation}>
     <div className="md:hidden px-4 pb-1.5 pt-0.5">
       <div className="relative">
         {/* ── Nav bar ── */}
@@ -175,6 +174,5 @@ export function MobileSecondaryNav() {
         </AnimatePresence>
       </div>
     </div>
-    </LazyMotion>
   );
 }

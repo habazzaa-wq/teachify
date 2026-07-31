@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { LazyMotion, m, domAnimation, useReducedMotion } from "framer-motion";
 import {
   GraduationCap,
@@ -13,6 +14,7 @@ import {
   Lightbulb,
   Rocket,
   Sparkles,
+  type LucideIcon,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
@@ -30,6 +32,19 @@ function getAccent(i: number) {
   return accents[i % accents.length];
 }
 
+/* Renders a stage icon without creating a component during render. */
+function StageGlyph({
+  icon: Icon,
+  className,
+  style,
+}: {
+  icon: LucideIcon;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return <Icon className={className} style={style} />;
+}
+
 /* ────────────── single card ────────────── */
 function StageCard({
   stage,
@@ -42,7 +57,7 @@ function StageCard({
   isDark: boolean;
   reduced: boolean;
 }) {
-  const Icon = getStageIcon(index);
+  const icon = getStageIcon(index);
   const accent = getAccent(index);
 
   const motionProps = reduced
@@ -79,7 +94,7 @@ function StageCard({
                 : `linear-gradient(135deg, ${accent}12, ${accent}06)`,
             }}
           >
-            <Icon className="h-14 w-14" style={{ color: `${accent}50` }} />
+            <StageGlyph icon={icon} className="h-14 w-14" style={{ color: `${accent}50` }} />
           </div>
         )}
 
@@ -105,7 +120,7 @@ function StageCard({
             border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.5)"}`,
           }}
         >
-          <Icon className="h-5 w-5" style={{ color: accent }} />
+          <StageGlyph icon={icon} className="h-5 w-5" style={{ color: accent }} />
         </div>
 
         {/* large watermark */}
@@ -191,18 +206,19 @@ function StageCard({
     },
   };
 
-  if (stage.link) {
+  if (stage.id) {
     return (
-      <m.a
+      <m.div
         {...anim}
-        href={stage.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         style={{ perspective: "800px" }}
       >
-        {card}
-      </m.a>
+        <Link
+          href={`/stages/${stage.id}`}
+          className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
+        >
+          {card}
+        </Link>
+      </m.div>
     );
   }
 

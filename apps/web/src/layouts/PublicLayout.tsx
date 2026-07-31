@@ -1,5 +1,10 @@
 import dynamic from "next/dynamic";
 
+const MotionProvider = dynamic(
+  () => import("@/components/home/MotionProvider").then((m) => m.MotionProvider),
+  { ssr: true }
+);
+
 const NewsTicker = dynamic(
   () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
   { ssr: true }
@@ -17,6 +22,7 @@ const MobileSecondaryNav = dynamic(
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
+    <MotionProvider>
     <div className="flex min-h-screen flex-col bg-background">
       <NewsTicker />
       <PublicNavbar />
@@ -30,6 +36,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
     </div>
+    </MotionProvider>
   );
 }
 
