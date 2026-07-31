@@ -1,18 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { educationalStagesService } from "./services";
-import type { EducationalStageInput } from "./types";
+import type { EducationalStageInput, StageStats } from "./types";
 
 export const stagesKeys = {
   public: ["stages", "public"] as const,
   list: ["stages", "list"] as const,
   detail: (id: number) => ["stages", "detail", id] as const,
+  stats: (id: number) => ["stages", "stats", id] as const,
 };
 
 export function usePublicStages() {
@@ -21,6 +24,55 @@ export function usePublicStages() {
     queryFn: educationalStagesService.getPublicStages,
     staleTime: 30_000,
   });
+}
+
+/** Real per-stage stats (courses + teachers counts). */
+export function useStageStats(stageId: number) {
+  return useQuery({
+    queryKey: stagesKeys.stats(stageId),
+    queryFn: () => educationalStagesService.getStageStats(stageId),
+    enabled: Number.isFinite(stageId) && stageId > 0,
+    staleTime: 120_000,
+    gcTime: 10 * 60_000,
+  });
+}
+
+/** Parallel stats for many stages; fetches only when `enabled` (section in view). */
+export function useStageStatsQueries(stageIds: number[], enabled: boolean) {
+  return useQueries({
+    queries: stageIds.map((id) => ({
+      queryKey: stagesKeys.stats(id),
+      queryFn: () => educationalStagesService.getStageStats(id),
+      enabled: enabled && Number.isFinite(id) && id > 0,
+      staleTime: 120_000,
+      gcTime: 10 * 60_000,
+    })),
+  });
+}
+
+/** Stats map + set of ids still loading (first fetch). */
+export function useStageStatsState(
+  stageIds: number[],
+  enabled: boolean,
+): { statsById: Map<number, StageStats>; loadingIds: Set<number> } {
+  const results = useStageStatsQueries(stageIds, enabled);
+
+  return useMemo(() => {
+    const statsById = new Map<number, StageStats>();
+    const loadingIds = new Set<number>();
+
+    stageIds.forEach((id, index) => {
+      const result = results[index];
+      if (result?.data) {
+        statsById.set(id, result.data);
+      }
+      if (result?.isLoading) {
+        loadingIds.add(id);
+      }
+    });
+
+    return { statsById, loadingIds };
+  }, [stageIds, results]);
 }
 
 export function useEducationalStagesList(params?: { inactive?: boolean }) {

@@ -3,6 +3,7 @@ import type {
   EducationalStageInput,
   EducationalStageRecord,
   PublicStagesResponse,
+  StageStats,
 } from "./types";
 
 export const educationalStagesService = {
@@ -10,6 +11,21 @@ export const educationalStagesService = {
   async getPublicStages() {
     const { data } = await api.get<PublicStagesResponse>("/public/educational-stages");
     return data;
+  },
+
+  /**
+   * Real per-stage stats derived from the existing public courses API
+   * (one lightweight request per stage, `per_page: 1`). Counts come from the
+   * paginator `total` + `aggregates` — no fake data, no backend changes.
+   */
+  async getStageStats(stageId: number): Promise<StageStats> {
+    const { data } = await api.get("/public/courses", {
+      params: { educational_stage_id: stageId, per_page: 1 },
+    });
+    return {
+      coursesCount: data.total ?? data.aggregates?.coursesCount ?? 0,
+      teachersCount: data.aggregates?.teachersCount ?? 0,
+    };
   },
 
   /** Authenticated: paginated list of all stages (active + inactive). */

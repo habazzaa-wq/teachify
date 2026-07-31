@@ -1,50 +1,40 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
-import Image from "next/image";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { LazyMotion, m, domAnimation, useReducedMotion } from "framer-motion";
+import { LazyMotion, m, domAnimation, useInView, useReducedMotion } from "framer-motion";
 import {
-  GraduationCap,
   ArrowLeft,
-  ChevronDown,
   BookOpen,
-  Trophy,
-  Palette,
+  GraduationCap,
   Lightbulb,
+  Palette,
   Rocket,
   Sparkles,
+  Star,
+  Trophy,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
-import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
-import type { StageItem } from "@/features/homepage/educational-stages/types";
+import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
+import type { StageItem, StageStats } from "@/features/homepage/educational-stages/types";
+import { formatNumber } from "@/lib/format";
+
+const PRIMARY = "#BF6D58";
+const SECONDARY = "#FFB50E";
 
 const stageIcons = [BookOpen, GraduationCap, Trophy, Palette, Lightbulb, Rocket];
-const primary = "#D87B63";
-const secondary = "#FFB50E";
-const accents = [primary, secondary, "#22C55E", "#06B6D4", "#EC4899", "#F97316"];
 
-const INITIAL_VISIBLE = 3;
+const INITIAL_VISIBLE = 8;
 
-function getStageIcon(i: number) {
+function getStageIcon(i: number): LucideIcon {
   return stageIcons[i % stageIcons.length] ?? BookOpen;
-}
-function getAccent(i: number) {
-  return accents[i % accents.length];
 }
 
 /* Renders a stage icon without creating a component during render. */
-function StageGlyph({
-  icon: Icon,
-  className,
-  style,
-}: {
-  icon: LucideIcon;
-  className?: string;
-  style?: CSSProperties;
-}) {
-  return <Icon className={className} style={style} />;
+function StageGlyph({ icon: Icon }: { icon: LucideIcon }) {
+  return <Icon className="h-[18px] w-[18px]" />;
 }
 
 /* ────────────── single card ────────────── */
@@ -52,182 +42,143 @@ function StageCard({
   stage,
   index,
   isDark,
-  reduced,
+  stats,
+  isPopular,
+  statsLoading,
 }: {
   stage: StageItem;
   index: number;
   isDark: boolean;
-  reduced: boolean;
+  stats?: StageStats;
+  isPopular: boolean;
+  statsLoading: boolean;
 }) {
   const icon = getStageIcon(index);
-  const accent = getAccent(index);
 
-  const motionProps = reduced
-    ? { opacity: 0 }
-    : { opacity: 0, y: 32, rotateX: 8 };
+  const surfaceShadow = isDark
+    ? "0 1px 2px rgba(0,0,0,0.25), 0 6px 20px rgba(0,0,0,0.22)"
+    : "0 1px 2px rgba(0,0,0,0.03), 0 6px 20px rgba(120,90,60,0.06)";
+  const hoverShadow = isDark
+    ? "0 2px 4px rgba(0,0,0,0.3), 0 12px 28px rgba(0,0,0,0.3)"
+    : "0 2px 4px rgba(0,0,0,0.04), 0 12px 28px rgba(120,90,60,0.12)";
 
-  const card = (
+  return (
     <div
-      className="group relative flex h-full flex-col overflow-hidden rounded-3xl transition-all duration-500"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl transition-[box-shadow,transform] duration-300 lg:hover:-translate-y-1 lg:hover:scale-[1.01] lg:hover:[--surface-shadow:var(--surface-shadow-hover)]"
       style={{
-        background: isDark ? "#16141e" : "#fff",
-        boxShadow: isDark
-          ? "0 1px 2px rgba(0,0,0,0.2), 0 8px 32px rgba(0,0,0,0.25)"
-          : "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(120,90,60,0.06)",
-        border: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`,
+        background: isDark ? "#16141e" : "#ffffff",
+        border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`,
+        ["--surface-shadow" as string]: surfaceShadow,
+        ["--surface-shadow-hover" as string]: hoverShadow,
+        boxShadow: "var(--surface-shadow)",
       }}
     >
-      {/* ── Angled image area ── */}
-      <div className="relative h-52 w-full sm:h-56" style={{ clipPath: "polygon(0 0, 100% 0, 100% 82%, 0 100%)" }}>
-        {stage.image ? (
-          <Image
-            src={stage.image}
-            alt={stage.name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
+      {/* thin accent bar */}
+      <div
+        className="h-[3px] w-full shrink-0"
+        style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
+      />
+
+      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+        {/* icon + badge */}
+        <div className="flex items-center justify-between gap-2">
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-300 lg:group-hover:[--chip-bg:#BF6D58] lg:group-hover:[--chip-fg:#ffffff]"
             style={{
-              background: isDark
-                ? `linear-gradient(135deg, ${accent}18, ${accent}08)`
-                : `linear-gradient(135deg, ${accent}12, ${accent}06)`,
+              ["--chip-bg" as string]: `${PRIMARY}12`,
+              ["--chip-fg" as string]: PRIMARY,
+              background: "var(--chip-bg)",
+              color: "var(--chip-fg)",
             }}
           >
-            <StageGlyph icon={icon} className="h-14 w-14" style={{ color: `${accent}50` }} />
-          </div>
-        )}
-
-        {/* dark overlay */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `linear-gradient(180deg, transparent 40%, ${isDark ? "#16141e" : "#fff"} 100%)`,
-          }}
-        />
-
-        {/* accent glow on hover */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          style={{ background: `linear-gradient(135deg, ${accent}20, transparent 60%)` }}
-        />
-
-        {/* floating accent circle */}
-        <div
-          className="absolute end-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.5)"}`,
-          }}
-        >
-          <StageGlyph icon={icon} className="h-5 w-5" style={{ color: accent }} />
-        </div>
-
-        {/* large watermark */}
-        <span
-          className="pointer-events-none absolute -start-2 bottom-6 select-none font-black leading-none"
-          style={{
-            fontSize: "clamp(4rem, 8vw, 6rem)",
-            color: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)",
-          }}
-        >
-          {String(index + 1).padStart(2, "0")}
-        </span>
-      </div>
-
-      {/* ── Content area ── */}
-      <div className="relative flex flex-1 flex-col gap-3 px-5 pb-5 pt-2 sm:px-6 sm:pb-6">
-        {/* progress dots */}
-        <div className="flex items-center gap-1.5">
-          {Array.from({ length: Math.min(6, Math.max(index + 2, 3)) }).map((_, dotIdx) => (
-            <span
-              key={dotIdx}
-              className="h-1.5 rounded-full transition-all duration-300"
-              style={{
-                width: dotIdx === index ? "1.25rem" : "0.375rem",
-                background: dotIdx === index ? accent : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
-              }}
-            />
-          ))}
-          <span className="me-auto text-[10px] font-bold tracking-wide" style={{ color: `${accent}90` }}>
-            {index + 1} / {Math.max(index + 2, 3)}
+            <StageGlyph icon={icon} />
           </span>
+
+          {isPopular ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold"
+              style={{ background: `${SECONDARY}1c`, color: "#8a5b00" }}
+            >
+              <Star aria-hidden="true" className="h-3 w-3 fill-current" />
+              شائع
+            </span>
+          ) : null}
         </div>
 
-        {/* title */}
+        {/* name */}
         <h3
-          className="text-lg font-extrabold leading-snug sm:text-xl"
+          className="mt-3 line-clamp-1 text-sm font-bold leading-snug sm:text-[15px]"
           style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}
         >
           {stage.name}
         </h3>
 
-        {/* description */}
+        {/* description — max 2 lines */}
         {stage.description ? (
           <p
-            className="line-clamp-2 text-sm leading-relaxed"
+            className="mt-1 line-clamp-2 text-xs leading-relaxed"
             style={{ color: isDark ? "#8a8290" : "#7a7168" }}
           >
             {stage.description}
           </p>
         ) : null}
 
+        {/* stats row */}
+        <div className="mt-auto flex min-h-[18px] flex-wrap items-center gap-x-3 gap-y-1 pt-3">
+          {statsLoading ? (
+            <>
+              <span
+                aria-hidden="true"
+                className="h-3 w-12 animate-pulse rounded-full"
+                style={{ background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)" }}
+              />
+              <span
+                aria-hidden="true"
+                className="h-3 w-12 animate-pulse rounded-full"
+                style={{ background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)" }}
+              />
+            </>
+          ) : stats ? (
+            <>
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums"
+                style={{ color: isDark ? "#8a8290" : "#6B7280" }}
+              >
+                <BookOpen aria-hidden="true" className="h-3 w-3" style={{ color: PRIMARY }} />
+                {formatNumber(stats.coursesCount)} دورة
+              </span>
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums"
+                style={{ color: isDark ? "#8a8290" : "#6B7280" }}
+              >
+                <Users aria-hidden="true" className="h-3 w-3" style={{ color: SECONDARY }} />
+                {formatNumber(stats.teachersCount)} مدرّس
+              </span>
+            </>
+          ) : null}
+        </div>
+
         {/* CTA */}
-        <div className="mt-auto pt-2">
+        <div className="mt-3">
           <span
-            className="group/cta inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300"
+            className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-[background-color,color] duration-300 lg:group-hover:[--cta-bg:#BF6D58] lg:group-hover:[--cta-fg:#ffffff]"
             style={{
-              color: accent,
-              background: isDark ? `${accent}12` : `${accent}0a`,
-              border: `1.5px solid ${isDark ? `${accent}25` : `${accent}18`}`,
+              ["--cta-bg" as string]: SECONDARY,
+              ["--cta-fg" as string]: "#3d2a00",
+              background: "var(--cta-bg)",
+              color: "var(--cta-fg)",
             }}
           >
             اكتشف المزيد
-            <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover/cta:-translate-x-1" />
+            <ArrowLeft
+              aria-hidden="true"
+              className="h-3 w-3 transition-transform duration-300 lg:group-hover:-translate-x-0.5"
+            />
           </span>
         </div>
       </div>
-
-      {/* bottom accent bar */}
-      <div
-        className="h-[3px] w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, ${accent}, ${accent}60)` }}
-      />
     </div>
-  );
-
-  const anim = {
-    initial: motionProps,
-    animate: { opacity: 1, y: 0, rotateX: 0 },
-    transition: {
-      duration: 0.55,
-      delay: (index % INITIAL_VISIBLE) * 0.1,
-      ease: [0.22, 1, 0.36, 1] as const,
-    },
-  };
-
-  if (stage.id) {
-    return (
-      <m.div
-        {...anim}
-        style={{ perspective: "800px" }}
-      >
-        <Link
-          href={`/stages/${stage.id}`}
-          className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
-        >
-          {card}
-        </Link>
-      </m.div>
-    );
-  }
-
-  return (
-    <m.div {...anim} style={{ perspective: "800px" }}>
-      {card}
-    </m.div>
   );
 }
 
@@ -236,113 +187,229 @@ export function EducationalStagesSection() {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
   const reduced = useReducedMotion() ?? false;
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
   const [expanded, setExpanded] = useState(false);
 
-  const { data } = usePublicStages();
+  const { data, isLoading } = usePublicStages();
   const all = data?.items ?? [];
-
-  if (all.length === 0) return null;
 
   const hasMore = all.length > INITIAL_VISIBLE;
   const visible = expanded ? all : all.slice(0, INITIAL_VISIBLE);
 
+  const visibleIds = useMemo(() => visible.map((s) => s.id), [visible]);
+  const { statsById, loadingIds } = useStageStatsState(visibleIds, inView);
+
+  const popularId = useMemo(() => {
+    let bestId: number | null = null;
+    let best = 0;
+    statsById.forEach((stats, id) => {
+      if (stats.coursesCount > best) {
+        best = stats.coursesCount;
+        bestId = id;
+      }
+    });
+    return best > 0 ? bestId : null;
+  }, [statsById]);
+
+  if (all.length === 0 && !isLoading) return null;
+
+  const anim = reduced
+    ? {}
+    : {
+        initial: { opacity: 0, y: 14 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, margin: "-40px" as const },
+        transition: { duration: 0.4 },
+      };
+
   return (
     <LazyMotion features={domAnimation}>
       <section
+        ref={sectionRef}
         id="educational-stages"
         dir="rtl"
-        className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-14 lg:py-20"
+        aria-label="المراحل الدراسية"
+        className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-12 lg:py-16"
       >
-      {/* bg */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: isDark
-            ? "linear-gradient(170deg, #0e0c14 0%, #15121e 50%, #0e0c14 100%)"
-            : "linear-gradient(170deg, #faf6ef 0%, #f3ece1 50%, #faf6ef 100%)",
-        }}
-      />
+        {/* background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: isDark
+              ? "linear-gradient(170deg, #0e0c14 0%, #16121c 50%, #0e0c14 100%)"
+              : "linear-gradient(170deg, #faf6ef 0%, #f5ede2 50%, #faf6ef 100%)",
+          }}
+        />
 
-      {/* subtle grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.02]"
-        style={{
-          backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 0.5px, transparent 0.5px)`,
-          backgroundSize: "24px 24px",
-        }}
-      />
+        {/* subtle dot grid */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 0.5px, transparent 0.5px)`,
+            backgroundSize: "24px 24px",
+          }}
+        />
 
-      {/* orbs */}
-      <div className="pointer-events-none absolute -start-32 top-1/4 h-[400px] w-[400px] rounded-full blur-[120px]" style={{ background: `${getAccent(0)}06` }} />
-      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-[350px] w-[350px] rounded-full blur-[100px]" style={{ background: `${getAccent(1)}05` }} />
+        {/* soft gradient orbs — cheap radial gradients, no filter blur */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full"
+          style={{ background: `radial-gradient(circle, ${PRIMARY}14 0%, transparent 70%)` }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full"
+          style={{ background: `radial-gradient(circle, ${SECONDARY}10 0%, transparent 70%)` }}
+        />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        {/* header */}
-        <div className="mb-8 text-center sm:mb-12">
-          <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="mb-4 inline-flex">
-            <span
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold sm:text-sm"
-              style={{
-                background: isDark ? `linear-gradient(135deg, ${getAccent(0)}12, ${getAccent(1)}08)` : `linear-gradient(135deg, ${getAccent(0)}08, ${getAccent(1)}05)`,
-                color: getAccent(0),
-                border: `1px solid ${isDark ? `${getAccent(0)}15` : `${getAccent(0)}10`}`,
-              }}
+        <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          {/* ── header ── */}
+          <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+            <div className="text-center sm:text-start">
+              <m.span
+                initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+                animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35 }}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold sm:text-xs"
+                style={{
+                  background: isDark
+                    ? `linear-gradient(135deg, ${PRIMARY}1f, ${SECONDARY}0f)`
+                    : `linear-gradient(135deg, ${PRIMARY}0f, ${SECONDARY}08)`,
+                  color: PRIMARY,
+                  border: `1px solid ${isDark ? `${PRIMARY}30` : `${PRIMARY}1c`}`,
+                }}
+              >
+                <Sparkles aria-hidden="true" className="h-3 w-3" />
+                المسار التعليمي
+              </m.span>
+
+              <m.h2
+                initial={reduced ? undefined : { opacity: 0, y: 12 }}
+                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.05 }}
+                className="mt-2.5 text-xl font-extrabold tracking-tight sm:text-2xl lg:text-3xl"
+                style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}
+              >
+                <span style={{ color: PRIMARY }}>المراحل</span>{" "}
+                <span style={{ color: SECONDARY }}>الدراسية</span>
+              </m.h2>
+
+              <m.p
+                initial={reduced ? undefined : { opacity: 0, y: 12 }}
+                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1 }}
+                className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed sm:mx-0 sm:text-sm"
+                style={{ color: isDark ? "#8a8290" : "#7a7168" }}
+              >
+                استكشف مراحل التعليم المتوفرة واختر المسار الأنسب لمستواك الدراسي
+              </m.p>
+            </div>
+
+            {hasMore ? (
+              <div className="flex justify-center sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  aria-expanded={expanded}
+                  aria-controls="educational-stages-grid"
+                  className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/60"
+                  style={{
+                    color: isDark ? "#F0ECE6" : "#1a1510",
+                    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
+                    background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  {expanded ? "عرض أقل" : `عرض الكل (${all.length})`}
+                  <ArrowLeft
+                    aria-hidden="true"
+                    className={`h-3 w-3 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {/* ── loading skeleton ── */}
+          {isLoading ? (
+            <div
+              id="educational-stages-grid"
+              className="grid grid-cols-2 items-stretch gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4 max-[400px]:grid-cols-1"
+              aria-busy="true"
+              aria-label="جارٍ تحميل المراحل الدراسية"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              المسار التعليمي
-            </span>
-          </m.div>
-
-          <m.h2
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
-            style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}
-          >
-            <span style={{ color: primary }}>المراحل</span>{" "}
-            <span style={{ color: secondary }}>الدراسية</span>
-          </m.h2>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex h-[220px] flex-col overflow-hidden rounded-2xl"
+                  style={{
+                    background: isDark ? "#16141e" : "#fff",
+                    border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"}`,
+                  }}
+                >
+                  <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }} />
+                  <div className="flex flex-col gap-3 p-3.5 sm:p-4">
+                    <div
+                      className="h-9 w-9 animate-pulse rounded-xl"
+                      style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
+                    />
+                    <div
+                      className="mt-2 h-4 w-2/3 animate-pulse rounded-full"
+                      style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
+                    />
+                    <div
+                      className="h-3 w-full animate-pulse rounded-full"
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)" }}
+                    />
+                    <div
+                      className="h-3 w-3/4 animate-pulse rounded-full"
+                      style={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              id="educational-stages-grid"
+              className="grid grid-cols-2 items-stretch gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4 max-[400px]:grid-cols-1"
+            >
+              {visible.map((stage, i) => {
+                const stats = statsById.get(stage.id);
+                return (
+                  <m.div key={stage.id} {...anim} className="h-full">
+                    <Link
+                      href={`/stages/${stage.id}`}
+                      aria-label={`${stage.name} — اكتشف المزيد`}
+                      className="block h-full rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/70"
+                    >
+                      <StageCard
+                        stage={stage}
+                        index={i}
+                        isDark={isDark}
+                        stats={stats}
+                        isPopular={stage.id === popularId}
+                        statsLoading={loadingIds.has(stage.id)}
+                      />
+                    </Link>
+                  </m.div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* grid — all cards equal */}
-        <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
-          {visible.map((stage, i) => (
-            <StageCard key={stage.id} stage={stage} index={i} isDark={isDark} reduced={reduced} />
-          ))}
-        </div>
-
-        {/* show more */}
-        {hasMore ? (
-          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mt-10 flex justify-center sm:mt-14">
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="group inline-flex items-center gap-2.5 rounded-full px-7 py-3 text-sm font-semibold transition-all duration-300 hover:shadow-xl"
-              style={{
-                color: isDark ? "#F0ECE6" : "#fff",
-                background: `linear-gradient(135deg, ${getAccent(0)}, ${getAccent(1)})`,
-                boxShadow: `0 4px 20px ${getAccent(0)}28`,
-              }}
-            >
-              {expanded ? (
-                "عرض أقل"
-              ) : (
-                <>
-                  عرض المزيد
-                  <span className="inline-flex h-6 min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs font-bold" style={{ background: "rgba(255,255,255,0.2)" }}>
-                    {all.length - INITIAL_VISIBLE}
-                  </span>
-                </>
-              )}
-              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
-            </button>
-          </m.div>
-        ) : null}
-      </div>
-
-      {/* bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20" style={{ background: isDark ? "linear-gradient(to top, #0e0c14, transparent)" : "linear-gradient(to top, #faf6ef, transparent)" }} />
+        {/* bottom fade */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+          style={{
+            background: isDark
+              ? "linear-gradient(to top, #0e0c14, transparent)"
+              : "linear-gradient(to top, #faf6ef, transparent)",
+          }}
+        />
       </section>
     </LazyMotion>
   );
