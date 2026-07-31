@@ -17,6 +17,7 @@ import {
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -164,7 +165,9 @@ export function HeroSection() {
   const social = hero?.socialLinks;
   const icons = hero?.icons;
 
-  const heroImage = hero?.teacherImage || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face";
+  const heroImage =
+    toAbsoluteAssetUrl(hero?.teacherImage) ??
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=800&fit=crop&crop=face";
   const heroName = hero?.teacherName || "المعلم";
 
   if (hero && !hero.isActive) return null;

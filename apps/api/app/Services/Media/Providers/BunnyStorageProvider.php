@@ -61,10 +61,19 @@ class BunnyStorageProvider implements MediaProvider
     {
         $config = $this->config($asset->tenant_id);
 
+        $url = rtrim((string) ($config['cdn_base_url'] ?? ''), '/')
+            .'/'.ltrim((string) $asset->storage_key, '/');
+
+        // Defensive: never emit a protocol-less URL — browsers would resolve it
+        // against the current origin and image previews would silently break.
+        if ($url !== '' && ! preg_match('#^[a-z][a-z0-9+.\-]*://#i', $url)) {
+            $url = 'https://'.$url;
+        }
+
         return [
             'provider' => 'bunny',
             'provider_service' => 'storage',
-            'url' => rtrim((string) ($config['cdn_base_url'] ?? ''), '/').'/'.ltrim((string) $asset->storage_key, '/'),
+            'url' => $url,
             'expires_at' => $options['expires_at'] ?? null,
         ];
     }

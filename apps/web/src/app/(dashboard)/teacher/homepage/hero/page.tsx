@@ -27,6 +27,7 @@ import { mediaLibraryService } from "@/features/media-library/services";
 import { useHeroSettings, useUpdateHeroSettings } from "@/features/homepage/hero/hooks";
 import { DEFAULT_HERO, type HeroSettings } from "@/features/homepage/hero/types";
 import { HeroSection } from "@/components/home/HeroSection";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 export default function HomepageHeroPage() {
   const { data, isLoading } = useHeroSettings();
@@ -175,7 +176,10 @@ export default function HomepageHeroPage() {
                             try {
                               const asset = await mediaLibraryService.getAsset(result.id);
                               if (asset?.cdnUrl) {
-                                setForm({ ...form, teacherImage: asset.cdnUrl });
+                                setForm({
+                                  ...form,
+                                  teacherImage: toAbsoluteAssetUrl(asset.cdnUrl) ?? "",
+                                });
                               }
                             } catch {
                               /* ignore */

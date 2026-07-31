@@ -130,7 +130,7 @@ class PlatformBunnySetting extends Model
             'zone' => $this->storage_zone_name,
             'password' => $this->storage_zone_password,
             'cdn_base_url' => $this->cdn_hostname
-                ? rtrim($this->cdn_hostname, '/')
+                ? rtrim($this->absoluteUrl($this->cdn_hostname), '/')
                 : "https://{$this->storage_zone_name}.b-cdn.net",
             'upload_base_url' => "https://{$this->storageHost($region)}/{$this->storage_zone_name}",
         ];
@@ -171,5 +171,25 @@ class PlatformBunnySetting extends Model
         ];
 
         return $map[$region] ?? $map['de'];
+    }
+
+    /**
+     * Ensure a CDN hostname always carries an absolute scheme so generated
+     * asset URLs are usable directly in <img> / next/image and are never
+     * resolved by the browser as a path relative to the current origin.
+     */
+    private function absoluteUrl(string $host): string
+    {
+        $host = trim($host);
+
+        if ($host === '') {
+            return $host;
+        }
+
+        if (str_starts_with($host, 'http://') || str_starts_with($host, 'https://')) {
+            return $host;
+        }
+
+        return 'https://'.$host;
     }
 }

@@ -247,6 +247,9 @@ class MediaLibraryUploadController extends Controller
         );
 
         // Detect whether Bunny Storage is actually configured for this tenant.
+        // Per-tenant credentials live on the platform-wide Bunny account, so when
+        // the tenant integration config lacks them, fall back to the platform
+        // settings (mirrors BunnyStorageProvider::config()).
         $integration = \App\Models\TenantIntegration::query()
             ->where('tenant_id', $tenant->id)
             ->where('provider', 'bunny')
@@ -254,6 +257,13 @@ class MediaLibraryUploadController extends Controller
             ->whereIn('status', ['pending', 'active'])
             ->first();
         $config = $integration?->config ?? [];
+
+        $platform = \App\Models\PlatformBunnySetting::active();
+        if ($platform && $platform->hasStorageCredentials()
+            && (empty($config['upload_base_url']) || empty($config['client_upload_key']))) {
+            $config = array_merge($platform->toProviderConfig('storage'), $config);
+        }
+
         $cdnBaseUrl = rtrim((string) ($config['cdn_base_url'] ?? ''), '/');
         $accessKey = $config['client_upload_key'] ?? $config['password'] ?? null;
         $bunnyReady = $integration && $accessKey && ! empty($cdnBaseUrl);
