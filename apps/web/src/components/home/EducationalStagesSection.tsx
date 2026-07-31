@@ -21,7 +21,9 @@ import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
 import type { StageItem } from "@/features/homepage/educational-stages/types";
 
 const stageIcons = [BookOpen, GraduationCap, Trophy, Palette, Lightbulb, Rocket];
-const accents = ["#D87B63", "#7C5CFC", "#22C55E", "#06B6D4", "#EC4899", "#F97316"];
+const primary = "#D87B63";
+const secondary = "#FFB50E";
+const accents = [primary, secondary, "#22C55E", "#06B6D4", "#EC4899", "#F97316"];
 
 const INITIAL_VISIBLE = 3;
 
@@ -298,21 +300,9 @@ export function EducationalStagesSection() {
             className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
             style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}
           >
-            المراحل{" "}
-            <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(135deg, ${getAccent(0)}, ${getAccent(1)})` }}>
-              الدراسية
-            </span>
+            <span style={{ color: primary }}>المراحل</span>{" "}
+            <span style={{ color: secondary }}>الدراسية</span>
           </m.h2>
-
-          <m.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mx-auto mt-2.5 max-w-md text-sm leading-relaxed"
-            style={{ color: isDark ? "#8a8290" : "#7a7168" }}
-          >
-            استكشف المراحل الدراسية التي نقدّمها لبناء مستقبلك التعليمي
-          </m.p>
         </div>
 
         {/* grid — all cards equal */}
