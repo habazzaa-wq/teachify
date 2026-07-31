@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { m, useReducedMotion } from "framer-motion";
+import { LazyMotion, m, domAnimation, useReducedMotion } from "framer-motion";
 import {
   GraduationCap,
   ArrowLeft,
@@ -229,10 +229,11 @@ export function EducationalStagesSection() {
   const visible = expanded ? all : all.slice(0, INITIAL_VISIBLE);
 
   return (
-    <section
-      dir="rtl"
-      className="section-lazy relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
-    >
+    <LazyMotion features={domAnimation}>
+      <section
+        dir="rtl"
+        className="section-lazy relative w-full overflow-hidden py-10 sm:py-14 lg:py-20"
+      >
       {/* bg */}
       <div
         className="absolute inset-0"
@@ -335,6 +336,7 @@ export function EducationalStagesSection() {
 
       {/* bottom fade */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20" style={{ background: isDark ? "linear-gradient(to top, #0e0c14, transparent)" : "linear-gradient(to top, #faf6ef, transparent)" }} />
-    </section>
+      </section>
+    </LazyMotion>
   );
 }
