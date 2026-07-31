@@ -139,7 +139,7 @@ function StageCard({
                 style={{ background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)" }}
               />
             </>
-          ) : stats ? (
+          ) : stats && (stats.coursesCount > 0 || stats.teachersCount > 0) ? (
             <>
               <span
                 className="inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums"
