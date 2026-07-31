@@ -65,8 +65,8 @@ class ProductionCourseSeeder extends Seeder
         $startTime = microtime(true);
 
         $this->resolveTenant();
-        $this->bindTenantContext();
         $this->resolveInstructor();
+        $this->bindTenantContext();
 
         DB::transaction(function (): void {
             $stages = $this->ensureStages();
