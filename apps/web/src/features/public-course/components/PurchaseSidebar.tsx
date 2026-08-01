@@ -1,49 +1,45 @@
 "use client";
 
-import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
+import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Check,
-  Sparkles,
   Crown,
-  Shield,
+  ShieldCheck,
   Smartphone,
   Download,
   ClipboardCheck,
   Award,
   RefreshCw,
-  Play,
   Users,
+  BookOpen,
+  Play,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { useUiStore } from "@/stores/ui.store";
+import { SubscribeButton } from "./primitives";
+import { ACCENT, CTA_GRADIENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
 import type { PublicCourse } from "../types";
 
 interface PurchaseSidebarProps {
   course: PublicCourse;
   isEnrolled: boolean;
   onEnroll: () => void;
-  onLogin: () => void;
 }
 
-const features = [
-  { icon: Shield, text: "صول دائم" },
-  { icon: Smartphone, text: "صول عبر الهاتف" },
+const includes = [
+  { icon: Crown, text: "وصول دائم للدورة" },
+  { icon: Smartphone, text: "الوصول عبر الهاتف" },
   { icon: Download, text: "ملفات قابلة للتحميل" },
   { icon: ClipboardCheck, text: "اختبارات وتمارين" },
   { icon: Award, text: "شهادة إتمام" },
   { icon: RefreshCw, text: "تحديثات مستقبلية" },
 ] as const;
 
-export function PurchaseSidebar({
-  course,
-  isEnrolled,
-  onEnroll,
-  onLogin,
-}: PurchaseSidebarProps) {
-  const theme = useUiStore((s) => s.theme);
-  const isDark = theme === "dark";
+function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarProps) {
+  const prefersReduced = useReducedMotion();
+  const coverSrc = course.coverImage || course.thumbnail;
 
   const isFree = course.pricingType === "free";
   const hasDiscount =
@@ -51,77 +47,86 @@ export function PurchaseSidebar({
     course.discountPrice != null &&
     course.price != null &&
     course.discountPrice < course.price;
-
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
+  const currency = course.currency ?? "ر.س";
 
   const discountPercent = useMemo(() => {
     if (!hasDiscount || !originalPrice || !course.discountPrice) return 0;
     return Math.round(((originalPrice - course.discountPrice) / originalPrice) * 100);
   }, [hasDiscount, originalPrice, course.discountPrice]);
 
+  const diffColor = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
+    <motion.aside
+      initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="sticky top-24 w-full"
+      className="w-full"
+      aria-label="تفاصيل الاشتراك"
     >
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-3xl border backdrop-blur-xl",
-          isDark
-            ? "border-white/10 bg-background/80 shadow-xl shadow-black/30"
-            : "border-neutral-200/80 bg-white/80 shadow-xl shadow-neutral-900/10",
-        )}
-      >
-        <div className="h-1.5 w-full bg-gradient-to-l from-[#BF6D58] via-[#d4856f] to-[#FFB50E]" />
+      <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xl shadow-black/5">
+        <div className="h-1.5 w-full" style={{ background: CTA_GRADIENT }} />
 
-        <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full opacity-15 blur-3xl bg-[#BF6D58]" />
-        <div className="pointer-events-none absolute -bottom-16 -right-16 h-32 w-32 rounded-full opacity-10 blur-3xl bg-[#FFB50E]" />
+        {/* Cover image */}
+        <div className="relative aspect-video w-full overflow-hidden">
+          {coverSrc && coverSrc.startsWith("https") ? (
+            <Image
+              src={coverSrc}
+              alt={course.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 380px"
+              className="object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: CTA_GRADIENT }}
+            >
+              <BookOpen className="h-12 w-12 text-white/70" />
+            </div>
+          )}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.4))" }}
+          />
+          <span
+            className="absolute start-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white shadow-md"
+            style={{ background: diffColor }}
+          >
+            {DIFFICULTY_LABELS[course.difficulty] ?? course.difficulty}
+          </span>
+        </div>
 
-        <div className="relative p-6">
+        <div className="p-5">
           {/* Price */}
-          <div className="mb-5">
+          <div className="mb-4">
             {isFree ? (
               <div className="flex items-center gap-2">
-                <span className="text-3xl font-bold text-emerald-500">مجاني</span>
-                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  مجاني
+                </span>
+                <Award className="h-5 w-5 text-emerald-400" />
               </div>
             ) : (
-              <div className="flex flex-wrap items-end gap-3">
-                <span
-                  className={cn(
-                    "text-3xl font-extrabold tracking-tight",
-                    isDark ? "text-white" : "text-neutral-900",
-                  )}
-                >
+              <div className="flex flex-wrap items-end gap-2.5">
+                <span className="text-3xl font-extrabold tracking-tight text-foreground">
                   {formatNumber(displayPrice)}
                 </span>
-
-                {course.currency && (
-                  <span
-                    className={cn(
-                      "mb-1 text-sm font-medium",
-                      isDark ? "text-neutral-400" : "text-neutral-500",
-                    )}
-                  >
-                    {course.currency}
-                  </span>
-                )}
-
+                <span className="mb-1 text-sm font-semibold text-muted-foreground">
+                  {currency}
+                </span>
                 {hasDiscount && (
                   <>
-                    <span
-                      className={cn(
-                        "mb-1 text-base line-through",
-                        isDark ? "text-neutral-500" : "text-neutral-400",
-                      )}
-                    >
-                      {formatNumber(originalPrice)}
+                    <span className="mb-1 text-base text-muted-foreground line-through">
+                      {formatNumber(originalPrice)} {currency}
                     </span>
-                    <span className="mb-1 rounded-lg bg-[#FFB50E]/15 px-2.5 py-0.5 text-xs font-bold text-[#FFB50E]">
-                      -{discountPercent}%
+                    <span
+                      className="mb-1 rounded-lg px-2 py-0.5 text-[11px] font-extrabold"
+                      style={{ background: `${ACCENT}22`, color: "#b45309" }}
+                    >
+                      خصم {discountPercent}%
                     </span>
                   </>
                 )}
@@ -129,121 +134,69 @@ export function PurchaseSidebar({
             )}
           </div>
 
-          {/* CTA Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={isEnrolled ? onEnroll : onLogin}
-            className={cn(
-              "group relative mb-6 flex w-full items-center justify-center gap-2.5",
-              "rounded-xl px-6 py-3.5 text-base font-bold transition-all duration-300",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-              isEnrolled
-                ? cn(
-                    "bg-emerald-500 text-white hover:bg-emerald-600 focus-visible:ring-emerald-500",
-                    isDark && "focus-visible:ring-offset-neutral-900",
-                  )
-                : cn(
-                    "bg-gradient-to-l from-[#BF6D58] to-[#a85a47] text-white",
-                    "hover:from-[#a85a47] hover:to-[#BF6D58] shadow-lg shadow-[#BF6D58]/25",
-                    "hover:shadow-xl hover:shadow-[#BF6D58]/30",
-                    "focus-visible:ring-[#BF6D58]",
-                    isDark && "focus-visible:ring-offset-neutral-900",
-                  ),
-            )}
-          >
-            {isEnrolled ? (
-              <>
-                <Play className="h-5 w-5 fill-current" />
-                <span>ابدأ التعلم</span>
-              </>
-            ) : (
-              <>
-                <Crown className="h-5 w-5" />
-                <span>اشترك الآن</span>
-              </>
-            )}
-
-            {!isEnrolled && (
-              <span className="absolute inset-0 overflow-hidden rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              </span>
-            )}
-          </motion.button>
-
-          {/* Divider */}
-          <div className={cn("mb-5 h-px w-full", isDark ? "bg-white/10" : "bg-neutral-200")} />
-
-          {/* Features */}
-          <div>
-            <h4
+          {/* CTA */}
+          {isEnrolled ? (
+            <button
+              type="button"
+              onClick={onEnroll}
               className={cn(
-                "mb-3 text-sm font-semibold",
-                isDark ? "text-neutral-300" : "text-neutral-600",
+                "group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-7 py-4",
+                "text-base font-extrabold text-white shadow-lg shadow-emerald-600/25",
+                "bg-emerald-600 transition-colors duration-200 hover:bg-emerald-500",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               )}
             >
-              يتضمن الدورة
-            </h4>
+              <Play className="h-5 w-5 fill-current" />
+              ابدأ التعلم الآن
+            </button>
+          ) : (
+            <SubscribeButton onClick={onEnroll} label="اشترك الآن وابدأ التعلم" />
+          )}
 
-            <ul className="space-y-2.5">
-              {features.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-center gap-2.5">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#BF6D58]/10">
-                    <Check className="h-3 w-3 text-[#BF6D58]" strokeWidth={3} />
-                  </span>
-                  <span
-                    className={cn(
-                      "text-sm",
-                      isDark ? "text-neutral-300" : "text-neutral-600",
-                    )}
-                  >
-                    {text}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          {/* Guarantee */}
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            ضمان استرداد الأموال خلال 30 يوماً
           </div>
 
-          {/* Stats Footer */}
-          <div
-            className={cn(
-              "mt-5 flex items-center justify-center gap-1 rounded-xl px-4 py-2.5",
-              isDark ? "bg-white/5" : "bg-neutral-50",
-            )}
-          >
-            <Users
-              className={cn(
-                "h-3.5 w-3.5",
-                isDark ? "text-neutral-500" : "text-neutral-400",
-              )}
-            />
-            <span
-              className={cn(
-                "text-xs",
-                isDark ? "text-neutral-400" : "text-neutral-500",
-              )}
-            >
-              {formatNumber(course.studentsCount)} طالب مسجّل
+          {/* Divider */}
+          <div className="my-5 h-px w-full bg-border/50" />
+
+          {/* Course includes */}
+          <h4 className="mb-3 text-sm font-extrabold text-foreground">يتضمن الدورة</h4>
+          <ul className="grid grid-cols-1 gap-2.5">
+            {includes.map((item) => (
+              <li key={item.text} className="flex items-center gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#BF6D58]/10">
+                  <Check className="h-3 w-3 text-[#BF6D58]" strokeWidth={3} />
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">{item.text}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Divider */}
+          <div className="my-5 h-px w-full bg-border/50" />
+
+          {/* Stats */}
+          <div className="flex items-center justify-center gap-1 rounded-xl bg-muted/50 px-4 py-2.5">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Users className="h-3.5 w-3.5 text-[#BF6D58]" />
+              {formatNumber(course.studentsCount)} طالب
             </span>
-            <span
-              className={cn(
-                "mx-1.5 text-xs",
-                isDark ? "text-neutral-600" : "text-neutral-300",
-              )}
-            >
-              •
-            </span>
-            <span
-              className={cn(
-                "text-xs",
-                isDark ? "text-neutral-400" : "text-neutral-500",
-              )}
-            >
+            <span className="mx-1.5 text-xs text-muted-foreground/40">•</span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <BookOpen className="h-3.5 w-3.5 text-[#BF6D58]" />
               {formatNumber(course.lessonsCount)} درس
             </span>
           </div>
         </div>
       </div>
-    </motion.div>
+    </motion.aside>
   );
 }
+
+const PurchaseSidebar = memo(PurchaseSidebarInner);
+
+export { PurchaseSidebar };
+export default PurchaseSidebar;

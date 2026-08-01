@@ -1,9 +1,11 @@
 "use client";
 
+import { memo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, X } from "lucide-react";
+import { Lock, X, LogIn } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { AppButton } from "@/components/ui/AppButton";
+import { SubscribeButton } from "./primitives";
+import { LOCKED_GRADIENT } from "../brand";
 
 interface LockedModalProps {
   isOpen: boolean;
@@ -12,100 +14,93 @@ interface LockedModalProps {
   onLogin: () => void;
 }
 
-const backdrop = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
-};
+function LockedModalInner({ isOpen, onClose, onEnroll, onLogin }: LockedModalProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
 
-const modal = {
-  hidden: { opacity: 0, scale: 0.92, y: 24 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.92,
-    y: 24,
-    transition: { duration: 0.2, ease: "easeIn" as const },
-  },
-};
+  useEffect(() => {
+    if (!isOpen) return;
 
-export function LockedModal({
-  isOpen,
-  onClose,
-  onEnroll,
-  onLogin,
-}: LockedModalProps) {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="locked-modal-title"
+        >
+          {/* Backdrop (opacity only, no blur) */}
           <motion.div
-            variants={backdrop}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60"
           />
 
+          {/* Modal */}
           <motion.div
-            variants={modal}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full max-w-md rounded-2xl border border-border/50 bg-background p-8",
-              "shadow-2xl shadow-black/10",
+              "relative w-full max-w-md overflow-hidden rounded-3xl border border-[#BF6D58]/20 bg-card shadow-2xl shadow-black/20",
             )}
           >
             <button
+              ref={closeRef}
               type="button"
               onClick={onClose}
-              className="absolute end-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="إغلاق"
+              className="absolute end-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
             >
               <X className="h-4 w-4" />
             </button>
 
-            <div className="flex flex-col items-center text-center">
-              <div
-                className={cn(
-                  "mb-6 flex h-20 w-20 items-center justify-center rounded-full",
-                  "bg-gradient-to-br from-primary/20 to-primary/5",
-                  "shadow-inner",
-                )}
-              >
-                <Lock className="h-9 w-9 text-primary" />
+            <div
+              className="p-8 text-center"
+              style={{ background: LOCKED_GRADIENT }}
+            >
+              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-amber-500/25 bg-gradient-to-br from-[#BF6D58]/20 to-[#FFB50E]/10 shadow-lg shadow-[#BF6D58]/10">
+                <Lock className="h-9 w-9 text-[#BF6D58]" strokeWidth={2} />
               </div>
 
-              <h3 className="mb-2 text-lg font-bold text-foreground">
-                محتوى مقفل
+              <h3
+                id="locked-modal-title"
+                className="mb-2 text-xl font-extrabold text-foreground"
+              >
+                هذا المحتوى متاح للمشتركين فقط
               </h3>
-              <p className="mb-8 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                يجب الاشتراك في الكورس للوصول إلى هذا المحتوى. اشترك الآن
-                واستمتع بتجربة تعليمية متكاملة.
+              <p className="mx-auto mb-7 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                اشترك الآن للوصول إلى جميع المحاضرات والملفات والاختبارات،
+                مع شهادة إتمام عند الانتهاء من الدورة.
               </p>
 
-              <div className="flex w-full flex-col gap-3">
-                <AppButton
-                  onClick={onEnroll}
-                  className="w-full"
-                  size="lg"
-                >
-                  اشترك الآن
-                </AppButton>
-                <AppButton
+              <div className="flex flex-col gap-3">
+                <SubscribeButton onClick={onEnroll} label="اشترك الآن وابدأ التعلم" />
+                <button
+                  type="button"
                   onClick={onLogin}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-[#BF6D58] transition-colors hover:text-[#a85a47] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
                 >
-                  تسجيل الدخول
-                </AppButton>
+                  <LogIn className="h-4 w-4" />
+                  لديك حساب بالفعل؟ سجّل الدخول
+                </button>
               </div>
             </div>
           </motion.div>
@@ -114,3 +109,8 @@ export function LockedModal({
     </AnimatePresence>
   );
 }
+
+const LockedModal = memo(LockedModalInner);
+
+export { LockedModal };
+export type { LockedModalProps };

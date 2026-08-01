@@ -2,23 +2,9 @@
 
 import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  Play,
-  FileText,
-  ClipboardCheck,
-  Headphones,
-  Monitor,
-  Link,
-  Lock,
-  ChevronLeft,
-  Clock,
-  Download,
-  Award,
-  CircleDot,
-  Puzzle,
-  Radio,
-} from "lucide-react";
+import { Clock, Download, Lock, Award, Play } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { getLessonConfig, formatDuration } from "../utils";
 import type { PublicCourseLesson } from "../types";
 
 interface LessonRowProps {
@@ -28,202 +14,101 @@ interface LessonRowProps {
   isPreview?: boolean;
 }
 
-const lessonTypeConfig: Record<
-  string,
-  { icon: React.ElementType; label: string; color: string }
-> = {
-  video: {
-    icon: Play,
-    label: "فيديو",
-    color: "text-blue-500 dark:text-blue-400",
-  },
-  file: {
-    icon: FileText,
-    label: "ملف",
-    color: "text-emerald-500 dark:text-emerald-400",
-  },
-  exam: {
-    icon: ClipboardCheck,
-    label: "امتحان",
-    color: "text-amber-500 dark:text-amber-400",
-  },
-  audio: {
-    icon: Headphones,
-    label: "صوتي",
-    color: "text-purple-500 dark:text-purple-400",
-  },
-  live: {
-    icon: Radio,
-    label: "بث مباشر",
-    color: "text-rose-500 dark:text-rose-400",
-  },
-  link: {
-    icon: Link,
-    label: "رابط خارجي",
-    color: "text-cyan-500 dark:text-cyan-400",
-  },
-  interactive: {
-    icon: Puzzle,
-    label: "تفاعلي",
-    color: "text-violet-500 dark:text-violet-400",
-  },
-  presentation: {
-    icon: Monitor,
-    label: "عرض تقديمي",
-    color: "text-orange-500 dark:text-orange-400",
-  },
-};
-
-function formatDuration(seconds: number | null): string {
-  if (!seconds || seconds <= 0) return "";
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins >= 60) {
-    const hrs = Math.floor(mins / 60);
-    const remMins = mins % 60;
-    return remMins > 0 ? `${hrs} س ${remMins} د` : `${hrs} س`;
-  }
-  if (mins > 0 && secs > 0) return `${mins} د ${secs} ث`;
-  if (mins > 0) return `${mins} د`;
-  return `${secs} ث`;
-}
-
 function LessonRowInner({
   lesson,
   isEnrolled,
   onLockedClick,
   isPreview = false,
 }: LessonRowProps) {
-  const typeConfig = lessonTypeConfig[lesson.lessonType] ?? lessonTypeConfig["file"]!;
-  const TypeIcon = typeConfig.icon;
+  const config = useMemo(() => getLessonConfig(lesson), [lesson]);
+  const TypeIcon = config.icon;
+
   const duration = useMemo(
     () => formatDuration(lesson.durationSeconds ?? lesson.estimatedDuration),
     [lesson.durationSeconds, lesson.estimatedDuration],
   );
+
   const hasExam = !!lesson.examId;
   const hasResources = lesson.downloadable;
-  const isLocked = !isEnrolled && !isPreview;
+  const isLocked = !isEnrolled;
+  const showPreview = isPreview && lesson.freePreview;
 
-  const handleClick = () => {
-    if (isLocked) {
-      onLockedClick();
-    }
+  const handleActivate = () => {
+    if (isLocked) onLockedClick();
   };
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, x: -8 }}
+      initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      onClick={handleClick}
-      className={cn(
-        "group/lesson flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-        isLocked
-          ? "cursor-pointer"
-          : "cursor-default",
-        "hover:bg-muted/50 dark:hover:bg-white/[0.03]",
-        isLocked && "opacity-60",
-      )}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      onClick={handleActivate}
       role={isLocked ? "button" : undefined}
       tabIndex={isLocked ? 0 : undefined}
+      aria-label={isLocked ? `الدرس مقفل: ${lesson.title}` : lesson.title}
       onKeyDown={
         isLocked
           ? (e: React.KeyboardEvent) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onLockedClick();
+                handleActivate();
               }
             }
           : undefined
       }
+      className={cn(
+        "group/lesson flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200",
+        "hover:bg-[#BF6D58]/[0.05] dark:hover:bg-white/[0.03]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40 focus-visible:ring-inset",
+      )}
     >
       {/* Type Icon */}
       <div
-        className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-          "bg-muted/70 dark:bg-white/[0.04]",
-          "border border-border/30 dark:border-white/[0.06]",
-          "transition-colors duration-200",
-          "group-hover/lesson:border-border/50 dark:group-hover/lesson:border-white/[0.1]",
-        )}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover/lesson:scale-105"
+        style={{ backgroundColor: `${config.color}16` }}
       >
-        <TypeIcon className={cn("h-3.5 w-3.5", typeConfig.color)} />
+        <TypeIcon className="h-4 w-4" style={{ color: config.color }} />
       </div>
 
       {/* Title & Meta */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "text-sm font-medium leading-snug line-clamp-1",
-              "text-foreground/90 dark:text-foreground/80",
-              "transition-colors duration-200",
-              "group-hover/lesson:text-foreground",
-            )}
-          >
+          <span className="line-clamp-1 text-sm font-semibold leading-snug text-foreground/90 transition-colors duration-200 group-hover/lesson:text-foreground">
             {lesson.title}
           </span>
-
-          {/* Free Preview Badge */}
-          {isPreview && lesson.freePreview && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 dark:bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20 dark:ring-emerald-400/20">
+          {showPreview && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
               <Play className="h-2.5 w-2.5 fill-current" />
               معاينة مجانية
             </span>
           )}
         </div>
 
-        {/* Meta Row */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground/60">
           {duration && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/60 dark:text-muted-foreground/50">
+            <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {duration}
             </span>
           )}
-
-          {hasResources && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/60 dark:text-muted-foreground/50">
-              <Download className="h-3 w-3" />
-              مرفق
-            </span>
-          )}
-
           {hasExam && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-amber-600/70 dark:text-amber-400/60">
+            <span className="inline-flex items-center gap-1 text-amber-600/70 dark:text-amber-400/70">
               <Award className="h-3 w-3" />
               امتحان
+            </span>
+          )}
+          {hasResources && (
+            <span className="inline-flex items-center gap-1">
+              <Download className="h-3 w-3" />
+              مرفقات
             </span>
           )}
         </div>
       </div>
 
-      {/* Right Actions */}
-      <div className="flex shrink-0 items-center gap-1.5">
-        {/* Completion Check (future use) */}
-        {isEnrolled && !isPreview && (
-          <div
-            className={cn(
-              "flex h-5 w-5 items-center justify-center rounded-full",
-              "border border-border/40 dark:border-white/[0.08]",
-              "text-muted-foreground/20 dark:text-muted-foreground/15",
-            )}
-          >
-            <CircleDot className="h-3 w-3" />
-          </div>
-        )}
-
-        {/* Lock / Chevron */}
-        {isLocked ? (
-          <div className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/30 dark:text-muted-foreground/25 transition-colors duration-200 group-hover/lesson:text-muted-foreground/50 dark:group-hover/lesson:text-muted-foreground/40">
-            <Lock className="h-3.5 w-3.5" />
-          </div>
-        ) : (
-          <div className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/25 dark:text-muted-foreground/20 opacity-0 transition-all duration-200 group-hover/lesson:opacity-100 group-hover/lesson:text-muted-foreground/50 dark:group-hover/lesson:text-muted-foreground/40">
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </div>
-        )}
+      {/* Lock */}
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 transition-transform duration-200 group-hover/lesson:scale-110 dark:text-amber-400">
+        <Lock className="h-3.5 w-3.5" />
       </div>
     </motion.div>
   );

@@ -3,11 +3,24 @@ import type { Course } from "@/features/courses/types";
 export type { Course } from "@/features/courses/types";
 
 // Public course with full content tree
-export interface PublicCourse extends Course {
+export interface PublicCourse extends Omit<Course, "instructor"> {
   fullDescription: string | null;
   requirements: string[];
   learningOutcomes: string[];
   targetAudience: string[];
+  instructor: PublicInstructor | null;
+}
+
+export interface PublicInstructor {
+  id: string;
+  name: string;
+  avatar: string | null;
+  bio?: string | null;
+  title?: string | null;
+  coursesCount?: number | null;
+  studentsCount?: number | null;
+  rating?: number | null;
+  socialLinks?: { platform: string; url: string }[];
 }
 
 export interface PublicCourseModule {

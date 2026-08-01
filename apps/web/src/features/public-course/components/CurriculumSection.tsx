@@ -1,18 +1,12 @@
 "use client";
 
 import { memo, useCallback, useMemo, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
-import {
-  Search,
-  Layers,
-  GraduationCap,
-  Clock,
-  ArrowUp,
-  ArrowDown,
-  List,
-} from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ListTree, Search, Layers, GraduationCap, Clock, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CurriculumModule } from "./CurriculumModule";
+import { SectionHeader } from "./primitives";
+import { getCourseStats, formatDuration } from "../utils";
 import type { PublicCourseModule } from "../types";
 
 interface CurriculumSectionProps {
@@ -21,59 +15,32 @@ interface CurriculumSectionProps {
   onLockedClick: () => void;
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds <= 0) return "";
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  if (hrs > 0 && mins > 0) return `${hrs} س ${mins} د`;
-  if (hrs > 0) return `${hrs} ساعة`;
-  if (mins > 0) return `${mins} دقيقة`;
-  return `${seconds} ثانية`;
-}
-
-function getAggregateStats(modules: PublicCourseModule[]) {
-  let totalSections = 0;
-  let totalLessons = 0;
-  let totalDuration = 0;
-
-  for (const mod of modules) {
-    totalSections += mod.sectionsCount ?? mod.sections?.length ?? 0;
-    for (const section of mod.sections ?? []) {
-      totalLessons += section.lessonsCount ?? section.lessons?.length ?? 0;
-      for (const lesson of section.lessons ?? []) {
-        totalDuration += lesson.durationSeconds ?? lesson.estimatedDuration ?? 0;
-      }
-    }
-  }
-
-  return { totalSections, totalLessons, totalDuration };
-}
-
 function filterModules(
   modules: PublicCourseModule[],
   query: string,
 ): PublicCourseModule[] {
   if (!query.trim()) return modules;
-
   const lower = query.toLowerCase().trim();
 
   return modules
     .map((mod) => {
-      const filteredSections = (mod.sections ?? [])
+      const sections = (mod.sections ?? [])
         .map((section) => {
-          const filteredLessons = (section.lessons ?? []).filter((lesson) =>
+          const lessons = (section.lessons ?? []).filter((lesson) =>
             lesson.title.toLowerCase().includes(lower),
           );
-          if (filteredLessons.length === 0) return null;
-          return { ...section, lessons: filteredLessons, lessonsCount: filteredLessons.length };
+          if (lessons.length === 0) return null;
+          return { ...section, lessons, lessonsCount: lessons.length };
         })
         .filter((s): s is NonNullable<typeof s> => s !== null);
 
-      if (filteredSections.length === 0) return null;
+      const modMatches = mod.title.toLowerCase().includes(lower);
+      if (!modMatches && sections.length === 0) return null;
+
       return {
         ...mod,
-        sections: filteredSections,
-        sectionsCount: filteredSections.length,
+        sections: modMatches ? mod.sections : sections,
+        sectionsCount: sections.length,
       };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null);
@@ -84,30 +51,61 @@ function CurriculumSectionInner({
   isEnrolled,
   onLockedClick,
 }: CurriculumSectionProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [allExpanded, setAllExpanded] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  const stats = useMemo(() => getAggregateStats(modules), [modules]);
-
+  const stats = useMemo(() => getCourseStats(modules), [modules]);
   const filteredModules = useMemo(
     () => filterModules(modules, searchQuery),
     [modules, searchQuery],
   );
+  const searchActive = searchQuery.trim().length > 0;
 
-  const hasQuery = searchQuery.trim().length > 0;
+  const allExpanded = useMemo(
+    () =>
+      filteredModules.length > 0 &&
+      filteredModules.every((m) => expandedModules.has(m.id) || searchActive),
+    [filteredModules, expandedModules, searchActive],
+  );
 
-  const toggleAll = useCallback(() => {
-    setAllExpanded((prev) => !prev);
+  const toggleModule = useCallback((id: string) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }, []);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-      if (e.target.value.trim()) {
-        setAllExpanded(true);
+  const toggleSection = useCallback((id: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedModules(new Set());
+      setExpandedSections(new Set());
+    } else {
+      const moduleIds = new Set<string>();
+      const sectionIds = new Set<string>();
+      for (const mod of filteredModules) {
+        moduleIds.add(mod.id);
+        for (const section of mod.sections ?? []) sectionIds.add(section.id);
       }
-    },
+      setExpandedModules(moduleIds);
+      setExpandedSections(sectionIds);
+    }
+  }, [allExpanded, filteredModules]);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
     [],
   );
 
@@ -116,22 +114,11 @@ function CurriculumSectionInner({
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.1,
+        staggerChildren: prefersReducedMotion ? 0 : 0.07,
+        delayChildren: 0.05,
       },
     },
   };
-
-  const itemVariants: Variants = prefersReducedMotion
-    ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
-    : {
-        hidden: { opacity: 0, y: 16 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-        },
-      };
 
   return (
     <motion.section
@@ -139,102 +126,65 @@ function CurriculumSectionInner({
       whileInView="visible"
       viewport={{ once: true, margin: "-60px" }}
       variants={sectionVariants}
-      className="space-y-5 sm:space-y-6"
       dir="rtl"
+      className="space-y-5"
     >
-      {/* Section Header */}
-      <motion.div variants={itemVariants} className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-xl",
-              "bg-gradient-to-br from-primary/10 to-primary/5",
-              "dark:from-primary/15 dark:to-primary/[0.03]",
-              "border border-primary/10 dark:border-primary/15",
-            )}
-          >
-            <List className="h-5 w-5 text-primary/70 dark:text-primary/60" />
-          </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              محتوى الدورة
-            </h2>
-          </div>
-        </div>
+      <SectionHeader
+        icon={<ListTree className="h-5 w-5" />}
+        title="محتوى الدورة"
+        subtitle="تصفّح جميع المحاضرات والأقسام قبل الاشتراك"
+      />
 
-        {/* Stats Summary */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground/70 dark:text-muted-foreground/60">
-            <Layers className="h-4 w-4 text-primary/50 dark:text-primary/40" />
-            <span className="font-semibold tabular-nums text-foreground/80 dark:text-foreground/70">
-              {stats.totalSections}
-            </span>
-            <span>{stats.totalSections === 1 ? "قسم" : "أقسام"}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground/70 dark:text-muted-foreground/60">
-            <GraduationCap className="h-4 w-4 text-primary/50 dark:text-primary/40" />
-            <span className="font-semibold tabular-nums text-foreground/80 dark:text-foreground/70">
-              {stats.totalLessons}
-            </span>
-            <span>{stats.totalLessons === 1 ? "درس" : "دروس"}</span>
-          </div>
-          {stats.totalDuration > 0 && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground/70 dark:text-muted-foreground/60">
-              <Clock className="h-4 w-4 text-primary/50 dark:text-primary/40" />
-              <span className="font-semibold text-foreground/80 dark:text-foreground/70">
-                {formatDuration(stats.totalDuration)}
-              </span>
-              <span>مدة التعلم</span>
-            </div>
-          )}
-        </div>
+      {/* Stats chips */}
+      <motion.div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
+          <Layers className="h-4 w-4 text-[#BF6D58]" />
+          <b className="tabular-nums text-foreground">{stats.sections}</b>
+          {stats.sections === 1 ? "قسم" : "أقسام"}
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
+          <GraduationCap className="h-4 w-4 text-[#BF6D58]" />
+          <b className="tabular-nums text-foreground">{stats.lessons}</b>
+          {stats.lessons === 1 ? "درس" : "درسًا"}
+        </span>
+        {stats.duration > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
+            <Clock className="h-4 w-4 text-[#BF6D58]" />
+            <b className="tabular-nums text-foreground">{formatDuration(stats.duration)}</b>
+            مدة التعلم
+          </span>
+        )}
       </motion.div>
 
-      {/* Search & Controls Bar */}
-      <motion.div variants={itemVariants} className="flex items-center gap-2.5">
-        {/* Search Input */}
-        <div
-          className={cn(
-            "relative flex-1 max-w-md",
-          )}
-        >
-          <Search className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40 dark:text-muted-foreground/30" />
+      {/* Search & controls */}
+      <motion.div className="flex items-center gap-2.5">
+        <div className="relative max-w-md flex-1">
+          <Search className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="ابحث في الدروس..."
             dir="rtl"
+            aria-label="البحث في الدروس"
             className={cn(
-              "flex h-10 w-full rounded-xl border bg-background/60 dark:bg-white/[0.03]",
-              "px-4 py-2 pe-10 ps-3 text-sm",
-              "text-foreground placeholder:text-muted-foreground/40 dark:placeholder:text-muted-foreground/30",
-              "border-border/40 dark:border-white/[0.08]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/15",
-              "focus-visible:border-primary/30 dark:focus-visible:border-primary/20",
-              "transition-all duration-200",
+              "flex h-10 w-full rounded-xl border bg-card/60 px-4 py-2 pe-10 ps-3 text-sm text-foreground",
+              "border-border/50 placeholder:text-muted-foreground/40",
+              "transition-all duration-200 focus-visible:border-[#BF6D58]/40",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
             )}
           />
         </div>
 
-        {/* Expand / Collapse All */}
-        <motion.button
+        <button
           type="button"
           onClick={toggleAll}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium",
-            "text-muted-foreground/70 dark:text-muted-foreground/60",
-            "bg-background/60 dark:bg-white/[0.03]",
-            "border-border/40 dark:border-white/[0.08]",
-            "hover:bg-muted/50 dark:hover:bg-white/[0.05]",
-            "hover:border-border/60 dark:hover:border-white/[0.12]",
-            "transition-all duration-200",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
-            "shrink-0",
-          )}
           aria-label={allExpanded ? "طي الكل" : "توسيع الكل"}
+          className={cn(
+            "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all duration-200",
+            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[#BF6D58]/30 hover:text-[#BF6D58]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
+          )}
         >
           {allExpanded ? (
             <>
@@ -247,67 +197,41 @@ function CurriculumSectionInner({
               <span className="hidden sm:inline">توسيع الكل</span>
             </>
           )}
-        </motion.button>
+        </button>
       </motion.div>
 
-      {/* Modules Accordion */}
-      <motion.div variants={itemVariants} className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {filteredModules.length > 0 ? (
-            filteredModules.map((mod, idx) => (
-              <motion.div
-                key={mod.id}
-                layout
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                transition={{
-                  duration: prefersReducedMotion ? 0 : 0.35,
-                  delay: idx * 0.05,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
-                <CurriculumModule
-                  module={mod}
-                  isEnrolled={isEnrolled}
-                  onLockedClick={onLockedClick}
-                  defaultExpanded={allExpanded || hasQuery}
-                />
-              </motion.div>
-            ))
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className={cn(
-                "flex flex-col items-center justify-center gap-3 rounded-2xl py-12",
-                "border border-dashed border-border/40 dark:border-white/[0.08]",
-                "bg-muted/20 dark:bg-white/[0.01]",
-              )}
-            >
-              <div
-                className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl",
-                  "bg-muted/50 dark:bg-white/[0.04]",
-                  "border border-border/30 dark:border-white/[0.06]",
-                )}
-              >
-                <Search className="h-5 w-5 text-muted-foreground/30 dark:text-muted-foreground/25" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground/70 dark:text-muted-foreground/60">
-                  لا توجد نتائج لـ &ldquo;{searchQuery}&rdquo;
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground/40 dark:text-muted-foreground/30">
-                  جرّب كلمات بحث مختلفة
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Modules list */}
+      <motion.div className="space-y-3">
+        {filteredModules.length > 0 ? (
+          filteredModules.map((mod) => (
+            <CurriculumModule
+              key={mod.id}
+              module={mod}
+              isEnrolled={isEnrolled}
+              onLockedClick={onLockedClick}
+              isExpanded={searchActive || expandedModules.has(mod.id)}
+              onToggle={() => toggleModule(mod.id)}
+              expandedSections={expandedSections}
+              onToggleSection={toggleSection}
+            />
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/50 bg-card/50 py-12">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
+              <Search className="h-5 w-5 text-muted-foreground/40" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-muted-foreground/80">
+                {searchActive
+                  ? `لا توجد نتائج لـ "${searchQuery}"`
+                  : "لا يوجد محتوى لهذه الدورة بعد"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground/50">
+                {searchActive ? "جرّب كلمات بحث مختلفة" : "تحقق لاحقًا"}
+              </p>
+            </div>
+          </div>
+        )}
       </motion.div>
     </motion.section>
   );

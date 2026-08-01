@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
 import { CourseHero } from "./CourseHero";
-import PurchaseCard from "./PurchaseCard";
-import { CoursePreview } from "./CoursePreview";
-import { CurriculumSection } from "./CurriculumSection";
-import { CourseDescription } from "./CourseDescription";
+import { CourseInformation } from "./CourseInformation";
 import { LearningOutcomes } from "./LearningOutcomes";
 import { CourseRequirements } from "./CourseRequirements";
-import { TargetAudience } from "./TargetAudience";
-import { InstructorCard } from "./InstructorCard";
 import { CourseStats } from "./CourseStats";
-import { CourseFAQ } from "./CourseFAQ";
+import { InstructorCard } from "./InstructorCard";
+import { CurriculumSection } from "./CurriculumSection";
+import { SubscriptionCta } from "./SubscriptionCta";
 import { RelatedCourses } from "./RelatedCourses";
-import { ReviewsSection } from "./ReviewsSection";
-import { LockedModal } from "./LockedModal";
+import { PurchaseSidebar } from "./PurchaseSidebar";
 import { MobilePurchaseBar } from "./MobilePurchaseBar";
+import { LockedModal } from "./LockedModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Props {
@@ -27,21 +24,19 @@ interface Props {
 function CoursePageSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <Skeleton className="h-[480px] w-full" />
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1fr_380px]">
+      <Skeleton className="h-[520px] w-full sm:h-[600px]" />
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-12">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-9 w-2/3 sm:w-72" />
+                <Skeleton className="h-24 w-full rounded-2xl" />
               </div>
             ))}
           </div>
           <div className="hidden lg:block">
-            <Skeleton className="h-[500px] w-full rounded-2xl" />
+            <Skeleton className="h-[520px] w-full rounded-3xl" />
           </div>
         </div>
       </div>
@@ -80,29 +75,36 @@ export function PublicCoursePage({ slug }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <CourseHero course={course} />
+      <CourseHero course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} onLogin={handleLogin} />
 
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1fr_380px]">
-          {/* Main Content */}
-          <div className="space-y-16">
-            <CourseStats course={course} />
-
-            <CoursePreview course={course} />
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
+          {/* Main content */}
+          <div className="min-w-0 space-y-14">
+            <CourseInformation
+              description={course.description}
+              fullDescription={course.fullDescription}
+              targetAudience={course.targetAudience}
+              objectives={course.learningOutcomes}
+            />
 
             {course.learningOutcomes.length > 0 && (
               <LearningOutcomes outcomes={course.learningOutcomes} />
             )}
 
-            <CourseDescription
-              description={course.description}
-              fullDescription={course.fullDescription}
-            />
+            {course.requirements.length > 0 && (
+              <CourseRequirements requirements={course.requirements} />
+            )}
+
+            <CourseStats course={course} modules={modules} />
+
+            {course.instructor && <InstructorCard instructor={course.instructor} />}
 
             {modulesLoading ? (
-              <div className="space-y-6">
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-64" />
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                 ))}
               </div>
             ) : modules && modules.length > 0 ? (
@@ -113,50 +115,27 @@ export function PublicCoursePage({ slug }: Props) {
               />
             ) : null}
 
-            {course.instructor && (
-              <InstructorCard instructor={course.instructor} />
-            )}
-
-            {course.requirements.length > 0 && (
-              <CourseRequirements requirements={course.requirements} />
-            )}
-
-            {course.targetAudience.length > 0 && (
-              <TargetAudience audience={course.targetAudience} />
-            )}
-
-            <CourseFAQ />
-
-            <ReviewsSection course={course} />
+            <SubscriptionCta onEnroll={handleEnroll} />
           </div>
 
-          {/* Sidebar */}
-          <div className="hidden lg:block">
+          {/* Sticky sidebar */}
+          <aside className="hidden lg:block">
             <div className="sticky top-24">
-              <PurchaseCard
-                course={course}
-                isEnrolled={isEnrolled}
-                onEnroll={handleEnroll}
-                onLogin={handleLogin}
-              />
+              <PurchaseSidebar course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} />
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
       {relatedCourses && relatedCourses.length > 0 && (
-        <div className="border-t border-border bg-muted/30">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="border-t border-border/60 bg-muted/30">
+          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
             <RelatedCourses courses={relatedCourses} />
           </div>
         </div>
       )}
 
-      <MobilePurchaseBar
-        course={course}
-        isEnrolled={isEnrolled}
-        onEnroll={handleEnroll}
-      />
+      <MobilePurchaseBar course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} />
 
       <LockedModal
         isOpen={lockedModalOpen}

@@ -48,6 +48,14 @@ function formatCourse(raw: Raw): PublicCourse {
           id: String(raw.instructor.id),
           name: raw.instructor.name,
           avatar: raw.instructor.avatar ?? null,
+          bio: raw.instructor.bio ?? raw.instructor.biography ?? null,
+          title: raw.instructor.title ?? raw.instructor.headline ?? null,
+          coursesCount: raw.instructor.coursesCount ?? raw.instructor.courses_count ?? null,
+          studentsCount: raw.instructor.studentsCount ?? raw.instructor.students_count ?? null,
+          rating: raw.instructor.rating ?? raw.instructor.average_rating ?? null,
+          socialLinks: Array.isArray(raw.instructor.socialLinks)
+            ? raw.instructor.socialLinks
+            : [],
         }
       : null,
     educationalStage: raw.educationalStage
