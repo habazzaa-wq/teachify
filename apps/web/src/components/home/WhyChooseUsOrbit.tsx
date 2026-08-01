@@ -359,7 +359,7 @@ function Plus({ color }: { color: string }) {
   );
 }
 
-function BackgroundDecor({ isDark, reduced }: { isDark: boolean; reduced: boolean }) {
+function BackgroundDecor({ isDark, reduced, active }: { isDark: boolean; reduced: boolean; active: boolean }) {
   const dot = isDark ? "rgba(255,255,255,0.05)" : "rgba(120,90,60,0.06)";
   const ring = isDark ? "rgba(255,255,255,0.07)" : "rgba(120,90,60,0.06)";
   const plus = isDark ? "rgba(255,255,255,0.14)" : "rgba(120,90,60,0.12)";
@@ -400,6 +400,7 @@ function BackgroundDecor({ isDark, reduced }: { isDark: boolean; reduced: boolea
 
       {/* floating accent dots */}
       {!reduced &&
+        active &&
         floatDots.map((p, i) => (
           <m.span
             key={i}
@@ -421,6 +422,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
   const isDark = theme === "dark";
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const sectionInView = useInView(ref, { margin: "0px" });
   const reduced = useReducedMotion() ?? false;
 
   // Guarantee the section becomes visible even if the IntersectionObserver
@@ -468,7 +470,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
       <div className="pointer-events-none absolute -end-10 bottom-0 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${secondary}0a, transparent 70%)` }} />
 
       {/* background decoration */}
-      <BackgroundDecor isDark={isDark} reduced={reduced} />
+      <BackgroundDecor isDark={isDark} reduced={reduced} active={sectionInView} />
 
       {/* title */}
       <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">

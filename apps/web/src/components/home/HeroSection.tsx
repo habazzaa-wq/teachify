@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import {
@@ -162,6 +162,20 @@ export function HeroSection() {
   const tenantName = tenant?.name ?? "";
   const isDark = theme === "dark";
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const [heroOffscreen, setHeroOffscreen] = useState(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroOffscreen(!(entry?.isIntersecting ?? true)),
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
   const title = hero?.title || `مرحباً بكم في ${tenantName}`;
   const social = hero?.socialLinks;
   const icons = hero?.icons;
@@ -178,7 +192,8 @@ export function HeroSection() {
 
   return (
     <section
-      className="hero-section relative w-full overflow-hidden"
+      ref={sectionRef}
+      className={`hero-section relative w-full overflow-hidden${heroOffscreen ? " hero-anim-paused" : ""}`}
       dir="rtl"
       style={{ minHeight: 560 }}
     >

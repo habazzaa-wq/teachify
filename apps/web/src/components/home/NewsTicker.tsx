@@ -61,6 +61,7 @@ export function NewsTicker({
   const [duration, setDuration] = useState(0);
   const [copies, setCopies] = useState(2);
   const [shift, setShift] = useState(0);
+  const [inView, setInView] = useState(true);
 
   const branding = tenant?.branding;
   const resolved = resolveTicker(data?.ticker, branding);
@@ -160,6 +161,19 @@ export function NewsTicker({
     };
   }, [enabled, config.position, collapsed, items]);
 
+  const mounted = !isLoading && enabled;
+  useEffect(() => {
+    if (!mounted) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry?.isIntersecting ?? true),
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [mounted]);
+
   if (isLoading || !enabled) {
     return null;
   }
@@ -182,6 +196,7 @@ export function NewsTicker({
           isBottom &&
             "fixed inset-x-0 bottom-0 z-40 shadow-[0_-8px_24px_-10px_rgba(0,0,0,0.4)]",
           collapsed && "pointer-events-none opacity-0",
+          !inView && "news-marquee-paused",
           className,
         )}
         dir="rtl"

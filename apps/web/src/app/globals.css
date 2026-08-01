@@ -729,6 +729,25 @@
   }
 }
 
+/* ───────── Pause animations while scrolling or when off-screen ───────── */
+.hero-anim-paused .hero-bg-orb,
+.hero-anim-paused .hero-bg-shape,
+.hero-anim-paused .hero-bg-math,
+.hero-anim-paused .hero-bg-dot,
+.hero-anim-paused .hero-bg-line,
+body.page-is-scrolling .hero-bg-orb,
+body.page-is-scrolling .hero-bg-shape,
+body.page-is-scrolling .hero-bg-math,
+body.page-is-scrolling .hero-bg-dot,
+body.page-is-scrolling .hero-bg-line {
+  animation-play-state: paused !important;
+}
+
+.news-marquee-paused .news-marquee-track,
+body.page-is-scrolling .news-marquee-track {
+  animation-play-state: paused !important;
+}
+
 /* ───────── Content-visibility: skip rendering offscreen sections ───────── */
 .section-lazy {
   content-visibility: auto;
