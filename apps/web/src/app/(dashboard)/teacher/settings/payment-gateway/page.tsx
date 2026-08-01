@@ -5,7 +5,8 @@ import { Save, KeyRound, ShieldCheck, Globe, RefreshCcw } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
   AppCard, AppCardHeader, AppCardTitle, AppCardDescription, AppCardContent,
-  AppInput, AppSelect, AppSelectItem, AppSwitch, AppLoadingState, AppErrorState,
+  AppInput, AppSelect, AppSelectValue, AppSelectTrigger, AppSelectContent,
+  AppSelectItem, AppSwitch, AppLoadingState, AppErrorState,
 } from "@/components/ui";
 import { usePaymentGatewaySettings, useUpdatePaymentGateway } from "@/features/payments/hooks";
 
@@ -96,8 +97,13 @@ function PaymentGatewaySettingsPage() {
                 البيئة
               </label>
               <AppSelect value={activeEnv} onValueChange={(v) => setEnvironment(v as "test" | "live")}>
-                <AppSelectItem value="test">وضع التجربة (Test)</AppSelectItem>
-                <AppSelectItem value="live">وضع الإنتاج (Live)</AppSelectItem>
+                <AppSelectTrigger>
+                  <AppSelectValue placeholder="اختر البيئة" />
+                </AppSelectTrigger>
+                <AppSelectContent>
+                  <AppSelectItem value="test">وضع التجربة (Test)</AppSelectItem>
+                  <AppSelectItem value="live">وضع الإنتاج (Live)</AppSelectItem>
+                </AppSelectContent>
               </AppSelect>
               <p className="text-xs text-muted-foreground">
                 استخدم وضع التجربة أثناء الاختبار، ثم بدّل إلى الإنتاج للدفع الحقيقي
