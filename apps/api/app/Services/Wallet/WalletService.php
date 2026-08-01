@@ -78,9 +78,22 @@ class WalletService
                 ->lockForUpdate()
                 ->first();
 
-            if ($rechargeCode->used_count >= $rechargeCode->max_uses) {
+            // Each code can be redeemed by a single student once only.
+            if ($rechargeCode->used_count >= 1) {
                 throw ValidationException::withMessages([
-                    'code' => ['تم استخدام كود الشحن بالكامل.'],
+                    'code' => ['تم استخدام كود الشحن من قبل.'],
+                ]);
+            }
+
+            // The same student cannot redeem the same code twice.
+            $alreadyUsed = WalletTransaction::query()
+                ->where('wallet_id', $wallet->id)
+                ->where('recharge_code_id', $rechargeCode->id)
+                ->exists();
+
+            if ($alreadyUsed) {
+                throw ValidationException::withMessages([
+                    'code' => ['لقد استخدمت كود الشحن هذا من قبل.'],
                 ]);
             }
 
@@ -118,7 +131,7 @@ class WalletService
     public function generate(Tenant $tenant, TenantUser $creator, array $data): RechargeCode
     {
         $amount = (float) $data['amount'];
-        $maxUses = max(1, (int) ($data['max_uses'] ?? 1));
+        $maxUses = 1; // Codes are single-use: one student, one redemption.
         $expiresAt = isset($data['expires_at']) && $data['expires_at']
             ? Carbon::parse($data['expires_at'])
             : null;

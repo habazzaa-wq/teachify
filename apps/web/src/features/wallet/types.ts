@@ -39,14 +39,12 @@ export interface RechargeCodeRecord {
 export interface RechargeCodeInput {
   code?: string | null;
   amount: number;
-  max_uses: number;
   expires_at?: string | null;
   is_active?: boolean;
 }
 
 export interface RechargeCodeGenerateInput {
   amount: number;
-  max_uses: number;
   expires_at?: string | null;
   is_active?: boolean;
   quantity?: number;

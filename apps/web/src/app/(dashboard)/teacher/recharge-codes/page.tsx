@@ -58,7 +58,6 @@ import type { RechargeCodeInput, RechargeCodeRecord } from "@/features/wallet/ty
 import { formatCurrency, formatRechargeCode } from "@/lib/format";
 
 const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
-const PRESET_USES = [1, 5, 10, 25, 100];
 
 function toLocalDate(value: string | null | undefined): string {
   if (!value) return "";
@@ -72,7 +71,7 @@ function toLocalDate(value: string | null | undefined): string {
 function codeStatus(item: RechargeCodeRecord): "active" | "inactive" {
   if (!item.is_active) return "inactive";
   if (item.expires_at && new Date(item.expires_at).getTime() < Date.now()) return "inactive";
-  if (item.used_count >= item.max_uses) return "inactive";
+  if (item.used_count >= 1) return "inactive";
   return "active";
 }
 
@@ -120,7 +119,6 @@ function GenerateCodesDialog({
   const generate = useGenerateRechargeCodes();
   const [amount, setAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
-  const [maxUses, setMaxUses] = useState<number>(1);
   const [quantity, setQuantity] = useState<number>(1);
   const [expiresAt, setExpiresAt] = useState("");
   const [error, setError] = useState("");
@@ -130,7 +128,6 @@ function GenerateCodesDialog({
   const reset = () => {
     setAmount(null);
     setCustomAmount("");
-    setMaxUses(1);
     setQuantity(1);
     setExpiresAt("");
     setError("");
@@ -144,7 +141,6 @@ function GenerateCodesDialog({
     generate.mutate(
       {
         amount: resolvedAmount,
-        max_uses: maxUses,
         expires_at: expiresAt ? `${expiresAt} 23:59:59` : undefined,
         quantity,
       },
@@ -200,37 +196,16 @@ function GenerateCodesDialog({
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">عدد مرات الاستخدام</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {PRESET_USES.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setMaxUses(value)}
-                    className={cn(
-                      "h-8 rounded-lg border text-xs font-semibold transition-all",
-                      maxUses === value
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:border-primary/40",
-                    )}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">عدد الأكواد</label>
-              <AppInput
-                type="number"
-                min={1}
-                max={100}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
-              />
-            </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">عدد الأكواد</label>
+            <AppInput
+              type="number"
+              min={1}
+              max={100}
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+            />
+            <p className="text-xs text-muted-foreground">كل كود يُستخدم مرة واحدة فقط بواسطة طالب واحد</p>
           </div>
 
           <div className="space-y-2">
@@ -275,11 +250,10 @@ function CodeFormDialog({
       ? {
           code: formatRechargeCode(initial.code),
           amount: Number(initial.amount),
-          max_uses: initial.max_uses,
           expires_at: toLocalDate(initial.expires_at) || null,
           is_active: initial.is_active,
         }
-      : { code: "", amount: 100, max_uses: 1, expires_at: null, is_active: true },
+      : { code: "", amount: 100, expires_at: null, is_active: true },
   );
 
   const saving = create.isPending || update.isPending;
@@ -288,7 +262,6 @@ function CodeFormDialog({
     const payload: RechargeCodeInput = {
       code: form.code ? form.code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : undefined,
       amount: Number(form.amount),
-      max_uses: form.max_uses,
       expires_at: form.expires_at ? `${form.expires_at} 23:59:59` : null,
       is_active: form.is_active,
     };
@@ -328,27 +301,16 @@ function CodeFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="mb-2 block text-sm font-medium">المبلغ <span className="text-destructive">*</span></label>
-              <AppInput
-                type="number"
-                min={1}
-                value={form.amount}
-                disabled={!!initial && initial.used_count > 0}
-                onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="mb-2 block text-sm font-medium">عدد مرات الاستخدام <span className="text-destructive">*</span></label>
-              <AppInput
-                type="number"
-                min={1}
-                value={form.max_uses}
-                disabled={!!initial && initial.used_count > 0}
-                onChange={(e) => setForm({ ...form, max_uses: Math.max(1, Number(e.target.value) || 1) })}
-              />
-            </div>
+          <div className="space-y-2">
+            <label className="mb-2 block text-sm font-medium">المبلغ <span className="text-destructive">*</span></label>
+            <AppInput
+              type="number"
+              min={1}
+              value={form.amount}
+              disabled={!!initial && initial.used_count > 0}
+              onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+            />
+            <p className="text-xs text-muted-foreground">الكود يُستخدم مرة واحدة فقط بواسطة طالب واحد</p>
           </div>
 
           <div className="space-y-2">
@@ -415,7 +377,7 @@ function GeneratedCodesDialog({
                   {formatRechargeCode(c.code)}
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
-                  {formatCurrency(c.amount)} • {c.max_uses} استخدام
+                  {formatCurrency(c.amount)} • استخدام واحد
                 </div>
               </div>
               <CopyCodeButton code={c.code} />
@@ -458,7 +420,7 @@ export default function RechargeCodesPage() {
   });
 
   const items = data?.data ?? [];
-  const totalValue = items.reduce((sum, c) => sum + Number(c.amount) * (c.max_uses - c.used_count), 0);
+  const totalValue = items.reduce((sum, c) => sum + (c.used_count >= 1 ? 0 : Number(c.amount)), 0);
   const totalUsed = items.reduce((sum, c) => sum + c.used_count, 0);
 
   const handleSearchChange = (value: string) => {
@@ -570,7 +532,7 @@ export default function RechargeCodesPage() {
             <div className="hidden grid-cols-[1.4fr_1fr_1.4fr_1fr_auto_auto] gap-4 border-b bg-muted/30 px-5 py-3 text-xs font-semibold text-muted-foreground lg:grid">
               <span>الكود</span>
               <span>المبلغ</span>
-              <span>الاستخدامات</span>
+              <span>الاستخدام</span>
               <span>تاريخ الانتهاء</span>
               <span>الحالة</span>
               <span className="text-end">الإجراءات</span>
@@ -579,7 +541,7 @@ export default function RechargeCodesPage() {
             <ul className="divide-y divide-border">
               {items.map((item) => {
                 const status = codeStatus(item);
-                const usedPct = Math.round((item.used_count / item.max_uses) * 100);
+                const used = item.used_count >= 1;
                 return (
                   <li
                     key={item.id}
@@ -602,13 +564,13 @@ export default function RechargeCodesPage() {
 
                     <div className="min-w-[120px]">
                       <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                        <span>{item.used_count} من {item.max_uses}</span>
-                        <span className="font-semibold">{usedPct}%</span>
+                        <span>{used ? "مستخدم" : "لم يُستخدم"}</span>
+                        <span className="font-semibold">{used ? "100%" : "0%"}</span>
                       </div>
                       <AppProgress
-                        value={item.used_count}
-                        max={item.max_uses}
-                        variant={usedPct >= 100 ? "destructive" : usedPct >= 80 ? "warning" : "default"}
+                        value={used ? 1 : 0}
+                        max={1}
+                        variant={used ? "destructive" : "default"}
                       />
                     </div>
 

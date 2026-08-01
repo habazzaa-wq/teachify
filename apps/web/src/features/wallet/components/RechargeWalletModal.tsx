@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet,
@@ -17,8 +17,6 @@ import { cn } from "@/lib/cn";
 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
-
-const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
 
 interface RechargeWalletModalProps {
   open: boolean;
@@ -40,8 +38,6 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
   const recharge = useRechargeWallet();
   const { data: walletData } = useWallet(true);
 
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
-  const [customAmount, setCustomAmount] = useState("");
   const [code, setCode] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -53,15 +49,7 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
 
   const balance = walletData?.balance ?? 0;
 
-  const amount = useMemo(() => {
-    if (selectedAmount !== null) return selectedAmount;
-    const parsed = Number(customAmount);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }, [selectedAmount, customAmount]);
-
   const resetForm = useCallback(() => {
-    setSelectedAmount(null);
-    setCustomAmount("");
     setCode("");
     setErrors({});
     setApiError(null);
@@ -70,32 +58,13 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
 
   const validateForm = useCallback((): FormErrors => {
     const next: FormErrors = {};
-    if (!amount || amount < 1) {
-      next.amount = "اختر مبلغاً أو أدخل مبلغاً صحيحاً";
-    } else if (amount > 1_000_000) {
-      next.amount = "المبلغ أكبر من الحد المسموح";
-    }
     if (!code.trim()) {
       next.code = "كود الشحن مطلوب";
     } else if (code.replace(/[^A-Za-z0-9]/g, "").length < 6) {
       next.code = "كود الشحن غير صالح";
     }
     return next;
-  }, [amount, code]);
-
-  const handleAmountPress = (value: number) => {
-    setSelectedAmount(value);
-    setCustomAmount("");
-    setErrors((prev) => ({ ...prev, amount: "" }));
-    setApiError(null);
-  };
-
-  const handleCustomAmountChange = (value: string) => {
-    setCustomAmount(value.replace(/[^\d.]/g, ""));
-    setSelectedAmount(null);
-    setErrors((prev) => ({ ...prev, amount: "" }));
-    setApiError(null);
-  };
+  }, [code]);
 
   const handleCodeChange = (value: string) => {
     setCode(value.toUpperCase().replace(/[^A-Z0-9]/g, ""));
@@ -239,7 +208,7 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
                     </div>
                     <h2 className="text-base font-bold text-foreground">شحن المحفظة بالكود</h2>
                     <p className="mt-1 text-xs text-muted-foreground/60">
-                      اختر المبلغ وأدخل كود الشحن لتفعيل رصيدك فوراً
+                      أدخل كود الشحن لتفعيل رصيدك فوراً
                     </p>
                   </div>
 
@@ -261,71 +230,6 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                    {/* Amount */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
-                        <Banknote className="h-3.5 w-3.5 text-muted-foreground/50" />
-                        المبلغ المطلوب شحنه
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {PRESET_AMOUNTS.map((value) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => handleAmountPress(value)}
-                            className={cn(
-                              "relative h-11 rounded-xl border text-sm font-bold transition-all duration-200",
-                              selectedAmount === value
-                                ? "text-white border-transparent scale-[1.02]"
-                                : "border-border/50 bg-background/70 text-foreground/80 hover:border-primary/40 hover:bg-primary/5",
-                            )}
-                            style={
-                              selectedAmount === value
-                                ? {
-                                    background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
-                                    boxShadow: `0 4px 14px ${primary}40`,
-                                  }
-                                : undefined
-                            }
-                          >
-                            {formatCurrency(value)}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="relative">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          dir="ltr"
-                          value={customAmount}
-                          onChange={(e) => handleCustomAmountChange(e.target.value)}
-                          placeholder="أو أدخل مبلغاً مخصصاً..."
-                          className={cn(
-                            inputClasses,
-                            "text-left ps-10",
-                            errors.amount && "border-red-400 focus:ring-red-400/30",
-                          )}
-                        />
-                        <span
-                          className="absolute start-3 top-1/2 -translate-y-1/2 text-xs font-semibold"
-                          style={{ color: primary }}
-                        >
-                          ج.م
-                        </span>
-                      </div>
-                      {errors.amount && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-xs text-red-500 flex items-center gap-1"
-                        >
-                          <span className="h-1 w-1 rounded-full bg-red-500 shrink-0" />
-                          {errors.amount}
-                        </motion.p>
-                      )}
-                    </div>
-
                     {/* Code */}
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
@@ -403,11 +307,7 @@ export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps)
                           <Wallet className="h-4 w-4 relative z-10" />
                         )}
                         <span className="relative z-10">
-                          {recharge.isPending
-                            ? "جارٍ شحن المحفظة..."
-                            : amount
-                              ? `شحن ${formatCurrency(amount)}`
-                              : "شحن المحفظة"}
+                          {recharge.isPending ? "جارٍ شحن المحفظة..." : "شحن المحفظة"}
                         </span>
                       </button>
                       <button

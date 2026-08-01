@@ -57,7 +57,6 @@ class RechargeCodeController extends Controller
         $validated = $request->validate([
             'code' => ['nullable', 'string', 'max:32'],
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
-            'max_uses' => ['required', 'integer', 'min:1', 'max:10000'],
             'expires_at' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -92,14 +91,13 @@ class RechargeCodeController extends Controller
         $validated = $request->validate([
             'code' => ['nullable', 'string', 'max:32'],
             'amount' => ['sometimes', 'numeric', 'min:1', 'max:1000000'],
-            'max_uses' => ['sometimes', 'integer', 'min:1', 'max:10000'],
             'expires_at' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
         // Only allow editing unused codes.
         if ($rechargeCode->used_count > 0) {
-            unset($validated['amount'], $validated['max_uses']);
+            unset($validated['amount']);
         }
 
         $data = $validated;
@@ -157,7 +155,6 @@ class RechargeCodeController extends Controller
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
-            'max_uses' => ['required', 'integer', 'min:1', 'max:10000'],
             'expires_at' => ['nullable', 'date'],
             'is_active' => ['sometimes', 'boolean'],
             'quantity' => ['sometimes', 'integer', 'min:1', 'max:100'],
