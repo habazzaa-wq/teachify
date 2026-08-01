@@ -64,6 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setTenantContext = useTenantStore((state) => state.setTenantContext);
   const clearTenant = useTenantStore((state) => state.clear);
 
+  const handleStaleSession = useCallback(() => {
+    clearAuth();
+    invalidateSession(queryClient);
+    if (!isPublicRoute(window.location.pathname)) {
+      clearTenant();
+      router.replace("/tenant-login");
+    }
+  }, [clearAuth, clearTenant, queryClient, router]);
+
   const refreshSession = useCallback(async () => {
     if (refreshingRef.current || !refreshToken) return;
     refreshingRef.current = true;
@@ -72,16 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await authService.refresh({ refresh_token: refreshToken });
       setAccessToken(result.access_token);
     } catch {
-      clearAuth();
-      clearTenant();
-      invalidateSession(queryClient);
-      if (!isPublicRoute(window.location.pathname)) {
-        router.replace("/tenant-login");
-      }
+      handleStaleSession();
     } finally {
       refreshingRef.current = false;
     }
-  }, [refreshToken, setAccessToken, clearAuth, clearTenant, queryClient, router]);
+  }, [refreshToken, setAccessToken, handleStaleSession]);
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
@@ -205,12 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      clearAuth();
-      clearTenant();
-      invalidateSession(queryClient);
-      if (!isPublicRoute(window.location.pathname)) {
-        router.replace("/tenant-login");
-      }
+      handleStaleSession();
     }
 
     function handleTokenExpired() {
@@ -228,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener(AUTH_EVENTS.unauthorized, handleUnauthorized);
       window.removeEventListener(AUTH_EVENTS.tokenExpired, handleTokenExpired);
     };
-  }, [clearAuth, clearTenant, queryClient, router, refreshSession]);
+  }, [handleStaleSession, refreshSession]);
 
   const value: AuthProviderValue = {
     status,
