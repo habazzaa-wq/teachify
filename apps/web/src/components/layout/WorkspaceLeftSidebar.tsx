@@ -20,6 +20,7 @@ import {
   GraduationCap,
   BookOpen,
   TicketCheck,
+  CreditCard,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -244,6 +245,13 @@ export function WorkspaceLeftSidebar() {
                 label="مظهر لوحة التحكم"
                 collapsed={leftSidebarCollapsed}
                 onClick={() => router.push("/teacher/settings/appearance")}
+              />
+              <StudioSidebarItem
+                icon={<CreditCard className="h-4 w-4" />}
+                label="بوابة الدفع"
+                active={pathname.startsWith("/teacher/settings/payment-gateway")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push("/teacher/settings/payment-gateway")}
               />
             </StudioSidebarSection>
 

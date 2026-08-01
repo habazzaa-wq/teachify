@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -10,12 +10,15 @@ import {
   Moon,
   Menu,
   GraduationCap,
+  CreditCard,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
 import { useUiStore } from "@/stores/ui.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { OnlineRechargeModal } from "@/features/wallet/components/OnlineRechargeModal";
+import { useRouter } from "next/navigation";
 
 const headerMotion = {
   initial: { y: -16, opacity: 0 },
@@ -29,6 +32,8 @@ export function WorkspaceHeader() {
   const setGlobalSearchOpen = useWorkspaceStore((s) => s.setGlobalSearchOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
   const { tenant } = useActiveTenant();
+  const router = useRouter();
+  const [rechargeOpen, setRechargeOpen] = useState(false);
 
   const tenantName = tenant?.name ?? "مساحة العمل";
 
@@ -128,14 +133,29 @@ export function WorkspaceHeader() {
               <span aria-hidden="true">U</span>
             </button>
           }
+          onSelect={(item) => {
+            if (item.value === "profile") {
+              router.push("/teacher/profile");
+            } else if (item.value === "settings") {
+              router.push("/teacher/settings");
+            } else if (item.value === "recharge") {
+              setRechargeOpen(true);
+            } else if (item.value === "logout") {
+              // Logout handled by the auth store/route logic elsewhere.
+            }
+          }}
           items={[
-            { label: "الملف الشخصي", icon: <Search className="h-4 w-4" /> },
-            { label: "الإعدادات", icon: <Search className="h-4 w-4" /> },
+            { value: "profile", label: "الملف الشخصي", icon: <Search className="h-4 w-4" /> },
+            { value: "settings", label: "الإعدادات", icon: <Search className="h-4 w-4" /> },
             { separator: true },
-            { label: "تسجيل الخروج", danger: true, icon: <Search className="h-4 w-4" /> },
+            { value: "recharge", label: "شحن المحفظة أونلاين", icon: <CreditCard className="h-4 w-4" /> },
+            { separator: true },
+            { value: "logout", label: "تسجيل الخروج", danger: true, icon: <Search className="h-4 w-4" /> },
           ]}
           align="end"
         />
+
+        <OnlineRechargeModal open={rechargeOpen} onClose={() => setRechargeOpen(false)} />
 
         {/* Mobile menu toggle */}
         <StudioButton

@@ -1,5 +1,7 @@
 import api from "@/services/api/axios";
 import type {
+  OnlinePaymentCreateResponse,
+  OnlinePaymentStatusResponse,
   RechargeCodeGenerateInput,
   RechargeCodeInput,
   RechargeCodeRecord,
@@ -27,6 +29,21 @@ export const walletService = {
 
   async recharge(code: string): Promise<RechargeResponse> {
     const { data } = await api.post<RechargeResponse>("/student/wallet/recharge", { code });
+    return data;
+  },
+
+  async createOnlinePayment(amount: number): Promise<OnlinePaymentCreateResponse> {
+    const { data } = await api.post<OnlinePaymentCreateResponse>(
+      "/student/wallet/online-recharge",
+      { amount },
+    );
+    return data;
+  },
+
+  async getOnlinePaymentStatus(reference: string): Promise<OnlinePaymentStatusResponse> {
+    const { data } = await api.get<OnlinePaymentStatusResponse>(
+      `/student/wallet/payments/${reference}`,
+    );
     return data;
   },
 };

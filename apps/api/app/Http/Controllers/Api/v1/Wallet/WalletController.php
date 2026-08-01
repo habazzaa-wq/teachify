@@ -5,14 +5,21 @@ namespace App\Http\Controllers\Api\v1\Wallet;
 use App\Http\Controllers\Controller;
 use App\Models\TenantUser;
 use App\Models\Wallet;
+use App\Models\WalletPayment;
+use App\Services\Payments\FawaterkService;
+use App\Services\Payments\PaymentGatewayService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class WalletController extends Controller
 {
-    public function __construct(private readonly WalletService $walletService)
-    {
+    public function __construct(
+        private readonly WalletService $walletService,
+        private readonly PaymentGatewayService $gatewayService,
+        private readonly FawaterkService $fawaterkService,
+    ) {
     }
 
     /**
@@ -74,6 +81,141 @@ class WalletController extends Controller
                 'balance' => $result['balance'],
                 'wallet' => $this->walletPayload($result['wallet']),
                 'transaction' => $result['transaction'],
+            ],
+        ]);
+    }
+
+    /**
+     * Create an online wallet top-up (Fawaterk invoice link) and return the payment URL.
+     */
+    public function createOnlinePayment(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+        ]);
+
+        $tenant = currentTenant();
+        $membership = app(TenantUser::class);
+        $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
+        $amount = (float) $validated['amount'];
+
+        $config = $this->gatewayService->requireConfig($tenant);
+
+        $reference = $this->gatewayService->generateReference();
+
+        $payment = WalletPayment::create([
+            'tenant_id' => $tenant->id,
+            'wallet_id' => $wallet->id,
+            'tenant_user_id' => $membership->id,
+            'reference' => $reference,
+            'amount' => $amount,
+            'currency' => 'EGP',
+            'status' => WalletPayment::STATUS_PENDING,
+            'provider' => PaymentGatewayService::PROVIDER,
+            'metadata' => ['requested_by_ip' => $request->ip()],
+        ]);
+
+        $user = $membership->user;
+        $fullName = $user?->name ?? $membership->phone ?? '';
+        $nameParts = array_values(array_filter(array_map('trim', explode(' ', (string) $fullName))));
+
+        $baseUrl = $request->schemeAndHttpHost();
+
+        $payload = [
+            'cartTotal' => $amount,
+            'currency' => 'EGP',
+            'customer' => [
+                'first_name' => $nameParts[0] ?? 'طالب',
+                'last_name' => $nameParts[1] ?? '',
+                'email' => $user?->email,
+                'phone' => $membership->phone,
+            ],
+            'cartItems' => [
+                [
+                    'name' => 'شحن محفظة الأكاديمية',
+                    'price' => (string) $amount,
+                    'quantity' => '1',
+                ],
+            ],
+            'sendEmail' => false,
+            'sendSMS' => false,
+            'payLoad' => ['reference' => $reference],
+            'redirectionUrls' => [
+                'successUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=success',
+                'failUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=failed',
+                'pendingUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=pending',
+                'webhookUrl' => $baseUrl . '/api/v1/payments/fawaterk/webhook_json',
+            ],
+        ];
+
+        try {
+            $result = $this->fawaterkService->createInvoiceLink($config, $payload);
+        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $e) {
+            $payment->update([
+                'status' => WalletPayment::STATUS_FAILED,
+                'failure_reason' => $e->getMessage(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'amount' => [$e->getMessage()],
+            ]);
+        }
+
+        if ($result['url'] === '') {
+            $payment->update([
+                'status' => WalletPayment::STATUS_FAILED,
+                'failure_reason' => 'لم ترجع بوابة الدفع رابط دفع صالح.',
+            ]);
+
+            throw ValidationException::withMessages([
+                'amount' => ['تعذر إنشاء رابط الدفع، حاول مرة أخرى.'],
+            ]);
+        }
+
+        $payment->update([
+            'provider_invoice_id' => $result['invoice_id'] !== null ? (string) $result['invoice_id'] : null,
+            'provider_invoice_key' => $result['invoice_key'],
+            'provider_payment_url' => $result['url'],
+        ]);
+
+        return response()->json([
+            'message' => 'تم إنشاء رابط الدفع بنجاح.',
+            'data' => [
+                'reference' => $reference,
+                'payment_url' => $result['url'],
+                'amount' => $amount,
+                'currency' => 'EGP',
+            ],
+        ], 201);
+    }
+
+    /**
+     * Get the status of one of the current user's online payments.
+     */
+    public function onlinePaymentStatus(string $reference): JsonResponse
+    {
+        $tenant = currentTenant();
+        $membership = app(TenantUser::class);
+
+        $payment = WalletPayment::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('reference', $reference)
+            ->where('tenant_user_id', $membership->id)
+            ->first();
+
+        if (! $payment) {
+            abort(404, 'عملية الدفع غير موجودة.');
+        }
+
+        return response()->json([
+            'data' => [
+                'reference' => $payment->reference,
+                'status' => $payment->status,
+                'amount' => (float) $payment->amount,
+                'currency' => $payment->currency,
+                'failure_reason' => $payment->failure_reason,
+                'paid_at' => $payment->paid_at?->toIso8601String(),
+                'wallet_balance' => (float) $payment->wallet->balance,
             ],
         ]);
     }

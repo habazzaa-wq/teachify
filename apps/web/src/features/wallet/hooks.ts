@@ -56,6 +56,12 @@ export function useRechargeWallet() {
   });
 }
 
+export function useCreateOnlinePayment() {
+  return useMutation({
+    mutationFn: (amount: number) => walletService.createOnlinePayment(amount),
+  });
+}
+
 export function useRechargeCodesList(params?: {
   search?: string;
   inactive?: boolean;

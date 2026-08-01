@@ -88,6 +88,8 @@ use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\SubjectController;
 use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
+use App\Http\Controllers\Api\v1\Payments\PaymentGatewayController;
+use App\Http\Controllers\Api\v1\Payments\FawaterkWebhookController;
 use App\Http\Controllers\Api\v1\Wallet\WalletController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -133,6 +135,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
+    Route::post('/payments/fawaterk/webhook_json', [FawaterkWebhookController::class, 'handle'])
+        ->middleware('throttle:60,1')
+        ->name('payments.fawaterk.webhook');
     Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
         ->where('path', '.*')
         ->middleware('throttle:120,1')
@@ -173,6 +178,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/student/wallet', [WalletController::class, 'me']);
         Route::get('/student/wallet/transactions', [WalletController::class, 'transactions']);
         Route::post('/student/wallet/recharge', [WalletController::class, 'recharge'])->middleware('throttle:20,1');
+        Route::post('/student/wallet/online-recharge', [WalletController::class, 'createOnlinePayment'])->middleware('throttle:20,1');
+        Route::get('/student/wallet/payments/{reference}', [WalletController::class, 'onlinePaymentStatus']);
+
+        // Teacher payment gateway settings
+        Route::get('/teacher/payment-gateway', [PaymentGatewayController::class, 'show']);
+        Route::put('/teacher/payment-gateway', [PaymentGatewayController::class, 'update']);
 
         Route::get('/courses/metrics', [CourseController::class, 'metrics']);
         Route::get('/courses/export', [CourseController::class, 'export']);

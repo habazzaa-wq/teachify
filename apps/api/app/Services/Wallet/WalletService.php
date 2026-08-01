@@ -6,6 +6,7 @@ use App\Models\RechargeCode;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\Wallet;
+use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -196,5 +197,72 @@ class WalletService
     public static function isValidCodeFormat(string $code): bool
     {
         return (bool) preg_match('/^[A-Za-z0-9]{6,32}$/', $code);
+    }
+
+    /**
+     * Credit a wallet from a successfully paid online payment.
+     *
+     * Idempotent: a payment is credited exactly once.
+     *
+     * @return array{wallet: Wallet, transaction: WalletTransaction, amount: float|string, balance: float|string, already_paid: bool}
+     */
+    public function creditOnlinePayment(Tenant $tenant, WalletPayment $payment): array
+    {
+        if ($payment->isPaid()) {
+            return [
+                'wallet' => $payment->wallet,
+                'transaction' => $payment->transactions()->firstOrNew(),
+                'amount' => $payment->amount,
+                'balance' => $payment->wallet->balance,
+                'already_paid' => true,
+            ];
+        }
+
+        [$wallet, $transaction] = DB::transaction(function () use ($tenant, $payment): array {
+            $payment = WalletPayment::query()
+                ->where('id', $payment->id)
+                ->lockForUpdate()
+                ->first();
+
+            // Guard against concurrent webhook deliveries.
+            if ($payment->isPaid()) {
+                return [$payment->wallet, $payment->transactions()->first()];
+            }
+
+            $wallet = Wallet::query()
+                ->where('id', $payment->wallet_id)
+                ->lockForUpdate()
+                ->first();
+
+            $newBalance = bcadd((string) $wallet->balance, (string) $payment->amount, 2);
+
+            $wallet->update(['balance' => $newBalance]);
+
+            $transaction = WalletTransaction::create([
+                'tenant_id' => $tenant->id,
+                'wallet_id' => $wallet->id,
+                'tenant_user_id' => $payment->tenant_user_id,
+                'wallet_payment_id' => $payment->id,
+                'type' => 'credit',
+                'amount' => $payment->amount,
+                'balance_after' => $newBalance,
+                'description' => 'شحن المحفظة أونلاين',
+            ]);
+
+            $payment->update([
+                'status' => WalletPayment::STATUS_PAID,
+                'paid_at' => now(),
+            ]);
+
+            return [$wallet->refresh(), $transaction];
+        });
+
+        return [
+            'wallet' => $wallet,
+            'transaction' => $transaction,
+            'amount' => $payment->amount,
+            'balance' => $wallet->balance,
+            'already_paid' => false,
+        ];
     }
 }

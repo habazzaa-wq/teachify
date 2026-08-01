@@ -15,6 +15,7 @@ class WalletTransaction extends Model
         'wallet_id',
         'tenant_user_id',
         'recharge_code_id',
+        'wallet_payment_id',
         'type',
         'amount',
         'balance_after',
@@ -42,5 +43,10 @@ class WalletTransaction extends Model
     public function rechargeCode(): BelongsTo
     {
         return $this->belongsTo(RechargeCode::class, 'recharge_code_id');
+    }
+
+    public function walletPayment(): BelongsTo
+    {
+        return $this->belongsTo(WalletPayment::class, 'wallet_payment_id');
     }
 }

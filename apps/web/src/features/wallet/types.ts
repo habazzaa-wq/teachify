@@ -59,3 +59,31 @@ export interface RechargeResponse {
     transaction: WalletTransaction;
   };
 }
+
+export type OnlinePaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "expired";
+
+export interface OnlinePaymentCreateResponse {
+  message: string;
+  data: {
+    reference: string;
+    payment_url: string;
+    amount: number;
+    currency: string;
+  };
+}
+
+export interface OnlinePaymentStatusResponse {
+  data: {
+    reference: string;
+    status: OnlinePaymentStatus;
+    amount: number;
+    currency: string;
+    failure_reason: string | null;
+    paid_at: string | null;
+    wallet_balance: number;
+  };
+}
