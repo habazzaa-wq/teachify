@@ -112,6 +112,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
                 Route::post('/logout', [TenantAuthController::class, 'logout']);
                 Route::get('/me', [TenantAuthController::class, 'me']);
+                Route::post('/change-password', [TenantAuthController::class, 'changePassword'])->middleware('throttle:10,1');
             });
         });
     });

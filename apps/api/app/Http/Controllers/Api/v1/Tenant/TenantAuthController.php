@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1\Tenant;
 
 use App\Events\Auth\LoginFailed;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\ChangePasswordRequest;
 use App\Http\Requests\Tenant\TenantLoginRequest;
 use App\Models\Tenant;
 use App\Models\TenantUser;
@@ -110,6 +111,35 @@ class TenantAuthController extends Controller
         $auth->logout($request->user());
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! Hash::check($request->input('current_password'), $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['كلمة المرور الحالية غير صحيحة.'],
+            ]);
+        }
+
+        $user->password = Hash::make($request->input('password'));
+        $user->save();
+
+        // Revoke all other sessions, keep the current one signed in.
+        $currentToken = $request->user()->currentAccessToken();
+        if ($currentToken) {
+            $user->tokens()->whereKeyNot($currentToken->id)->delete();
+        }
+
+        $this->audit->record('password_changed', [
+            'tenant_id' => currentTenant()->id,
+            'user_id' => $user->id,
+        ]);
+
+        return response()->json([
+            'message' => 'تم تغيير كلمة المرور بنجاح.',
+        ]);
     }
 
     public function refresh(Request $request, AuthenticationService $auth): JsonResponse

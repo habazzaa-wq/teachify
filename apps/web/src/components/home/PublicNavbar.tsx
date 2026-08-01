@@ -8,7 +8,7 @@ import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
-  LogOut, Settings, ChevronDown,
+  LogOut, Settings, ChevronDown, KeyRound,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -16,6 +16,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { PublicRegisterCard, RegisterSuccessOverlay } from "@/features/auth/components/PublicRegisterCard";
 import { PublicLoginCard } from "@/features/auth/components/PublicLoginCard";
+import { ChangePasswordModal } from "@/features/auth/components/ChangePasswordModal";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
 import { StudentProfileDrawer } from "@/features/student-profile/components/StudentProfileDrawer";
 import { cn } from "@/lib/cn";
@@ -190,6 +191,7 @@ export function PublicNavbar() {
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const setAuthTokens = useAuthStore((s) => s.setTokens);
@@ -491,6 +493,22 @@ export function PublicNavbar() {
                               <span className="relative z-10">الإعدادات</span>
                             </button>
 
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileDropdownOpen(false);
+                                setChangePasswordOpen(true);
+                              }}
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                            >
+                              <span
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
+                              />
+                              <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span className="relative z-10">تغيير كلمة المرور</span>
+                            </button>
+
                             <div className="my-1 mx-3 border-t" style={{ borderColor: `${primary}10` }} />
 
                             <button
@@ -590,6 +608,11 @@ export function PublicNavbar() {
       <StudentProfileDrawer
         open={profileDrawerOpen}
         onClose={() => setProfileDrawerOpen(false)}
+      />
+
+      <ChangePasswordModal
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
       />
     </>
   );
