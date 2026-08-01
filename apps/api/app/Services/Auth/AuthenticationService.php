@@ -28,14 +28,15 @@ class AuthenticationService
      *
      * @throws ValidationException
      */
-    public function login(Tenant $tenant, string $email, string $password): array
+    public function login(Tenant $tenant, string $identifier, string $password): array
     {
-        $normalizedEmail = $this->emails->normalize($email);
-        $user = User::query()->where('email', $normalizedEmail)->first();
+        $identifier = trim($identifier);
+
+        $user = $this->findUserByIdentifier($tenant, $identifier);
 
         if (! $user || ! Hash::check($password, $user->password)) {
-            event(new LoginFailed($tenant->id, $normalizedEmail));
-            $this->audit->record('login_failed', ['tenant_id' => $tenant->id, 'email' => $normalizedEmail]);
+            event(new LoginFailed($tenant->id, $identifier));
+            $this->audit->record('login_failed', ['tenant_id' => $tenant->id, 'identifier' => $identifier]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -44,7 +45,7 @@ class AuthenticationService
         $membership = $this->memberships->activeMembership($user, $tenant);
 
         if (! $membership) {
-            event(new LoginFailed($tenant->id, $normalizedEmail, $user->id));
+            event(new LoginFailed($tenant->id, $identifier, $user->id));
             $this->audit->record('login_rejected_membership', ['tenant_id' => $tenant->id, 'user_id' => $user->id]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
@@ -75,6 +76,33 @@ class AuthenticationService
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
         ];
+    }
+
+    /**
+     * Resolve the user by email or phone number.
+     *
+     * Phone numbers are matched against the tenant-scoped membership first
+     * (public student registrations store the phone on tenant_users), then
+     * fall back to the global user record.
+     */
+    private function findUserByIdentifier(Tenant $tenant, string $identifier): ?User
+    {
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $normalizedEmail = $this->emails->normalize($identifier);
+
+            return User::query()->where('email', $normalizedEmail)->first();
+        }
+
+        $membership = TenantUser::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('phone', $identifier)
+            ->first();
+
+        if ($membership) {
+            return $membership->user;
+        }
+
+        return User::query()->where('phone', $identifier)->first();
     }
 
     /**

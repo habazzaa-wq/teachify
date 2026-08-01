@@ -14,7 +14,8 @@ class TenantLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required_without:phone', 'nullable', 'email', 'max:255'],
+            'phone' => ['required_without:email', 'nullable', 'string', 'max:50'],
             'password' => ['required', 'string', 'max:255'],
             'remember' => ['boolean'],
         ];

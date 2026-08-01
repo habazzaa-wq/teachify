@@ -18,7 +18,20 @@ import { ErrorMessage, type NoticeKind } from "./error-message";
 import { SuccessState } from "./success-state";
 
 const schema = z.object({
-  email: z.string().min(1, "البريد الإلكتروني مطلوب").max(255).email("بريد إلكتروني غير صحيح"),
+  email: z
+    .string()
+    .min(1, "البريد الإلكتروني أو رقم الهاتف مطلوب")
+    .max(255)
+    .refine(
+      (value) => {
+        const trimmed = value.trim();
+        if (trimmed.includes("@")) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+        }
+        return /^[\d+\s()-]{7,20}$/.test(trimmed);
+      },
+      { message: "أدخل بريداً إلكترونياً أو رقم هاتف صحيحاً" },
+    ),
   password: z.string().min(1, "كلمة المرور مطلوبة").max(255),
   remember: z.boolean().optional(),
 });
@@ -77,11 +90,14 @@ function LoginForm() {
   );
 
   const mutation = useMutation({
-    mutationFn: (data: SchemaType) =>
-      login({
-        email: data.email,
+    mutationFn: (data: SchemaType) => {
+      const raw = data.email.trim();
+      const isPhone = !raw.includes("@");
+      return login({
+        ...(isPhone ? { phone: raw } : { email: raw.toLowerCase() }),
         password: data.password,
-      }),
+      });
+    },
     onSuccess: () => {
       setDone(true);
       setTimeout(() => {
@@ -113,7 +129,7 @@ function LoginForm() {
     setAlert(null);
     try {
       await mutation.mutateAsync({
-        email: values.email.trim().toLowerCase(),
+        email: values.email,
         password: values.password,
         remember: values.remember,
       });
@@ -179,17 +195,17 @@ function LoginForm() {
                 : "text-muted-foreground/60",
           )}
         >
-          البريد الإلكتروني
+          البريد الإلكتروني أو رقم الهاتف
         </label>
         <div className="relative">
           <input
             {...register("email")}
             id="email"
-            type="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="username"
             dir="ltr"
             disabled={mutation.isPending}
-            placeholder="name@example.com"
+            placeholder="name@example.com أو 01XXXXXXXXX"
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? "email-error" : undefined}
             onFocus={() => handleFocus("email")}

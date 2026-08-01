@@ -40,7 +40,9 @@ class TenantAuthController extends Controller
 
         $remember = $request->boolean('remember', false);
 
-        $result = $auth->login($tenant, $request->input('email'), $request->input('password'));
+        $identifier = $request->input('email') ?? $request->input('phone') ?? '';
+
+        $result = $auth->login($tenant, $identifier, $request->input('password'));
 
         // Re-apply remember me preference
         Auth::login($result['user'], $remember);
