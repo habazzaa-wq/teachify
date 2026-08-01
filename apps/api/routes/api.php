@@ -73,6 +73,7 @@ use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
@@ -119,6 +120,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
+    Route::post('/public/register', [PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
