@@ -19,6 +19,7 @@ import {
   Award,
   GraduationCap,
   BookOpen,
+  TicketCheck,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -208,6 +209,13 @@ export function WorkspaceLeftSidebar() {
                 icon={<Layout className="h-4 w-4" />}
                 label="الطلاب"
                 collapsed={leftSidebarCollapsed}
+              />
+              <StudioSidebarItem
+                icon={<TicketCheck className="h-4 w-4" />}
+                label="أكواد الشحن"
+                active={pathname.startsWith("/teacher/recharge-codes")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.dashboardRechargeCodes)}
               />
             </StudioSidebarSection>
 

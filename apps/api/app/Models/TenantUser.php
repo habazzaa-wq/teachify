@@ -149,6 +149,11 @@ class TenantUser extends Model
         return $this->hasOne(LearnerAnalytics::class);
     }
 
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class, 'tenant_user_id');
+    }
+
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);

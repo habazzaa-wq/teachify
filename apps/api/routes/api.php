@@ -87,6 +87,8 @@ use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\SubjectController;
 use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
+use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
+use App\Http\Controllers\Api\v1\Wallet\WalletController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -166,6 +168,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+
+        // Student wallet (self-service)
+        Route::get('/student/wallet', [WalletController::class, 'me']);
+        Route::get('/student/wallet/transactions', [WalletController::class, 'transactions']);
+        Route::post('/student/wallet/recharge', [WalletController::class, 'recharge'])->middleware('throttle:20,1');
 
         Route::get('/courses/metrics', [CourseController::class, 'metrics']);
         Route::get('/courses/export', [CourseController::class, 'export']);
@@ -427,6 +434,11 @@ Route::prefix('v1')->group(function () {
 
         Route::apiResource('teacher/subjects', SubjectController::class)->names('teacher.subjects');
         Route::post('/teacher/subjects/reorder', [SubjectController::class, 'reorder']);
+
+        // Teacher recharge codes (wallet top-ups)
+        Route::apiResource('teacher/recharge-codes', RechargeCodeController::class)->names('teacher.recharge-codes');
+        Route::post('/teacher/recharge-codes/generate', [RechargeCodeController::class, 'generate']);
+        Route::patch('/teacher/recharge-codes/{rechargeCode}/status', [RechargeCodeController::class, 'toggleStatus']);
 
         Route::get('/domains', [TenantDomainController::class, 'index']);
         Route::post('/domains', [TenantDomainController::class, 'store']);

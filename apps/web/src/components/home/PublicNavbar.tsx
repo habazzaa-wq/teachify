@@ -8,7 +8,7 @@ import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
-  LogOut, Settings, ChevronDown, KeyRound,
+  LogOut, Settings, ChevronDown, KeyRound, Wallet,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -19,6 +19,8 @@ import { PublicLoginCard } from "@/features/auth/components/PublicLoginCard";
 import { ChangePasswordModal } from "@/features/auth/components/ChangePasswordModal";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
 import { StudentProfileDrawer } from "@/features/student-profile/components/StudentProfileDrawer";
+import { WalletBalanceBadge } from "@/features/wallet/components/WalletBalanceBadge";
+import { RechargeWalletModal } from "@/features/wallet/components/RechargeWalletModal";
 import { cn } from "@/lib/cn";
 
 const primary = "#D87B63";
@@ -192,6 +194,7 @@ export function PublicNavbar() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [rechargeWalletOpen, setRechargeWalletOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const setAuthTokens = useAuthStore((s) => s.setTokens);
@@ -379,17 +382,19 @@ export function PublicNavbar() {
               <div className="flex items-center gap-1 sm:gap-2">
                 {isLoggedIn ? (
                   <div className="relative" ref={dropdownRef}>
-                    <m.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 group"
-                      style={{
-                        border: `1px solid ${profileDropdownOpen ? primary : `${primary}30`}`,
-                        backgroundColor: profileDropdownOpen ? `${primary}15` : `${primary}08`,
-                        boxShadow: profileDropdownOpen ? `0 4px 20px ${primary}30` : undefined,
-                      }}
-                    >
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />
+                      <m.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                        className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 group"
+                        style={{
+                          border: `1px solid ${profileDropdownOpen ? primary : `${primary}30`}`,
+                          backgroundColor: profileDropdownOpen ? `${primary}15` : `${primary}08`,
+                          boxShadow: profileDropdownOpen ? `0 4px 20px ${primary}30` : undefined,
+                        }}
+                      >
                       <div
                         className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold overflow-hidden"
                         style={{ backgroundColor: primary }}
@@ -414,6 +419,7 @@ export function PublicNavbar() {
                         <ChevronDown className="h-4 w-4 text-muted-foreground/60 hidden sm:block" />
                       </m.div>
                     </m.button>
+                    </div>
 
                     <AnimatePresence>
                       {profileDropdownOpen && (
@@ -507,6 +513,22 @@ export function PublicNavbar() {
                               />
                               <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">تغيير كلمة المرور</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileDropdownOpen(false);
+                                setRechargeWalletOpen(true);
+                              }}
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                            >
+                              <span
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
+                              />
+                              <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span className="relative z-10">شحن المحفظة بالكود</span>
                             </button>
 
                             <div className="my-1 mx-3 border-t" style={{ borderColor: `${primary}10` }} />
@@ -613,6 +635,11 @@ export function PublicNavbar() {
       <ChangePasswordModal
         open={changePasswordOpen}
         onClose={() => setChangePasswordOpen(false)}
+      />
+
+      <RechargeWalletModal
+        open={rechargeWalletOpen}
+        onClose={() => setRechargeWalletOpen(false)}
       />
     </>
   );
