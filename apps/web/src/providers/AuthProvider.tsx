@@ -30,6 +30,19 @@ function invalidateSession(queryClient: QueryClient): void {
   queryClient.clear();
 }
 
+function isPublicRoute(pathname: string): boolean {
+  return (
+    pathname === routes.home ||
+    pathname === routes.publicCourse ||
+    pathname.startsWith(`${routes.publicCourse}/`) ||
+    pathname.startsWith("/stages") ||
+    pathname === routes.tenantLogin ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/tenant-not-found"
+  );
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -62,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuth();
       clearTenant();
       invalidateSession(queryClient);
-      router.replace("/tenant-login");
+      if (!isPublicRoute(window.location.pathname)) {
+        router.replace("/tenant-login");
+      }
     } finally {
       refreshingRef.current = false;
     }
@@ -193,7 +208,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuth();
       clearTenant();
       invalidateSession(queryClient);
-      router.replace("/tenant-login");
+      if (!isPublicRoute(window.location.pathname)) {
+        router.replace("/tenant-login");
+      }
     }
 
     function handleTokenExpired() {
