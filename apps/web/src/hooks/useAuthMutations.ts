@@ -9,10 +9,12 @@ import { toast } from "sonner";
 import type { ApiError } from "@/types/common.types";
 import type { LoginRequest } from "@/types/auth.types";
 import { routes } from "@/constants/routes";
+import { useTenantStore } from "@/stores/tenant.store";
 
 /**
  * Login mutation. Wires CSRF → /auth/login → /me resolution via the AuthProvider.
  * On success it redirects to the dashboard and invalidates the session cache.
+ * Students land on their own dashboard; every other role keeps the teacher panel.
  */
 export function useLogin() {
   const { login } = useAuth();
@@ -23,7 +25,9 @@ export function useLogin() {
     mutationFn: (credentials: LoginRequest) => login(credentials),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.all });
-      router.replace(routes.dashboard);
+      const roles = useTenantStore.getState().roles;
+      const isStudent = roles.some((role) => role.slug === "student");
+      router.replace(isStudent ? routes.studentDashboard : routes.dashboard);
     },
     onError: (error: ApiError) => {
       toast.error(error.message);

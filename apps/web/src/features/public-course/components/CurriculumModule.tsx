@@ -6,6 +6,7 @@ import { ChevronDown, Layers, GraduationCap, Clock, BookOpen, Lock } from "lucid
 import { cn } from "@/lib/cn";
 import { LessonRow } from "./LessonRow";
 import { SubscribeButton } from "./primitives";
+import { ExamEntryCard } from "@/features/exam-entry/components/ExamEntryCard";
 import { getModuleStats, formatDuration } from "../utils";
 import { LOCKED_GRADIENT } from "../brand";
 import type { PublicCourseModule, PublicCourseSection } from "../types";
@@ -292,13 +293,19 @@ function SectionAccordionInner({
             <div className="space-y-0.5 border-t border-border/20 px-1 py-1.5">
               {lessons.length > 0 ? (
                 lessons.map((lesson) => (
-                  <LessonRow
-                    key={lesson.id}
-                    lesson={lesson}
-                    isEnrolled={isEnrolled}
-                    onLockedClick={onLockedClick}
-                    isPreview={section.freePreview}
-                  />
+                  <div key={lesson.id}>
+                    <LessonRow
+                      lesson={lesson}
+                      isEnrolled={isEnrolled}
+                      onLockedClick={onLockedClick}
+                      isPreview={section.freePreview}
+                    />
+                    {isEnrolled && lesson.examId && (
+                      <div className="px-1 pb-1.5 pt-1.5">
+                        <ExamEntryCard lessonId={lesson.id} enabled={isEnrolled} />
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
                 <p className="px-3 py-2 text-[11px] text-muted-foreground/50">

@@ -30,6 +30,8 @@ export const routes = {
   dashboardProfile: "/teacher/profile",
   dashboardHelp: "/teacher/help",
   dashboardSettings: "/teacher/settings",
+  // Student control panel (learner dashboard) — under /student/
+  studentDashboard: "/student/dashboard",
   homepageNews: "/teacher/homepage/news",
   homepageHero: "/teacher/homepage/hero",
   homepageWhyChooseUs: "/teacher/homepage/why-choose-us",
