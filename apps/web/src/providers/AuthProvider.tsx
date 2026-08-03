@@ -24,10 +24,32 @@ interface AuthProviderValue {
 
 const AuthContext = createContext<AuthProviderValue | null>(null);
 
+/**
+ * Public, user-independent query keys that must survive session invalidation
+ * so public pages (hero, news, stages, ...) don't flash a fallback/refetch
+ * when a guest session 401s or an expired token is cleared.
+ */
+const PUBLIC_QUERY_KEYS: readonly (readonly string[])[] = [
+  ["hero", "public"],
+  ["news", "public"],
+  ["news", "ticker"],
+  ["stages", "public"],
+  ["whyChooseUs", "public"],
+  ["homepage-courses", "public"],
+];
+
+function isPublicQueryKey(queryKey: readonly unknown[]): boolean {
+  return PUBLIC_QUERY_KEYS.some(
+    (key) => key.length === queryKey.length && key.every((part, i) => part === queryKey[i]),
+  );
+}
+
 function invalidateSession(queryClient: QueryClient): void {
   queryClient.removeQueries({ queryKey: authKeys.me() });
   queryClient.removeQueries({ queryKey: authKeys.all });
-  queryClient.clear();
+  queryClient.removeQueries({
+    predicate: (query) => !isPublicQueryKey(query.queryKey),
+  });
 }
 
 function isPublicRoute(pathname: string): boolean {
