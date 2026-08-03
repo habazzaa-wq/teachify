@@ -19,6 +19,17 @@ import type {
   PublicCourseModule,
   PublicCourseSection,
 } from "./types";
+import { formatCurrency } from "@/lib/format";
+
+/**
+ * Price label for a course. Prices are always displayed in EGP (جنيه مصري)
+ * regardless of the stored currency, matching the wallet currency.
+ */
+export function formatCoursePrice(
+  amount: number | string | null | undefined,
+): string {
+  return formatCurrency(amount);
+}
 
 /** Content-type → icon/label/color mapping used across the curriculum. */
 export interface LessonTypeConfig {

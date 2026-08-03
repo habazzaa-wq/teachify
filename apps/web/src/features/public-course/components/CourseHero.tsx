@@ -123,7 +123,7 @@ function CourseHeroInner({
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice - course.discountPrice!) / originalPrice) * 100)
     : 0;
-  const currency = course.currency ?? "ر.س";
+  const currency = "ج.م";
 
   const coverSrc = course.coverImage || course.thumbnail;
 

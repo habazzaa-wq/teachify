@@ -191,4 +191,21 @@ export const publicCourseService = {
       return { enrolled: false, enrollment: null };
     }
   },
+
+  async purchaseCourse(slug: string): Promise<{
+    message: string;
+    enrolled: boolean;
+    amount: number;
+    balance: number;
+    enrollment: { id: string; status: string } | null;
+  }> {
+    const { data } = await api.post(`/public/courses/${slug}/enroll`);
+    return {
+      message: data.message,
+      enrolled: data.enrolled ?? true,
+      amount: data.amount ?? 0,
+      balance: data.balance ?? 0,
+      enrollment: data.enrollment ?? null,
+    };
+  },
 };

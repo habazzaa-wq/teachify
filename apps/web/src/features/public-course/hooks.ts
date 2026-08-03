@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicCourseService } from "./services";
 import { PUBLIC_COURSE_QUERY_KEY } from "./constants";
 
@@ -37,5 +37,25 @@ export function useEnrollmentCheck(slug: string | null) {
     queryFn: () => publicCourseService.checkEnrollment(slug!),
     enabled: !!slug,
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function usePurchaseCourse(slug: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => publicCourseService.purchaseCourse(slug!),
+    onSuccess: (data) => {
+      if (data.enrolled && slug) {
+        queryClient.setQueryData([PUBLIC_COURSE_QUERY_KEY, "enrollment", slug], {
+          enrolled: true,
+          enrollment: data.enrollment ?? null,
+        });
+        queryClient.invalidateQueries({
+          queryKey: [PUBLIC_COURSE_QUERY_KEY, "detail", slug],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    },
   });
 }

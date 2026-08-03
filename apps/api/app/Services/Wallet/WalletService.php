@@ -2,18 +2,103 @@
 
 namespace App\Services\Wallet;
 
+use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\RechargeCode;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\Wallet;
 use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
+use App\Services\Learning\EnrollmentService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class WalletService
 {
+    /**
+     * Purchase a course with the wallet balance and enroll the student.
+     *
+     * Idempotent guard: the student cannot be charged twice for the same course
+     * because an active enrollment is created before any balance is deducted.
+     *
+     * @return array{
+     *     enrollment: CourseEnrollment,
+     *     transaction: ?WalletTransaction,
+     *     amount: float,
+     *     balance: float,
+     * }
+     */
+    public function purchaseCourse(
+        Tenant $tenant,
+        Course $course,
+        TenantUser $student,
+        EnrollmentService $enrollments,
+    ): array {
+        if ($course->tenant_id !== $tenant->id) {
+            throw ValidationException::withMessages([
+                'course' => ['الدورة غير صالحة لهذه الأكاديمية.'],
+            ]);
+        }
+
+        if ($course->status !== 'published' || $course->visibility !== 'public') {
+            throw ValidationException::withMessages([
+                'course' => ['هذه الدورة غير متاحة للشراء حالياً.'],
+            ]);
+        }
+
+        $amount = $course->pricing_type === 'free'
+            ? 0.0
+            : (float) ($course->discount_price ?? $course->price_amount ?? 0);
+
+        return DB::transaction(function () use ($tenant, $course, $student, $enrollments, $amount): array {
+            $wallet = null;
+            if ($amount > 0) {
+                $wallet = $this->getOrCreateWallet($tenant, $student);
+                $wallet = Wallet::query()->where('id', $wallet->id)->lockForUpdate()->first();
+
+                if (bccomp((string) $wallet->balance, (string) $amount, 2) < 0) {
+                    throw ValidationException::withMessages([
+                        'balance' => ['رصيد المحفظة غير كافٍ لشراء هذه الدورة.'],
+                    ]);
+                }
+            }
+
+            // Enroll before charging so an already-enrolled student is never debited.
+            $enrollment = $enrollments->enrollStudent($tenant, $course, $student, 'active', [
+                'purchased_at' => now()->toIso8601String(),
+                'amount' => $amount,
+                'currency' => 'EGP',
+                'payment_method' => $amount > 0 ? 'wallet' : 'free',
+            ]);
+
+            $transaction = null;
+            if ($amount > 0) {
+                $newBalance = bcsub((string) $wallet->balance, (string) $amount, 2);
+
+                $wallet->update(['balance' => $newBalance]);
+
+                $transaction = WalletTransaction::create([
+                    'tenant_id' => $tenant->id,
+                    'wallet_id' => $wallet->id,
+                    'tenant_user_id' => $student->id,
+                    'type' => 'debit',
+                    'amount' => $amount,
+                    'balance_after' => $newBalance,
+                    'description' => 'شراء دورة: '.$course->title,
+                ]);
+            }
+
+            return [
+                'enrollment' => $enrollment,
+                'transaction' => $transaction,
+                'amount' => $amount,
+                'balance' => $wallet ? (float) $wallet->refresh()->balance : 0.0,
+            ];
+        });
+    }
+
     /**
      * Get or lazily create a wallet for the given student membership.
      */

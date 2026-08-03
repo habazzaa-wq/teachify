@@ -334,7 +334,7 @@ class ProductionCourseSeeder extends Seeder
                 'visibility' => 'public',
                 'pricing_type' => $definition['pricing_type'],
                 'price_amount' => $definition['price_amount'],
-                'price_currency' => 'SAR',
+                'price_currency' => 'EGP',
                 'discount_price' => $definition['discount_price'],
                 'enrollment_limit' => $definition['enrollment_limit'],
                 'certificate_enabled' => $definition['certificate_enabled'],

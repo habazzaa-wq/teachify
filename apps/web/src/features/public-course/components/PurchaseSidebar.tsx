@@ -49,7 +49,7 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = course.currency ?? "ر.س";
+  const currency = "ج.م";
 
   const discountPercent = useMemo(() => {
     if (!hasDiscount || !originalPrice || !course.discountPrice) return 0;

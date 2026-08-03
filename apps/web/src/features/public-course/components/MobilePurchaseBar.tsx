@@ -20,7 +20,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
   const hasDiscount = !isFree && originalPrice > displayPrice && displayPrice > 0;
-  const currency = course.currency ?? "ر.س";
+  const currency = "ج.م";
 
   const discountPercent = useMemo(
     () =>

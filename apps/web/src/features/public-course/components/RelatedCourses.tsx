@@ -25,7 +25,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = course.currency ?? "ر.س";
+  const currency = "ج.م";
   const diffColor = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
 
   return (

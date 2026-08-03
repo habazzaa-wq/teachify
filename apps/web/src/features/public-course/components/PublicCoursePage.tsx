@@ -15,7 +15,9 @@ import { RelatedCourses } from "./RelatedCourses";
 import { PurchaseSidebar } from "./PurchaseSidebar";
 import { MobilePurchaseBar } from "./MobilePurchaseBar";
 import { LockedModal } from "./LockedModal";
+import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useCurrentUser } from "@/hooks/useAuthStatus";
 
 interface Props {
   slug: string;
@@ -46,7 +48,9 @@ function CoursePageSkeleton() {
 
 export function PublicCoursePage({ slug }: Props) {
   const router = useRouter();
+  const { isAuthenticated } = useCurrentUser();
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
@@ -56,8 +60,16 @@ export function PublicCoursePage({ slug }: Props) {
   const isEnrolled = enrollment?.enrolled ?? false;
 
   const handleEnroll = useCallback(() => {
-    router.push("/tenant-login");
-  }, [router]);
+    if (isEnrolled) {
+      router.push("/student/dashboard");
+      return;
+    }
+    if (!isAuthenticated) {
+      router.push("/tenant-login");
+      return;
+    }
+    setPurchaseModalOpen(true);
+  }, [isEnrolled, isAuthenticated, router]);
 
   const handleLogin = useCallback(() => {
     router.push("/tenant-login");
@@ -142,6 +154,12 @@ export function PublicCoursePage({ slug }: Props) {
         onClose={() => setLockedModalOpen(false)}
         onEnroll={handleEnroll}
         onLogin={handleLogin}
+      />
+
+      <PurchaseCourseModal
+        open={purchaseModalOpen}
+        onClose={() => setPurchaseModalOpen(false)}
+        course={course}
       />
     </div>
   );

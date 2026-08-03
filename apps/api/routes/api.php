@@ -76,6 +76,7 @@ use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseController;
+use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
@@ -157,6 +158,7 @@ Route::prefix('v1')->group(function () {
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
         Route::get('/public/courses/{slug}/enrollment', [PublicEnrollmentCheckController::class, 'show']);
+        Route::post('/public/courses/{slug}/enroll', [PublicCoursePurchaseController::class, 'store'])->middleware('throttle:10,1');
     });
 
     Route::prefix('auth')->group(function () {

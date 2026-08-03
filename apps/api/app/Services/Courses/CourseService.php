@@ -46,7 +46,7 @@ class CourseService
                 'duration' => $data['duration'] ?? null,
                 'pricing_type' => $data['pricing_type'] ?? 'free',
                 'price_amount' => $data['price_amount'] ?? null,
-                'price_currency' => $data['price_currency'] ?? null,
+                'price_currency' => $data['price_currency'] ?? 'EGP',
                 'discount_price' => $data['discount_price'] ?? null,
                 'educational_stage_id' => $data['educational_stage_id'] ?? null,
                 'subject_id' => $data['subject_id'] ?? null,
