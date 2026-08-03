@@ -154,14 +154,16 @@ class StudentDashboardTest extends TestCase
         $this->assertTrue($calendarItems->contains('course_ends'));
     }
 
-    public function test_dashboard_is_forbidden_for_non_student_members(): void
+    public function test_active_member_can_access_their_own_dashboard(): void
     {
         $tenant = Tenant::factory()->create();
         $admin = $this->memberWithRole($tenant, 'admin');
 
         Sanctum::actingAs($admin->user);
         $this->getJson('/api/v1/student/dashboard', $this->tenantHeader($tenant))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertJsonPath('data.student.name', $admin->user->name)
+            ->assertJsonPath('data.stats.enrolledCoursesCount', 0);
     }
 
     public function test_dashboard_returns_empty_state_for_student_without_activity(): void
