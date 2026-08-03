@@ -692,7 +692,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="mb-6 max-w-lg text-center text-lg font-extrabold leading-relaxed sm:text-xl lg:text-2xl"
+            className="mb-6 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
             style={{ color: secondary, fontFamily: "'Cairo', sans-serif" }}
           >
             {hero.subtitle}
