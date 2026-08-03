@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
-import type { PublicCourse, PublicCourseModule, EnrollmentCheck, RelatedCourse } from "./types";
+import type { PublicCourse, PublicCourseModule, RelatedCourse } from "./types";
 
 // Raw API response shape (untyped from Laravel)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -223,10 +223,5 @@ export const publicCourseServerService = {
     } catch {
       return [];
     }
-  },
-
-  async checkEnrollment(_slug: string): Promise<EnrollmentCheck> {
-    // Server-side: can't auth users without a token, return not-enrolled
-    return { enrolled: false, enrollment: null };
   },
 };

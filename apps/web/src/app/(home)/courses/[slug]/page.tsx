@@ -54,10 +54,6 @@ export default async function CourseSlugPage({ params }: PageProps) {
       queryKey: [PUBLIC_COURSE_QUERY_KEY, "related", slug],
       queryFn: () => publicCourseServerService.getRelated(slug),
     }),
-    queryClient.prefetchQuery({
-      queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug],
-      queryFn: () => publicCourseServerService.checkEnrollment(slug),
-    }),
   ]);
 
   return (

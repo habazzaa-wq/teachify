@@ -10,6 +10,7 @@ import {
   useEnrollmentCheck,
 } from "@/features/public-course/hooks";
 import { COURSE_FAQS_DEFAULT } from "@/features/public-course/constants";
+import { useCurrentUser } from "@/hooks/useAuthStatus";
 import type { PublicCourse, PublicCourseModule } from "@/features/public-course/types";
 import { HeroSection } from "./HeroSection";
 import { FeaturesBar } from "./FeaturesBar";
@@ -111,10 +112,11 @@ function FaqSection() {
 
 export function CourseDetailPage({ slug }: CourseDetailPageProps) {
   const [activeTab, setActiveTab] = useState("content");
+  const { isAuthenticated } = useCurrentUser();
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
-  const { data: enrollment } = useEnrollmentCheck(slug);
+  const { data: enrollment } = useEnrollmentCheck(slug, isAuthenticated);
 
   const isEnrolled = enrollment?.enrolled ?? false;
 

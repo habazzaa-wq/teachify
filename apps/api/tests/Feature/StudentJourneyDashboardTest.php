@@ -110,6 +110,46 @@ class StudentJourneyDashboardTest extends TestCase
             ->assertJsonPath('data.stats.enrolledCoursesCount', 1);
     }
 
+    public function test_enrollment_check_reports_true_after_purchase(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->seedTenantRoles($tenant);
+
+        $admin = $this->memberWithRole($tenant, 'admin');
+        $course = $this->createPublicPaidCourse($tenant, $admin, 'Enrollment Check Course', 250);
+
+        $registration = $this->postJson('/api/v1/public/register', [
+            'name' => 'Check Student',
+            'phone' => '01077777777',
+            'password' => 'secret1234',
+            'password_confirmation' => 'secret1234',
+        ], ['X-Tenant-ID' => (string) $tenant->id])
+            ->assertCreated()
+            ->json();
+
+        $token = $registration['access_token'];
+
+        Wallet::create([
+            'tenant_id' => $tenant->id,
+            'tenant_user_id' => $registration['membership']['id'],
+            'balance' => 500,
+            'currency' => 'EGP',
+        ]);
+
+        $this->withToken($token)
+            ->postJson("/api/v1/public/courses/{$course->slug}/enroll", [], $this->tenantHeader($tenant))
+            ->assertCreated();
+
+        $this->withToken($token)
+            ->getJson("/api/v1/public/courses/{$course->slug}/enrollment", $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('enrolled', true);
+
+        $this->withToken($token)
+            ->getJson('/api/v1/public/courses', $this->tenantHeader($tenant))
+            ->assertOk();
+    }
+
     private function seedTenantRoles(Tenant $tenant): void
     {
         if (! Role::query()->where('tenant_id', $tenant->id)->exists()) {

@@ -31,11 +31,11 @@ export function useRelatedCourses(slug: string | null) {
   });
 }
 
-export function useEnrollmentCheck(slug: string | null) {
+export function useEnrollmentCheck(slug: string | null, enabled = true) {
   return useQuery({
     queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug],
     queryFn: () => publicCourseService.checkEnrollment(slug!),
-    enabled: !!slug,
+    enabled: !!slug && enabled,
     staleTime: 2 * 60 * 1000,
   });
 }

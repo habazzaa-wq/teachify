@@ -55,7 +55,7 @@ export function PublicCoursePage({ slug }: Props) {
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
   const { data: relatedCourses } = useRelatedCourses(slug);
-  const { data: enrollment } = useEnrollmentCheck(slug);
+  const { data: enrollment } = useEnrollmentCheck(slug, isAuthenticated);
 
   const isEnrolled = enrollment?.enrolled ?? false;
 
