@@ -205,11 +205,16 @@ export function PublicNavbar() {
   const [registeredName, setRegisteredName] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
 
-  const [studentRegistered, setStudentRegistered] = useState(() => {
+  const [studentRegistered, setStudentRegistered] = useState<{
+    name: string;
+    token: string;
+    refreshToken?: string | null;
+    avatar?: string | null;
+  } | null>(() => {
     if (typeof window === "undefined") return null;
     try {
       const stored = localStorage.getItem("public-register-state");
-      return stored ? JSON.parse(stored) as { name: string; token: string; avatar?: string | null } : null;
+      return stored ? JSON.parse(stored) as { name: string; token: string; refreshToken?: string | null; avatar?: string | null } : null;
     } catch {
       return null;
     }
@@ -232,6 +237,27 @@ export function PublicNavbar() {
   const authUser = useAuthStore((s) => s.user);
   const setTenantContext = useTenantStore((s) => s.setTenantContext);
   const clearAuth = useAuthStore((s) => s.clear);
+
+  // The home page runs without AuthProvider, so the auth store is only populated
+  // when the user logs in/registers on this page. After a reload, `public-register-state`
+  // is the source of truth — seed the auth store (token + user) from it so tenant API
+  // calls (profile, avatar, wallet) carry a Bearer token and currentUser stays non-null.
+  useEffect(() => {
+    if (!studentRegistered) return;
+    const current = useAuthStore.getState();
+    if (studentRegistered.token && !current.accessToken) {
+      setAuthTokens(studentRegistered.token, current.refreshToken ?? studentRegistered.refreshToken ?? "");
+    }
+    if (!current.user && (studentRegistered.name || studentRegistered.avatar)) {
+      setAuthUser({
+        id: 0,
+        name: studentRegistered.name ?? "",
+        email: "",
+        avatar: studentRegistered.avatar ?? null,
+        is_platform_super_admin: false,
+      });
+    }
+  }, [studentRegistered, setAuthTokens, setAuthUser]);
 
   const isLoggedIn = !!studentRegistered;
 
@@ -269,10 +295,17 @@ export function PublicNavbar() {
   );
 
   const handleLoginSuccess = useCallback(
-    (data: { name: string; avatar?: string | null }) => {
+    (data: { name: string; avatar?: string | null; token?: string | null; refreshToken?: string | null }) => {
+      const token = data.token || "";
+      const state = { name: data.name, token, refreshToken: data.refreshToken ?? null, avatar: data.avatar ?? null };
+      try {
+        localStorage.setItem("public-register-state", JSON.stringify(state));
+      } catch {
+        // ignore storage errors
+      }
       setLoginOpen(false);
       setRegisteredName(data.name);
-      setStudentRegistered({ name: data.name, token: "", avatar: data.avatar ?? null });
+      setStudentRegistered(state);
       setRegisterSuccess(true);
       queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
     },
@@ -292,7 +325,7 @@ export function PublicNavbar() {
       });
       setAuthUser(response.user as any);
 
-      const state = { name: response.user.name, token: response.access_token, avatar: response.user.avatar ?? null };
+      const state = { name: response.user.name, token: response.access_token, refreshToken: response.refresh_token, avatar: response.user.avatar ?? null };
       localStorage.setItem("public-register-state", JSON.stringify(state));
 
       setRegisterOpen(false);

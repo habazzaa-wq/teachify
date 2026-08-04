@@ -16,7 +16,12 @@ const secondary = "#FFB50E";
 interface PublicLoginCardProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: (response: { name: string; avatar?: string | null }) => void;
+  onSuccess: (response: {
+    name: string;
+    avatar?: string | null;
+    token?: string | null;
+    refreshToken?: string | null;
+  }) => void;
 }
 
 interface FormErrors {
@@ -149,13 +154,19 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
         const userState = {
           name: loginResult.user.name,
           token: loginResult.access_token,
+          refreshToken: loginResult.refresh_token,
           avatar: loginResult.user.avatar ?? null,
         };
         localStorage.setItem("public-register-state", JSON.stringify(userState));
 
         setDone(true);
         setTimeout(() => {
-          onSuccess({ name: loginResult.user.name, avatar: loginResult.user.avatar ?? null });
+          onSuccess({
+            name: loginResult.user.name,
+            avatar: loginResult.user.avatar ?? null,
+            token: loginResult.access_token,
+            refreshToken: loginResult.refresh_token,
+          });
         }, 1200);
       } catch (err: unknown) {
         const apiErr = err as { status?: number; message?: string; fieldErrors?: Record<string, string[]> };
