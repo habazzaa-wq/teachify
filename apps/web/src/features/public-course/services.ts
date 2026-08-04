@@ -1,4 +1,5 @@
 import { api } from "@/services/api";
+import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
 import type { PublicCourse, PublicCourseModule, PublicCourseSection, PublicCourseLesson, EnrollmentCheck, RelatedCourse } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Raw API responses have untyped shapes
@@ -182,10 +183,13 @@ export const publicCourseService = {
 
   async checkEnrollment(slug: string): Promise<EnrollmentCheck> {
     try {
-      const { data } = await api.get(`/public/courses/${slug}/enrollment`);
+      const json = await tenantStudentFetch<{
+        enrolled?: boolean;
+        enrollment?: EnrollmentCheck["enrollment"];
+      }>(`/public/courses/${slug}/enrollment`);
       return {
-        enrolled: data.enrolled ?? false,
-        enrollment: data.enrollment ?? null,
+        enrolled: json.enrolled ?? false,
+        enrollment: json.enrollment ?? null,
       };
     } catch {
       return { enrolled: false, enrollment: null };
@@ -199,13 +203,19 @@ export const publicCourseService = {
     balance: number;
     enrollment: { id: string; status: string } | null;
   }> {
-    const { data } = await api.post(`/public/courses/${slug}/enroll`);
+    const json = await tenantStudentFetch<{
+      message: string;
+      enrolled?: boolean;
+      amount?: number;
+      balance?: number;
+      enrollment?: { id: string; status: string } | null;
+    }>(`/public/courses/${slug}/enroll`, { method: "POST" });
     return {
-      message: data.message,
-      enrolled: data.enrolled ?? true,
-      amount: data.amount ?? 0,
-      balance: data.balance ?? 0,
-      enrollment: data.enrollment ?? null,
+      message: json.message,
+      enrolled: json.enrolled ?? true,
+      amount: json.amount ?? 0,
+      balance: json.balance ?? 0,
+      enrollment: json.enrollment ?? null,
     };
   },
 };
