@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
@@ -59,6 +60,8 @@ const OnlineRechargeModal = dynamic(
 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
+
+const STUDENT_PROFILE_QUERY_KEY = ["student-profile", "profile"];
 
 type NavLink = {
   label: string;
@@ -218,6 +221,7 @@ export function PublicNavbar() {
   const [rechargeWalletOpen, setRechargeWalletOpen] = useState(false);
   const [onlineRechargeOpen, setOnlineRechargeOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     walletBadgeOnClick = () => setRechargeWalletOpen(true);
@@ -236,7 +240,8 @@ export function PublicNavbar() {
     localStorage.removeItem("public-register-state");
     clearAuth();
     setProfileDropdownOpen(false);
-  }, [clearAuth]);
+    queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
+  }, [clearAuth, queryClient]);
 
   const scrollToSection = useCallback(
     (targetId: string) => {
@@ -269,8 +274,9 @@ export function PublicNavbar() {
       setRegisteredName(data.name);
       setStudentRegistered({ name: data.name, token: "", avatar: data.avatar ?? null });
       setRegisterSuccess(true);
+      queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
     },
-    [],
+    [queryClient],
   );
 
   const handleRegisterSuccess = useCallback(
@@ -293,9 +299,38 @@ export function PublicNavbar() {
       setRegisteredName(response.user.name);
       setRegisterSuccess(true);
       setStudentRegistered(state);
+      queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
     },
-    [setAuthTokens, setAuthUser, setTenantContext],
+    [setAuthTokens, setAuthUser, setTenantContext, queryClient],
   );
+
+  useEffect(() => {
+    const handleProfileUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ avatar?: string | null }>).detail;
+      if (!detail) return;
+
+      // Keep the auth-store user avatar fresh so authUser?.avatar matches
+      const current = useAuthStore.getState().user;
+      if (current) {
+        setAuthUser({ ...current, avatar: detail.avatar ?? current.avatar });
+      }
+
+      // Keep the navbar's mirrored session state + localStorage in sync
+      setStudentRegistered((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, avatar: detail.avatar ?? prev.avatar };
+        try {
+          localStorage.setItem("public-register-state", JSON.stringify(next));
+        } catch {
+          // ignore storage errors
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener("student-profile-updated", handleProfileUpdated);
+    return () => window.removeEventListener("student-profile-updated", handleProfileUpdated);
+  }, [setAuthUser]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
