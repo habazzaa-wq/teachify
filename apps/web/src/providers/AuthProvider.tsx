@@ -59,7 +59,6 @@ function isPublicRoute(pathname: string): boolean {
     pathname.startsWith(`${routes.publicCourse}/`) ||
     pathname.startsWith("/stages") ||
     pathname === routes.tenantLogin ||
-    pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/tenant-not-found"
   );
@@ -211,7 +210,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isGuestRoute =
       pathname === routes.tenantLogin ||
-      pathname === "/login" ||
       pathname === "/register" ||
       pathname === "/tenant-not-found";
 

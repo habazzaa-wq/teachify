@@ -36,7 +36,7 @@ export function useLogin() {
 }
 
 /**
- * Logout mutation. Tears down the session and redirects to /login.
+ * Logout mutation. Tears down the session and redirects to the tenant login page.
  */
 export function useLogout() {
   const { logout } = useAuth();

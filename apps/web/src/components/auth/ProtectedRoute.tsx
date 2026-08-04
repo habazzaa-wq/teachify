@@ -8,8 +8,9 @@ import { routes } from "@/constants/routes";
 import { AppLoadingState } from "@/components/ui/AppLoadingState";
 
 /**
- * Gate for authenticated dashboard routes. Redirects to /login when the session
- * is unauthenticated, and requires an active tenant before rendering children.
+ * Gate for authenticated dashboard routes. Redirects to the tenant login page
+ * when the session is unauthenticated, and requires an active tenant before
+ * rendering children.
  */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -19,7 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(routes.login);
+      router.replace(routes.tenantLogin);
     }
   }, [router, status]);
 

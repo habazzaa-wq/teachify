@@ -6,7 +6,6 @@ export const routes = {
   home: "/",
   publicCourse: "/courses",
   // Auth
-  login: "/login",
   tenantLogin: "/tenant-login",
   // Teacher control panel (tenant dashboard) — all under /teacher/
   dashboard: "/teacher/dashboard",
