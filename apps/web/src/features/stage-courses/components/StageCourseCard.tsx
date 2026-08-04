@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { m } from "framer-motion";
+import { motion } from "framer-motion";
 import { BookOpen, Clock, Users, Award, Tag, Sparkles } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
@@ -287,13 +287,13 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
   };
 
   return (
-    <m.div {...anim} style={{ perspective: "800px" }}>
+    <motion.div {...anim} style={{ perspective: "800px" }}>
       <Link
         href={`/courses/${course.slug}`}
         className={cn("block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl")}
       >
         {card}
       </Link>
-    </m.div>
+    </motion.div>
   );
 }
