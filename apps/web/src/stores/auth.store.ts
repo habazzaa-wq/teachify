@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { addApiRequestContextReader } from "@/services/api/request-context";
 import type { AuthUser } from "@/types/auth.types";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
@@ -60,3 +61,9 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+// Provide the access token to the API layer lazily at request time instead of
+// importing this store from the axios module (see services/api/request-context.ts).
+addApiRequestContextReader(() => ({
+  accessToken: useAuthStore.getState().accessToken,
+}));

@@ -504,12 +504,6 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  @keyframes float-orb {
-    0%, 100% { transform: translateY(0px) scale(1); }
-    33% { transform: translateY(-20px) scale(1.02); }
-    66% { transform: translateY(12px) scale(0.98); }
-  }
-
   .card-premium {
     @apply overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-500;
   }
@@ -708,38 +702,48 @@
 
 /* ───────── Mobile performance: pause decorative hero animations ───────── */
 @media (max-width: 768px) {
-  .hero-bg-orb,
-  .hero-bg-shape,
-  .hero-bg-math,
-  .hero-bg-dot,
-  .hero-bg-line {
+  .hero-bg-orb {
     animation: none !important;
   }
   .hero-bg-orb {
     opacity: var(--orb-opacity, 0.12) !important;
   }
-  .hero-bg-shape {
-    opacity: 0.2 !important;
+}
+
+/* ───────── Touch devices (phones + tablets) ─────────
+   Three rendering-only rules. None of them change the layout, spacing,
+   colors, or desktop appearance (desktop keeps `hover` + `fine` pointer):
+   1. Freeze the decorative hero orbs. On tablets the desktop orbs render and
+      the float keyframes animate blur+opacity, which re-runs the CSS filter
+      every frame. The orbs are low-opacity background blobs, so freezing
+      them is visually identical while removing a continuous repaint source.
+   2. Drop repaint-heavy backdrop-filter from glass chrome. The page
+      background is essentially flat, so removing the blur is visually
+      identical — and it eliminates the per-frame backdrop re-sampling under
+      the sticky navbar while the page scrolls.
+   3. Release the forced composited layer on frozen hero orbs. */
+@media (hover: none) and (pointer: coarse) {
+  .hero-bg-orb {
+    animation: none !important;
+    opacity: var(--orb-opacity, 0.12) !important;
+    will-change: auto !important;
   }
-  .hero-bg-math {
-    opacity: var(--math-opacity, 0.12) !important;
+
+  .glass-touch-solid {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
-  .hero-bg-dot {
-    opacity: var(--dot-opacity, 0.15) !important;
+
+  .nav-touch-solid {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-color: hsl(var(--background) / 0.94) !important;
   }
 }
 
 /* ───────── Pause animations while scrolling or when off-screen ───────── */
 .hero-anim-paused .hero-bg-orb,
-.hero-anim-paused .hero-bg-shape,
-.hero-anim-paused .hero-bg-math,
-.hero-anim-paused .hero-bg-dot,
-.hero-anim-paused .hero-bg-line,
-body.page-is-scrolling .hero-bg-orb,
-body.page-is-scrolling .hero-bg-shape,
-body.page-is-scrolling .hero-bg-math,
-body.page-is-scrolling .hero-bg-dot,
-body.page-is-scrolling .hero-bg-line {
+body.page-is-scrolling .hero-bg-orb {
   animation-play-state: paused !important;
 }
 
@@ -751,7 +755,7 @@ body.page-is-scrolling .news-marquee-track {
 /* ───────── Content-visibility: skip rendering offscreen sections ───────── */
 .section-lazy {
   content-visibility: auto;
-  contain-intrinsic-size: 300px;
+  contain-intrinsic-size: auto 360px;
 }
 
 @keyframes float-soft {
@@ -799,40 +803,8 @@ body.page-is-scrolling .news-marquee-track {
 }
 
 /* — Hero section (قسم الترحيب): cream-themed decorations — */
-.hero-deco-icon {
-  animation: hero-float var(--hero-duration, 8s) ease-in-out infinite;
-  animation-delay: var(--hero-delay, 0s);
-}
-
-@keyframes hero-float {
-  0%, 100% { transform: translateY(0) rotate(var(--hero-rotate, 0deg)); }
-  50% { transform: translateY(-12px) rotate(calc(var(--hero-rotate, 0deg) + 3deg)); }
-}
-
-@keyframes hero-glow-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-@keyframes hero-ring-rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
 .hero-avatar-ring {
   box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.30)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.12));
-}
-
-.hero-dashed-ring {
-  animation: hero-ring-rotate 30s linear infinite;
-  transform-origin: center center;
-}
-
-.hero-social-btn {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.hero-social-btn:hover {
-  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
 }
 
 /* — Hero background decorations — */
@@ -848,56 +820,113 @@ body.page-is-scrolling .news-marquee-track {
   75% { transform: translate(-15px, -10px) scale(1.03); opacity: calc(var(--orb-opacity, 0.15) - 0.03); }
 }
 
-.hero-bg-shape {
-  will-change: transform;
-  animation: hero-shape-drift var(--shape-duration, 15s) ease-in-out infinite;
-  animation-delay: var(--shape-delay, 0s);
+/* — Homepage one-shot entrance animations (no infinite loops) — */
+.home-enter-up {
+  opacity: 0;
+  animation: home-enter-up var(--home-enter-duration, 0.5s) ease-out forwards;
 }
-@keyframes hero-shape-drift {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(8px, -12px) rotate(45deg); }
-  50% { transform: translate(-4px, -20px) rotate(90deg); }
-  75% { transform: translate(-12px, -6px) rotate(135deg); }
+@keyframes home-enter-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-bg-math {
-  will-change: transform;
-  animation: hero-math-bob var(--math-duration, 9s) ease-in-out infinite;
-  animation-delay: var(--math-delay, 0s);
+.home-enter-pop {
+  opacity: 0;
+  animation: home-enter-pop var(--home-enter-duration, 0.45s) cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-@keyframes hero-math-bob {
-  0%, 100% { transform: translateY(0) rotate(var(--math-rotate, 0deg)); opacity: var(--math-opacity, 0.08); }
-  50% { transform: translateY(-18px) rotate(calc(var(--math-rotate, 0deg) + 10deg)); opacity: calc(var(--math-opacity, 0.08) + 0.04); }
-}
-
-.hero-bg-dot {
-  will-change: transform;
-  animation: hero-dot-pulse var(--dot-duration, 6s) ease-in-out infinite;
-  animation-delay: var(--dot-delay, 0s);
-}
-@keyframes hero-dot-pulse {
-  0%, 100% { transform: scale(1); opacity: var(--dot-opacity, 0.12); }
-  50% { transform: scale(1.6); opacity: calc(var(--dot-opacity, 0.12) + 0.08); }
+@keyframes home-enter-pop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-.hero-bg-line {
-  animation: hero-line-draw var(--line-duration, 20s) linear infinite;
-  animation-delay: var(--line-delay, 0s);
+.home-enter-pop-soft {
+  opacity: 0;
+  animation: home-enter-pop-soft var(--home-enter-duration, 0.6s) ease-out forwards;
 }
-@keyframes hero-line-draw {
-  0% { stroke-dashoffset: 200; }
-  100% { stroke-dashoffset: -200; }
+@keyframes home-enter-pop-soft {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.home-enter-badge-top {
+  opacity: 0;
+  animation: home-enter-badge-top var(--home-enter-duration, 0.5s) ease-out forwards;
+}
+@keyframes home-enter-badge-top {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.home-enter-badge-bottom {
+  opacity: 0;
+  animation: home-enter-badge-bottom var(--home-enter-duration, 0.5s) ease-out forwards;
+}
+@keyframes home-enter-badge-bottom {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* — Theme icon swap (navbar) — */
+.home-icon-swap {
+  animation: home-icon-swap 0.35s ease;
+}
+@keyframes home-icon-swap {
+  0% { transform: rotate(-60deg) scale(0.6); opacity: 0; }
+  60% { transform: rotate(10deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+/* — Mobile icons overlay (secondary nav) — */
+.home-menu-pop {
+  animation: home-menu-pop 0.18s ease-out;
+}
+@keyframes home-menu-pop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* — WhyChooseUs orbit: one-shot draw-in + reveal — */
+.wc-in-view .wc-line {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: wc-line-draw 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--wc-delay, 0s);
+}
+@keyframes wc-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.wc-reveal {
+  opacity: 0;
+}
+.wc-in-view .wc-reveal {
+  animation: wc-reveal 0.55s ease-out forwards;
+  animation-delay: var(--wc-delay, 0s);
+}
+@keyframes wc-reveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-deco-icon,
-  .hero-avatar-ring,
-  .hero-dashed-ring,
+  .home-enter-up,
+  .home-enter-pop,
+  .home-enter-pop-soft,
+  .home-enter-badge-top,
+  .home-enter-badge-bottom,
+  .home-icon-swap,
+  .home-menu-pop,
   .hero-bg-orb,
-  .hero-bg-shape,
-  .hero-bg-math,
-  .hero-bg-dot,
-  .hero-bg-line {
+  .wc-in-view .wc-line,
+  .wc-in-view .wc-reveal {
     animation: none !important;
+  }
+  .home-enter-up,
+  .home-enter-pop,
+  .home-enter-pop-soft,
+  .home-enter-badge-top,
+  .home-enter-badge-bottom,
+  .wc-reveal {
+    opacity: 1 !important;
   }
 }

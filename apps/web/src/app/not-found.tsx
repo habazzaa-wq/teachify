@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppButton } from "@/components/ui";
+import { AppButton } from "@/components/ui/AppButton";
 import { routes } from "@/constants/routes";
 
 export default function NotFound() {

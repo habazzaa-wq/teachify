@@ -1,28 +1,61 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
-  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard,
+  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
-import { PublicRegisterCard, RegisterSuccessOverlay } from "@/features/auth/components/PublicRegisterCard";
-import { PublicLoginCard } from "@/features/auth/components/PublicLoginCard";
-import { ChangePasswordModal } from "@/features/auth/components/ChangePasswordModal";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
-import { StudentProfileDrawer } from "@/features/student-profile/components/StudentProfileDrawer";
-import { WalletBalanceBadge } from "@/features/wallet/components/WalletBalanceBadge";
-import { RechargeWalletModal } from "@/features/wallet/components/RechargeWalletModal";
-import { OnlineRechargeModal } from "@/features/wallet/components/OnlineRechargeModal";
 import { cn } from "@/lib/cn";
+
+const PublicRegisterCard = dynamic(
+  () => import("@/features/auth/components/PublicRegisterCard").then((m) => m.PublicRegisterCard),
+  { ssr: false },
+);
+
+const RegisterSuccessOverlay = dynamic(
+  () => import("@/features/auth/components/PublicRegisterCard").then((m) => m.RegisterSuccessOverlay),
+  { ssr: false },
+);
+
+const PublicLoginCard = dynamic(
+  () => import("@/features/auth/components/PublicLoginCard").then((m) => m.PublicLoginCard),
+  { ssr: false },
+);
+
+const ChangePasswordModal = dynamic(
+  () => import("@/features/auth/components/ChangePasswordModal").then((m) => m.ChangePasswordModal),
+  { ssr: false },
+);
+
+const StudentProfileDrawer = dynamic(
+  () => import("@/features/student-profile/components/StudentProfileDrawer").then((m) => m.StudentProfileDrawer),
+  { ssr: false },
+);
+
+const WalletBalanceBadge = dynamic(
+  () => import("@/features/wallet/components/WalletBalanceBadge").then((m) => m.WalletBalanceBadge),
+  { ssr: false, loading: WalletBalanceBadgeFallback },
+);
+
+const RechargeWalletModal = dynamic(
+  () => import("@/features/wallet/components/RechargeWalletModal").then((m) => m.RechargeWalletModal),
+  { ssr: false },
+);
+
+const OnlineRechargeModal = dynamic(
+  () => import("@/features/wallet/components/OnlineRechargeModal").then((m) => m.OnlineRechargeModal),
+  { ssr: false },
+);
 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
@@ -41,32 +74,31 @@ const navLinks: NavLink[] = [
   { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
-function DecoOrbs() {
-  const prefersReducedMotion = useReducedMotion();
-  if (prefersReducedMotion) return null;
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+let walletBadgeOnClick: (() => void) | null = null;
+
+function WalletBalanceBadgeFallback(): React.ReactNode {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <m.div
-        className="absolute -top-16 -start-16 h-32 w-32 rounded-full opacity-20 blur-3xl"
-        style={{ backgroundColor: primary }}
-        animate={{
-          x: [0, 20, -10, 0],
-          y: [0, -15, 10, 0],
-          scale: [1, 1.1, 0.95, 1],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <m.div
-        className="absolute -bottom-20 -end-20 h-40 w-40 rounded-full opacity-20 blur-3xl"
-        style={{ backgroundColor: secondary }}
-        animate={{
-          x: [0, -25, 15, 0],
-          y: [0, 20, -10, 0],
-          scale: [1, 0.9, 1.05, 1],
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      />
-    </div>
+    <button
+      type="button"
+      title="رصيد المحفظة"
+      aria-label="رصيد المحفظة"
+      onClick={() => walletBadgeOnClick?.()}
+      className="group relative flex h-8 items-center gap-1.5 rounded-full px-2.5 opacity-60"
+      style={{ border: "1px solid #FFB50E66" }}
+    >
+      <span
+        className="flex h-5 w-5 items-center justify-center rounded-full"
+        style={{ background: "linear-gradient(135deg, #D87B63, #D87B63cc)" }}
+      >
+        <Wallet className="h-3 w-3 text-white" />
+      </span>
+      <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: primary }} />
+    </button>
   );
 }
 
@@ -75,14 +107,10 @@ function ThemeBtn() {
   const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   return (
-    <m.button
-      whileHover={{ scale: 1.12, rotate: theme === "light" ? -15 : 15 }}
-      whileTap={{ scale: 0.88 }}
+    <button
+      type="button"
       onClick={toggleTheme}
-      className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 group"
-      style={{
-        backgroundColor: undefined,
-      }}
+      className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
       aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
     >
       {/* Default border */}
@@ -101,20 +129,17 @@ function ThemeBtn() {
           boxShadow: `0 0 24px ${primary}40`,
         }}
       />
-      <m.div
+      <span
         key={theme}
-        initial={{ rotate: -180, scale: 0 }}
-        animate={{ rotate: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-        className="relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300"
+        className="home-icon-swap relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300"
       >
         {theme === "light" ? (
           <Moon className="h-[18px] w-[18px]" />
         ) : (
           <Sun className="h-[18px] w-[18px]" />
         )}
-      </m.div>
-    </m.button>
+      </span>
+    </button>
   );
 }
 
@@ -126,21 +151,17 @@ function NavLinkItem({
 }) {
   return (
     <Link href={href} onClick={onClick} className="group relative">
-      <m.div
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.94 }}
-        className="relative flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-300"
+      <div
+        className="relative flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105 active:scale-95"
       >
         {isActive ? (
           <>
-            <m.span
-              layoutId="nav-bg"
+            <span
               className="absolute inset-0 rounded-2xl"
               style={{
                 backgroundColor: primary,
                 boxShadow: `0 4px 24px ${primary}50`,
               }}
-              transition={{ type: "spring", stiffness: 400, damping: 28 }}
             />
             <span
               className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -165,7 +186,7 @@ function NavLinkItem({
           "relative z-10 transition-colors duration-300",
           isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
         )}>{label}</span>
-      </m.div>
+      </div>
     </Link>
   );
 }
@@ -174,7 +195,6 @@ export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
   const pathname = usePathname();
-  const prefersReducedMotion = useReducedMotion();
   const [activeSection, setActiveSection] = useState("/");
 
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -199,6 +219,10 @@ export function PublicNavbar() {
   const [onlineRechargeOpen, setOnlineRechargeOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    walletBadgeOnClick = () => setRechargeWalletOpen(true);
+  }, [setRechargeWalletOpen]);
+
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
   const authUser = useAuthStore((s) => s.user);
@@ -220,7 +244,7 @@ export function PublicNavbar() {
         const el = document.getElementById(targetId);
         if (!el) return false;
         el.scrollIntoView({
-          behavior: prefersReducedMotion ? "auto" : "smooth",
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
           block: "start",
         });
         return true;
@@ -236,7 +260,7 @@ export function PublicNavbar() {
         }
       }, 120);
     },
-    [prefersReducedMotion],
+    [],
   );
 
   const handleLoginSuccess = useCallback(
@@ -297,14 +321,12 @@ export function PublicNavbar() {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div
-            className="relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
+            className="nav-touch-solid relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
             style={{
               borderColor: `${primary}30`,
               boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px ${primary}15`,
             }}
           >
-            <DecoOrbs />
-
             <div
               className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
               style={{
@@ -313,10 +335,7 @@ export function PublicNavbar() {
             />
 
             {/* ── Logo ── */}
-            <m.div
-              transition={{ duration: 0.4 }}
-              className="relative z-10 flex items-center"
-            >
+            <div className="relative z-10 flex items-center">
               <Link href="/" className="group relative flex items-center gap-2.5">
                 {logo ? (
                   <div className="relative">
@@ -328,9 +347,8 @@ export function PublicNavbar() {
                     />
                   </div>
                 ) : (
-                  <m.div
-                    whileHover={{ rotate: -8, scale: 1.1 }}
-                    className="relative flex h-9 w-9 items-center justify-center rounded-2xl"
+                  <div
+                    className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
                     style={{
                       backgroundColor: primary,
                       boxShadow: `0 2px 20px ${primary}40`,
@@ -342,13 +360,13 @@ export function PublicNavbar() {
                       className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
                     />
-                  </m.div>
+                  </div>
                 )}
                 <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
                   {tenantName}
                 </span>
               </Link>
-            </m.div>
+            </div>
 
             {/* ── Desktop Nav ── */}
             <nav
@@ -386,11 +404,10 @@ export function PublicNavbar() {
                   <div className="relative" ref={dropdownRef}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />
-                      <m.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                      <button
+                        type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                        className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 group"
+                        className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                         style={{
                           border: `1px solid ${profileDropdownOpen ? primary : `${primary}30`}`,
                           backgroundColor: profileDropdownOpen ? `${primary}15` : `${primary}08`,
@@ -414,28 +431,22 @@ export function PublicNavbar() {
                       <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
                         {studentRegistered?.name}
                       </span>
-                      <m.div
-                        animate={{ rotate: profileDropdownOpen ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
+                      <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
                         <ChevronDown className="h-4 w-4 text-muted-foreground/60 hidden sm:block" />
-                      </m.div>
-                    </m.button>
+                      </div>
+                    </button>
                     </div>
 
-                    <AnimatePresence>
-                      {profileDropdownOpen && (
-                        <m.div
-                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                          className="absolute top-full mt-2 end-0 w-64 rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden z-50"
-                          style={{
-                            borderColor: `${primary}25`,
-                            boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${primary}10`,
-                          }}
-                        >
+                    <div
+                      aria-hidden={!profileDropdownOpen}
+                      className={`glass-touch-solid absolute top-full mt-2 end-0 z-50 w-64 origin-top rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-200 ease-out ${
+                        profileDropdownOpen ? "visible translate-y-0 scale-100 opacity-100" : "invisible pointer-events-none translate-y-2 scale-95 opacity-0"
+                      }`}
+                      style={{
+                        borderColor: `${primary}25`,
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${primary}10`,
+                      }}
+                    >
                           {/* Header */}
                           <div
                             className="px-4 py-3 border-b"
@@ -564,13 +575,11 @@ export function PublicNavbar() {
                               <span className="relative z-10 font-medium">تسجيل الخروج</span>
                             </button>
                           </div>
-                        </m.div>
-                      )}
-                    </AnimatePresence>
+                        </div>
                   </div>
                 ) : (
                   <>
-                    <m.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                    <div className="transition-transform duration-300 hover:scale-105 active:scale-95">
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
@@ -593,9 +602,9 @@ export function PublicNavbar() {
                         <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
                         <span className="relative z-10 group-hover:text-[#2D1B00] transition-colors">تسجيل الدخول</span>
                       </button>
-                    </m.div>
+                    </div>
 
-                    <m.div whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95, y: 0 }}>
+                    <div className="transition-transform duration-300 hover:scale-105 hover:-translate-y-px active:scale-95">
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
@@ -616,7 +625,7 @@ export function PublicNavbar() {
                         <span className="relative z-10">إنشاء حساب</span>
                         <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />
                       </button>
-                    </m.div>
+                    </div>
                   </>
                 )}
               </div>

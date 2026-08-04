@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { addApiRequestContextReader } from "@/services/api/request-context";
 import type {
   ActiveTenant,
   Membership,
@@ -130,3 +131,11 @@ export const useTenantStore = create<TenantState>()(
       }),
   }),
 );
+
+// Provide tenant request context lazily to the API layer at request time.
+// Registered from the store itself so axios.ts never has to import Zustand
+// (see services/api/request-context.ts).
+addApiRequestContextReader(() => ({
+  tenantId: useTenantStore.getState().activeTenant?.id?.toString() ?? null,
+  tenantDomain: useTenantStore.getState().domain ?? null,
+}));

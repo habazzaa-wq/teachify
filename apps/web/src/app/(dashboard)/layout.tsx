@@ -1,3 +1,4 @@
+import { AuthProviders } from "@/providers/AuthProviders";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { TenantDashboardLayout } from "@/components/layout/TenantDashboardLayout";
 import { UploadManager } from "@/features/media-library/upload-manager";
@@ -8,11 +9,13 @@ export default function DashboardRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute>
-      <TenantDashboardLayout>
-        {children}
-        <UploadManager />
-      </TenantDashboardLayout>
-    </ProtectedRoute>
+    <AuthProviders>
+      <ProtectedRoute>
+        <TenantDashboardLayout>
+          {children}
+          <UploadManager />
+        </TenantDashboardLayout>
+      </ProtectedRoute>
+    </AuthProviders>
   );
 }

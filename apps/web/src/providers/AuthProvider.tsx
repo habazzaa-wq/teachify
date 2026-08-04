@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AUTH_EVENTS } from "@/services/api/axios";
+import { AUTH_EVENTS } from "@/constants/auth-events";
 import { authService } from "@/services/api/auth.service";
 import { tenantService } from "@/services/api/tenant.service";
 import { authKeys } from "@/services/queryKeys";

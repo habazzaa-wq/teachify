@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LazyMotion, m, domAnimation, useInView, useReducedMotion } from "framer-motion";
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import {
   ArrowLeft,
   BookOpen,
@@ -347,9 +347,7 @@ function StagesSkeleton({ isDark }: { isDark: boolean }) {
 export function EducationalStagesSection() {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
-  const reduced = useReducedMotion() ?? false;
-  const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-80px" });
+  const { ref: sectionRef, inView } = useInViewOnce({ rootMargin: "-80px 0px" });
   const [expanded, setExpanded] = useState(false);
 
   const { data, isLoading } = usePublicStages();
@@ -378,35 +376,23 @@ export function EducationalStagesSection() {
 
   if (all.length === 0 && !isLoading) return null;
 
-  const anim = reduced
-    ? {}
-    : {
-        initial: { opacity: 0, y: 16 },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, margin: "-40px" as const },
-        transition: { duration: 0.45 },
-      };
-
-  const decoShapes = reduced
-    ? []
-    : [
-        { x: "6%", y: "12%", s: 8, c: PRIMARY, d: 0 },
-        { x: "93%", y: "16%", s: 6, c: ACCENT, d: 1.4 },
-        { x: "8%", y: "84%", s: 6, c: ACCENT, d: 0.7 },
-        { x: "90%", y: "86%", s: 9, c: PRIMARY, d: 2.1 },
-        { x: "50%", y: "5%", s: 5, c: PRIMARY, d: 2.8 },
-        { x: "46%", y: "95%", s: 5, c: ACCENT, d: 0.4 },
-      ];
+  const decoShapes = [
+    { x: "6%", y: "12%", s: 8, c: PRIMARY },
+    { x: "93%", y: "16%", s: 6, c: ACCENT },
+    { x: "8%", y: "84%", s: 6, c: ACCENT },
+    { x: "90%", y: "86%", s: 9, c: PRIMARY },
+    { x: "50%", y: "5%", s: 5, c: PRIMARY },
+    { x: "46%", y: "95%", s: 5, c: ACCENT },
+  ];
 
   return (
-    <LazyMotion features={domAnimation}>
-      <section
-        ref={sectionRef}
-        id="educational-stages"
-        dir="rtl"
-        aria-label="المراحل الدراسية"
-        className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-14"
-      >
+    <section
+      ref={sectionRef}
+      id="educational-stages"
+      dir="rtl"
+      aria-label="المراحل الدراسية"
+      className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-14"
+    >
         <div
           className="absolute inset-0"
           style={{
@@ -438,12 +424,10 @@ export function EducationalStagesSection() {
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           {decoShapes.map((d, i) => (
-            <m.span
+            <span
               key={i}
               className="absolute rounded-full"
               style={{ left: d.x, top: d.y, width: d.s, height: d.s, background: d.c, opacity: 0.14 }}
-              animate={{ y: [0, -10, 0], opacity: [0.1, 0.24, 0.1] }}
-              transition={{ duration: 6 + (i % 3) * 2, repeat: Infinity, delay: d.d }}
             />
           ))}
         </div>
@@ -451,11 +435,8 @@ export function EducationalStagesSection() {
         <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           {/* centered header */}
           <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-10">
-            <m.span
-              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
-              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35 }}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold sm:text-xs"
+            <span
+              className="home-enter-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold sm:text-xs"
               style={{
                 background: isDark
                   ? `linear-gradient(135deg, ${PRIMARY}1f, ${ACCENT}0f)`
@@ -466,27 +447,22 @@ export function EducationalStagesSection() {
             >
               <Sparkles aria-hidden="true" className="h-3 w-3" />
               المسار التعليمي
-            </m.span>
+            </span>
 
-            <m.h2
-              initial={reduced ? undefined : { opacity: 0, y: 12 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.05 }}
-              className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
+            <h2
+              className="home-enter-up mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
+              style={{ animationDelay: "0.05s" }}
             >
               <span style={{ color: PRIMARY }}>المراحل</span>{" "}
               <span style={{ color: ACCENT }}>الدراسية</span>
-            </m.h2>
+            </h2>
 
-            <m.p
-              initial={reduced ? undefined : { opacity: 0, y: 12 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.1 }}
-              className="max-w-xl text-xs leading-relaxed sm:text-sm"
-              style={{ color: muted(isDark) }}
+            <p
+              className="home-enter-up max-w-xl text-xs leading-relaxed sm:text-sm"
+              style={{ color: muted(isDark), animationDelay: "0.1s" }}
             >
               اختر المسار المناسب لمستواك وابدأ رحلة التعلم
-            </m.p>
+            </p>
           </div>
 
           {isLoading ? (
@@ -528,7 +504,7 @@ export function EducationalStagesSection() {
                 {display.map((stage, i) => {
                   const stats = statsById.get(stage.id);
                   return (
-                    <m.div key={stage.id} {...anim} transition={{ ...anim.transition, delay: (i % 6) * 0.06 }}>
+                    <div key={stage.id} className="home-enter-up" style={{ animationDelay: `${(i % 6) * 0.06}s` }}>
                       <StageCard
                         stage={stage}
                         index={i}
@@ -537,7 +513,7 @@ export function EducationalStagesSection() {
                         loading={loadingIds.has(stage.id)}
                         popular={stage.id === popularId}
                       />
-                    </m.div>
+                    </div>
                   );
                 })}
               </div>
@@ -578,6 +554,5 @@ export function EducationalStagesSection() {
           }}
         />
       </section>
-    </LazyMotion>
   );
 }

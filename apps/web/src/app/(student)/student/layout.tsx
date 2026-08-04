@@ -1,3 +1,4 @@
+import { AuthProviders } from "@/providers/AuthProviders";
 import { StudentDashboardShell } from "@/features/student-dashboard/components/StudentDashboardShell";
 
 export default function StudentRouteLayout({
@@ -5,5 +6,9 @@ export default function StudentRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <StudentDashboardShell>{children}</StudentDashboardShell>;
+  return (
+    <AuthProviders>
+      <StudentDashboardShell>{children}</StudentDashboardShell>
+    </AuthProviders>
+  );
 }

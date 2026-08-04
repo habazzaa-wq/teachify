@@ -1,15 +1,11 @@
 import axios, { type Axios, type InternalAxiosRequestConfig } from "axios";
 import { resolveApiBaseUrl, resolveApiUrl } from "@/config/env";
 import { normalizeApiError } from "./errors";
-import { useTenantStore } from "@/stores/tenant.store";
-import { useAuthStore } from "@/stores/auth.store";
+import { getApiRequestContext } from "./request-context";
 import type { ApiError } from "@/types/common.types";
+import { AUTH_EVENTS } from "@/constants/auth-events";
 
-export const AUTH_EVENTS = {
-  unauthorized: "app:unauthorized",
-  tenantInvalid: "app:tenant-invalid",
-  tokenExpired: "app:token-expired",
-} as const;
+export { AUTH_EVENTS };
 
 const TENANT_ID_HEADER = "X-Tenant-ID";
 const TENANT_DOMAIN_HEADER = "X-Tenant-Domain";
@@ -26,27 +22,17 @@ export const api: Axios = axios.create({
   },
 });
 
-function getActiveTenantId(): string | null {
-  try {
-    return useTenantStore.getState().activeTenant?.id.toString() ?? null;
-  } catch {
-    return null;
-  }
-}
+const EMPTY_CONTEXT = {
+  accessToken: null as string | null,
+  tenantId: null as string | null,
+  tenantDomain: null as string | null,
+};
 
-function getActiveDomain(): string | null {
+function readRequestContext() {
   try {
-    return useTenantStore.getState().domain ?? null;
+    return getApiRequestContext();
   } catch {
-    return null;
-  }
-}
-
-function getAccessToken(): string | null {
-  try {
-    return useAuthStore.getState().accessToken;
-  } catch {
-    return null;
+    return EMPTY_CONTEXT;
   }
 }
 
@@ -60,9 +46,7 @@ function isPublicEndpoint(url?: string): boolean {
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const isPublic = isPublicEndpoint(config.url);
-  const token = getAccessToken();
-  const tenantId = getActiveTenantId();
-  const domain = getActiveDomain();
+  const { accessToken, tenantId, tenantDomain } = readRequestContext();
 
   config.baseURL = resolveApiBaseUrl();
 
@@ -74,8 +58,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     if (tenantId) {
       config.headers.set(TENANT_ID_HEADER, tenantId);
       config.headers.delete(TENANT_DOMAIN_HEADER);
-    } else if (domain) {
-      config.headers.set(TENANT_DOMAIN_HEADER, domain);
+    } else if (tenantDomain) {
+      config.headers.set(TENANT_DOMAIN_HEADER, tenantDomain);
       config.headers.delete(TENANT_ID_HEADER);
     } else {
       config.headers.delete(TENANT_ID_HEADER);
@@ -84,8 +68,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   } else if (tenantId) {
     config.headers.set(TENANT_ID_HEADER, tenantId);
     config.headers.delete(TENANT_DOMAIN_HEADER);
-  } else if (domain) {
-    config.headers.set(TENANT_DOMAIN_HEADER, domain);
+  } else if (tenantDomain) {
+    config.headers.set(TENANT_DOMAIN_HEADER, tenantDomain);
     config.headers.delete(TENANT_ID_HEADER);
   } else {
     config.headers.delete(TENANT_ID_HEADER);
@@ -94,8 +78,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
   // Prefer Bearer token over session cookies
   const isLoginRequest = config.url?.includes("/auth/login") || config.url?.includes("/tenant/auth/login") || false;
-  if (token && !isPublic && !isLoginRequest && !config.url?.includes("sanctum/csrf-cookie")) {
-    config.headers.set("Authorization", `Bearer ${token}`);
+  if (accessToken && !isPublic && !isLoginRequest && !config.url?.includes("sanctum/csrf-cookie")) {
+    config.headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
   return config;
@@ -109,8 +93,8 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       if (normalized.status === 401) {
         // Check if we have a token - if so, it might be expired
-        const token = getAccessToken();
-        if (token) {
+        const { accessToken } = readRequestContext();
+        if (accessToken) {
           // Try refresh before dispatching unauthorized
           window.dispatchEvent(new CustomEvent(AUTH_EVENTS.tokenExpired));
         } else {

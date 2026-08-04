@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { authKeys } from "@/services/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { ApiError } from "@/types/common.types";
 import type { LoginRequest } from "@/types/auth.types";
 import { routes } from "@/constants/routes";

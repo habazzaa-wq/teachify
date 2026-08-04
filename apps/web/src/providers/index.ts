@@ -1,4 +1,5 @@
 export { AppProviders } from "./AppProviders";
+export { AuthProviders } from "./AuthProviders";
 export { ThemeProvider } from "./ThemeProvider";
 export { QueryProvider } from "./QueryProvider";
 export { TenantBootstrapProvider } from "./TenantBootstrapProvider";

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { m, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
 } from "lucide-react";
@@ -13,6 +12,11 @@ import { cn } from "@/lib/cn";
 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 type NavLink = {
   label: string;
@@ -30,7 +34,7 @@ const navLinks: NavLink[] = [
 
 export function MobileSecondaryNav() {
   const pathname = usePathname();
-  const prefersReducedMotion = useReducedMotion();
+  const reduced = prefersReducedMotion();
   const { data: hero } = usePublicHero();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
@@ -56,7 +60,7 @@ export function MobileSecondaryNav() {
       <div className="relative">
         {/* ── Nav bar ── */}
         <div
-          className="relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
+          className="glass-touch-solid relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
           style={{
             backgroundColor: isDark ? "rgba(22,24,29,0.8)" : "rgba(255,255,255,0.85)",
             borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
@@ -71,10 +75,10 @@ export function MobileSecondaryNav() {
 
           {/* ── Plus toggle ── */}
           {hasIcons && (
-            <m.button
-              whileTap={{ scale: 0.9 }}
+            <button
+              type="button"
               onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300 active:scale-90"
               style={{
                 backgroundColor: mobileIconsOpen ? primary : `${primary}12`,
                 color: mobileIconsOpen ? "#fff" : primary,
@@ -85,7 +89,7 @@ export function MobileSecondaryNav() {
                 className="h-4 w-4 transition-transform duration-300"
                 style={{ transform: mobileIconsOpen ? "rotate(45deg)" : "rotate(0deg)" }}
               />
-            </m.button>
+            </button>
           )}
 
           {/* ── Nav items ── */}
@@ -100,7 +104,7 @@ export function MobileSecondaryNav() {
                     const el = document.getElementById(targetId);
                     if (!el) return false;
                     el.scrollIntoView({
-                      behavior: prefersReducedMotion ? "auto" : "smooth",
+                      behavior: reduced ? "auto" : "smooth",
                       block: "start",
                     });
                     return true;
@@ -130,11 +134,9 @@ export function MobileSecondaryNav() {
                   }}
                 >
                   {isActive && (
-                    <m.span
-                      layoutId="mobileNavPill"
-                      className="absolute inset-0 rounded-xl"
+                    <span
+                      className="absolute inset-0 rounded-xl transition-all duration-200"
                       style={{ backgroundColor: primary }}
-                      transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     />
                   )}
                   <span className="relative z-10">{link.label}</span>
@@ -145,65 +147,57 @@ export function MobileSecondaryNav() {
         </div>
 
         {/* ── Icons floating overlay ── */}
-        <AnimatePresence>
-          {mobileIconsOpen && (
-            <m.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute end-0 start-0 z-50 mt-1.5"
+        {mobileIconsOpen && (
+          <div className="home-menu-pop absolute end-0 start-0 z-50 mt-1.5">
+            <div
+              className="glass-touch-solid overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+              style={{
+                backgroundColor: isDark ? "rgba(22,24,29,0.88)" : "rgba(255,255,255,0.88)",
+                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(216,123,99,0.12)",
+              }}
             >
-              <div
-                className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
-                style={{
-                  backgroundColor: isDark ? "rgba(22,24,29,0.88)" : "rgba(255,255,255,0.88)",
-                  borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(216,123,99,0.12)",
-                }}
-              >
-                <div className="flex flex-col divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(216,123,99,0.06)" }}>
-                  {visibleIcons.map((item) => {
-                    const iconContent = (
-                      <div className="flex items-center gap-3 px-3.5 py-2.5 transition-all duration-200 hover:bg-black/5 active:scale-[0.98]">
-                        <div
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] shadow-md"
-                          style={{
-                            backgroundColor: item.color,
-                            borderColor: item.borderColor,
-                          }}
-                        >
-                          <item.icon className="h-[18px] w-[18px] text-white" />
-                        </div>
-                        <span
-                          className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
-                          style={{ backgroundColor: `${item.color}dd` }}
-                        >
-                          {item.label}
-                        </span>
+              <div className="flex flex-col divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(216,123,99,0.06)" }}>
+                {visibleIcons.map((item) => {
+                  const iconContent = (
+                    <div className="flex items-center gap-3 px-3.5 py-2.5 transition-all duration-200 hover:bg-black/5 active:scale-[0.98]">
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] shadow-md"
+                        style={{
+                          backgroundColor: item.color,
+                          borderColor: item.borderColor,
+                        }}
+                      >
+                        <item.icon className="h-[18px] w-[18px] text-white" />
                       </div>
-                    );
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
+                        style={{ backgroundColor: `${item.color}dd` }}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                  );
 
-                    if (item.href) {
-                      return (
-                        <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
-                          {iconContent}
-                        </a>
-                      );
-                    }
-                    if (item.key === "phone") {
-                      return (
-                        <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
-                          {iconContent}
-                        </a>
-                      );
-                    }
-                    return <div key={item.key}>{iconContent}</div>;
-                  })}
-                </div>
+                  if (item.href) {
+                    return (
+                      <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
+                        {iconContent}
+                      </a>
+                    );
+                  }
+                  if (item.key === "phone") {
+                    return (
+                      <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
+                        {iconContent}
+                      </a>
+                    );
+                  }
+                  return <div key={item.key}>{iconContent}</div>;
+                })}
               </div>
-            </m.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { AppButton } from "@/components/ui";
+import { AppButton } from "@/components/ui/AppButton";
 
 interface TenantBootstrapErrorProps {
   error: string;

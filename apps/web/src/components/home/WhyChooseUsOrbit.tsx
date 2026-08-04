@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FC, type MouseEvent } from "react";
-import { m, useInView, useReducedMotion, useMotionValue, useSpring } from "framer-motion";
+import { type FC } from "react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } from "@/features/homepage/why-choose-us/types";
 
 /* ───────────────────────────────────────
@@ -123,9 +123,11 @@ function IllWallet() {
 const illMap: Record<string, FC> = { cap: IllCap, video: IllVideo, target: IllTarget, chat: IllChat, trend: IllTrend, wallet: IllWallet };
 
 /* ───────────────────────────────────────
-   Connector SVG (hub → node)
+   Connector SVG (hub → node).
+   Fully static. The only motion is a one-shot
+   draw-in that runs once when the section enters view.
    ─────────────────────────────────────── */
-function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; isInView: boolean; reduced: boolean; features: DisplayFeature[] }) {
+function Connectors({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
   const hub = { x: 500, y: 96 };
   return (
     <svg viewBox="0 0 1000 700" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -141,22 +143,16 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
         </linearGradient>
       </defs>
 
-      {/* rotating dashed ring around hub */}
-      {!reduced && (
-        <m.circle
-          cx="500" cy="96" r="74"
-          fill="none"
-          stroke={isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"}
-          strokeWidth="1.4"
-          strokeDasharray="3 12"
-          style={{ transformOrigin: "500px 96px" }}
-          initial={false}
-          animate={{ opacity: 1, rotate: 360 }}
-          transition={{ opacity: { duration: 0.8, delay: 0.4 }, rotate: { duration: 22, repeat: Infinity, ease: "linear" } }}
-        />
-      )}
+      {/* static dashed ring around hub */}
+      <circle
+        cx="500" cy="96" r="74"
+        fill="none"
+        stroke={isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"}
+        strokeWidth="1.4"
+        strokeDasharray="3 12"
+      />
 
-      {/* connectors */}
+      {/* connectors (draw in once) */}
       {features.map((f: DisplayFeature, i) => {
         const ex = (f.x / 100) * 1000;
         const ey = (f.y / 100) * 700;
@@ -166,69 +162,26 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
         const cy = sy + (ey - sy) * 0.5;
         const d = `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`;
         return (
-          <g key={`c-${i}`}>
-            {/* base line draws in */}
-            <m.path
-              d={d}
-              fill="none"
-              stroke="url(#oLine)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              initial={false}
-              animate={{ pathLength: 1, opacity: 0.6 }}
-              transition={{ duration: 0.9, delay: 0.5 + i * 0.12, ease: "easeInOut" }}
-            />
-            {/* flowing energy dots */}
-            {!reduced && (
-              <m.path
-                d={d}
-                fill="none"
-                stroke={secondary}
-                strokeWidth="2.6"
-                strokeLinecap="round"
-                strokeDasharray="1 16"
-                initial={{ opacity: 0 }}
-                animate={isInView ? { opacity: 0.9, strokeDashoffset: [0, -34] } : {}}
-                transition={{
-                  strokeDashoffset: { duration: 1.6, repeat: Infinity, ease: "linear", delay: 1 + i * 0.15 },
-                  opacity: { duration: 0.6, delay: 1 + i * 0.15 },
-                }}
-              />
-            )}
-            {/* moving spark */}
-            {!reduced && (
-              <m.circle
-                r="3.2"
-                fill={secondary}
-                initial={{ opacity: 0 }}
-                animate={isInView ? { opacity: [0, 1, 0] } : {}}
-                transition={{ duration: 2.4, delay: 1 + i * 0.2, repeat: Infinity, repeatDelay: 1.5 }}
-              >
-                <animateMotion dur="2.4s" repeatCount="indefinite" path={d} begin={`${1 + i * 0.2}s`} />
-              </m.circle>
-            )}
-          </g>
+          <path
+            key={`c-${i}`}
+            d={d}
+            className="wc-line"
+            fill="none"
+            stroke="url(#oLine)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{ "--wc-delay": `${0.5 + i * 0.12}s` } as React.CSSProperties}
+          />
         );
       })}
 
-      {/* hub core */}
-      <m.circle
-        cx="500" cy="96" r="56"
-        fill="url(#oHub)"
-        initial={false}
-        animate={{ scale: 1, opacity: 1 }}
-        style={{ transformOrigin: "500px 96px" }}
-        transition={{ type: "spring", stiffness: 120, damping: 12, delay: 0.3 }}
-      />
-      <m.circle
+      {/* hub core (static) */}
+      <circle cx="500" cy="96" r="56" fill="url(#oHub)" />
+      <circle
         cx="500" cy="96" r="56"
         fill="none"
         stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)"}
         strokeWidth="1.5"
-        initial={{ scale: 0.8 }}
-        animate={reduced ? { scale: 0.8 } : { scale: [0.8, 1.15, 0.8], opacity: [0.6, 0, 0.6] }}
-        style={{ transformOrigin: "500px 96px" }}
-        transition={{ duration: 3, repeat: Infinity, delay: 0.6 }}
       />
       <text x="500" y="92" textAnchor="middle" fontSize="15" fontWeight="800" fill="#fff">منظومة</text>
       <text x="500" y="110" textAnchor="middle" fontSize="11" fontWeight="600" fill="#fff" opacity="0.85">المعرفة</text>
@@ -237,59 +190,44 @@ function Connectors({ isDark, isInView, reduced, features }: { isDark: boolean; 
 }
 
 /* ───────────────────────────────────────
-   Node + card
+   Node + card (static; one-shot reveal on view)
    ─────────────────────────────────────── */
-function Node({ f, index, reduced, isDark }: { f: DisplayFeature; index: number; reduced: boolean; isDark: boolean }) {
+function Node({ f, index, isDark }: { f: DisplayFeature; index: number; isDark: boolean }) {
   const Ill = illMap[f.ill]!;
+  const accent = index % 2 === 0 ? primary : secondary;
   return (
-    <m.div
-      className="absolute z-20"
-      style={{ left: `${f.x}%`, top: `${f.y}%` }}
-      initial={false}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.55, delay: 0.8 + index * 0.12, type: "spring", stiffness: 140, damping: 14 }}
+    <div
+      className="wc-reveal absolute z-20"
+      style={{ left: `${f.x}%`, top: `${f.y}%`, ["--wc-delay" as string]: `${0.8 + index * 0.12}s` }}
     >
       <div
         className="relative"
         style={{ transform: "translate(-50%,-50%)" }}
       >
-        <m.div
-          animate={reduced ? {} : { y: [0, -6, 0] }}
-          transition={{ duration: 4, repeat: Infinity, delay: index * 0.3 }}
-        >
+        <div>
           {/* glow */}
-          <div className="pointer-events-none absolute -inset-4 rounded-full" style={{ background: `${index % 2 === 0 ? primary : secondary}1f` }} />
+          <div className="pointer-events-none absolute -inset-4 rounded-full" style={{ background: `${accent}1f` }} />
           {/* badge */}
           <div
             className="relative flex h-14 w-14 items-center justify-center rounded-full sm:h-16 sm:w-16"
             style={{
               background: isDark ? "rgba(255,255,255,0.05)" : "#fff",
-              border: `2px solid ${index % 2 === 0 ? primary : secondary}`,
-              boxShadow: `0 12px 30px ${index % 2 === 0 ? primary : secondary}28`,
+              border: `2px solid ${accent}`,
+              boxShadow: `0 12px 30px ${accent}28`,
             }}
           >
-            {/* pulse ring */}
-            {!reduced && (
-              <m.span
-                className="pointer-events-none absolute inset-0 rounded-full"
-                style={{ border: `1.5px solid ${index % 2 === 0 ? primary : secondary}` }}
-                initial={{ scale: 1, opacity: 0.5 }}
-                animate={{ scale: [1, 1.55, 1], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 3, repeat: Infinity, delay: index * 0.4 }}
-              />
-            )}
             <div className="h-8 w-8 text-primary sm:h-9 sm:w-9"><Ill /></div>
           </div>
-        </m.div>
+        </div>
 
         {/* centered label below */}
         <div className="absolute left-1/2 top-[calc(100%+16px)] w-[clamp(150px,17vw,220px)] -translate-x-1/2 px-1 text-center">
-          <div className="mb-1 text-[11px] font-extrabold" style={{ color: index % 2 === 0 ? primary : secondary }}>{f.num}</div>
+          <div className="mb-1 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
           <h3 className="text-[12px] font-bold leading-snug sm:text-[13px] lg:text-sm" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
           <p className="mx-auto mt-1 max-w-[190px] text-[10.5px] leading-relaxed sm:text-[11px] lg:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
         </div>
       </div>
-    </m.div>
+    </div>
   );
 }
 
@@ -323,24 +261,27 @@ function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFea
       <div className="relative z-10 grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
         {features.map((f: DisplayFeature, i) => {
           const Ill = illMap[f.ill]!;
+          const accent = i % 2 === 0 ? primary : secondary;
           return (
-            <m.div
+            <div
               key={f.num}
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.3 + i * 0.1 }}
-              className="flex items-start gap-3 rounded-2xl border p-3.5 sm:gap-3.5 sm:p-4"
-              style={{ background: isDark ? "rgba(18,18,26,0.82)" : "rgba(255,255,255,0.88)", borderColor: `${i % 2 === 0 ? primary : secondary}1a`, boxShadow: `0 6px 18px rgba(0,0,0,${isDark ? "0.3" : "0.05"})` }}
+              className="wc-reveal flex items-start gap-3 rounded-2xl border p-3.5 sm:gap-3.5 sm:p-4"
+              style={{
+                background: isDark ? "rgba(18,18,26,0.82)" : "rgba(255,255,255,0.88)",
+                borderColor: `${accent}1a`,
+                boxShadow: `0 6px 18px rgba(0,0,0,${isDark ? "0.3" : "0.05"})`,
+                ["--wc-delay" as string]: `${0.3 + i * 0.1}s`,
+              }}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${i % 2 === 0 ? primary : secondary}` }}>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${accent}` }}>
                 <div className="h-6 w-6 text-primary sm:h-7 sm:w-7"><Ill /></div>
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
-                <div className="mb-0.5 text-[11px] font-extrabold" style={{ color: i % 2 === 0 ? primary : secondary }}>{f.num}</div>
+                <div className="mb-0.5 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
                 <h3 className="text-sm font-bold leading-snug sm:text-[15px]" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
                 <p className="mt-0.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
               </div>
-            </m.div>
+            </div>
           );
         })}
       </div>
@@ -349,7 +290,7 @@ function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFea
 }
 
 /* ───────────────────────────────────────
-   Background decoration (edges / fill)
+   Background decoration (edges / fill) — fully static
    ─────────────────────────────────────── */
 function Plus({ color }: { color: string }) {
   return (
@@ -359,19 +300,12 @@ function Plus({ color }: { color: string }) {
   );
 }
 
-function BackgroundDecor({ isDark, reduced, active }: { isDark: boolean; reduced: boolean; active: boolean }) {
+function BackgroundDecor({ isDark }: { isDark: boolean }) {
   const dot = isDark ? "rgba(255,255,255,0.05)" : "rgba(120,90,60,0.06)";
   const ring = isDark ? "rgba(255,255,255,0.07)" : "rgba(120,90,60,0.06)";
   const plus = isDark ? "rgba(255,255,255,0.14)" : "rgba(120,90,60,0.12)";
   const plusPos = [
     [11, 16], [87, 11], [5, 58], [93, 66], [16, 90], [82, 92], [50, 6], [50, 95],
-  ];
-  const floatDots = [
-    { x: "14%", y: "30%", c: primary, s: 10, d: 0 },
-    { x: "85%", y: "22%", c: secondary, s: 7, d: 1.2 },
-    { x: "8%", y: "78%", c: secondary, s: 8, d: 0.6 },
-    { x: "90%", y: "58%", c: primary, s: 6, d: 1.8 },
-    { x: "24%", y: "12%", c: primary, s: 5, d: 2.4 },
   ];
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -397,19 +331,6 @@ function BackgroundDecor({ isDark, reduced, active }: { isDark: boolean; reduced
           <Plus color={plus} />
         </span>
       ))}
-
-      {/* floating accent dots */}
-      {!reduced &&
-        active &&
-        floatDots.map((p, i) => (
-          <m.span
-            key={i}
-            className="absolute rounded-full"
-            style={{ left: p.x, top: p.y, width: p.s, height: p.s, background: p.c, opacity: 0.16 }}
-            animate={{ y: [0, -10, 0], opacity: [0.12, 0.3, 0.12] }}
-            transition={{ duration: 5, repeat: Infinity, delay: p.d }}
-          />
-        ))}
     </div>
   );
 }
@@ -420,19 +341,7 @@ function BackgroundDecor({ isDark, reduced, active }: { isDark: boolean; reduced
 export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings }) {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
-  const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const sectionInView = useInView(ref, { margin: "0px" });
-  const reduced = useReducedMotion() ?? false;
-
-  // Guarantee the section becomes visible even if the IntersectionObserver
-  // never fires (some mobile layouts / browsers). Content reveals on mount.
-  const [forceShow, setForceShow] = useState(false);
-  useEffect(() => {
-    const id = window.setTimeout(() => setForceShow(true), 400);
-    return () => window.clearTimeout(id);
-  }, []);
-  const show = isInView || forceShow;
+  const { ref, inView } = useInViewOnce<HTMLElement>({ rootMargin: "0px 0px -40px 0px" });
 
   const { data } = usePublicWhyChooseUs();
   const src = settings ?? data ?? DEFAULT_WHY_CHOOSE_US;
@@ -443,62 +352,38 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
     "من قلب المنظومة تشعّ كل ميزة — نظام متصل يحيط طالبك بكل ما يحتاجه للنجاح";
   const features = buildFeatures(src);
 
-  // 3D mouse-parallax tilt
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const rx = useSpring(my, { stiffness: 60, damping: 15 });
-  const ry = useSpring(mx, { stiffness: 60, damping: 15 });
-
   if (src.isActive === false) return null;
 
-  const onMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (reduced) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    mx.set(((e.clientX - r.left) / r.width - 0.5) * 9);
-    my.set(-((e.clientY - r.top) / r.height - 0.5) * 9);
-  };
-  const onLeave = () => {
-    mx.set(0);
-    my.set(0);
-  };
-
   return (
-    <section ref={ref} dir="rtl" className="section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24">
+    <section ref={ref} dir="rtl" className={`section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24${inView ? " wc-in-view" : ""}`}>
       <IllDefs />
       <div className="absolute inset-0" style={{ background: isDark ? "radial-gradient(ellipse at 50% 40%, #15131C 0%, #100E16 45%, #0C0A12 100%)" : "radial-gradient(ellipse at 50% 40%, #FBF6F0 0%, #F6EFE6 45%, #F0E8DC 100%)" }} />
       <div className="pointer-events-none absolute -start-10 top-10 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${primary}0c, transparent 70%)` }} />
       <div className="pointer-events-none absolute -end-10 bottom-0 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${secondary}0a, transparent 70%)` }} />
 
       {/* background decoration */}
-      <BackgroundDecor isDark={isDark} reduced={reduced} active={sectionInView} />
+      <BackgroundDecor isDark={isDark} />
 
       {/* title */}
       <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">
-        <m.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+        <div className="wc-reveal" style={{ ["--wc-delay" as string]: "0s" }}>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold sm:text-sm" style={{ background: isDark ? `linear-gradient(135deg, ${primary}18, ${secondary}10)` : `linear-gradient(135deg, ${primary}12, ${secondary}08)`, color: primary, border: `1px solid ${primary}22` }}>{title}</span>
-        </m.div>
-        <m.p initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.16 }} className="mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666" }}>
+        </div>
+        <p className="wc-reveal mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666", ["--wc-delay" as string]: "0.16s" }}>
           {subtitle}
-        </m.p>
+        </p>
       </div>
 
       {/* desktop orbit */}
-      <div
-        className="relative z-10 mx-auto hidden max-w-6xl px-4 lg:block"
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-      >
-        <m.div
-          className="relative mx-auto aspect-[10/7] w-full"
-          style={{ perspective: 1200, rotateX: rx, rotateY: ry }}
-        >
-          <div className="relative h-full w-full" style={{ transformStyle: "preserve-3d" }}>
-            <Connectors isDark={isDark} isInView={show} reduced={reduced} features={features} />
+      <div className="relative z-10 mx-auto hidden max-w-6xl px-4 lg:block">
+        <div className="relative mx-auto aspect-[10/7] w-full">
+          <div className="relative h-full w-full">
+            <Connectors isDark={isDark} features={features} />
             {features.map((f, i) => (
-              <Node key={f.num} f={f} index={i} reduced={reduced} isDark={isDark} />
+              <Node key={f.num} f={f} index={i} isDark={isDark} />
             ))}
           </div>
-        </m.div>
+        </div>
       </div>
 
       {/* phones & tablets (< lg) */}

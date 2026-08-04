@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { AUTH_EVENTS } from "@/services/api/axios";
+import { AUTH_EVENTS } from "@/constants/auth-events";
 import { useTenantStore } from "@/stores/tenant.store";
 import type { ActiveTenant } from "@/types/tenant.types";
 

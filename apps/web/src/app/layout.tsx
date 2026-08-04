@@ -4,7 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import "./globals.css";
-import { AppProviders } from "@/providers";
+import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
 import { env } from "@/config/env";

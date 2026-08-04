@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { Toaster } from "sonner";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "./ThemeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
 import { TenantProvider } from "./TenantProvider";
-import { AuthProvider } from "./AuthProvider";
-import { PermissionProvider } from "./PermissionProvider";
+
+const Toaster = dynamic(
+  () => import("@/components/system/Toaster").then((m) => m.Toaster),
+  { ssr: false },
+);
 
 function PauseAnimationsWhileScrolling() {
   useEffect(() => {
@@ -29,6 +32,13 @@ function PauseAnimationsWhileScrolling() {
   return null;
 }
 
+/**
+ * Providers required by every route, including fully anonymous pages.
+ *
+ * Auth-dependent providers (AuthProvider / PermissionProvider) intentionally
+ * live outside this tree and are mounted by route groups that require them, so
+ * the public homepage never ships session/dashboard code.
+ */
 export function AppProviders({
   children,
   serverHostname,
@@ -46,18 +56,9 @@ export function AppProviders({
           tenantContext={tenantContext}
         >
           <TenantProvider>
-            <AuthProvider>
-              <PermissionProvider>
-                <PauseAnimationsWhileScrolling />
-                {children}
-                <Toaster
-                  position="top-center"
-                  dir="rtl"
-                  richColors
-                  closeButton
-                />
-              </PermissionProvider>
-            </AuthProvider>
+            <PauseAnimationsWhileScrolling />
+            {children}
+            <Toaster />
           </TenantProvider>
         </TenantBootstrapProvider>
       </QueryProvider>

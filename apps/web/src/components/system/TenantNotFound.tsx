@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppButton } from "@/components/ui";
+import { AppButton } from "@/components/ui/AppButton";
 import { getPlatformDomain } from "@/lib/domain";
 
 export function TenantNotFound() {

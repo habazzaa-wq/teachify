@@ -273,7 +273,7 @@ export function NewsTicker({
             type="button"
             onClick={() => persistCollapsed(true)}
             aria-label="إخفاء شريط الأخبار"
-            className="absolute end-3 top-1/2 z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/20 text-white/90 backdrop-blur transition-colors hover:bg-black/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="glass-touch-solid absolute end-3 top-1/2 z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/20 text-white/90 backdrop-blur transition-colors hover:bg-black/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             <ChevronUp className="h-4 w-4" />
           </button>
@@ -291,7 +291,7 @@ export function NewsTicker({
           onPointerCancel={onHandlePointerUp}
           aria-label="إظهار شريط الأخبار"
           className={cn(
-            "fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            "glass-touch-solid fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
             pulling && "translate-y-1",
           )}
           style={{
