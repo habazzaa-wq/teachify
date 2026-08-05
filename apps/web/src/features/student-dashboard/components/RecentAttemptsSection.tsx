@@ -4,74 +4,94 @@ import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 import type { RecentAttemptItem } from "../types";
 import {
-  AppCard,
-  AppCardContent,
-  AppCardHeader,
-  AppCardTitle,
-} from "@/components/ui/AppCard";
-import { AppEmptyState } from "@/components/ui/AppEmptyState";
-import { AppBadge } from "@/components/ui/AppBadge";
+  StudentCard,
+  StudentCardHeader,
+  StudentEmptyState,
+  useBrandTheme,
+} from "./StudentCard";
+import { BRAND_PRIMARY, BRAND_SECONDARY } from "../constants";
 import { formatDateTime, formatNumber } from "@/lib/format";
 
 interface RecentAttemptsSectionProps {
   attempts: RecentAttemptItem[];
 }
 
-function resultBadge(attempt: RecentAttemptItem) {
+function resultBadge(attempt: RecentAttemptItem, t: ReturnType<typeof useBrandTheme>) {
   if (attempt.passed) {
     return (
-      <AppBadge variant="success" className="shrink-0 text-xs">
+      <span
+        className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold tabular-nums"
+        style={{
+          backgroundColor: `${BRAND_SECONDARY}1c`,
+          color: BRAND_SECONDARY,
+        }}
+      >
         ناجح · {formatNumber(attempt.percentage ?? 0)}%
-      </AppBadge>
+      </span>
     );
   }
 
   return (
-    <AppBadge variant="destructive" className="shrink-0 text-xs">
-      {attempt.status === "submitted" ? "مكتمل" : attempt.status} · {formatNumber(attempt.percentage ?? 0)}%
-    </AppBadge>
+    <span
+      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold tabular-nums"
+      style={{
+        backgroundColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+        color: t.muted,
+      }}
+    >
+      {attempt.status === "submitted" ? "مكتمل" : attempt.status} ·{" "}
+      {formatNumber(attempt.percentage ?? 0)}%
+    </span>
   );
 }
 
 export function RecentAttemptsSection({ attempts }: RecentAttemptsSectionProps) {
+  const t = useBrandTheme();
+
   return (
-    <AppCard className="h-full">
-      <AppCardHeader>
-        <AppCardTitle className="flex items-center gap-2">
-          <ClipboardCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-          آخر الاختبارات
-        </AppCardTitle>
-      </AppCardHeader>
-      <AppCardContent>
+    <StudentCard className="h-full">
+      <StudentCardHeader
+        icon={ClipboardCheck}
+        title="آخر الاختبارات"
+        subtitle="أحدث المحاولات ونتائجها"
+        accent={BRAND_PRIMARY}
+      />
+      <div className="p-5 sm:p-6">
         {attempts.length === 0 ? (
-          <AppEmptyState
-            variant="compact"
+          <StudentEmptyState
             icon={ClipboardCheck}
             title="لم تخض أي اختبار بعد"
             description="عند إتمام اختبار، ستظهر نتيجته هنا."
+            accent={BRAND_PRIMARY}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {attempts.map((attempt) => (
               <li key={attempt.attemptId}>
                 <Link
                   href={`/exam-results/${attempt.attemptId}`}
-                  className="group flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:border-primary/40 hover:bg-accent/40"
+                  className="group flex items-center justify-between gap-3 rounded-2xl border p-3 transition-all duration-300 hover:-translate-y-0.5"
+                  style={{
+                    border: `1px solid ${t.cardBorder}`,
+                    background: t.chipBg,
+                  }}
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{attempt.examTitle}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    <p className="truncate text-sm font-bold" style={{ color: t.ink }}>
+                      {attempt.examTitle}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs" style={{ color: t.muted }}>
                       {attempt.courseTitle ?? "اختبار مستقل"}
                       {attempt.submittedAt ? ` · ${formatDateTime(attempt.submittedAt)}` : ""}
                     </p>
                   </div>
-                  {resultBadge(attempt)}
+                  {resultBadge(attempt, t)}
                 </Link>
               </li>
             ))}
           </ul>
         )}
-      </AppCardContent>
-    </AppCard>
+      </div>
+    </StudentCard>
   );
 }

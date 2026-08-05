@@ -4,13 +4,13 @@ import Link from "next/link";
 import { AlarmClock, CalendarClock, PlaySquare } from "lucide-react";
 import type { UpcomingTask } from "../types";
 import {
-  AppCard,
-  AppCardContent,
-  AppCardHeader,
-  AppCardTitle,
-} from "@/components/ui/AppCard";
-import { AppEmptyState } from "@/components/ui/AppEmptyState";
-import { AppBadge } from "@/components/ui/AppBadge";
+  StudentCard,
+  StudentCardHeader,
+  StudentChip,
+  StudentEmptyState,
+  useBrandTheme,
+} from "./StudentCard";
+import { BRAND_PRIMARY, BRAND_SECONDARY } from "../constants";
 import { formatDateTime } from "@/lib/format";
 
 interface UpcomingTasksSectionProps {
@@ -18,63 +18,71 @@ interface UpcomingTasksSectionProps {
 }
 
 export function UpcomingTasksSection({ tasks }: UpcomingTasksSectionProps) {
+  const t = useBrandTheme();
+
   return (
-    <AppCard className="h-full">
-      <AppCardHeader>
-        <AppCardTitle className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-primary" aria-hidden="true" />
-          المهام القادمة
-        </AppCardTitle>
-      </AppCardHeader>
-      <AppCardContent>
+    <StudentCard className="h-full">
+      <StudentCardHeader
+        icon={CalendarClock}
+        title="المهام القادمة"
+        subtitle="اختبارات ومواعيد تنتهي قريبًا"
+        accent={BRAND_SECONDARY}
+      />
+      <div className="p-5 sm:p-6">
         {tasks.length === 0 ? (
-          <AppEmptyState
-            variant="compact"
+          <StudentEmptyState
             icon={CalendarClock}
             title="لا توجد مهام قادمة"
             description="أنت على اطلاع كامل بكل المهام."
+            accent={BRAND_SECONDARY}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {tasks.map((task) => {
-              const Icon = task.type === "exam" ? AlarmClock : PlaySquare;
+              const isExam = task.type === "exam";
+              const Icon = isExam ? AlarmClock : PlaySquare;
+              const accent = isExam ? BRAND_SECONDARY : BRAND_PRIMARY;
 
               return (
                 <li key={task.id}>
                   <Link
                     href={task.link}
-                    className="group flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:border-primary/40 hover:bg-accent/40"
+                    className="group flex items-center justify-between gap-3 rounded-2xl border p-3 transition-all duration-300 hover:-translate-y-0.5"
+                    style={{
+                      border: `1px solid ${t.cardBorder}`,
+                      background: t.chipBg,
+                    }}
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div
-                        className={
-                          task.priority === "high"
-                            ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive"
-                            : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                        }
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                        style={{
+                          backgroundColor: `${accent}1a`,
+                          color: accent,
+                          boxShadow: `0 4px 10px ${accent}1c`,
+                        }}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{task.title}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="truncate text-sm font-bold" style={{ color: t.ink }}>
+                          {task.title}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs" style={{ color: t.muted }}>
                           {task.dueAt ? formatDateTime(task.dueAt) : "بدون موعد محدد"}
                         </p>
                       </div>
                     </div>
-                    <AppBadge
-                      variant={task.priority === "high" ? "destructive" : "outline"}
-                      className="shrink-0 text-xs"
-                    >
-                      {task.type === "exam" ? "اختبار" : "دورة"}
-                    </AppBadge>
+                    <StudentChip accent={accent} className="shrink-0">
+                      {isExam ? "اختبار" : "دورة"}
+                    </StudentChip>
                   </Link>
                 </li>
               );
             })}
           </ul>
         )}
-      </AppCardContent>
-    </AppCard>
+      </div>
+    </StudentCard>
   );
 }

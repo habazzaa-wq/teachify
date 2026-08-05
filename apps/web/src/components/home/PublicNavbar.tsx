@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,6 +15,7 @@ import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
+import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
 import { cn } from "@/lib/cn";
 
@@ -198,6 +199,7 @@ export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
   const pathname = usePathname();
+  const auth = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState("/");
 
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -259,15 +261,32 @@ export function PublicNavbar() {
     }
   }, [studentRegistered, setAuthTokens, setAuthUser]);
 
-  const isLoggedIn = !!studentRegistered;
+  // The home page runs without AuthProvider, so the auth store is only populated
+  // when the user logs in/registers on this page. On authenticated routes (e.g.
+  // the student dashboard) the AuthProvider session is available instead.
+  const authSessionActive = !!auth && !!authUser;
+  const isLoggedIn = !!studentRegistered || authSessionActive;
+  const sessionName = studentRegistered?.name ?? authUser?.name ?? "";
+  const sessionAvatar = studentRegistered?.avatar ?? authUser?.avatar ?? null;
 
   const handleLogout = useCallback(() => {
+    if (auth) {
+      setProfileDropdownOpen(false);
+      setStudentRegistered(null);
+      try {
+        localStorage.removeItem("public-register-state");
+      } catch {
+        // ignore storage errors
+      }
+      void auth.logout();
+      return;
+    }
     setStudentRegistered(null);
     localStorage.removeItem("public-register-state");
     clearAuth();
     setProfileDropdownOpen(false);
     queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
-  }, [clearAuth, queryClient]);
+  }, [auth, clearAuth, queryClient]);
 
   // The student API layer clears `public-register-state` when it can no longer
   // refresh a 401 (the tokens were revoked by a login on /tenant-login and no
@@ -499,18 +518,18 @@ export function PublicNavbar() {
                         className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold overflow-hidden"
                         style={{ backgroundColor: primary }}
                       >
-                        {(authUser?.avatar || studentRegistered?.avatar) ?? undefined ? (
+                        {sessionAvatar ? (
                           <img
-                            src={(authUser?.avatar || studentRegistered?.avatar) ?? undefined}
+                            src={sessionAvatar}
                             alt=""
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          studentRegistered?.name?.charAt(0) ?? <User className="h-4 w-4" />
+                          sessionName?.charAt(0) ?? <User className="h-4 w-4" />
                         )}
                       </div>
                       <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
-                        {studentRegistered?.name}
+                        {sessionName}
                       </span>
                       <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
                         <ChevronDown className="h-4 w-4 text-muted-foreground/60 hidden sm:block" />
@@ -541,19 +560,19 @@ export function PublicNavbar() {
                                   boxShadow: `0 2px 12px ${primary}40`,
                                 }}
                               >
-                                {(authUser?.avatar || studentRegistered?.avatar) ?? undefined ? (
+                                {sessionAvatar ? (
                                   <img
-                                    src={(authUser?.avatar || studentRegistered?.avatar) ?? undefined}
+                                    src={sessionAvatar}
                                     alt=""
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  studentRegistered?.name?.charAt(0) ?? <User className="h-5 w-5" />
+                                  sessionName?.charAt(0) ?? <User className="h-5 w-5" />
                                 )}
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-foreground truncate">
-                                  {studentRegistered?.name}
+                                  {sessionName}
                                 </p>
                                 <p className="text-xs text-muted-foreground/60">
                                   حساب الطالب

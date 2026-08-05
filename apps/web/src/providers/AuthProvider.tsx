@@ -24,6 +24,8 @@ interface AuthProviderValue {
 
 const AuthContext = createContext<AuthProviderValue | null>(null);
 
+export { AuthContext };
+
 /**
  * Public, user-independent query keys that must survive session invalidation
  * so public pages (hero, news, stages, ...) don't flash a fallback/refetch

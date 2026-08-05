@@ -1,7 +1,6 @@
 "use client";
 
 import { useStudentDashboard } from "../hooks";
-import { AppPage } from "@/components/ui/AppPage";
 import { AppLoadingState } from "@/components/ui/AppLoadingState";
 import { AppErrorState } from "@/components/ui/AppErrorState";
 import { StudentHero } from "./StudentHero";
@@ -33,22 +32,30 @@ export function StudentDashboardPage() {
   }
 
   return (
-    <AppPage maxWidth="xl" className="space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <StudentHero data={data} />
       <StudentStatCards stats={data.stats} />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ContinueLearningSection items={data.continueLearning} />
-        <UpcomingTasksSection tasks={data.upcomingTasks} />
+      <div className="home-enter-up" style={{ animationDelay: "0.1s" }}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ContinueLearningSection items={data.continueLearning} />
+          <UpcomingTasksSection tasks={data.upcomingTasks} />
+        </div>
       </div>
-      <RecentAttemptsSection attempts={data.recentAttempts} />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TimelineSection events={data.timeline} />
-        <AchievementsSection achievements={data.achievements} />
+      <div className="home-enter-up" style={{ animationDelay: "0.15s" }}>
+        <RecentAttemptsSection attempts={data.recentAttempts} />
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <CalendarSection calendar={data.calendar} />
-        <QuickActions data={data} />
+      <div className="home-enter-up" style={{ animationDelay: "0.2s" }}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TimelineSection events={data.timeline} />
+          <AchievementsSection achievements={data.achievements} />
+        </div>
       </div>
-    </AppPage>
+      <div className="home-enter-up" style={{ animationDelay: "0.25s" }}>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CalendarSection calendar={data.calendar} />
+          <QuickActions data={data} />
+        </div>
+      </div>
+    </div>
   );
 }

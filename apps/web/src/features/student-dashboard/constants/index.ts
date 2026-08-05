@@ -15,6 +15,22 @@ import type {
   StudentDashboardStats,
 } from "../types";
 
+/**
+ * Brand palette shared with the public site (the-mechanist.com).
+ * Each visual element uses exactly ONE of these two colors — never both.
+ */
+export const BRAND_PRIMARY = "#D87B63";
+export const BRAND_SECONDARY = "#FFB50E";
+export const BRAND_TEXT_ON_PRIMARY = "#FFFFFF";
+export const BRAND_TEXT_ON_SECONDARY = "#5A3A00";
+
+/** Maps a stat-card semantic color to a single brand color. */
+export function brandColorFor(color: StatCardConfig["color"]): string {
+  return color === "warning" || color === "destructive"
+    ? BRAND_SECONDARY
+    : BRAND_PRIMARY;
+}
+
 export const TIMELINE_EVENT_LABELS: Record<TimelineEventType, string> = {
   course_enrolled: "التحق بدورة",
   lesson_progressed: "تقدّم في درس",

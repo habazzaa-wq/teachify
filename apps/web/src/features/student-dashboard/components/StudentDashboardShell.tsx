@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { NewsTicker } from "@/components/home/NewsTicker";
+import { PublicNavbar } from "@/components/home/PublicNavbar";
+import { MobileSecondaryNav } from "@/components/home/MobileSecondaryNav";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
 import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
 import { generateThemeColors } from "@/lib/color";
-import { StudentHeader } from "./StudentHeader";
 
 interface StudentDashboardShellProps {
   children: React.ReactNode;
@@ -29,7 +31,8 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
     }
   }, [tenant, isActive, setColors]);
 
-  // Inject the tenant-themed palette across the whole student dashboard.
+  // Inject the tenant-themed palette for the shared neutral tokens still used
+  // by some of the child UI (drawers, modals, loading states).
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
@@ -51,13 +54,30 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
     styleTag.textContent = `.student-theme { ${vars} }`;
   }, [primaryColor, secondaryColor, isActive, theme]);
 
+  const isDark = theme === "dark";
+
   return (
     <ProtectedRoute>
       <div ref={rootRef} className="student-theme flex min-h-screen flex-col bg-background">
-        <StudentHeader />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-6 lg:px-8">
+        {/* Home page chrome — same news bar, navbar and mobile nav as the main site */}
+        <NewsTicker />
+        <PublicNavbar />
+        <MobileSecondaryNav />
+
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 md:py-10 lg:px-8">
           {children}
         </main>
+
+        <footer
+          className="border-t py-6"
+          style={{
+            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.12)",
+          }}
+        >
+          <div className="container text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} {tenant?.name ?? "أكاديميتي"}. جميع الحقوق محفوظة.
+          </div>
+        </footer>
       </div>
     </ProtectedRoute>
   );
