@@ -269,6 +269,19 @@ export function PublicNavbar() {
     queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
   }, [clearAuth, queryClient]);
 
+  // The student API layer clears `public-register-state` when it can no longer
+  // refresh a 401 (the tokens were revoked by a login on /tenant-login and no
+  // valid replacement exists). Sync the navbar back to a logged-out state then.
+  useEffect(() => {
+    const onSessionExpired = () => {
+      setStudentRegistered(null);
+      setProfileDropdownOpen(false);
+      queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
+    };
+    window.addEventListener("public-session-expired", onSessionExpired);
+    return () => window.removeEventListener("public-session-expired", onSessionExpired);
+  }, [queryClient]);
+
   const scrollToSection = useCallback(
     (targetId: string) => {
       const scroll = () => {

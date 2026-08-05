@@ -7,6 +7,12 @@
  * leak the wrong identity's token into student API calls. Inside dashboard/auth
  * routes the auth store is authoritative.
  *
+ * Signing in on /tenant-login revokes every one of the user's tokens, including the
+ * ones held in `public-register-state`. When the auth store ends up holding the SAME
+ * identity's fresher token we prefer it on public pages too, so student calls keep
+ * working right after a dashboard login. A *different* identity's session (e.g. a
+ * teacher signed into the dashboard) is never used for student calls.
+ *
  * Handles tenant identification headers and one retry after a token refresh on 401.
  */
 import { useAuthStore } from "@/stores/auth.store";
@@ -87,11 +93,30 @@ function authStoreSessionIsStudent(): boolean {
   }
 }
 
+/**
+ * True when the shared auth store holds a session for the same person that the
+ * public navbar is showing. A dashboard login for the same person revokes the
+ * public tokens, so the auth store holds that identity's fresher token and is
+ * the correct credential to prefer. A different person's session (e.g. a teacher
+ * signed into the dashboard) must never leak into student calls.
+ */
+function samePublicIdentity(stored: RegisterState | null): boolean {
+  if (!stored?.name) return false;
+  try {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser?.name) return false;
+    return authUser.name === stored.name;
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve the access token that should be used for a student API call right now. */
 export function resolveStudentAccessToken(pathname?: string): string | null {
   const stored = readRegisterState();
   const authToken = authStoreToken();
   if (isPublicHomeContext(pathname)) {
+    if (authToken && samePublicIdentity(stored)) return authToken;
     if (stored?.token) return stored.token;
     return authToken && authStoreSessionIsStudent() ? authToken : null;
   }
@@ -102,6 +127,7 @@ function resolveRefreshToken(pathname?: string): string | null {
   const stored = readRegisterState();
   const authRefresh = authStoreRefreshToken();
   if (isPublicHomeContext(pathname)) {
+    if (authRefresh && samePublicIdentity(stored)) return authRefresh;
     if (stored?.refreshToken) return stored.refreshToken;
     return authRefresh && authStoreSessionIsStudent() ? authRefresh : null;
   }
@@ -187,6 +213,25 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 /**
+ * A public-home request came back 401 and the token could not be refreshed, which
+ * means the navbar session's credentials were revoked (e.g. by a login on
+ * /tenant-login) with no valid replacement for that identity. Drop the dead public
+ * session and notify the navbar so it returns to a logged-out state instead of
+ * showing stale data or a permanent "data not found" state.
+ */
+function clearExpiredPublicSession(): void {
+  try {
+    localStorage.removeItem(REGISTER_STATE_KEY);
+    const auth = useAuthStore.getState();
+    // Only drop the home-page seeded session, never a live dashboard session.
+    if (auth.user?.id === 0) auth.clear();
+    window.dispatchEvent(new CustomEvent("public-session-expired"));
+  } catch {
+    // ignore storage/event errors
+  }
+}
+
+/**
  * Fetch a tenant student endpoint with the correct identity's token, tenant
  * headers, and a single refresh+retry on 401.
  */
@@ -210,6 +255,13 @@ export async function tenantStudentFetch<T>(
   }
 
   if (!res.ok) {
+    if (
+      res.status === 401 &&
+      isPublicHomeContext() &&
+      typeof window !== "undefined"
+    ) {
+      clearExpiredPublicSession();
+    }
     let message = `Request failed (${res.status})`;
     try {
       const body = await res.json();
