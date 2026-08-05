@@ -21,6 +21,11 @@ const EducationalStagesSection = dynamic(
   { ssr: true }
 );
 
+const HomeCommunitySection = dynamic(
+  () => import("@/features/community/components/community-section/HomeCommunitySection").then((m) => m.HomeCommunitySection),
+  { ssr: true }
+);
+
 function SectionFallback({ className }: { className?: string }) {
   return (
     <section className={`relative w-full overflow-hidden py-12 sm:py-16 lg:py-24 ${className ?? ""}`} dir="rtl">
@@ -61,6 +66,11 @@ async function HomePage() {
       <LazyMount minHeight="560px">
         <Suspense fallback={<SectionFallback />}>
           <EducationalStagesSection />
+        </Suspense>
+      </LazyMount>
+      <LazyMount minHeight="520px">
+        <Suspense fallback={<SectionFallback />}>
+          <HomeCommunitySection />
         </Suspense>
       </LazyMount>
     </HydrationBoundary>

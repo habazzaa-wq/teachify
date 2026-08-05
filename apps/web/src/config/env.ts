@@ -136,6 +136,12 @@ export const env = {
         status: process.env.NEXT_PUBLIC_DEV_TENANT_STATUS ?? "active",
       }
     : null,
+  // Reverb (Laravel broadcasting) — Pusher-protocol compatible over WebSockets.
+  // Override with NEXT_PUBLIC_REVERB_* in .env.local when deploying.
+  reverbHost: process.env.NEXT_PUBLIC_REVERB_HOST ?? "localhost",
+  reverbPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080),
+  reverbScheme: process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http",
+  reverbAppKey: process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? "techify-reverb-key",
 } as const;
 
 /**

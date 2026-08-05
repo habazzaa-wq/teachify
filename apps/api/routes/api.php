@@ -26,6 +26,18 @@ use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateVerificationController;
 use App\Http\Controllers\Api\v1\Certificates\CourseCertificateRuleController;
+use App\Http\Controllers\Api\v1\Community\CommunityAnnouncementController;
+use App\Http\Controllers\Api\v1\Community\CommunityBookmarkController;
+use App\Http\Controllers\Api\v1\Community\CommunityChannelController;
+use App\Http\Controllers\Api\v1\Community\CommunityGamificationController;
+use App\Http\Controllers\Api\v1\Community\CommunityMessageController;
+use App\Http\Controllers\Api\v1\Community\CommunityModerationController;
+use App\Http\Controllers\Api\v1\Community\CommunityNotificationController;
+use App\Http\Controllers\Api\v1\Community\CommunityPresenceController;
+use App\Http\Controllers\Api\v1\Community\CommunityReactionController;
+use App\Http\Controllers\Api\v1\Community\CommunitySearchController;
+use App\Http\Controllers\Api\v1\Community\CommunityStatsController;
+use App\Http\Controllers\Api\v1\Community\CommunityThreadController;
 use App\Http\Controllers\Api\v1\Courses\CategoryController;
 use App\Http\Controllers\Api\v1\Courses\CourseController;
 use App\Http\Controllers\Api\v1\Courses\CourseInstructorController;
@@ -82,8 +94,6 @@ use App\Http\Controllers\Api\v1\PublicEducationalStageController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
-use App\Http\Controllers\Api\v1\StudentDashboardController;
-use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
 use App\Http\Controllers\Api\v1\PublicWhyChooseUsController;
@@ -91,6 +101,8 @@ use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizResultController;
+use App\Http\Controllers\Api\v1\StudentDashboardController;
+use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -423,6 +435,78 @@ Route::prefix('v1')->group(function () {
         Route::put('/discussions/{thread}/posts/{post}', [DiscussionPostController::class, 'update']);
         Route::delete('/discussions/{thread}/posts/{post}', [DiscussionPostController::class, 'destroy']);
         Route::post('/discussions/posts/{post}/report', [DiscussionReportController::class, 'store']);
+
+        // Community
+        Route::prefix('community')->group(function () {
+            Route::get('/categories', [CommunityChannelController::class, 'index']);
+            Route::get('/channels/{channel}', [CommunityChannelController::class, 'show']);
+            Route::get('/channels/{channel}/threads', [CommunityChannelController::class, 'threads']);
+            Route::post('/channels/{channel}/lock', [CommunityChannelController::class, 'lock']);
+            Route::post('/channels/{channel}/unlock', [CommunityChannelController::class, 'unlock']);
+
+            Route::post('/channels/{channel}/threads', [CommunityThreadController::class, 'store']);
+            Route::get('/threads/{thread}', [CommunityThreadController::class, 'show']);
+            Route::post('/threads/{thread}/follow', [CommunityThreadController::class, 'follow']);
+            Route::post('/threads/{thread}/unfollow', [CommunityThreadController::class, 'unfollow']);
+            Route::post('/threads/{thread}/mute', [CommunityThreadController::class, 'mute']);
+            Route::post('/threads/{thread}/unmute', [CommunityThreadController::class, 'unmute']);
+
+            Route::get('/channels/{channel}/messages', [CommunityMessageController::class, 'index']);
+            Route::post('/channels/{channel}/messages', [CommunityMessageController::class, 'store'])->middleware('throttle:30,1');
+            Route::post('/channels/{channel}/read', [CommunityMessageController::class, 'markRead']);
+            Route::get('/messages/{message}', [CommunityMessageController::class, 'show']);
+            Route::put('/messages/{message}', [CommunityMessageController::class, 'update']);
+            Route::delete('/messages/{message}', [CommunityMessageController::class, 'destroy']);
+            Route::post('/messages/{message}/pin', [CommunityMessageController::class, 'pin']);
+            Route::post('/messages/{message}/unpin', [CommunityMessageController::class, 'unpin']);
+            Route::post('/messages/{message}/highlight', [CommunityMessageController::class, 'highlight']);
+            Route::post('/messages/{message}/unhighlight', [CommunityMessageController::class, 'unhighlight']);
+            Route::post('/messages/{message}/official', [CommunityMessageController::class, 'official']);
+            Route::post('/messages/{message}/official/remove', [CommunityMessageController::class, 'removeOfficial']);
+            Route::post('/messages/{message}/solve', [CommunityMessageController::class, 'solve']);
+            Route::post('/messages/{message}/unsolve', [CommunityMessageController::class, 'unsolve']);
+            Route::post('/messages/{message}/accept', [CommunityMessageController::class, 'accept']);
+            Route::post('/messages/{message}/unaccept', [CommunityMessageController::class, 'unaccept']);
+            Route::get('/messages/{message}/seen-by', [CommunityMessageController::class, 'seenBy']);
+
+            Route::post('/messages/{message}/reactions', [CommunityReactionController::class, 'store'])->middleware('throttle:60,1');
+            Route::get('/bookmarks', [CommunityBookmarkController::class, 'index']);
+            Route::post('/messages/{message}/bookmark', [CommunityBookmarkController::class, 'store']);
+            Route::delete('/messages/{message}/bookmark', [CommunityBookmarkController::class, 'destroy']);
+
+            Route::get('/search', [CommunitySearchController::class, 'index'])->middleware('throttle:30,1');
+
+            Route::get('/moderation/reports', [CommunityModerationController::class, 'reports']);
+            Route::patch('/moderation/reports/{report}', [CommunityModerationController::class, 'review']);
+            Route::post('/moderation/members/{subject}/warn', [CommunityModerationController::class, 'warn']);
+            Route::post('/moderation/members/{subject}/mute', [CommunityModerationController::class, 'mute']);
+            Route::post('/moderation/members/{subject}/unmute', [CommunityModerationController::class, 'unmute']);
+            Route::post('/moderation/members/{subject}/ban', [CommunityModerationController::class, 'ban']);
+            Route::post('/moderation/members/{subject}/unban', [CommunityModerationController::class, 'unban']);
+            Route::get('/moderation/members/{subject}/actions', [CommunityModerationController::class, 'actions']);
+
+            Route::post('/presence/online', [CommunityPresenceController::class, 'online'])->middleware('throttle:60,1');
+            Route::post('/presence/offline', [CommunityPresenceController::class, 'offline'])->middleware('throttle:60,1');
+            Route::get('/presence/online-members', [CommunityPresenceController::class, 'onlineMembers']);
+            Route::post('/channels/{channel}/typing', [CommunityPresenceController::class, 'typing'])->middleware('throttle:60,1');
+
+            Route::get('/announcements', [CommunityAnnouncementController::class, 'index']);
+            Route::post('/announcements', [CommunityAnnouncementController::class, 'store']);
+            Route::get('/announcements/{announcement}', [CommunityAnnouncementController::class, 'show']);
+            Route::put('/announcements/{announcement}', [CommunityAnnouncementController::class, 'update']);
+            Route::post('/announcements/{announcement}/publish', [CommunityAnnouncementController::class, 'publish']);
+            Route::delete('/announcements/{announcement}', [CommunityAnnouncementController::class, 'destroy']);
+
+            Route::get('/notifications', [CommunityNotificationController::class, 'index']);
+            Route::get('/notifications/unread', [CommunityNotificationController::class, 'unread']);
+            Route::patch('/notifications/{notification}/read', [CommunityNotificationController::class, 'read']);
+            Route::patch('/notifications/{notification}/archive', [CommunityNotificationController::class, 'archive']);
+
+            Route::get('/gamification/me', [CommunityGamificationController::class, 'me']);
+            Route::get('/gamification/leaderboard', [CommunityGamificationController::class, 'leaderboard']);
+
+            Route::get('/stats', [CommunityStatsController::class, 'show']);
+        });
 
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
         Route::get('/audit-logs/entity', [AuditLogController::class, 'entity']);

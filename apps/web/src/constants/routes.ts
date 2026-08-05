@@ -31,6 +31,9 @@ export const routes = {
   dashboardSettings: "/teacher/settings",
   // Student control panel (learner dashboard) — under /student/
   studentDashboard: "/student/dashboard",
+  // Student community — under /community
+  community: "/community",
+  communityThread: "/community/threads",
   homepageNews: "/teacher/homepage/news",
   homepageHero: "/teacher/homepage/hero",
   homepageWhyChooseUs: "/teacher/homepage/why-choose-us",
