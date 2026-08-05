@@ -57,7 +57,7 @@ class PublicCourseController extends Controller
 
         match ($request->string('pricing_type')->toString()) {
             'free' => $query->where('pricing_type', 'free'),
-            'paid' => $query->whereIn('pricing_type', ['one_time', 'subscription']),
+            'paid' => $query->where('pricing_type', '!=', 'free'),
             default => null,
         };
 
