@@ -28,8 +28,8 @@ return new class extends Migration
                 ->references(['id', 'tenant_id'])
                 ->on('community_messages')
                 ->cascadeOnDelete();
-            $table->foreign(['media_asset_id', 'tenant_id'])
-                ->references(['id', 'tenant_id'])
+            $table->foreign('media_asset_id')
+                ->references('id')
                 ->on('media_assets')
                 ->nullOnDelete();
         });
