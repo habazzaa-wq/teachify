@@ -63,7 +63,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['tenant_id', 'message_id', 'mentioned_tenant_user_id'], 'community_mentions_unique');
-            $table->index(['tenant_id', 'mentioned_tenant_user_id']);
+            $table->index(['tenant_id', 'mentioned_tenant_user_id'], 'community_mentions_user_idx');
             $table->foreign(['message_id', 'tenant_id'])
                 ->references(['id', 'tenant_id'])
                 ->on('community_messages')
@@ -151,8 +151,8 @@ return new class extends Migration
             $table->jsonb('metadata')->nullable();
             $table->timestamps();
 
-            $table->index(['tenant_id', 'subject_tenant_user_id']);
-            $table->index(['tenant_id', 'action']);
+            $table->index(['tenant_id', 'subject_tenant_user_id'], 'community_moderation_subject_idx');
+            $table->index(['tenant_id', 'action'], 'community_moderation_action_idx');
             $table->foreign(['subject_tenant_user_id', 'tenant_id'])
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
