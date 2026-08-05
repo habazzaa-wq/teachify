@@ -57,11 +57,11 @@ function IllDefs() {
       <defs>
         <linearGradient id="oG1" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor={primary} />
-          <stop offset="100%" stopColor={secondary} />
+          <stop offset="100%" stopColor={primary} />
         </linearGradient>
         <linearGradient id="oG2" x1="1" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={secondary} />
-          <stop offset="100%" stopColor={primary} />
+          <stop offset="100%" stopColor={secondary} />
         </linearGradient>
       </defs>
     </svg>
@@ -150,7 +150,7 @@ function FeatureTile({
       <div
         className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-white sm:p-8"
         style={{
-          background: `linear-gradient(150deg, ${primary} 0%, #E08A6C 46%, ${secondary} 135%)`,
+          background: `linear-gradient(160deg, #E08A6C 0%, ${primary} 100%)`,
           boxShadow: `0 18px 44px ${primary}38`,
           ["--wc-delay" as string]: "0.05s",
         }}
@@ -255,9 +255,9 @@ function CtaTile({ isDark }: { isDark: boolean }) {
       className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D87B63]/60"
       style={{
         background: isDark
-          ? "linear-gradient(150deg, rgba(216,123,99,0.16), rgba(255,181,14,0.10)), #16141E"
-          : "linear-gradient(150deg, rgba(216,123,99,0.10), rgba(255,181,14,0.08)), #ffffff",
-        borderColor: isDark ? "rgba(255,181,14,0.18)" : `${primary}30`,
+          ? "linear-gradient(150deg, rgba(216,123,99,0.16), rgba(216,123,99,0.06)), #16141E"
+          : "linear-gradient(150deg, rgba(216,123,99,0.10), rgba(216,123,99,0.05)), #ffffff",
+        borderColor: isDark ? "rgba(216,123,99,0.35)" : `${primary}30`,
         boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.28)" : "0 10px 30px rgba(0,0,0,0.05)",
         ["--wc-delay" as string]: "0.34s",
       }}
@@ -269,7 +269,7 @@ function CtaTile({ isDark }: { isDark: boolean }) {
       <span
         className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-110"
         style={{
-          background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+          background: primary,
           boxShadow: `0 10px 24px ${primary}3d`,
         }}
       >
@@ -282,10 +282,10 @@ function CtaTile({ isDark }: { isDark: boolean }) {
         ابدأ رحلة النجاح مع منظومة تعليمية متكاملة تواكب طموحك
       </p>
       <span
-        className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-white transition-transform duration-300 group-hover:scale-[1.03]"
+        className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-[#5a3a00] transition-transform duration-300 group-hover:scale-[1.03]"
         style={{
-          background: `linear-gradient(120deg, ${primary}, #E08A6C, ${secondary})`,
-          boxShadow: `0 10px 26px ${primary}38`,
+          background: secondary,
+          boxShadow: `0 10px 26px ${secondary}38`,
         }}
       >
         استكشف المراحل
@@ -386,9 +386,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
             <span
               className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold"
               style={{
-                background: isDark
-                  ? `linear-gradient(135deg, ${primary}1f, ${secondary}0f)`
-                  : `linear-gradient(135deg, ${primary}0e, ${secondary}08)`,
+                background: isDark ? `${primary}1f` : `${primary}0e`,
                 color: primary,
                 border: `1px solid ${isDark ? `${primary}30` : `${primary}1c`}`,
               }}
@@ -400,14 +398,9 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
 
           <h2
             className="wc-reveal mx-auto pb-2 text-3xl font-extrabold leading-snug sm:text-4xl lg:text-[42px]"
-            style={{ ["--wc-delay" as string]: "0.12s" }}
+            style={{ color: primary, ["--wc-delay" as string]: "0.12s" }}
           >
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: `linear-gradient(120deg, ${primary}, ${secondary})` }}
-            >
-              {title}
-            </span>
+            {title}
           </h2>
 
           <p
