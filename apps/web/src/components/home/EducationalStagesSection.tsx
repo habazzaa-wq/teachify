@@ -232,16 +232,16 @@ function StageStatsRow({
 
 /* ────────────── explore CTA ────────────── */
 
-function ExploreCta({ isDark }: { isDark: boolean }) {
+function ExploreCta() {
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors duration-300"
-      style={{ color: isDark ? "#F0ECE6" : PRIMARY }}
+      className="inline-flex items-center gap-1.5 text-[11px] font-extrabold transition-colors duration-300"
+      style={{ color: ACCENT }}
     >
       استكشف المرحلة
       <span
-        className="flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300"
-        style={{ background: `${PRIMARY}14`, color: PRIMARY }}
+        className="flex h-6 w-6 items-center justify-center rounded-full text-[#5a3a00] transition-transform duration-300 group-hover:scale-110"
+        style={{ background: ACCENT, boxShadow: `0 4px 10px ${ACCENT}40` }}
       >
         <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
       </span>
@@ -276,7 +276,7 @@ function StageCard({
     >
       <div className="flex h-full flex-col overflow-hidden rounded-3xl lg:hover:-translate-y-1" style={cardShell(isDark)}>
         <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
-          <StageCover stage={stage} index={index} isDark={isDark} priority={priority} sizes="(max-width: 639px) 72vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 400px" />
+          <StageCover stage={stage} index={index} isDark={isDark} priority={priority} sizes="(max-width: 639px) 90vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 400px" />
 
           {popular ? (
             <span
@@ -310,7 +310,7 @@ function StageCard({
             className="mt-3 flex items-center justify-between border-t pt-3"
             style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)" }}
           >
-            <ExploreCta isDark={isDark} />
+            <ExploreCta />
             <span className="text-[10px] font-semibold tabular-nums" style={{ color: muted(isDark) }}>
               {formatNumber(stats?.coursesCount ?? 0)} دورة
             </span>
@@ -469,37 +469,10 @@ export function EducationalStagesSection() {
             <StagesSkeleton isDark={isDark} />
           ) : (
             <>
-              {/* mobile: horizontal snapping carousel (all stages) */}
-              <div className="-mx-5 px-5 sm:hidden">
-                <div
-                  role="region"
-                  aria-label="المراحل الدراسية — مرر أفقياً للاستكشاف"
-                  tabIndex={0}
-                  className="flex snap-x snap-mandatory [scroll-padding-inline-start:4px] gap-4 overflow-x-auto pb-2 pt-0.5 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:ring-2 focus-visible:ring-[#BF6D58]/50 focus-visible:rounded-2xl"
-                >
-                  {all.map((stage, i) => {
-                    const stats = statsById.get(stage.id);
-                    return (
-                      <div key={stage.id} className="w-[72%] max-w-[340px] shrink-0 snap-start">
-                        <StageCard
-                          stage={stage}
-                          index={i}
-                          isDark={isDark}
-                          priority={i < 2}
-                          stats={stats}
-                          loading={loadingIds.has(stage.id)}
-                          popular={stage.id === popularId}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* tablet / desktop: uniform grid */}
+              {/* uniform grid — stacked single column on phones, side-by-side on larger screens */}
               <div
                 id="educational-stages-grid"
-                className="hidden gap-5 sm:grid sm:grid-cols-2 lg:grid-cols-3"
+                className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
               >
                 {display.map((stage, i) => {
                   const stats = statsById.get(stage.id);
@@ -509,6 +482,7 @@ export function EducationalStagesSection() {
                         stage={stage}
                         index={i}
                         isDark={isDark}
+                        priority={i < 2}
                         stats={stats}
                         loading={loadingIds.has(stage.id)}
                         popular={stage.id === popularId}
