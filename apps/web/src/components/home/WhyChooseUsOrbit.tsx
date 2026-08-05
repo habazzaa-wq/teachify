@@ -1,6 +1,7 @@
 "use client";
 
 import { type FC } from "react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
@@ -12,27 +13,12 @@ import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } 
 const primary = "#D87B63";
 const secondary = "#FFB50E";
 
-/* ───────────────────────────────────────
-   Fixed professional layout positions (index-based).
-   Content (title/desc/ill) is fully dynamic; positions stay fixed.
-   ─────────────────────────────────────── */
 interface DisplayFeature {
   num: string;
   title: string;
   desc: string;
   ill: WhyChooseUsIll;
-  x: number;
-  y: number;
 }
-
-const POSITIONS: { x: number; y: number }[] = [
-  { x: 25, y: 42 },
-  { x: 50, y: 42 },
-  { x: 75, y: 42 },
-  { x: 25, y: 74 },
-  { x: 75, y: 74 },
-  { x: 50, y: 86 },
-];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -43,9 +29,24 @@ function buildFeatures(settings: WhyChooseUsSettings): DisplayFeature[] {
     title: f.title,
     desc: f.desc,
     ill: f.ill,
-    ...(POSITIONS[i] ?? { x: 50, y: 90 }),
   }));
 }
+
+/* ───────────────────────────────────────
+   Bento layout rules
+   The first feature is a large "flagship" tile (2×2 on desktop).
+   Depending on the total feature count the last tiles / CTA tile
+   stretch to fill the grid with no holes.
+   ─────────────────────────────────────── */
+function bentoCell(i: number, total: number): string {
+  if (i === 0) return "sm:col-span-2 lg:col-span-2 lg:row-span-2";
+  if (i === 1) return "sm:col-span-2 lg:col-span-1";
+  if (total === 3 && i === 2) return "lg:col-span-2";
+  if (total === 4 && i === 3) return "lg:col-span-2";
+  return "lg:col-span-1";
+}
+
+const showCtaTile = (total: number) => total >= 2 && total <= 5;
 
 /* ───────────────────────────────────────
    Shared illustration gradient defs
@@ -123,174 +124,179 @@ function IllWallet() {
 const illMap: Record<string, FC> = { cap: IllCap, video: IllVideo, target: IllTarget, chat: IllChat, trend: IllTrend, wallet: IllWallet };
 
 /* ───────────────────────────────────────
-   Connector SVG (hub → node).
-   Fully static. The only motion is a one-shot
-   draw-in that runs once when the section enters view.
+   Shared tokens
    ─────────────────────────────────────── */
-function Connectors({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
-  const hub = { x: 500, y: 96 };
-  return (
-    <svg viewBox="0 0 1000 700" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
-      <defs>
-        <radialGradient id="oHub" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={secondary} />
-          <stop offset="60%" stopColor={primary} />
-          <stop offset="100%" stopColor={primary} stopOpacity="0.2" />
-        </radialGradient>
-        <linearGradient id="oLine" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={primary} stopOpacity="0.7" />
-          <stop offset="100%" stopColor={secondary} stopOpacity="0.15" />
-        </linearGradient>
-      </defs>
-
-      {/* static dashed ring around hub */}
-      <circle
-        cx="500" cy="96" r="74"
-        fill="none"
-        stroke={isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"}
-        strokeWidth="1.4"
-        strokeDasharray="3 12"
-      />
-
-      {/* connectors (draw in once) */}
-      {features.map((f: DisplayFeature, i) => {
-        const ex = (f.x / 100) * 1000;
-        const ey = (f.y / 100) * 700;
-        const sx = hub.x;
-        const sy = hub.y + 46;
-        const cx = sx + (ex - sx) * 0.5;
-        const cy = sy + (ey - sy) * 0.5;
-        const d = `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`;
-        return (
-          <path
-            key={`c-${i}`}
-            d={d}
-            className="wc-line"
-            fill="none"
-            stroke="url(#oLine)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            style={{ "--wc-delay": `${0.5 + i * 0.12}s` } as React.CSSProperties}
-          />
-        );
-      })}
-
-      {/* hub core (static) */}
-      <circle cx="500" cy="96" r="56" fill="url(#oHub)" />
-      <circle
-        cx="500" cy="96" r="56"
-        fill="none"
-        stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)"}
-        strokeWidth="1.5"
-      />
-      <text x="500" y="92" textAnchor="middle" fontSize="15" fontWeight="800" fill="#fff">منظومة</text>
-      <text x="500" y="110" textAnchor="middle" fontSize="11" fontWeight="600" fill="#fff" opacity="0.85">المعرفة</text>
-    </svg>
-  );
-}
+const ink = (isDark: boolean) => (isDark ? "#F5F1EC" : "#1a1a1a");
+const muted = (isDark: boolean) => (isDark ? "#9C948A" : "#666");
+const cardBg = (isDark: boolean) => (isDark ? "rgba(22,20,30,0.72)" : "rgba(255,255,255,0.92)");
 
 /* ───────────────────────────────────────
-   Node + card (static; one-shot reveal on view)
+   Regular feature tile
    ─────────────────────────────────────── */
-function Node({ f, index, isDark }: { f: DisplayFeature; index: number; isDark: boolean }) {
+function FeatureTile({
+  f,
+  index,
+  isDark,
+}: {
+  f: DisplayFeature;
+  index: number;
+  isDark: boolean;
+}) {
   const Ill = illMap[f.ill]!;
   const accent = index % 2 === 0 ? primary : secondary;
-  return (
-    <div
-      className="wc-reveal absolute z-20"
-      style={{ left: `${f.x}%`, top: `${f.y}%`, ["--wc-delay" as string]: `${0.8 + index * 0.12}s` }}
-    >
+
+  if (index === 0) {
+    return (
       <div
-        className="relative"
-        style={{ transform: "translate(-50%,-50%)" }}
+        className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-white sm:p-8"
+        style={{
+          background: `linear-gradient(150deg, ${primary} 0%, #E08A6C 46%, ${secondary} 135%)`,
+          boxShadow: `0 18px 44px ${primary}38`,
+          ["--wc-delay" as string]: "0.05s",
+        }}
       >
-        <div>
-          {/* glow */}
-          <div className="pointer-events-none absolute -inset-4 rounded-full" style={{ background: `${accent}1f` }} />
-          {/* badge */}
-          <div
-            className="relative flex h-14 w-14 items-center justify-center rounded-full sm:h-16 sm:w-16"
-            style={{
-              background: isDark ? "rgba(255,255,255,0.05)" : "#fff",
-              border: `2px solid ${accent}`,
-              boxShadow: `0 12px 30px ${accent}28`,
-            }}
-          >
-            <div className="h-8 w-8 text-primary sm:h-9 sm:w-9"><Ill /></div>
+        {/* decorations */}
+        <div aria-hidden="true" className="pointer-events-none absolute -end-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -start-12 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -end-8 bottom-8 h-24 w-24 rounded-full border border-white/25" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: "radial-gradient(#fff 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+
+        {/* top row */}
+        <div className="relative flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-extrabold backdrop-blur-sm">
+            <Sparkles aria-hidden="true" className="h-3 w-3" />
+            {f.num}
+          </span>
+          <span className="text-[11px] font-bold tracking-widest text-white/80">الأفضل دائمًا</span>
+        </div>
+
+        {/* emblem */}
+        <div className="relative my-6 flex justify-center">
+          <div aria-hidden="true" className="absolute -inset-4 rounded-full bg-white/25 blur-2xl" />
+          <div aria-hidden="true" className="absolute -start-2 top-2 h-2.5 w-2.5 rounded-full" style={{ background: "#fff" }} />
+          <div aria-hidden="true" className="absolute -end-1 bottom-4 h-2 w-2 rounded-full bg-white/70" />
+          <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-white/95 shadow-2xl sm:h-32 sm:w-32">
+            <div className="h-14 w-14 sm:h-16 sm:w-16"><Ill /></div>
           </div>
         </div>
 
-        {/* centered label below */}
-        <div className="absolute left-1/2 top-[calc(100%+16px)] w-[clamp(150px,17vw,220px)] -translate-x-1/2 px-1 text-center">
-          <div className="mb-1 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
-          <h3 className="text-[12px] font-bold leading-snug sm:text-[13px] lg:text-sm" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
-          <p className="mx-auto mt-1 max-w-[190px] text-[10.5px] leading-relaxed sm:text-[11px] lg:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
+        {/* text */}
+        <div className="relative">
+          <h3 className="text-xl font-extrabold leading-snug sm:text-2xl">{f.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-[15px]">{f.desc}</p>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-/* ───────────────────────────────────────
-    Responsive cards (phones → tablets, < lg)
-    ─────────────────────────────────────── */
-function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 lg:hidden">
-      {/* hub */}
-      <div className="relative mb-7 flex h-24 items-center justify-center sm:mb-9 sm:h-28">
-        <svg viewBox="0 0 200 110" className="h-full w-36 sm:w-40" fill="none">
-          <defs>
-            <radialGradient id="mHub" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={secondary} />
-              <stop offset="100%" stopColor={primary} />
-            </radialGradient>
-          </defs>
-          <circle cx="100" cy="55" r="34" fill="url(#mHub)" />
-          <text x="100" y="52" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff">منظومة</text>
-          <text x="100" y="66" textAnchor="middle" fontSize="8" fontWeight="600" fill="#fff" opacity="0.85">المعرفة</text>
-          {[
-            [50, 30], [100, 22], [150, 30], [50, 84], [150, 84],
-          ].map(([x, y], i) => (
-            <line key={i} x1="100" y1="55" x2={x} y2={y} stroke={primary} strokeWidth="1" strokeOpacity="0.4" strokeDasharray="3 4" />
-          ))}
-        </svg>
+    <div
+      className="wc-reveal group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 sm:p-6"
+      style={{
+        background: cardBg(isDark),
+        borderColor: `${accent}1f`,
+        boxShadow: isDark
+          ? "0 10px 30px rgba(0,0,0,0.28)"
+          : `0 10px 30px ${accent}12`,
+        ["--wc-delay" as string]: `${0.08 + index * 0.06}s`,
+      }}
+    >
+      {/* watermark number */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -end-1 -top-3 select-none text-[64px] font-black leading-none sm:text-[76px]"
+        style={{ color: `${accent}12` }}
+      >
+        {f.num}
+      </span>
+
+      {/* icon */}
+      <div
+        className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14"
+        style={{
+          background: isDark ? `${accent}17` : `${accent}12`,
+          border: `1px solid ${accent}33`,
+        }}
+      >
+        <div className="h-7 w-7 sm:h-8 sm:w-8"><Ill /></div>
       </div>
 
-      {/* responsive grid: 1 col on phones, 2 cols on small tablets/tablets */}
-      <div className="relative z-10 grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
-        {features.map((f: DisplayFeature, i) => {
-          const Ill = illMap[f.ill]!;
-          const accent = i % 2 === 0 ? primary : secondary;
-          return (
-            <div
-              key={f.num}
-              className="wc-reveal flex items-start gap-3 rounded-2xl border p-3.5 sm:gap-3.5 sm:p-4"
-              style={{
-                background: isDark ? "rgba(18,18,26,0.82)" : "rgba(255,255,255,0.88)",
-                borderColor: `${accent}1a`,
-                boxShadow: `0 6px 18px rgba(0,0,0,${isDark ? "0.3" : "0.05"})`,
-                ["--wc-delay" as string]: `${0.3 + i * 0.1}s`,
-              }}
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${accent}` }}>
-                <div className="h-6 w-6 text-primary sm:h-7 sm:w-7"><Ill /></div>
-              </div>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <div className="mb-0.5 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
-                <h3 className="text-sm font-bold leading-snug sm:text-[15px]" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
-                <p className="mt-0.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <h3 className="relative text-[15px] font-extrabold leading-snug sm:text-base" style={{ color: ink(isDark) }}>
+        {f.title}
+      </h3>
+      <p className="relative mt-1.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: muted(isDark) }}>
+        {f.desc}
+      </p>
+
+      {/* corner glow on hover */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-10 -end-10 h-28 w-28 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ background: `radial-gradient(circle, ${accent}2e, transparent 70%)` }}
+      />
     </div>
   );
 }
 
 /* ───────────────────────────────────────
-   Background decoration (edges / fill) — fully static
+   CTA tile (fills the bento on smaller feature counts)
+   ─────────────────────────────────────── */
+function CtaTile({ isDark }: { isDark: boolean }) {
+  return (
+    <a
+      href="#educational-stages"
+      className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D87B63]/60"
+      style={{
+        background: isDark
+          ? "linear-gradient(150deg, rgba(216,123,99,0.16), rgba(255,181,14,0.10)), #16141E"
+          : "linear-gradient(150deg, rgba(216,123,99,0.10), rgba(255,181,14,0.08)), #ffffff",
+        borderColor: isDark ? "rgba(255,181,14,0.18)" : `${primary}30`,
+        boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.28)" : "0 10px 30px rgba(0,0,0,0.05)",
+        ["--wc-delay" as string]: "0.34s",
+      }}
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-12 h-32 w-32 rounded-full border-2 border-dashed" style={{ borderColor: `${primary}2e` }} />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -start-10 h-28 w-28 rounded-full" style={{ background: `radial-gradient(circle, ${secondary}22, transparent 70%)` }} />
+      <span className="pointer-events-none absolute end-5 top-4 select-none text-4xl font-black" style={{ color: `${secondary}14` }}>+</span>
+
+      <span
+        className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-110"
+        style={{
+          background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+          boxShadow: `0 10px 24px ${primary}3d`,
+        }}
+      >
+        <ArrowLeft aria-hidden="true" className="h-6 w-6" />
+      </span>
+      <h3 className="relative text-lg font-extrabold leading-snug" style={{ color: ink(isDark) }}>
+        جاهز للانطلاق؟
+      </h3>
+      <p className="relative -mt-2 text-sm leading-relaxed" style={{ color: muted(isDark) }}>
+        ابدأ رحلة النجاح مع منظومة تعليمية متكاملة تواكب طموحك
+      </p>
+      <span
+        className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-white transition-transform duration-300 group-hover:scale-[1.03]"
+        style={{
+          background: `linear-gradient(120deg, ${primary}, #E08A6C, ${secondary})`,
+          boxShadow: `0 10px 26px ${primary}38`,
+        }}
+      >
+        استكشف المراحل
+        <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+      </span>
+    </a>
+  );
+}
+
+/* ───────────────────────────────────────
+   Background decoration
    ─────────────────────────────────────── */
 function Plus({ color }: { color: string }) {
   return (
@@ -309,7 +315,6 @@ function BackgroundDecor({ isDark }: { isDark: boolean }) {
   ];
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-      {/* dot grid */}
       <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="oDots" width="34" height="34" patternUnits="userSpaceOnUse">
@@ -319,13 +324,11 @@ function BackgroundDecor({ isDark }: { isDark: boolean }) {
         <rect width="100%" height="100%" fill="url(#oDots)" />
       </svg>
 
-      {/* faint large rings at edges */}
       <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full border" style={{ borderColor: ring }} />
       <div className="absolute -right-28 -bottom-28 h-96 w-96 rounded-full border" style={{ borderColor: ring }} />
       <div className="absolute -right-16 top-1/3 h-44 w-44 rounded-full border" style={{ borderColor: ring }} />
       <div className="absolute -left-20 bottom-1/4 h-52 w-52 rounded-full border" style={{ borderColor: ring }} />
 
-      {/* plus marks */}
       {plusPos.map(([x, y], i) => (
         <span key={i} className="absolute" style={{ left: `${x}%`, top: `${y}%`, color: plus }}>
           <Plus color={plus} />
@@ -351,45 +354,104 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
     src.subtitle?.trim() ||
     "من قلب المنظومة تشعّ كل ميزة — نظام متصل يحيط طالبك بكل ما يحتاجه للنجاح";
   const features = buildFeatures(src);
+  const total = features.length;
 
   if (src.isActive === false) return null;
 
   return (
-    <section ref={ref} dir="rtl" className={`section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24${inView ? " wc-in-view" : ""}`}>
+    <section
+      ref={ref}
+      dir="rtl"
+      className={`section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24${inView ? " wc-in-view" : ""}`}
+    >
       <IllDefs />
-      <div className="absolute inset-0" style={{ background: isDark ? "radial-gradient(ellipse at 50% 40%, #15131C 0%, #100E16 45%, #0C0A12 100%)" : "radial-gradient(ellipse at 50% 40%, #FBF6F0 0%, #F6EFE6 45%, #F0E8DC 100%)" }} />
-      <div className="pointer-events-none absolute -start-10 top-10 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${primary}0c, transparent 70%)` }} />
-      <div className="pointer-events-none absolute -end-10 bottom-0 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${secondary}0a, transparent 70%)` }} />
 
-      {/* background decoration */}
+      {/* background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isDark
+            ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
+            : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
+        }}
+      />
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, ${primary}12 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${secondary}0d 0%, transparent 70%)` }} />
       <BackgroundDecor isDark={isDark} />
 
-      {/* title */}
-      <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">
-        <div className="wc-reveal" style={{ ["--wc-delay" as string]: "0s" }}>
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold sm:text-sm" style={{ background: isDark ? `linear-gradient(135deg, ${primary}18, ${secondary}10)` : `linear-gradient(135deg, ${primary}12, ${secondary}08)`, color: primary, border: `1px solid ${primary}22` }}>{title}</span>
-        </div>
-        <p className="wc-reveal mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666", ["--wc-delay" as string]: "0.16s" }}>
-          {subtitle}
-        </p>
-      </div>
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        {/* header */}
+        <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-12">
+          <div className="wc-reveal" style={{ ["--wc-delay" as string]: "0s" }}>
+            <span
+              className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold"
+              style={{
+                background: isDark
+                  ? `linear-gradient(135deg, ${primary}1f, ${secondary}0f)`
+                  : `linear-gradient(135deg, ${primary}0e, ${secondary}08)`,
+                color: primary,
+                border: `1px solid ${isDark ? `${primary}30` : `${primary}1c`}`,
+              }}
+            >
+              <Sparkles aria-hidden="true" className="h-3.5 w-3.5" style={{ color: secondary }} />
+              مميزات المنظومة
+            </span>
+          </div>
 
-      {/* desktop orbit */}
-      <div className="relative z-10 mx-auto hidden max-w-6xl px-4 lg:block">
-        <div className="relative mx-auto aspect-[10/7] w-full">
-          <div className="relative h-full w-full">
-            <Connectors isDark={isDark} features={features} />
-            {features.map((f, i) => (
-              <Node key={f.num} f={f} index={i} isDark={isDark} />
-            ))}
+          <h2
+            className="wc-reveal mx-auto pb-2 text-3xl font-extrabold leading-snug sm:text-4xl lg:text-[42px]"
+            style={{ ["--wc-delay" as string]: "0.12s" }}
+          >
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: `linear-gradient(120deg, ${primary}, ${secondary})` }}
+            >
+              {title}
+            </span>
+          </h2>
+
+          <p
+            className="wc-reveal mx-auto mt-3 max-w-xl text-sm leading-relaxed sm:text-base"
+            style={{ color: muted(isDark), ["--wc-delay" as string]: "0.2s" }}
+          >
+            {subtitle}
+          </p>
+
+          {/* divider */}
+          <div className="wc-reveal mt-6 flex items-center justify-center gap-2" style={{ ["--wc-delay" as string]: "0.26s" }}>
+            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to left, ${primary}, transparent)` }} />
+            <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: secondary }} />
+            <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: primary, opacity: 0.6 }} />
+            <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: secondary }} />
+            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to right, ${secondary}, transparent)` }} />
           </div>
         </div>
+
+        {/* bento grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:auto-rows-fr lg:gap-6">
+          {features.map((f, i) => (
+            <div key={`${f.num}-${i}`} className={`h-full ${bentoCell(i, total)}`}>
+              <FeatureTile f={f} index={i} isDark={isDark} />
+            </div>
+          ))}
+
+          {showCtaTile(total) ? (
+            <div className="h-full lg:col-span-1">
+              <CtaTile isDark={isDark} />
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {/* phones & tablets (< lg) */}
-      <CardsGrid isDark={isDark} features={features} />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28" style={{ background: isDark ? "linear-gradient(to top, #0C0A12, transparent)" : "linear-gradient(to top, #F0E8DC, transparent)" }} />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-14"
+        style={{
+          background: isDark
+            ? "linear-gradient(to top, #0e0c14, transparent)"
+            : "linear-gradient(to top, #fdfbf7, transparent)",
+        }}
+      />
     </section>
   );
 }
