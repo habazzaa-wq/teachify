@@ -60,7 +60,7 @@ return new class extends Migration
                 ->references(['id', 'tenant_id'])
                 ->on('community_channels')
                 ->cascadeOnDelete();
-            $table->foreign(['created_by_tenant_user_id', 'tenant_id'])
+            $table->foreign(['created_by_tenant_user_id', 'tenant_id'], 'community_announcements_creator_foreign')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
                 ->cascadeOnDelete();

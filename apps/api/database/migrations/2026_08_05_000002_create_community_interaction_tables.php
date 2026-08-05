@@ -68,7 +68,7 @@ return new class extends Migration
                 ->references(['id', 'tenant_id'])
                 ->on('community_messages')
                 ->cascadeOnDelete();
-            $table->foreign(['mentioned_tenant_user_id', 'tenant_id'])
+            $table->foreign(['mentioned_tenant_user_id', 'tenant_id'], 'community_mentions_user_foreign')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
                 ->cascadeOnDelete();
@@ -153,11 +153,11 @@ return new class extends Migration
 
             $table->index(['tenant_id', 'subject_tenant_user_id'], 'community_moderation_subject_idx');
             $table->index(['tenant_id', 'action'], 'community_moderation_action_idx');
-            $table->foreign(['subject_tenant_user_id', 'tenant_id'])
+            $table->foreign(['subject_tenant_user_id', 'tenant_id'], 'community_moderation_subject_foreign')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
                 ->cascadeOnDelete();
-            $table->foreign(['moderator_tenant_user_id', 'tenant_id'])
+            $table->foreign(['moderator_tenant_user_id', 'tenant_id'], 'community_moderation_moderator_foreign')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
                 ->cascadeOnDelete();
