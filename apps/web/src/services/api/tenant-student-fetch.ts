@@ -71,12 +71,29 @@ function authStoreRefreshToken(): string | null {
   }
 }
 
+/**
+ * True when the shared auth store currently holds a *student* session.
+ *
+ * The auth store is overwritten by every login (teacher dashboard included),
+ * so on public pages we must only fall back to it when it actually belongs to
+ * a student — otherwise a teacher token would leak into student API calls.
+ */
+function authStoreSessionIsStudent(): boolean {
+  try {
+    const roles = useTenantStore.getState().roles;
+    return Array.isArray(roles) && roles.some((role) => role?.slug === "student");
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve the access token that should be used for a student API call right now. */
 export function resolveStudentAccessToken(pathname?: string): string | null {
   const stored = readRegisterState();
   const authToken = authStoreToken();
   if (isPublicHomeContext(pathname)) {
-    return stored?.token ?? authToken;
+    if (stored?.token) return stored.token;
+    return authToken && authStoreSessionIsStudent() ? authToken : null;
   }
   return authToken ?? stored?.token ?? null;
 }
@@ -85,7 +102,8 @@ function resolveRefreshToken(pathname?: string): string | null {
   const stored = readRegisterState();
   const authRefresh = authStoreRefreshToken();
   if (isPublicHomeContext(pathname)) {
-    return stored?.refreshToken ?? authRefresh;
+    if (stored?.refreshToken) return stored.refreshToken;
+    return authRefresh && authStoreSessionIsStudent() ? authRefresh : null;
   }
   return authRefresh ?? stored?.refreshToken ?? null;
 }

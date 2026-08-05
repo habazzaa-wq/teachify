@@ -23,12 +23,26 @@ class WalletController extends Controller
     }
 
     /**
+     * Ensure the active membership has the student role so a teacher/owner
+     * token can never read or create a wallet via the student endpoints.
+     */
+    private function assertStudentRole(TenantUser $membership): void
+    {
+        abort_unless(
+            $membership->roles()->where('slug', 'student')->exists(),
+            403,
+            'هذه الميزة متاحة للطلاب فقط.',
+        );
+    }
+
+    /**
      * Show the current student's wallet (creates it on first access).
      */
     public function me(): JsonResponse
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
@@ -44,6 +58,7 @@ class WalletController extends Controller
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
@@ -71,6 +86,7 @@ class WalletController extends Controller
 
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $result = $this->walletService->recharge($tenant, $membership, $validated['code']);
 
@@ -96,6 +112,7 @@ class WalletController extends Controller
 
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
         $amount = (float) $validated['amount'];
 
@@ -196,6 +213,7 @@ class WalletController extends Controller
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $payment = WalletPayment::query()
             ->where('tenant_id', $tenant->id)
