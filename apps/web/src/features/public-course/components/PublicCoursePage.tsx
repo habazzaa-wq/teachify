@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
 import { CourseHero } from "./CourseHero";
@@ -18,6 +19,14 @@ import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+
+const PublicLoginCard = dynamic(
+  () =>
+    import("@/features/auth/components/PublicLoginCard").then(
+      (m) => m.PublicLoginCard,
+    ),
+  { ssr: false },
+);
 
 interface Props {
   slug: string;
@@ -51,6 +60,7 @@ export function PublicCoursePage({ slug }: Props) {
   const { isAuthenticated } = useCurrentUser();
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
@@ -65,15 +75,20 @@ export function PublicCoursePage({ slug }: Props) {
       return;
     }
     if (!isAuthenticated) {
-      router.push("/tenant-login");
+      setLoginOpen(true);
       return;
     }
     setPurchaseModalOpen(true);
   }, [isEnrolled, isAuthenticated, router]);
 
   const handleLogin = useCallback(() => {
-    router.push("/tenant-login");
-  }, [router]);
+    setLoginOpen(true);
+  }, []);
+
+  const handleLoginSuccess = useCallback(() => {
+    setLoginOpen(false);
+    setPurchaseModalOpen(true);
+  }, []);
 
   const handleLockedClick = useCallback(() => {
     if (!isEnrolled) {
@@ -160,6 +175,12 @@ export function PublicCoursePage({ slug }: Props) {
         open={purchaseModalOpen}
         onClose={() => setPurchaseModalOpen(false)}
         course={course}
+      />
+
+      <PublicLoginCard
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
       />
     </div>
   );
