@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const isSuperAdminRoute = isSuperAdminPath(pathname);
-  const refreshingRef = useRef(false);
+  const refreshingPromiseRef = useRef<Promise<void> | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
@@ -97,16 +97,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearAuth, clearTenant, queryClient, router]);
 
   const refreshSession = useCallback(async () => {
-    if (refreshingRef.current || !refreshToken) return;
-    refreshingRef.current = true;
+    if (!refreshToken) return;
+
+    if (refreshingPromiseRef.current) {
+      await refreshingPromiseRef.current;
+      return;
+    }
+
+    refreshingPromiseRef.current = (async () => {
+      try {
+        const result = await authService.refresh({ refresh_token: refreshToken });
+        setAccessToken(result.access_token);
+      } catch {
+        handleStaleSession();
+      }
+    })();
 
     try {
-      const result = await authService.refresh({ refresh_token: refreshToken });
-      setAccessToken(result.access_token);
-    } catch {
-      handleStaleSession();
+      await refreshingPromiseRef.current;
     } finally {
-      refreshingRef.current = false;
+      refreshingPromiseRef.current = null;
     }
   }, [refreshToken, setAccessToken, handleStaleSession]);
 
