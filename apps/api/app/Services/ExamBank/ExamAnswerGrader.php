@@ -47,7 +47,7 @@ class ExamAnswerGrader
 
     private function gradeNumeric(Question $question, mixed $answer): bool
     {
-        $expected = $question->content['correct'] ?? null;
+        $expected = $question->content['answer'] ?? $question->content['correct'] ?? null;
 
         if (! is_string($answer) || ! is_numeric($answer) || ! is_numeric($expected)) {
             return false;

@@ -300,6 +300,73 @@ class ExamSessionFoundationTest extends TestCase
         $this->assertSame('6', $response->json('data.questions.0.content.correct'));
     }
 
+    public function test_numeric_question_with_ui_answer_key_schema_is_graded_with_tolerance(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->memberWithRole($tenant, 'admin');
+        $student = $this->memberWithRole($tenant, 'student');
+        [$course, $section, $lesson] = $this->publishedLessonStack($tenant, $admin, 'Numeric UI Fixture');
+        $this->setCourseAccess($tenant, $admin, $course, 'enrolled_only');
+        $this->enrollStudent($tenant, $admin, $course, $student);
+        $exam = $this->createPublishedExam($tenant, $admin, [
+            'title' => 'Numeric UI Exam',
+            'duration' => 30,
+            'passing_score' => 60,
+        ]);
+
+        $numeric = $this->createQuestion($tenant, $admin, 'numeric', [
+            'answer' => 6,
+            'unit' => 'm/s',
+            'tolerance' => 1,
+        ]);
+        $this->attachQuestionToExam($tenant, $admin, $exam, $numeric);
+        $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
+
+        Sanctum::actingAs($student->user);
+        $data = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data');
+
+        $question = $data['questions'][0];
+        $this->assertSame('numeric', $question['type']);
+        $this->assertSame(1, $question['content']['tolerance']);
+        $this->assertArrayNotHasKey('correct', $question['content']);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '5.5'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved = ExamAttemptAnswer::query()
+            ->where('exam_attempt_id', $data['attempt']['id'])
+            ->where('exam_question_id', $question['examQuestionId'])
+            ->firstOrFail();
+
+        $this->assertTrue($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '8'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved->refresh();
+        $this->assertFalse($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '6'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $response = $this->postJson("/api/v1/exam-sessions/{$data['attempt']['id']}/submit", [], $this->tenantHeader($tenant))
+            ->assertOk();
+
+        $this->assertSame(1.0, (float) $response->json('data.attempt.score'));
+        $this->assertSame('6', $response->json('data.questions.0.content.correct'));
+    }
+
     public function test_partial_submission_is_scored_accordingly(): void
     {
         [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();

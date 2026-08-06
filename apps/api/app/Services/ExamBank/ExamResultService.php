@@ -295,9 +295,7 @@ class ExamResultService
                 : [],
             'numeric' => array_filter([
                 'tolerance' => (int) ($content['tolerance'] ?? 0),
-                'correct' => $revealCorrect && isset($content['correct'])
-                    ? (string) $content['correct']
-                    : null,
+                'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
             ], fn (mixed $value): bool => $value !== null),
             default => [],
         };
@@ -318,11 +316,22 @@ class ExamResultService
                 ->values()
                 ->all(),
             'true_false' => isset($content['correct']) ? (string) $content['correct'] : null,
-            'numeric' => isset($content['correct']) && is_numeric($content['correct'])
-                ? (string) $content['correct']
-                : null,
+            'numeric' => $this->numericCorrectValue($content),
             default => null,
         };
+    }
+
+    /**
+     * Numeric questions store their expected value under `answer` (teacher UI)
+     * or `correct` (seed data).
+     *
+     * @param  array<string, mixed>  $content
+     */
+    private function numericCorrectValue(array $content): ?string
+    {
+        $value = $content['answer'] ?? $content['correct'] ?? null;
+
+        return is_numeric($value) ? (string) $value : null;
     }
 
     private function percent(int $part, int $total): float

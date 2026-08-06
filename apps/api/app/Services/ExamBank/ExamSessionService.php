@@ -475,11 +475,22 @@ class ExamSessionService
                 : [],
             'numeric' => array_filter([
                 'tolerance' => (int) ($content['tolerance'] ?? 0),
-                'correct' => $revealCorrect && isset($content['correct'])
-                    ? (string) $content['correct']
-                    : null,
+                'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
             ], fn (mixed $value): bool => $value !== null),
             default => [],
         };
+    }
+
+    /**
+     * Numeric questions store their expected value under `answer` (teacher UI)
+     * or `correct` (seed data).
+     *
+     * @param  array<string, mixed>  $content
+     */
+    private function numericCorrectValue(array $content): ?string
+    {
+        $value = $content['answer'] ?? $content['correct'] ?? null;
+
+        return is_numeric($value) ? (string) $value : null;
     }
 }
