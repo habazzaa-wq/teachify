@@ -26,7 +26,7 @@ async function serverFetch<T>(path: string): Promise<T> {
       ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
       ...(tenantDomain ? { "X-Tenant-Domain": tenantDomain } : {}),
     },
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
 
   if (!res.ok) {
