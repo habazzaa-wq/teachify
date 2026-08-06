@@ -244,7 +244,10 @@ class BunnyClient implements BunnyClientInterface
         if (isset($options['body']) && is_string($options['body'])) {
             $request = $request->withBody($options['body'], 'application/octet-stream');
         } elseif (isset($options['json'])) {
-            $request = $request->json($options['json']);
+            $request = $request->withBody(
+                json_encode($options['json']),
+                'application/json',
+            );
         }
 
         return $request;

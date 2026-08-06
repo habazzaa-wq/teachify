@@ -18,6 +18,7 @@ use App\Services\Media\MediaManager;
 use App\Services\Media\Providers\BunnyStreamProvider;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -314,6 +315,25 @@ class BunnyStreamFoundationTest extends TestCase
         $this->assertSame('stream', $data['provider_service']);
         $this->assertSame('video-playback-1', $data['video_id']);
         $this->assertSame('https://platform.example.test/video-playback-1/playlist.m3u8', $data['playback_url']);
+    }
+
+    public function test_create_video_sends_json_body_with_application_json_content_type(): void
+    {
+        $this->createPlatformStreamSettings();
+
+        Http::fake();
+
+        app(\App\Services\Bunny\BunnyStreamService::class)->createVideo('My Lesson');
+
+        $recorded = Http::recorded();
+
+        $this->assertCount(1, $recorded);
+        [$request] = $recorded[0];
+
+        $this->assertSame('POST', $request->method());
+        $this->assertStringContainsString('/library/platform-lib-1/videos', $request->url());
+        $this->assertSame('application/json', $request->header('Content-Type')[0]);
+        $this->assertSame('My Lesson', $request['title']);
     }
 
     private function createPlatformStreamSettings(): void
