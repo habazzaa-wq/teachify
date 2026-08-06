@@ -29,7 +29,7 @@ function LessonRowInner({
   );
 
   const hasExam = !!lesson.examId;
-  const hasResources = lesson.downloadable;
+  const hasResources = (lesson.filesCount ?? 0) > 0 || lesson.downloadable;
   const isLocked = !isEnrolled;
   const showPreview = isPreview && lesson.freePreview;
 
@@ -106,10 +106,16 @@ function LessonRowInner({
         </div>
       </div>
 
-      {/* Lock */}
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 transition-transform duration-200 group-hover/lesson:scale-110 dark:text-amber-400">
-        <Lock className="h-3.5 w-3.5" />
-      </div>
+      {/* Status icon */}
+      {isLocked ? (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 transition-transform duration-200 group-hover/lesson:scale-110 dark:text-amber-400">
+          <Lock className="h-3.5 w-3.5" />
+        </div>
+      ) : (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#BF6D58]/10 text-[#BF6D58] transition-transform duration-200 group-hover/lesson:scale-110">
+          <Play className="h-3.5 w-3.5 fill-current" />
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -66,6 +66,7 @@ export interface PublicCourseLesson {
   downloadable: boolean;
   featured: boolean;
   examId: string | null;
+  filesCount: number;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

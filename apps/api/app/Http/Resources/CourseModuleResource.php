@@ -24,7 +24,9 @@ class CourseModuleResource extends JsonResource
             'color' => $this->color,
             'icon' => $this->icon,
             'notes' => $this->notes,
-            'sectionsCount' => $this->sections_count ?? $this->sections()->count(),
+            'sectionsCount' => $this->sections_count
+                ?? ($this->relationLoaded('sections') ? $this->sections->count() : $this->sections()->count()),
+            'sections' => CourseSectionResource::collection($this->whenLoaded('sections')),
             'publishedAt' => $this->published_at?->toIso8601String(),
             'course' => $this->when($this->relationLoaded('course'), fn () => [
                 'id' => (string) $this->course->id,

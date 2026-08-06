@@ -130,6 +130,7 @@ function formatLesson(raw: Raw): PublicCourseLesson {
     downloadable: raw.downloadable ?? false,
     featured: raw.featured ?? false,
     examId: raw.examId ?? raw.exam_id ?? null,
+    filesCount: raw.filesCount ?? raw.files_count ?? 0,
     publishedAt: raw.publishedAt ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
