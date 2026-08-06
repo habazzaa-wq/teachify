@@ -5,9 +5,9 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { LazyMount } from "@/components/home/LazyMount";
 import { heroKeys } from "@/features/homepage/hero/query-keys";
 import { heroServerService } from "@/features/homepage/hero/server-services";
-import { whyChooseUsKeys } from "@/features/homepage/why-choose-us/hooks";
+import { whyChooseUsKeys } from "@/features/homepage/why-choose-us/keys";
 import { whyChooseUsServerService } from "@/features/homepage/why-choose-us/server-services";
-import { stagesKeys } from "@/features/homepage/educational-stages/hooks";
+import { stagesKeys } from "@/features/homepage/educational-stages/keys";
 import { stagesServerService } from "@/features/homepage/educational-stages/server-services";
 import { getQueryClient } from "@/lib/get-query-client";
 
