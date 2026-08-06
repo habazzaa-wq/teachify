@@ -404,7 +404,7 @@ export function useMarkRead() {
       });
       mutation.mutate({ channelId, messageId, threadId });
     },
-    [clearUnread, mutation, queryClient],
+    [clearUnread, mutation.mutate, queryClient],
   );
 
   return { markRead, ...mutation };
