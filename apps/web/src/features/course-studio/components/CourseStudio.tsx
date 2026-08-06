@@ -534,7 +534,6 @@ function CourseStudio({
           title: `${CONTENT_TYPE_CONFIG[type].label} جديد`,
           lesson_type: type === "external_link" ? "external" as any : type === "resource" ? "text" as any : type as any,
           sort_order: nextOrder + 1,
-          status: "draft",
         },
       }).then(() => {
         toast.success(`تم إنشاء ${CONTENT_TYPE_CONFIG[type].label} بنجاح`);
@@ -593,7 +592,6 @@ function CourseStudio({
               lesson_type: lessonType,
               description: description || null,
               sort_order: nextOrder,
-              status: "draft",
             },
           });
           if (contentType === "video") {
@@ -612,7 +610,6 @@ function CourseStudio({
               exam_id: Number(pendingContent.examId),
               description: description || null,
               sort_order: nextOrder,
-              status: "draft",
             },
           });
           toast.success(`تم ربط "${title}" بنجاح`);

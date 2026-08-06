@@ -61,9 +61,9 @@ class ExamPolicy
             && $this->auth()->hasPermission($user, currentTenant(), 'exams.delete');
     }
 
-    public function restore(User $user, Exam $exam): bool
+    public function restore(User $user): bool
     {
-        return $this->update($user, $exam);
+        return $this->auth()->hasPermission($user, currentTenant(), 'exams.update');
     }
 
     private function isTenantOperator(User $user, Tenant $tenant): bool

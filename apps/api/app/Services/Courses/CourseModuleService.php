@@ -36,14 +36,14 @@ class CourseModuleService
                 'slug' => $this->uniqueModuleSlug($course, $data['slug'] ?? $data['title']),
                 'description' => $data['description'] ?? null,
                 'order' => $data['order'] ?? $this->nextSortOrder($course),
-                'status' => 'draft',
-                'is_published' => false,
+                'status' => 'published',
+                'is_published' => true,
                 'featured' => $data['featured'] ?? false,
                 'estimated_duration' => $data['estimated_duration'] ?? null,
                 'color' => $data['color'] ?? null,
                 'icon' => $data['icon'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'published_at' => null,
+                'published_at' => now(),
             ]);
 
             return $module;
@@ -108,6 +108,10 @@ class CourseModuleService
     public function changeStatus(Course $course, CourseModule $module, string $status): CourseModule
     {
         $this->ensureModuleBelongsToCourse($course, $module);
+
+        if ($status === $module->status) {
+            return $module;
+        }
 
         $allowed = [
             'draft' => ['published', 'archived'],

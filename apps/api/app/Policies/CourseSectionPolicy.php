@@ -57,10 +57,9 @@ class CourseSectionPolicy
         return $this->auth()->hasPermission($user, currentTenant(), 'sections.reorder');
     }
 
-    public function restore(User $user, CourseSection $section): bool
+    public function restore(User $user): bool
     {
-        return $section->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'sections.delete');
+        return $this->auth()->hasPermission($user, currentTenant(), 'sections.delete');
     }
 
     private function auth(): TenantAuthorizationService

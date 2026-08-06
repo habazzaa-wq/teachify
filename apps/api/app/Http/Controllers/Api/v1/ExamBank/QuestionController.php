@@ -148,7 +148,7 @@ class QuestionController extends Controller
 
     public function restore(int $question): JsonResponse
     {
-        Gate::authorize('update', Question::class);
+        Gate::authorize('restore', Question::class);
 
         $question = $this->repository->restore($question);
         abort_if($question === null, 404);
@@ -194,7 +194,7 @@ class QuestionController extends Controller
 
     public function bulkRestore(Request $request): JsonResponse
     {
-        Gate::authorize('update', Question::class);
+        Gate::authorize('restore', Question::class);
 
         $validated = $request->validate([
             'ids' => ['required', 'array'],
@@ -234,8 +234,6 @@ class QuestionController extends Controller
 
     public function bulkArchive(Request $request): JsonResponse
     {
-        Gate::authorize('update', Question::class);
-
         $validated = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
@@ -254,8 +252,6 @@ class QuestionController extends Controller
 
     public function bulkMoveCategory(Request $request): JsonResponse
     {
-        Gate::authorize('update', Question::class);
-
         $validated = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer'],

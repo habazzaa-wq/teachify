@@ -40,8 +40,8 @@ class CourseSectionService
                 'sort_order' => $data['sort_order'] ?? $this->nextSortOrder($course),
                 'duration_minutes' => $data['duration_minutes'] ?? null,
                 'free_preview' => $data['free_preview'] ?? false,
-                'status' => 'draft',
-                'is_published' => false,
+                'status' => 'published',
+                'is_published' => true,
                 'locked' => $data['locked'] ?? false,
                 'featured' => $data['featured'] ?? false,
                 'color' => $data['color'] ?? null,
@@ -193,6 +193,10 @@ class CourseSectionService
     public function changeStatus(Course $course, CourseSection $section, string $status): CourseSection
     {
         $this->ensureSectionBelongsToCourse($course, $section);
+
+        if ($status === $section->status) {
+            return $section;
+        }
 
         $allowed = [
             'draft' => ['published', 'archived'],

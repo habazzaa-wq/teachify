@@ -37,6 +37,11 @@ class QuestionBankPolicy
             && $this->auth()->hasPermission($user, currentTenant(), 'exams.delete');
     }
 
+    public function restore(User $user): bool
+    {
+        return $this->auth()->hasPermission($user, currentTenant(), 'exams.update');
+    }
+
     private function auth(): TenantAuthorizationService
     {
         return app(TenantAuthorizationService::class);
