@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { routes } from "@/constants/routes";
 import { useAuthStore } from "@/stores/auth.store";
+import { useUiStore } from "@/stores/ui.store";
 import {
   STAT_KEYS,
   useCommunityStats,
@@ -28,6 +29,10 @@ const PublicLoginCard = dynamic(
   { ssr: false },
 );
 
+/* ───────────────────────────────────────
+   Homepage brand palette — each color is
+   used on its own, never mixed together.
+   ─────────────────────────────────────── */
 const PRIMARY = "#D87B63";
 const SECONDARY = "#FFB50E";
 
@@ -79,6 +84,8 @@ function StatTile({
 export function HomeCommunitySection() {
   const status = useAuthStore((s) => s.status);
   const isAuthenticated = status === "authenticated";
+  const theme = useUiStore((s) => s.theme);
+  const isDark = theme === "dark";
   const [loginOpen, setLoginOpen] = useState(false);
 
   const { data: stats } = useCommunityStats();
@@ -118,56 +125,64 @@ export function HomeCommunitySection() {
 
   return (
     <section dir="rtl" className="relative w-full overflow-hidden py-12 sm:py-16 lg:py-20">
-      {/* Ambient gradient blobs */}
-      <div className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute -top-24 start-1/4 h-72 w-72 rounded-full opacity-25 blur-3xl"
-          style={{ background: `radial-gradient(circle, ${SECONDARY}66, transparent 70%)` }}
-        />
-        <div
-          className="absolute bottom-0 end-0 h-80 w-80 rounded-full opacity-20 blur-3xl"
-          style={{ background: `radial-gradient(circle, ${PRIMARY}66, transparent 70%)` }}
-        />
-      </div>
+      {/* Section background — matches the rest of the homepage */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isDark
+            ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
+            : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
+        }}
+      />
+
+      {/* Ambient single-color glows */}
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, ${PRIMARY}12 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${SECONDARY}0d 0%, transparent 70%)` }} />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
-          className="relative overflow-hidden rounded-[2rem] border border-white/60 shadow-2xl backdrop-blur-xl dark:border-white/10"
+          className="relative overflow-hidden rounded-[2rem] border shadow-2xl backdrop-blur-xl"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,248,235,0.9) 45%, rgba(255,237,213,0.85) 100%)",
-            boxShadow: `0 24px 80px rgba(216,123,99,0.18)`,
+            background: isDark
+              ? "linear-gradient(150deg, rgba(23,21,29,0.96) 0%, rgba(28,24,34,0.94) 55%, rgba(22,20,30,0.96) 100%)"
+              : "linear-gradient(150deg, rgba(255,255,255,0.96) 0%, rgba(255,250,242,0.92) 50%, rgba(255,244,228,0.9) 100%)",
+            borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.6)",
+            boxShadow: isDark
+              ? "0 24px 80px rgba(0,0,0,0.45)"
+              : `0 24px 80px rgba(216,123,99,0.18)`,
           }}
         >
-          {/* Decorative top sheen */}
+          {/* Decorative top sheen — single color */}
           <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-40"
-            style={{
-              background: `linear-gradient(135deg, ${PRIMARY}22, ${SECONDARY}33)`,
-            }}
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-30"
+            style={{ background: `linear-gradient(180deg, ${PRIMARY}14, transparent)` }}
           />
-          <div className="absolute -end-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-amber-300/40 to-orange-400/30 blur-2xl" />
+          <div
+            className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full blur-2xl"
+            style={{ background: `radial-gradient(circle, ${SECONDARY}30, transparent 70%)` }}
+          />
 
           <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:p-12">
             {/* Content side */}
             <div>
               <span
-                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md"
-                style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${SECONDARY})` }}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-[#5a3a00] shadow-md"
+                style={{
+                  backgroundColor: SECONDARY,
+                  boxShadow: `0 6px 18px ${SECONDARY}40`,
+                }}
               >
                 <GraduationCap className="h-4 w-4" />
                 منتدى الطلاب
               </span>
 
               <h2
-                className="mt-5 text-3xl font-black leading-tight tracking-tight text-slate-800 dark:text-slate-100 sm:text-4xl lg:text-[2.6rem]"
+                className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-4xl lg:text-[2.6rem]"
                 style={{ textShadow: "0 2px 24px rgba(216,123,99,0.12)" }}
               >
-                مكان يجتمع فيه الطلاب
+                <span style={{ color: PRIMARY }}>مكان يجتمع فيه الطلاب</span>
                 <br />
-                <span className="bg-gradient-to-l from-orange-600 via-amber-500 to-orange-600 bg-clip-text text-transparent">
-                  للمناقشة وتبادل المعرفة
-                </span>
+                <span style={{ color: SECONDARY }}>للمناقشة وتبادل المعرفة</span>
               </h2>
 
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 sm:text-base">
@@ -177,7 +192,13 @@ export function HomeCommunitySection() {
               </p>
 
               {/* Latest activity preview */}
-              <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-white/70 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-white/[0.05]">
+              <div
+                className="mt-6 flex items-start gap-3 rounded-2xl border p-4 backdrop-blur-sm"
+                style={{
+                  borderColor: isDark ? "rgba(255,181,14,0.22)" : "rgba(255,181,14,0.35)",
+                  background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.75)",
+                }}
+              >
                 <div
                   className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow"
                   style={{ backgroundColor: SECONDARY }}
@@ -209,7 +230,7 @@ export function HomeCommunitySection() {
                     href={routes.community}
                     className="group inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                     style={{
-                      background: `linear-gradient(135deg, ${PRIMARY}, ${SECONDARY})`,
+                      backgroundColor: PRIMARY,
                       boxShadow: `0 10px 30px ${PRIMARY}55`,
                     }}
                   >
@@ -224,7 +245,7 @@ export function HomeCommunitySection() {
                       onClick={() => setLoginOpen(true)}
                       className="group inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                       style={{
-                        background: `linear-gradient(135deg, ${PRIMARY}, ${SECONDARY})`,
+                        backgroundColor: PRIMARY,
                         boxShadow: `0 10px 30px ${PRIMARY}55`,
                       }}
                     >
@@ -253,31 +274,31 @@ export function HomeCommunitySection() {
                   label="متصل الآن"
                   value={online}
                   icon={CheckCircle2}
-                  accent="#22C55E"
+                  accent={SECONDARY}
                 />
                 <StatTile
                   label="مناقشات اليوم"
                   value={today}
                   icon={MessagesSquare}
-                  accent={SECONDARY}
+                  accent={PRIMARY}
                 />
                 <StatTile
                   label="موضوعات ونقاشات"
                   value={threads}
                   icon={GraduationCap}
-                  accent="#3B82F6"
+                  accent={SECONDARY}
                 />
               </div>
 
               <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {FEATURES.map((feature) => (
+                {FEATURES.map((feature, i) => (
                   <li
                     key={feature.label}
                     className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300"
                   >
                     <feature.icon
                       className="h-4 w-4 shrink-0"
-                      style={{ color: PRIMARY }}
+                      style={{ color: i % 2 === 0 ? PRIMARY : SECONDARY }}
                     />
                     {feature.label}
                   </li>
@@ -287,6 +308,17 @@ export function HomeCommunitySection() {
           </div>
         </div>
       </div>
+
+      {/* Bottom fade to blend into the next section */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-14"
+        style={{
+          background: isDark
+            ? "linear-gradient(to top, #0e0c14, transparent)"
+            : "linear-gradient(to top, #fdfbf7, transparent)",
+        }}
+      />
 
       <PublicLoginCard
         open={loginOpen}
