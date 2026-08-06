@@ -179,11 +179,16 @@ class PublicCourseController extends Controller
             ->firstOrFail();
 
         $modules = $course->modules()
+            ->where('is_published', true)
             ->with([
                 'sections' => fn ($q) => $q
+                    ->where('is_published', true)
                     ->orderBy('sort_order')
                     ->with([
-                        'lessons' => fn ($lq) => $lq->orderBy('sort_order')->with('files'),
+                        'lessons' => fn ($lq) => $lq
+                            ->where('status', 'published')
+                            ->orderBy('sort_order')
+                            ->with('files'),
                     ]),
             ])
             ->orderBy('order')
