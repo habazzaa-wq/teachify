@@ -28,7 +28,6 @@ export function PinnedDialog({
         channels.map((channel) =>
           communityApi
             .getMessages(channel.id, { pinned_only: true, per_page: 10 })
-            .then((page) => page.data)
             .catch(() => []),
         ),
       );

@@ -216,10 +216,7 @@ export interface PaginationMeta {
 }
 
 export interface CommunityMessagesResponse {
-  messages: {
-    data: CommunityMessage[];
-    meta?: PaginationMeta;
-  };
+  messages: CommunityMessage[];
 }
 
 export interface CommunityCategoriesResponse {

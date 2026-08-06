@@ -25,12 +25,14 @@ export function useChannelMessages(
 
   const query = useInfiniteQuery({
     queryKey: communityKeys.messages(channelId ?? "", scope),
-    queryFn: ({ pageParam }) =>
-      communityApi.getMessages(channelId!, {
+    queryFn: async ({ pageParam }) => {
+      const messages = await communityApi.getMessages(channelId!, {
         thread_id: threadId ?? undefined,
         before_id: pageParam as string | undefined,
         per_page: MESSAGES_PER_PAGE,
-      }),
+      });
+      return { data: messages, meta: undefined };
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => {
       const oldest = last.data[last.data.length - 1];

@@ -89,7 +89,7 @@ export const communityApi = {
       per_page?: number;
       page?: number;
     } = {},
-  ): Promise<CommunityMessagesResponse["messages"]> {
+  ): Promise<CommunityMessage[]> {
     const { data } = await api.get<CommunityMessagesResponse>(
       `/community/channels/${channelId}/messages`,
       { params },

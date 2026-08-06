@@ -250,13 +250,9 @@ function normalizeReactions(
   });
 }
 
-/** Type guard for the message list response page object. */
+/** Type guard for the message list response array. */
 export function isMessagesResponseShape(
   value: unknown,
 ): value is CommunityMessagesResponse["messages"] {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    Array.isArray((value as { data?: unknown }).data)
-  );
+  return Array.isArray(value);
 }
