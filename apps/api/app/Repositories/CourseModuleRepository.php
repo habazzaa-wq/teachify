@@ -94,7 +94,7 @@ class CourseModuleRepository
 
     public function restore(int $id, ?Course $course = null): ?CourseModule
     {
-        $query = CourseModule::onlyTrashed()
+        $query = CourseModule::withTrashed()
             ->where('tenant_id', currentTenant()->id)
             ->where('id', $id);
 
@@ -106,7 +106,13 @@ class CourseModuleRepository
 
         if ($module) {
             $module->restore();
-            return $module->load($this->defaultEagerLoads());
+            $module->forceFill([
+                'status' => 'published',
+                'is_published' => true,
+                'published_at' => now(),
+            ])->save();
+
+            return $module->refresh()->load($this->defaultEagerLoads());
         }
 
         return null;

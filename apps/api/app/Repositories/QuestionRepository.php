@@ -93,6 +93,8 @@ class QuestionRepository
 
         if ($question) {
             $question->restore();
+            $question->forceFill(['status' => 'published'])->save();
+
             return $question->refresh();
         }
 
