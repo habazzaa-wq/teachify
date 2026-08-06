@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
-  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2,
+  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -17,6 +17,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
+import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
 import { cn } from "@/lib/cn";
 
 const PublicRegisterCard = dynamic(
@@ -206,6 +207,7 @@ export function PublicNavbar() {
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [registeredName, setRegisteredName] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const [studentRegistered, setStudentRegistered] = useState<{
     name: string;
@@ -233,6 +235,18 @@ export function PublicNavbar() {
   useEffect(() => {
     walletBadgeOnClick = () => setRechargeWalletOpen(true);
   }, [setRechargeWalletOpen]);
+
+  // Ctrl/Cmd+K toggles the course search dialog from anywhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
@@ -496,6 +510,28 @@ export function PublicNavbar() {
 
             {/* ── Right actions ── */}
             <div className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                title="بحث عن كورس (Ctrl+K)"
+                aria-label="بحث عن كورس"
+                className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
+              >
+                <span
+                  className="absolute inset-0 rounded-2xl"
+                  style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
+                />
+                <span
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  style={{
+                    backgroundColor: secondary,
+                    border: `3px solid ${primary}`,
+                    boxShadow: `0 0 24px ${primary}40`,
+                  }}
+                />
+                <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300" />
+              </button>
+
               <ThemeBtn />
 
               {/* Desktop auth */}
@@ -773,6 +809,8 @@ export function PublicNavbar() {
         open={onlineRechargeOpen}
         onClose={() => setOnlineRechargeOpen(false)}
       />
+
+      <CourseSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }

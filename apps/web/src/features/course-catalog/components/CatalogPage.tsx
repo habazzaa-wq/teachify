@@ -13,16 +13,22 @@ import { CatalogFiltersSheet } from "./CatalogFiltersSheet";
 import { CatalogStageStrip } from "./CatalogStageStrip";
 import { CatalogCourseGrid } from "./CatalogCourseGrid";
 
-export function CatalogPage() {
+export function CatalogPage({
+  initialFilters = {},
+  initialPage = 1,
+}: {
+  initialFilters?: CatalogFilters;
+  initialPage?: number;
+}) {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
 
   const { data: stagesData } = useCatalogStages();
 
-  const [filters, setFilters] = useState<CatalogFilters>({});
-  const [searchDraft, setSearchDraft] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
+  const [searchDraft, setSearchDraft] = useState(initialFilters.search ?? "");
+  const [search, setSearch] = useState(initialFilters.search ?? "");
+  const [page, setPage] = useState(initialPage);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Debounce the search term before it hits the API.
