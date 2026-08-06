@@ -293,6 +293,12 @@ class ExamResultService
             'true_false' => $revealCorrect && isset($content['correct'])
                 ? ['correct' => (string) $content['correct']]
                 : [],
+            'numeric' => array_filter([
+                'tolerance' => (int) ($content['tolerance'] ?? 0),
+                'correct' => $revealCorrect && isset($content['correct'])
+                    ? (string) $content['correct']
+                    : null,
+            ], fn (mixed $value): bool => $value !== null),
             default => [],
         };
     }
@@ -312,6 +318,9 @@ class ExamResultService
                 ->values()
                 ->all(),
             'true_false' => isset($content['correct']) ? (string) $content['correct'] : null,
+            'numeric' => isset($content['correct']) && is_numeric($content['correct'])
+                ? (string) $content['correct']
+                : null,
             default => null,
         };
     }

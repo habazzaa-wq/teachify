@@ -129,6 +129,42 @@ function ExamQuestionViewInner({
             );
           })}
         </div>
+      ) : question.type === "numeric" ? (
+        <div className="space-y-3">
+          <input
+            type="text"
+            inputMode="decimal"
+            dir="ltr"
+            disabled={!selectable}
+            value={typeof answer === "string" ? answer : ""}
+            onChange={(event) => selectable && onAnswerChange!(event.target.value)}
+            placeholder="أدخل الإجابة الرقمية"
+            className={cn(
+              "h-14 w-full rounded-2xl border-2 px-4 text-lg font-extrabold tabular-nums text-foreground outline-none transition-all duration-200 placeholder:text-base placeholder:font-semibold placeholder:text-muted-foreground/50",
+              selectable && "cursor-text hover:border-[#BF6D58]/40 focus:border-[#BF6D58] focus:shadow-lg focus:shadow-[#BF6D58]/10",
+              readOnly &&
+                question.isCorrect !== null &&
+                (question.isCorrect
+                  ? "border-emerald-500 bg-emerald-500/10"
+                  : "border-red-500 bg-red-500/10"),
+              !selectable && "opacity-80",
+            )}
+          />
+          {readOnly &&
+            question.isCorrect !== null &&
+            question.content.correct !== undefined && (
+              <p
+                className={cn(
+                  "text-sm font-extrabold",
+                  question.isCorrect ? "text-emerald-600" : "text-red-500",
+                )}
+              >
+                {question.isCorrect
+                  ? "إجابة صحيحة"
+                  : `الإجابة الصحيحة: ${question.content.correct}`}
+              </p>
+            )}
+        </div>
       ) : (
         <div className="space-y-2.5">
           {options.map((option) => {

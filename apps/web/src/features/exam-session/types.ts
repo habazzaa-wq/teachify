@@ -1,6 +1,6 @@
 export type ExamSessionStatus = "in_progress" | "submitted";
 
-export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false";
+export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false" | "numeric";
 
 export type ExamSessionAnswer = string[] | string | null;
 
@@ -12,7 +12,8 @@ export interface ExamSessionOption {
 
 export interface ExamSessionQuestionContent {
   options?: ExamSessionOption[];
-  correct?: string;
+  correct?: string | number;
+  tolerance?: number;
 }
 
 export interface ExamSessionQuestion {

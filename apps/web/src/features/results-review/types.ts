@@ -13,6 +13,7 @@ export interface ResultReviewOption {
 export interface ResultReviewContent {
   options?: ResultReviewOption[];
   correct?: string;
+  tolerance?: number;
 }
 
 export interface ResultReviewItem {

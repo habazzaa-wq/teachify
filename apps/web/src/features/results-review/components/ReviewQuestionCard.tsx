@@ -215,6 +215,42 @@ function QuestionOptions({
     );
   }
 
+  if (type === "numeric") {
+    const student = typeof studentAnswer === "string" ? studentAnswer : "";
+    const correct = revealCorrect
+      ? typeof correctAnswer === "string"
+        ? correctAnswer
+        : correctAnswer != null
+          ? String(correctAnswer)
+          : null
+      : null;
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border-2 border-border/60 bg-background/50 p-4">
+          <p className="text-xs font-bold text-muted-foreground">إجابتك</p>
+          <p
+            dir="ltr"
+            className={cn(
+              "mt-1 text-right text-lg font-extrabold tabular-nums",
+              student ? "text-foreground" : "text-muted-foreground/50",
+            )}
+          >
+            {student || "—"}
+          </p>
+        </div>
+        {correct !== null && (
+          <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 p-4">
+            <p className="text-xs font-bold text-emerald-600">الإجابة الصحيحة</p>
+            <p dir="ltr" className="mt-1 text-right text-lg font-extrabold tabular-nums text-emerald-600">
+              {correct}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const options = content.options ?? [];
   const selectedIds = Array.isArray(studentAnswer) ? studentAnswer : [];
 

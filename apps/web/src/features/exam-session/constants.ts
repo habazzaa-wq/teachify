@@ -18,4 +18,5 @@ export const QUESTION_TYPE_LABELS: Record<ExamSessionQuestionType, string> = {
   single_choice: "اختيار من متعدد",
   multiple_choice: "اختيارات متعددة",
   true_false: "صح أم خطأ",
+  numeric: "رقمي",
 };

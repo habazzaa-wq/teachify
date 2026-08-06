@@ -148,6 +148,10 @@ function formatReviewItem(raw: Raw): ResultReviewItem {
           }))
         : undefined,
       correct: typeof content.correct === "string" ? content.correct : undefined,
+      tolerance:
+        typeof content.tolerance === "number" || typeof content.tolerance === "string"
+          ? Number(content.tolerance)
+          : undefined,
     },
     studentAnswer: formatAnswer(raw.studentAnswer),
     correctAnswer: formatAnswer(raw.correctAnswer),
