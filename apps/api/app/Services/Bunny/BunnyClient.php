@@ -49,8 +49,7 @@ class BunnyClient implements BunnyClientInterface
     public function __construct(
         private readonly BunnyExceptionHandler $exceptionHandler,
         private readonly BunnyRetryService $retryService,
-    ) {
-    }
+    ) {}
 
     public function storageRequest(string $method, string $path, array $options = []): array
     {
@@ -71,6 +70,7 @@ class BunnyClient implements BunnyClientInterface
                 'AccessKey' => $settings->storage_zone_password,
             ], $options['headers'] ?? []),
             'body' => $options['body'] ?? null,
+            'json' => $options['json'] ?? null,
             'timeout' => $options['timeout'] ?? self::REQUEST_TIMEOUT,
             'connect_timeout' => $options['connect_timeout'] ?? self::CONNECT_TIMEOUT,
             'service' => 'storage',
@@ -99,6 +99,7 @@ class BunnyClient implements BunnyClientInterface
                 'AccessKey' => $settings->stream_api_key,
             ], $options['headers'] ?? []),
             'body' => $options['body'] ?? null,
+            'json' => $options['json'] ?? null,
             'timeout' => $options['timeout'] ?? self::REQUEST_TIMEOUT,
             'connect_timeout' => $options['connect_timeout'] ?? self::CONNECT_TIMEOUT,
             'service' => 'stream',
@@ -137,7 +138,7 @@ class BunnyClient implements BunnyClientInterface
     }
 
     /**
-     * @param array<string, mixed> $options
+     * @param  array<string, mixed>  $options
      * @return array<string, mixed>
      */
     private function executeRequest(string $method, string $url, array $options): array
@@ -226,7 +227,7 @@ class BunnyClient implements BunnyClientInterface
     }
 
     /**
-     * @param array<string, mixed> $options
+     * @param  array<string, mixed>  $options
      */
     private function buildRequest(array $options): PendingRequest
     {
