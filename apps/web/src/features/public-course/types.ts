@@ -82,6 +82,29 @@ export interface EnrollmentCheck {
   } | null;
 }
 
+export interface PublicCourseLessonVideo {
+  lesson: {
+    id: string;
+    title: string;
+    slug: string;
+    lessonType: string;
+    shortDescription: string | null;
+    durationSeconds: number | null;
+  };
+  video: {
+    provider: string;
+    provider_service: string;
+    video_id: string;
+    library_id: string | null;
+    embed_url: string | null;
+    playback_url: string | null;
+    thumbnail_url: string | null;
+    duration_seconds: number | null;
+    available_resolutions: string[];
+    status: string;
+  };
+}
+
 export interface RelatedCourse {
   id: string;
   title: string;

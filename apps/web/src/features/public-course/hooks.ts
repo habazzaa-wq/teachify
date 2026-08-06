@@ -53,6 +53,15 @@ export function useEnrollmentCheck(slug: string | null, enabled = true) {
   });
 }
 
+export function useLessonVideo(slug: string | null, lessonId: string | null) {
+  return useQuery({
+    queryKey: [PUBLIC_COURSE_QUERY_KEY, "video", slug, lessonId],
+    queryFn: () => publicCourseService.getLessonVideo(slug!, lessonId!),
+    enabled: !!slug && !!lessonId,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function usePurchaseCourse(slug: string | null) {
   const queryClient = useQueryClient();
 

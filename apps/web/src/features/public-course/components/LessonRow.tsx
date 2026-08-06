@@ -11,6 +11,7 @@ interface LessonRowProps {
   lesson: PublicCourseLesson;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay?: (lesson: PublicCourseLesson) => void;
   isPreview?: boolean;
 }
 
@@ -18,6 +19,7 @@ function LessonRowInner({
   lesson,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isPreview = false,
 }: LessonRowProps) {
   const config = useMemo(() => getLessonConfig(lesson), [lesson]);
@@ -34,7 +36,11 @@ function LessonRowInner({
   const showPreview = isPreview && lesson.freePreview;
 
   const handleActivate = () => {
-    if (isLocked) onLockedClick();
+    if (isLocked) {
+      onLockedClick();
+      return;
+    }
+    onPlay?.(lesson);
   };
 
   return (
@@ -43,19 +49,15 @@ function LessonRowInner({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       onClick={handleActivate}
-      role={isLocked ? "button" : undefined}
-      tabIndex={isLocked ? 0 : undefined}
+      role="button"
+      tabIndex={0}
       aria-label={isLocked ? `الدرس مقفل: ${lesson.title}` : lesson.title}
-      onKeyDown={
-        isLocked
-          ? (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleActivate();
-              }
-            }
-          : undefined
-      }
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivate();
+        }
+      }}
       className={cn(
         "group/lesson flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200",
         "hover:bg-[#BF6D58]/[0.05] dark:hover:bg-white/[0.03]",

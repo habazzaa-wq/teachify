@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
 import { CourseHero } from "./CourseHero";
+import { CourseVideoPlayer } from "./CourseVideoPlayer";
 import { CourseInformation } from "./CourseInformation";
 import { LearningOutcomes } from "./LearningOutcomes";
 import { CourseRequirements } from "./CourseRequirements";
@@ -19,6 +20,7 @@ import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import type { PublicCourseLesson } from "../types";
 
 const PublicLoginCard = dynamic(
   () =>
@@ -61,6 +63,8 @@ export function PublicCoursePage({ slug }: Props) {
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [activeLesson, setActiveLesson] = useState<PublicCourseLesson | null>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
@@ -96,6 +100,17 @@ export function PublicCoursePage({ slug }: Props) {
     }
   }, [isEnrolled]);
 
+  const handlePlayLesson = useCallback((lesson: PublicCourseLesson) => {
+    setActiveLesson(lesson);
+    requestAnimationFrame(() => {
+      playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const handleClosePlayer = useCallback(() => {
+    setActiveLesson(null);
+  }, []);
+
   if (courseLoading || !course) {
     return <CoursePageSkeleton />;
   }
@@ -103,6 +118,16 @@ export function PublicCoursePage({ slug }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <CourseHero course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} onLogin={handleLogin} />
+
+      <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
+          <CourseVideoPlayer
+            slug={slug}
+            lesson={activeLesson}
+            onClose={handleClosePlayer}
+          />
+        </div>
+      </div>
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
@@ -139,6 +164,7 @@ export function PublicCoursePage({ slug }: Props) {
                 modules={modules}
                 isEnrolled={isEnrolled}
                 onLockedClick={handleLockedClick}
+                onPlay={handlePlayLesson}
               />
             ) : null}
 

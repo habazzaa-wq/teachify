@@ -1,6 +1,6 @@
 import { api } from "@/services/api";
 import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
-import type { PublicCourse, PublicCourseModule, PublicCourseSection, PublicCourseLesson, EnrollmentCheck, RelatedCourse } from "./types";
+import type { PublicCourse, PublicCourseModule, PublicCourseSection, PublicCourseLesson, PublicCourseLessonVideo, EnrollmentCheck, RelatedCourse } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Raw API responses have untyped shapes
 type Raw = Record<string, any>;
@@ -194,6 +194,17 @@ export const publicCourseService = {
       };
     } catch {
       return { enrolled: false, enrollment: null };
+    }
+  },
+
+  async getLessonVideo(slug: string, lessonId: string): Promise<PublicCourseLessonVideo | null> {
+    try {
+      const json = await tenantStudentFetch<{ data?: PublicCourseLessonVideo }>(
+        `/public/courses/${slug}/lessons/${lessonId}/video`,
+      );
+      return json.data ?? null;
+    } catch {
+      return null;
     }
   },
 

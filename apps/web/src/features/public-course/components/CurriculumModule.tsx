@@ -9,12 +9,13 @@ import { SubscribeButton } from "./primitives";
 import { ExamEntryCard } from "@/features/exam-entry/components/ExamEntryCard";
 import { getModuleStats, formatDuration } from "../utils";
 import { LOCKED_GRADIENT } from "../brand";
-import type { PublicCourseModule, PublicCourseSection } from "../types";
+import type { PublicCourseLesson, PublicCourseModule, PublicCourseSection } from "../types";
 
 interface CurriculumModuleProps {
   module: PublicCourseModule;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay: (lesson: PublicCourseLesson) => void;
   isExpanded: boolean;
   onToggle: () => void;
   expandedSections: ReadonlySet<string>;
@@ -25,6 +26,7 @@ function CurriculumModuleInner({
   module,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isExpanded,
   onToggle,
   expandedSections,
@@ -159,6 +161,7 @@ function CurriculumModuleInner({
                     section={section}
                     isEnrolled={isEnrolled}
                     onLockedClick={onLockedClick}
+                    onPlay={onPlay}
                     isExpanded={expandedSections.has(section.id)}
                     onToggle={() => onToggleSection(section.id)}
                   />
@@ -210,6 +213,7 @@ interface SectionAccordionProps {
   section: PublicCourseSection;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay: (lesson: PublicCourseLesson) => void;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -218,6 +222,7 @@ function SectionAccordionInner({
   section,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isExpanded,
   onToggle,
 }: SectionAccordionProps) {
@@ -298,6 +303,7 @@ function SectionAccordionInner({
                       lesson={lesson}
                       isEnrolled={isEnrolled}
                       onLockedClick={onLockedClick}
+                      onPlay={onPlay}
                       isPreview={section.freePreview}
                     />
                     {isEnrolled && lesson.examId && (

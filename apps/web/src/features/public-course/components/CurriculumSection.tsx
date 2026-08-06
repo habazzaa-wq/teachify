@@ -7,12 +7,13 @@ import { cn } from "@/lib/cn";
 import { CurriculumModule } from "./CurriculumModule";
 import { SectionHeader } from "./primitives";
 import { getCourseStats, formatDuration } from "../utils";
-import type { PublicCourseModule } from "../types";
+import type { PublicCourseLesson, PublicCourseModule } from "../types";
 
 interface CurriculumSectionProps {
   modules: PublicCourseModule[];
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay: (lesson: PublicCourseLesson) => void;
 }
 
 function filterModules(
@@ -50,6 +51,7 @@ function CurriculumSectionInner({
   modules,
   isEnrolled,
   onLockedClick,
+  onPlay,
 }: CurriculumSectionProps) {
   const prefersReducedMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
@@ -209,6 +211,7 @@ function CurriculumSectionInner({
               module={mod}
               isEnrolled={isEnrolled}
               onLockedClick={onLockedClick}
+              onPlay={onPlay}
               isExpanded={searchActive || expandedModules.has(mod.id)}
               onToggle={() => toggleModule(mod.id)}
               expandedSections={expandedSections}
