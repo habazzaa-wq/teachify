@@ -120,9 +120,11 @@ class AuthenticationService
             ]);
         }
 
-        // Revoke old access tokens, keep refresh tokens
+        // Revoke expired access tokens, keep still-valid ones so concurrent
+        // refreshes and in-flight requests are not invalidated mid-flight.
         $user->tokens()
             ->where('name', 'access_token')
+            ->where('expires_at', '<', now())
             ->delete();
 
         $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));

@@ -173,7 +173,10 @@ class TenantAuthController extends Controller
             return response()->json(['message' => 'No active membership found.'], 403);
         }
 
-        $user->tokens()->where('name', 'access_token')->delete();
+        $user->tokens()
+            ->where('name', 'access_token')
+            ->where('expires_at', '<', now())
+            ->delete();
 
         $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));
         $this->memberships->touchLastAccessed($membership);
