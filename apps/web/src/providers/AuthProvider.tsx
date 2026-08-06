@@ -19,7 +19,7 @@ interface AuthProviderValue {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthProviderValue | null>(null);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const isSuperAdminRoute = isSuperAdminPath(pathname);
-  const refreshingPromiseRef = useRef<Promise<void> | null>(null);
+  const refreshingPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
@@ -96,28 +96,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearAuth, clearTenant, queryClient, router]);
 
-  const refreshSession = useCallback(async () => {
-    if (!refreshToken) return;
-
-    if (refreshingPromiseRef.current) {
-      await refreshingPromiseRef.current;
-      return;
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    if (!refreshToken) {
+      handleStaleSession();
+      return false;
     }
 
-    refreshingPromiseRef.current = (async () => {
+    if (refreshingPromiseRef.current) {
+      return refreshingPromiseRef.current;
+    }
+
+    refreshingPromiseRef.current = (async (): Promise<boolean> => {
       try {
         const result = await authService.refresh({ refresh_token: refreshToken });
         setAccessToken(result.access_token);
         queryClient.invalidateQueries({
           predicate: (query) => !isPublicQueryKey(query.queryKey),
         });
+        return true;
       } catch {
         handleStaleSession();
+        return false;
       }
     })();
 
     try {
-      await refreshingPromiseRef.current;
+      return await refreshingPromiseRef.current;
     } finally {
       refreshingPromiseRef.current = null;
     }
@@ -151,7 +155,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Token might be expired, try refresh
       try {
-        await refreshSession();
+        const refreshed = await refreshSession();
+        if (!refreshed) {
+          return;
+        }
         // Retry bootstrap with new token
         const context = await tenantService.resolveContext();
         setTenantContext({
@@ -164,10 +171,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         setUser(context.user);
       } catch {
-        clearAuth();
+        // Refresh succeeded but the retried /auth/me failed transiently
+        // (rate limit, 5xx, network). The session is still valid — keep it
+        // instead of logging the user out.
+        setStatus("authenticated");
       }
     }
-  }, [activeTenant, accessToken, setStatus, setUser, setTenantContext, refreshSession, clearAuth]);
+  }, [activeTenant, accessToken, setStatus, setUser, setTenantContext, refreshSession]);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
