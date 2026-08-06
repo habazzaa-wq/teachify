@@ -23,7 +23,7 @@ import { toAbsoluteAssetUrl } from "@/lib/url";
 const PRIMARY = "#BF6D58";
 const ACCENT = "#FFB50E";
 
-const SHOWCASE_CAP = 6;
+const SHOWCASE_CAP = 3;
 
 const stageIcons: LucideIcon[] = [BookOpen, GraduationCap, Sparkles, Star, Trophy, Users];
 
@@ -327,7 +327,7 @@ function StagesSkeleton({ isDark }: { isDark: boolean }) {
   const block = (alpha: string) => ({ background: isDark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})` });
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className="animate-pulse overflow-hidden rounded-3xl" style={cardShell(isDark)}>
           <div className="aspect-[4/3] w-full" style={block("0.05")} />
           <div className="space-y-2.5 p-5">
@@ -506,7 +506,7 @@ export function EducationalStagesSection() {
                       background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)",
                     }}
                   >
-                    {expanded ? "عرض أقل" : `عرض الكل (${all.length})`}
+                    {expanded ? "عرض أقل" : "عرض المزيد"}
                     <ArrowLeft
                       aria-hidden="true"
                       className={`h-3 w-3 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
