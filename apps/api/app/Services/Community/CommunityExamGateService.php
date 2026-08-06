@@ -24,9 +24,15 @@ class CommunityExamGateService
             ->where('user_id', $member->user_id)
             ->whereNull('deleted_at')
             ->where(function ($query) {
-                $query->where('status', 'in_progress')
-                    ->orWhere(function ($timer) {
-                        $timer->where('status', 'started')
+                $query->where(function ($inProgress) {
+                    $inProgress->where('status', 'in_progress')
+                        ->where(function ($timer) {
+                            $timer->whereNull('timer_ends_at')
+                                ->orWhere('timer_ends_at', '>', now());
+                        });
+                })
+                    ->orWhere(function ($started) {
+                        $started->where('status', 'started')
                             ->whereNotNull('timer_ends_at')
                             ->where('timer_ends_at', '>', now());
                     });
