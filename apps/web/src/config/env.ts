@@ -142,6 +142,7 @@ export const env = {
   reverbPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT ?? 8080),
   reverbScheme: process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http",
   reverbAppKey: process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? "techify-reverb-key",
+  reverbCluster: process.env.NEXT_PUBLIC_REVERB_CLUSTER ?? "mt1",
 } as const;
 
 /**

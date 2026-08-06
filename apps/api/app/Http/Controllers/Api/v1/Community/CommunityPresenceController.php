@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1\Community;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Community\CommunityOnlineMembersRequest;
 use App\Http\Requests\Community\CommunityPresenceRequest;
 use App\Http\Requests\Community\CommunityTypingRequest;
 use App\Http\Resources\Community\CommunityPresenceResource;
@@ -47,7 +48,7 @@ class CommunityPresenceController extends Controller
     }
 
     public function onlineMembers(
-        CommunityPresenceRequest $request,
+        CommunityOnlineMembersRequest $request,
         CommunityPresenceService $presence,
         CommunityPresencePolicy $policy,
     ): JsonResponse {

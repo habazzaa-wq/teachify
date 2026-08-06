@@ -54,6 +54,7 @@ export function getCommunityEcho(): CommunityEcho | null {
   const instance = new Echo({
     broadcaster: "pusher",
     key: env.reverbAppKey,
+    cluster: env.reverbCluster,
     wsHost: env.reverbHost,
     wsPort: env.reverbPort,
     wssPort: env.reverbPort,
