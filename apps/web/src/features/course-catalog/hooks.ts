@@ -1,15 +1,9 @@
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { CATALOG_QUERY_KEY, CATALOG_STAGES_KEY } from "./constants";
+import { catalogKeys } from "./keys";
 import { catalogService } from "./services";
 import type { CatalogFilters } from "./types";
-
-export const catalogKeys = {
-  stages: [CATALOG_STAGES_KEY, "public"] as const,
-  courses: (filters: CatalogFilters, page: number) =>
-    [CATALOG_QUERY_KEY, "courses", filters, page] as const,
-};
 
 export function useCatalogStages() {
   return useQuery({

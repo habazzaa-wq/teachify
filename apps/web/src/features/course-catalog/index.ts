@@ -9,4 +9,4 @@ export type {
   CatalogSubject,
   CatalogTeacher,
 } from "./types";
-export { catalogKeys } from "./hooks";
+export { catalogKeys } from "./keys";

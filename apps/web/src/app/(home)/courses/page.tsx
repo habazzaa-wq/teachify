@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/get-query-client";
 import { env } from "@/config/env";
-import { catalogKeys } from "@/features/course-catalog/hooks";
+import { catalogKeys } from "@/features/course-catalog/keys";
 import { catalogServerService } from "@/features/course-catalog/server-services";
 import { CatalogPage } from "@/features/course-catalog/components/CatalogPage";
 
