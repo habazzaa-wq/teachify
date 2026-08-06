@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
@@ -102,14 +102,17 @@ export function PublicCoursePage({ slug }: Props) {
 
   const handlePlayLesson = useCallback((lesson: PublicCourseLesson) => {
     setActiveLesson(lesson);
-    requestAnimationFrame(() => {
-      playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   }, []);
 
   const handleClosePlayer = useCallback(() => {
     setActiveLesson(null);
   }, []);
+
+  useEffect(() => {
+    if (activeLesson) {
+      playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeLesson]);
 
   if (courseLoading || !course) {
     return <CoursePageSkeleton />;
@@ -119,15 +122,17 @@ export function PublicCoursePage({ slug }: Props) {
     <div className="min-h-screen bg-background">
       <CourseHero course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} onLogin={handleLogin} />
 
-      <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
-          <CourseVideoPlayer
-            slug={slug}
-            lesson={activeLesson}
-            onClose={handleClosePlayer}
-          />
+      {activeLesson && (
+        <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+          <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
+            <CourseVideoPlayer
+              slug={slug}
+              lesson={activeLesson}
+              onClose={handleClosePlayer}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">

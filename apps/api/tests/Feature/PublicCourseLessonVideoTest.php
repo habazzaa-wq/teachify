@@ -98,6 +98,27 @@ class PublicCourseLessonVideoTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_storage_based_video_is_served_via_cdn_url(): void
+    {
+        [$tenant, $admin, $student, $course, $section, $lesson, $asset] = $this->publicVideoFixture('storage');
+        $this->enroll($tenant, $course, $student);
+
+        Sanctum::actingAs($student->user);
+
+        $this->getJson(
+            "/api/v1/public/courses/{$course->slug}/lessons/{$lesson->id}/video",
+            $this->tenantHeader($tenant),
+        )
+            ->assertOk()
+            ->assertJsonPath('data.video.provider_service', 'storage')
+            ->assertJsonPath(
+                'data.video.playback_url',
+                'https://cdn.example.test/tenants/'.$tenant->id.'/media/video/demo.mp4',
+            )
+            ->assertJsonPath('data.video.embed_url', null)
+            ->assertJsonPath('data.video.status', 'ready');
+    }
+
     public function test_cross_tenant_lesson_is_not_found(): void
     {
         [$tenant, $admin, $student, $course, $section, $lesson, $asset] = $this->publicVideoFixture();
@@ -111,14 +132,16 @@ class PublicCourseLessonVideoTest extends TestCase
     }
 
     /**
+     * @param string $service 'stream' or 'storage'
      * @return array{Tenant, TenantUser, TenantUser, Course, CourseSection, CourseLesson, MediaAsset}
      */
-    private function publicVideoFixture(): array
+    private function publicVideoFixture(string $service = 'stream'): array
     {
         $tenant = Tenant::factory()->create();
         $admin = $this->memberWithRole($tenant, 'admin');
         $student = $this->memberWithRole($tenant, 'student');
         $this->createBunnyStreamIntegration($tenant);
+        $this->createBunnyStorageIntegration($tenant);
 
         $course = Course::create([
             'tenant_id' => $tenant->id,
@@ -162,26 +185,46 @@ class PublicCourseLessonVideoTest extends TestCase
             'duration_seconds' => 100,
         ]);
 
-        $asset = MediaAsset::create([
-            'tenant_id' => $tenant->id,
-            'provider' => 'bunny',
-            'provider_service' => 'stream',
-            'type' => 'video',
-            'status' => 'ready',
-            'visibility' => 'private',
-            'external_id' => 'external-video-'.uniqid(),
-            'bunny_video_id' => 'bunny-video-'.$tenant->id,
-            'bunny_library_id' => 'bunny-library-'.$tenant->id,
-            'metadata' => [
+        if ($service === 'storage') {
+            $storageKey = 'tenants/'.$tenant->id.'/media/video/demo.mp4';
+            $asset = MediaAsset::create([
+                'tenant_id' => $tenant->id,
+                'provider' => 'bunny',
+                'provider_service' => 'storage',
+                'type' => 'video',
+                'status' => 'ready',
+                'visibility' => 'private',
+                'storage_key' => $storageKey,
+                'bunny_storage_path' => $storageKey,
+                'cdn_url' => 'https://cdn.example.test/'.$storageKey,
+                'mime_type' => 'video/mp4',
+                'extension' => 'mp4',
+                'metadata' => [
+                    'upload_service' => 'storage',
+                ],
+            ]);
+        } else {
+            $asset = MediaAsset::create([
+                'tenant_id' => $tenant->id,
+                'provider' => 'bunny',
+                'provider_service' => 'stream',
+                'type' => 'video',
+                'status' => 'ready',
+                'visibility' => 'private',
+                'external_id' => 'external-video-'.uniqid(),
                 'bunny_video_id' => 'bunny-video-'.$tenant->id,
-                'collection' => 'tenant-'.$tenant->id,
-                'duration_seconds' => 100,
-                'available_resolutions' => ['720p', '1080p'],
-                'thumbnail_url' => 'https://cdn.example.test/thumb.jpg',
-                'preview_url' => null,
-                'encoding_status' => 'Ready',
-            ],
-        ]);
+                'bunny_library_id' => 'bunny-library-'.$tenant->id,
+                'metadata' => [
+                    'bunny_video_id' => 'bunny-video-'.$tenant->id,
+                    'collection' => 'tenant-'.$tenant->id,
+                    'duration_seconds' => 100,
+                    'available_resolutions' => ['720p', '1080p'],
+                    'thumbnail_url' => 'https://cdn.example.test/thumb.jpg',
+                    'preview_url' => null,
+                    'encoding_status' => 'Ready',
+                ],
+            ]);
+        }
 
         LessonVideo::create([
             'tenant_id' => $tenant->id,
@@ -223,6 +266,21 @@ class PublicCourseLessonVideoTest extends TestCase
                 'pull_zone' => 'stream.example.test',
                 'api_region' => 'video',
                 'status' => 'active',
+            ],
+        ]);
+    }
+
+    private function createBunnyStorageIntegration(Tenant $tenant): void
+    {
+        TenantIntegration::create([
+            'tenant_id' => $tenant->id,
+            'provider' => 'bunny',
+            'service' => 'storage',
+            'status' => 'active',
+            'config' => [
+                'cdn_base_url' => 'https://cdn.example.test',
+                'upload_base_url' => 'https://storage.bunnycdn.com/zone-'.$tenant->id,
+                'client_upload_key' => 'secret-'.$tenant->id,
             ],
         ]);
     }

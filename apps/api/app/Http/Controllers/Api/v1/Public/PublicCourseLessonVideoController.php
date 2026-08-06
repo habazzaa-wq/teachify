@@ -59,7 +59,7 @@ class PublicCourseLessonVideoController extends Controller
             $asset
                 && $asset->tenant_id === $tenant->id
                 && $asset->provider === 'bunny'
-                && $asset->provider_service === 'stream'
+                && in_array($asset->provider_service, ['stream', 'storage'], true)
                 && $asset->type === 'video',
             404,
             'محتوى الفيديو غير متاح.',
@@ -69,16 +69,31 @@ class PublicCourseLessonVideoController extends Controller
 
         $this->authorizeWatch($lesson, $this->resolveUser());
 
-        $playback = $this->manager
-            ->providerFor($asset->provider, $asset->provider_service)
-            ->getPlaybackData($asset);
+        $isStream = $asset->provider_service === 'stream';
+
+        $playback = $isStream
+            ? $this->manager
+                ->providerFor($asset->provider, 'stream')
+                ->getPlaybackData($asset)
+            : [];
 
         $videoId = $asset->bunny_video_id ?: $asset->external_id;
         $libraryId = $asset->bunny_library_id;
 
         $embedUrl = null;
-        if ($libraryId && $videoId) {
+        if ($isStream && $libraryId && $videoId) {
             $embedUrl = 'https://iframe.mediadelivery.net/embed/'.trim((string) $libraryId, '/').'/'.trim((string) $videoId, '/');
+        }
+
+        $playbackUrl = $playback['playback_url'] ?? null;
+        if (! $isStream) {
+            $playbackUrl = $asset->cdn_url;
+            if (! $playbackUrl) {
+                $signed = $this->manager
+                    ->providerFor('bunny', 'storage')
+                    ->createSignedReadUrl($asset);
+                $playbackUrl = $signed['url'] ?? null;
+            }
         }
 
         return response()->json([
@@ -93,11 +108,11 @@ class PublicCourseLessonVideoController extends Controller
                 ],
                 'video' => [
                     'provider' => 'bunny',
-                    'provider_service' => 'stream',
+                    'provider_service' => $asset->provider_service,
                     'video_id' => $videoId,
                     'library_id' => $libraryId,
                     'embed_url' => $embedUrl,
-                    'playback_url' => $playback['playback_url'] ?? null,
+                    'playback_url' => $playbackUrl,
                     'thumbnail_url' => $asset->thumbnail_url
                         ?? $asset->poster_url
                         ?? ($playback['thumbnail_url'] ?? null),

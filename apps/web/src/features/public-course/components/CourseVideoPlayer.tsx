@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Play, X, Clock, MonitorPlay, VideoOff, Loader2 } from "lucide-react";
+import { X, Clock, MonitorPlay, VideoOff, Loader2 } from "lucide-react";
 import { useLessonVideo } from "../hooks";
 import { formatDuration } from "../utils";
 import { PRIMARY, ACCENT } from "../brand";
@@ -10,7 +10,7 @@ import type { PublicCourseLesson } from "../types";
 
 interface CourseVideoPlayerProps {
   slug: string;
-  lesson: PublicCourseLesson | null;
+  lesson: PublicCourseLesson;
   onClose: () => void;
 }
 
@@ -21,7 +21,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
     data: videoData,
     isLoading,
     isFetching,
-  } = useLessonVideo(slug, lesson?.id ?? null);
+  } = useLessonVideo(slug, lesson.id);
 
   const embedUrl = useMemo(() => {
     if (!videoData?.video?.embed_url) return null;
@@ -53,19 +53,15 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
 
         <div className="min-w-0 flex-1">
           <h2 className="line-clamp-1 text-sm font-extrabold text-foreground sm:text-base">
-            {lesson ? lesson.title : "مشغل الفيديو"}
+            {lesson.title}
           </h2>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground/70">
-            {lesson && (
-              <>
-                <span>مشاهدة المحاضرة</span>
-                {(lesson.durationSeconds ?? videoData?.video?.duration_seconds) != null && (
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDuration(lesson.durationSeconds ?? videoData?.video?.duration_seconds)}
-                  </span>
-                )}
-              </>
+            <span>مشاهدة المحاضرة</span>
+            {(lesson.durationSeconds ?? videoData?.video?.duration_seconds) != null && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDuration(lesson.durationSeconds ?? videoData?.video?.duration_seconds)}
+              </span>
             )}
             {videoData?.video?.available_resolutions?.length ? (
               <span className="text-muted-foreground/50">
@@ -75,46 +71,20 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
           </div>
         </div>
 
-        {lesson && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق المشغل"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[#BF6D58]/30 hover:text-[#BF6D58] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="إغلاق المشغل"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[#BF6D58]/30 hover:text-[#BF6D58] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Player area */}
       <div className="relative aspect-video w-full bg-black">
         <AnimatePresence mode="wait">
-          {!lesson ? (
-            <motion.div
-              key="idle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
-              style={{
-                background: `radial-gradient(700px 320px at 50% 0%, ${PRIMARY}22, transparent 65%), linear-gradient(180deg, #14151a, #0c0d11)`,
-              }}
-            >
-              <div
-                className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10"
-                style={{ background: "rgba(255,255,255,0.04)", boxShadow: `0 0 40px ${PRIMARY}22` }}
-              >
-                <Play className="h-9 w-9 fill-white/90 text-white/90" />
-              </div>
-              <div>
-                <p className="text-base font-extrabold text-white/90">مشغل الفيديو</p>
-                <p className="mt-1 text-sm text-white/50">
-                  اختر محاضرة من قائمة المحتوى لبدء المشاهدة
-                </p>
-              </div>
-            </motion.div>
-          ) : busy ? (
+          {busy ? (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
@@ -156,6 +126,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
                   poster={thumbnailUrl ?? undefined}
                   controls
                   autoPlay
+                  playsInline
                   className="h-full w-full"
                 />
               )}
