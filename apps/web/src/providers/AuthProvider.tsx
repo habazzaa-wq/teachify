@@ -108,6 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const result = await authService.refresh({ refresh_token: refreshToken });
         setAccessToken(result.access_token);
+        queryClient.invalidateQueries({
+          predicate: (query) => !isPublicQueryKey(query.queryKey),
+        });
       } catch {
         handleStaleSession();
       }
@@ -118,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       refreshingPromiseRef.current = null;
     }
-  }, [refreshToken, setAccessToken, handleStaleSession]);
+  }, [refreshToken, setAccessToken, handleStaleSession, queryClient]);
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
