@@ -103,6 +103,23 @@ class CommunityParticipantService
             ->count();
     }
 
+    /**
+     * Presence payload for the Reverb presence channel. The frontend only
+     * relies on an id (member/tenant_user) for the online roster.
+     */
+    public function presencePayload(Tenant $tenant, TenantUser $member): array
+    {
+        $this->bindTenant($tenant);
+
+        return [
+            'id' => (string) $member->id,
+            'tenant_user_id' => (string) $member->id,
+            'user_id' => (string) $member->user_id,
+            'name' => $member->user?->name,
+            'avatar' => $member->avatar,
+        ];
+    }
+
     private function ensureMemberInTenant(Tenant $tenant, TenantUser $member): void
     {
         if ($member->tenant_id !== $tenant->id || $member->status !== 'active') {

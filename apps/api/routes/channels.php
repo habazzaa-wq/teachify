@@ -40,6 +40,13 @@ Broadcast::channel('community.tenant.{tenantId}.channel.{channelId}', function (
         return false;
     }
 
+    app()->instance(Tenant::class, $tenant);
+    app()->instance('currentTenant', $tenant);
+
+    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
+    app()->instance(App\Models\TenantUser::class, $membership);
+    app()->instance('currentTenantMembership', $membership);
+
     $channel = CommunityChannel::query()
         ->where('tenant_id', $tenantId)
         ->whereKey($channelId)
@@ -49,13 +56,6 @@ Broadcast::channel('community.tenant.{tenantId}.channel.{channelId}', function (
     if (! $channel) {
         return false;
     }
-
-    app()->instance(Tenant::class, $tenant);
-    app()->instance('currentTenant', $tenant);
-
-    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
-    app()->instance(App\Models\TenantUser::class, $membership);
-    app()->instance('currentTenantMembership', $membership);
 
     $access = app(CommunityAccessService::class);
     $category = $channel->category ?? new CommunityCategory(['tenant_id' => $tenantId, 'status' => 'active']);
@@ -70,6 +70,13 @@ Broadcast::channel('community.tenant.{tenantId}.thread.{threadId}', function ($u
         return false;
     }
 
+    app()->instance(Tenant::class, $tenant);
+    app()->instance('currentTenant', $tenant);
+
+    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
+    app()->instance(App\Models\TenantUser::class, $membership);
+    app()->instance('currentTenantMembership', $membership);
+
     $thread = CommunityThread::query()
         ->where('tenant_id', $tenantId)
         ->whereKey($threadId)
@@ -79,13 +86,6 @@ Broadcast::channel('community.tenant.{tenantId}.thread.{threadId}', function ($u
     if (! $thread) {
         return false;
     }
-
-    app()->instance(Tenant::class, $tenant);
-    app()->instance('currentTenant', $tenant);
-
-    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
-    app()->instance(App\Models\TenantUser::class, $membership);
-    app()->instance('currentTenantMembership', $membership);
 
     return app(CommunityAccessService::class)->canViewChannel(
         $membership,
