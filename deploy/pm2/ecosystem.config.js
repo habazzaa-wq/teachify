@@ -50,7 +50,8 @@ module.exports = {
     },
     {
       name: "teachify-reverb",
-      script: "vendor/bin/artisan",
+      script: "artisan",
+      interpreter: "php",
       args: "reverb:start --host=127.0.0.1 --port=8080 --no-interaction",
       cwd: "./apps/api",
       instances: 1,
