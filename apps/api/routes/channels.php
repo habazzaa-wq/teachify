@@ -24,11 +24,13 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-function communityAuthorize(Tenant $tenant, object $user): bool
-{
-    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
+if (! function_exists('communityAuthorize')) {
+    function communityAuthorize(Tenant $tenant, object $user): bool
+    {
+        $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
 
-    return $membership !== null;
+        return $membership !== null;
+    }
 }
 
 Broadcast::channel('community.tenant.{tenantId}.channel.{channelId}', function ($user, int $tenantId, int $channelId) {
