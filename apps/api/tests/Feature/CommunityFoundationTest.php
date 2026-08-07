@@ -211,6 +211,38 @@ class CommunityFoundationTest extends TestCase
         $this->fail('Active exam should block community access.');
     }
 
+    public function test_exam_gate_ignores_abandoned_untimed_attempt_after_inactivity_window(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $student = $this->memberWithRole($tenant, 'student');
+        $this->bindTenant($tenant);
+
+        $exam = \App\Models\Exam::create([
+            'tenant_id' => $tenant->id,
+            'title' => 'Practice',
+            'slug' => 'practice',
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'status' => 'published',
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('exam_attempts')->insert([
+            'tenant_id' => $tenant->id,
+            'exam_id' => $exam->id,
+            'user_id' => $student->user_id,
+            'score' => 0,
+            'max_score' => 100,
+            'passed' => false,
+            'is_practice' => true,
+            'status' => 'in_progress',
+            'started_at' => now()->subHours(2),
+            'updated_at' => now()->subHours(2),
+            'created_at' => now()->subHours(2),
+        ]);
+
+        app(CommunityExamGateService::class)->ensureNoActiveExam($student, $tenant);
+        $this->assertTrue(true);
+    }
+
     public function test_banned_member_cannot_post(): void
     {
         $tenant = Tenant::factory()->create();

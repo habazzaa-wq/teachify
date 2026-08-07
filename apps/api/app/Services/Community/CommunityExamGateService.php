@@ -28,6 +28,7 @@ class CommunityExamGateService
                     $inProgress->where('status', 'in_progress')
                         ->where(function ($timer) {
                             $timer->whereNull('timer_ends_at')
+                                ->where('updated_at', '>', now()->subMinutes(60))
                                 ->orWhere('timer_ends_at', '>', now());
                         });
                 })
