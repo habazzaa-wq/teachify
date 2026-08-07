@@ -254,6 +254,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/lessons/{lesson}/exam-entry', [ExamEntryController::class, 'show']);
         Route::post('/lessons/{lesson}/exam-sessions/start', [ExamSessionController::class, 'start'])->middleware('throttle:10,1');
         Route::get('/lessons/{lesson}/exam-sessions/current', [ExamSessionController::class, 'current']);
+        Route::get('/exams/active-attempt', [ExamSessionController::class, 'activeAttempt']);
         Route::get('/exam-sessions/{attempt}', [ExamSessionController::class, 'show']);
         Route::put('/exam-sessions/{attempt}/answers/{examQuestion}', [ExamSessionController::class, 'saveAnswer'])->middleware('throttle:300,1');
         Route::put('/exam-sessions/{attempt}/progress', [ExamSessionController::class, 'saveProgress'])->middleware('throttle:300,1');

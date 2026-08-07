@@ -68,6 +68,26 @@ export interface ExamSession {
   questions: ExamSessionQuestion[];
 }
 
+/**
+ * Lightweight payload returned by GET /exams/active-attempt — enough for the
+ * global reminder to surface an unfinished exam without loading the full
+ * session (questions, answers, ...).
+ */
+export interface ActiveExamAttempt {
+  id: string;
+  examId: string;
+  status: ExamSessionStatus;
+  isOfficial: boolean;
+  isPractice: boolean;
+  currentQuestionIndex: number | null;
+  timerEndsAt: string | null;
+  remainingSeconds: number | null;
+  exam: {
+    id: string;
+    title: string;
+  } | null;
+}
+
 export type AntiCheatEventType =
   | "page_hidden"
   | "page_visible"

@@ -179,6 +179,34 @@ class ExamSessionService
             ->first();
     }
 
+    /**
+     * The student's single active attempt across all exams of the current
+     * tenant, when one still exists.
+     *
+     * An attempt only counts as "active" when:
+     *  - it is still in_progress,
+     *  - it was never submitted,
+     *  - its timer has not expired (untimed attempts are always active), and
+     *  - its exam is still published (teacher archive/close hides it).
+     *
+     * This is intentionally a pure read — it never grades or mutates state.
+     */
+    public function activeAttempt(User $user): ?ExamAttempt
+    {
+        return ExamAttempt::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'in_progress')
+            ->whereNull('submitted_at')
+            ->where(function ($query): void {
+                $query->whereNull('timer_ends_at')->orWhere('timer_ends_at', '>', now());
+            })
+            ->whereHas('exam', function ($query): void {
+                $query->where('status', 'published');
+            })
+            ->latest('id')
+            ->first();
+    }
+
     public function session(ExamAttempt $attempt, User $user): ExamSessionData
     {
         $this->ensureAttemptOwnedByUser($attempt, $user);

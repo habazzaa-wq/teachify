@@ -494,6 +494,105 @@ class ExamSessionFoundationTest extends TestCase
             ->assertJsonPath('data.attempt.id', $attempt);
     }
 
+    public function test_active_attempt_returns_null_when_none_running(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_returns_the_running_attempt_with_exam_title(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        $response = $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk();
+
+        $this->assertSame($attempt, $response->json('data.id'));
+        $this->assertSame('in_progress', $response->json('data.status'));
+        $this->assertSame((string) $exam, $response->json('data.examId'));
+        $this->assertSame('Session Exam', $response->json('data.exam.title'));
+        $this->assertNotNull($response->json('data.timerEndsAt'));
+        $this->assertGreaterThan(0, $response->json('data.remainingSeconds'));
+    }
+
+    public function test_active_attempt_is_isolated_per_user_and_tenant(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated();
+
+        // Another student of the same tenant has no active attempt.
+        $otherStudent = $this->memberWithRole($tenant, 'student');
+        Sanctum::actingAs($otherStudent->user);
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_submitted_attempt(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        $this->postJson("/api/v1/exam-sessions/{$attempt}/submit", [], $this->tenantHeader($tenant))->assertOk();
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_attempt_with_expired_timer(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        ExamAttempt::withoutGlobalScopes()
+            ->whereKey($attempt)
+            ->update(['timer_ends_at' => now()->subMinutes(5)]);
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_attempt_when_exam_is_not_published(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated();
+
+        // Teacher closes the exam.
+        Sanctum::actingAs($admin->user);
+        $this->patchJson("/api/v1/exam-bank/exams/{$exam}/archive", [], $this->tenantHeader($tenant))->assertOk();
+
+        Sanctum::actingAs($student->user);
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
     public function test_session_is_owner_and_tenant_isolated(): void
     {
         [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();

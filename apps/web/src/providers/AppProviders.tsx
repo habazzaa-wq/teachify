@@ -6,6 +6,7 @@ import { ThemeProvider } from "./ThemeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
 import { TenantProvider } from "./TenantProvider";
+import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
 
 const Toaster = dynamic(
   () => import("@/components/system/Toaster").then((m) => m.Toaster),
@@ -58,6 +59,7 @@ export function AppProviders({
           <TenantProvider>
             <PauseAnimationsWhileScrolling />
             {children}
+            <ActiveExamProvider />
             <Toaster />
           </TenantProvider>
         </TenantBootstrapProvider>
