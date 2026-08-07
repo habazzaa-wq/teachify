@@ -28,7 +28,8 @@ module.exports = {
     },
     {
       name: "teachify-queue",
-      script: "vendor/bin/artisan",
+      script: "artisan",
+      interpreter: "php",
       args: "queue:work --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000",
       cwd: "./apps/api",
       instances: 2,
@@ -73,7 +74,8 @@ module.exports = {
     },
     {
       name: "teachify-scheduler",
-      script: "vendor/bin/artisan",
+      script: "artisan",
+      interpreter: "php",
       args: "schedule:work",
       cwd: "./apps/api",
       instances: 1,
