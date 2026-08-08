@@ -11,6 +11,9 @@ import {
 import { useSiteSettings, useUpdateSiteSettings } from "@/features/settings/hooks";
 import type { SiteSettings } from "@/features/settings/types";
 import { useTenantStore } from "@/stores/tenant.store";
+import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
+import { mediaLibraryService } from "@/features/media-library/services";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 function SiteForm({ initial }: { initial: SiteSettings }) {
   const updateSite = useUpdateSiteSettings();
@@ -74,7 +77,7 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
             <ImageIcon className="h-4 w-4" /> أيقونة الموقع (Favicon)
           </AppCardTitle>
           <AppCardDescription>
-            ارفع الأيقونة في مكتبة الوسائط ثم الصق رابط الصورة هنا
+            اختر الأيقونة من مكتبة الوسائط أو الصق رابط الصورة هنا
           </AppCardDescription>
         </AppCardHeader>
         <AppCardContent className="space-y-4">
@@ -87,6 +90,33 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
               placeholder="https://example.com/favicon.png"
               maxLength={2048}
             />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <ChooseMediaButton
+              mode="single"
+              allowedTypes={["image"]}
+              label="اختيار من مكتبة الوسائط"
+              onSelect={async (result) => {
+                try {
+                  const asset = await mediaLibraryService.getAsset(result.id);
+                  const url = toAbsoluteAssetUrl(asset?.cdnUrl);
+                  if (url) setFavicon(url);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            />
+            {favicon.trim() && (
+              <AppButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setFavicon("")}
+              >
+                إزالة الأيقونة
+              </AppButton>
+            )}
           </div>
           {favicon.trim() && (
             <div className="flex items-center gap-3 rounded-lg border border-studio-border bg-studio-soft px-3 py-3">

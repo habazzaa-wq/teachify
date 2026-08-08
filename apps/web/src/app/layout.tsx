@@ -7,7 +7,7 @@ import "./globals.css";
 import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
-import { TenantFavicon } from "@/components/layout/TenantFavicon";
+import { TenantDocumentMeta } from "@/components/layout/TenantDocumentMeta";
 import { env } from "@/config/env";
 
 const cairo = Cairo({
@@ -16,10 +16,24 @@ const cairo = Cairo({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: env.appName,
-  description: "منصة إدارة التعلم — لوحة تحكم الأكاديمية",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let tenantName: string | null = null;
+  try {
+    const headersList = await headers();
+    const tenantContextRaw = headersList.get("x-tenant-context");
+    if (tenantContextRaw) {
+      const parsed = JSON.parse(Buffer.from(tenantContextRaw, "base64").toString("utf-8"));
+      if (parsed?.name) tenantName = String(parsed.name);
+    }
+  } catch {
+    // Ignore — fall back to the static app name.
+  }
+
+  return {
+    title: tenantName ?? env.appName,
+    description: "منصة إدارة التعلم — لوحة تحكم الأكاديمية",
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -50,7 +64,7 @@ export default async function RootLayout({
               serverHostname={serverHostname}
               tenantContext={tenantContext}
             >
-              <TenantFavicon />
+              <TenantDocumentMeta />
               {children}
             </AppProviders>
           </NextIntlClientProvider>
