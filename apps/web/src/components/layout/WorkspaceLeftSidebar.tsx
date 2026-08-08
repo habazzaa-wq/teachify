@@ -208,9 +208,11 @@ export function WorkspaceLeftSidebar() {
                 onClick={() => router.push(routes.dashboardSubjects)}
               />
               <StudioSidebarItem
-                icon={<Layout className="h-4 w-4" />}
+                icon={<GraduationCap className="h-4 w-4" />}
                 label="الطلاب"
+                active={pathname.startsWith("/teacher/students")}
                 collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.dashboardStudents)}
               />
               <StudioSidebarItem
                 icon={<TicketCheck className="h-4 w-4" />}
