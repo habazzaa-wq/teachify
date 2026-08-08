@@ -30,4 +30,10 @@ export {
   useStudentAnalytics,
   useCreateStudent,
   useInviteStudent,
+  useDeleteStudent,
+  useBulkDeleteStudents,
+  useActivateStudent,
+  useSuspendStudent,
+  useBulkActivateStudents,
+  useBulkSuspendStudents,
 } from "./hooks";

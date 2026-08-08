@@ -545,6 +545,21 @@ Route::prefix('v1')->group(function () {
         Route::post('/permissions/matrix/clone', [MatrixController::class, 'clone']);
         Route::apiResource('roles', RoleController::class);
 
+        // Teacher students management
+        Route::get('/students', [StudentController::class, 'index']);
+        Route::get('/students/metrics', [StudentController::class, 'metrics']);
+        Route::post('/students', [StudentController::class, 'store']);
+        Route::post('/students/invite', [StudentController::class, 'invite']);
+        Route::post('/students/bulk-destroy', [StudentController::class, 'bulkDestroy']);
+        Route::post('/students/bulk/activate', [StudentController::class, 'bulkActivate']);
+        Route::post('/students/bulk/suspend', [StudentController::class, 'bulkSuspend']);
+        Route::get('/students/{student}', [StudentController::class, 'show']);
+        Route::post('/students/{student}/activate', [StudentController::class, 'activate']);
+        Route::post('/students/{student}/suspend', [StudentController::class, 'suspend']);
+        Route::get('/students/{student}/enrollments', [StudentController::class, 'enrollments']);
+        Route::get('/students/{student}/analytics', [StudentController::class, 'analytics']);
+        Route::delete('/students/{student}', [StudentController::class, 'destroy']);
+
         Route::get('/settings', [TenantSettingController::class, 'index']);
         Route::get('/settings/site', [TenantSettingController::class, 'site']);
         Route::put('/settings/site', [TenantSettingController::class, 'updateSite']);
