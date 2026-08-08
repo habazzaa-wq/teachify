@@ -103,6 +103,7 @@ use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizResultController;
+use App\Http\Controllers\Api\v1\StudentController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
