@@ -9,6 +9,73 @@ use Illuminate\Http\Request;
 
 class TenantSettingController extends Controller
 {
+    public function site(): JsonResponse
+    {
+        $tenant = currentTenant();
+        $branding = $tenant->settings()
+            ->where('group', 'branding')
+            ->first();
+
+        $values = $branding?->values ?? [];
+
+        return response()->json([
+            'group' => 'site',
+            'values' => [
+                'name' => $tenant->name,
+                'favicon' => $values['favicon'] ?? null,
+                'logo' => $values['logo'] ?? null,
+                'dark_logo' => $values['dark_logo'] ?? null,
+                'light_logo' => $values['light_logo'] ?? null,
+            ],
+        ]);
+    }
+
+    public function updateSite(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'values' => ['required', 'array'],
+            'values.name' => ['sometimes', 'string', 'max:255'],
+            'values.favicon' => ['sometimes', 'nullable', 'string', 'max:2048'],
+        ]);
+
+        $tenant = currentTenant();
+        $values = $validated['values'];
+
+        if (array_key_exists('name', $values)) {
+            $tenant->update(['name' => trim((string) $values['name'])]);
+        }
+
+        if (array_key_exists('favicon', $values)) {
+            $existing = $tenant->settings()
+                ->where('group', 'branding')
+                ->first();
+
+            $merged = array_merge($existing?->values ?? [], ['favicon' => $values['favicon'] ?? null]);
+
+            TenantSetting::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'group' => 'branding',
+                ],
+                ['values' => $merged],
+            );
+        }
+
+        $tenant->refresh();
+        $branding = $tenant->settings()
+            ->where('group', 'branding')
+            ->first();
+
+        return response()->json([
+            'message' => 'Site settings updated.',
+            'group' => 'site',
+            'values' => [
+                'name' => $tenant->name,
+                'favicon' => $branding?->values['favicon'] ?? null,
+            ],
+        ]);
+    }
+
     public function index(): JsonResponse
     {
         return response()->json([

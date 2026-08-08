@@ -8,6 +8,7 @@ import {
   Star,
   Layout,
   Palette,
+  Globe,
   PanelLeftClose,
   PanelLeftOpen,
   ClipboardList,
@@ -240,6 +241,13 @@ export function WorkspaceLeftSidebar() {
 
             {/* Settings */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "الإعدادات"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Globe className="h-4 w-4" />}
+                label="إعدادات الموقع"
+                active={pathname.startsWith(routes.dashboardSiteSettings)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.dashboardSiteSettings)}
+              />
               <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}
                 label="مظهر لوحة التحكم"

@@ -8,3 +8,11 @@ export interface TenantSettings {
   storage?: Record<string, unknown>;
   setup?: Record<string, unknown>;
 }
+
+export interface SiteSettings {
+  name: string;
+  favicon: string | null;
+  logo?: string | null;
+  dark_logo?: string | null;
+  light_logo?: string | null;
+}

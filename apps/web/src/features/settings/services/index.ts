@@ -1,5 +1,5 @@
 import api from "@/services/api/axios";
-import type { TenantSettings } from "../types";
+import type { SiteSettings, TenantSettings } from "../types";
 
 export const settingsService = {
   async getAll() {
@@ -15,5 +15,15 @@ export const settingsService = {
   async updateGroup(group: string, values: Record<string, unknown>) {
     const { data } = await api.put(`/settings/${group}`, { values });
     return data;
+  },
+
+  async getSite() {
+    const { data } = await api.get("/settings/site");
+    return data.values as SiteSettings;
+  },
+
+  async updateSite(values: Partial<SiteSettings>) {
+    const { data } = await api.put("/settings/site", { values });
+    return data.values as SiteSettings;
   },
 };

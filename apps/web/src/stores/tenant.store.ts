@@ -35,6 +35,7 @@ interface TenantState {
   bootstrapError: string | null;
 
   setActiveTenant: (tenant: ActiveTenant | null) => void;
+  setTenantSite: (site: { name: string; favicon: string | null }) => void;
   setTenantContext: (context: {
     tenant: ActiveTenant;
     membership: Membership;
@@ -73,6 +74,34 @@ export const useTenantStore = create<TenantState>()(
     bootstrapError: null,
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
+
+    setTenantSite: ({ name, favicon }) =>
+      set((state) => {
+        const activeTenant = state.activeTenant
+          ? {
+              ...state.activeTenant,
+              name,
+              branding: {
+                ...(state.activeTenant.branding ?? {
+                  logo: null,
+                  favicon: null,
+                  primary_color: null,
+                  secondary_color: null,
+                  accent_color: null,
+                  font: null,
+                  dark_logo: null,
+                  light_logo: null,
+                }),
+                favicon,
+              },
+            }
+          : null;
+
+        return {
+          activeTenant,
+          branding: state.branding ? { ...state.branding, favicon } : state.branding,
+        };
+      }),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
       set({

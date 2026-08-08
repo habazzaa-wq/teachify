@@ -7,6 +7,7 @@ import "./globals.css";
 import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
+import { TenantFavicon } from "@/components/layout/TenantFavicon";
 import { env } from "@/config/env";
 
 const cairo = Cairo({
@@ -49,6 +50,7 @@ export default async function RootLayout({
               serverHostname={serverHostname}
               tenantContext={tenantContext}
             >
+              <TenantFavicon />
               {children}
             </AppProviders>
           </NextIntlClientProvider>

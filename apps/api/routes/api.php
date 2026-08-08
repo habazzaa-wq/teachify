@@ -546,6 +546,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('roles', RoleController::class);
 
         Route::get('/settings', [TenantSettingController::class, 'index']);
+        Route::get('/settings/site', [TenantSettingController::class, 'site']);
+        Route::put('/settings/site', [TenantSettingController::class, 'updateSite']);
         Route::get('/settings/{group}', [TenantSettingController::class, 'show']);
         Route::put('/settings/{group}', [TenantSettingController::class, 'update']);
 
