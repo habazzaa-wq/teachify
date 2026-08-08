@@ -273,7 +273,7 @@ export function Composer({
       {/* Reply banner */}
       {replyingTo && (
         <div className="flex items-center gap-2 border-b px-4 py-2">
-          <div className="min-w-0 flex-1 truncate rounded-lg bg-muted px-3 py-1.5 text-xs">
+          <div className="min-w-0 flex-1 truncate rounded-lg border-s-2 border-primary/50 bg-muted/60 px-3 py-1.5 text-xs">
             <span className="font-bold text-primary">رد على {replyingTo.author?.name ?? "رسالة"}: </span>
             <span className="text-muted-foreground">
               {replyingTo.body_text ?? replyingTo.body}
@@ -282,7 +282,7 @@ export function Composer({
           <button
             type="button"
             onClick={onCancelReply}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+            className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
             aria-label="إلغاء الرد"
           >
             <X className="h-3.5 w-3.5" />
@@ -442,7 +442,7 @@ export function Composer({
             }
             dir="auto"
             rows={1}
-            className="mx-1 min-h-10 flex-1 resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="mx-1 min-h-10 flex-1 resize-none rounded-2xl border border-input bg-background px-3 py-2.5 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
         )}
 
@@ -461,7 +461,7 @@ export function Composer({
           onClick={() => void handleSend()}
           disabled={!canSend || sending}
           aria-label="إرسال"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition-all hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
         >
           <Send className="h-5 w-5" />
         </button>
@@ -509,7 +509,7 @@ function ToolbarButton({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-10 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+      className="flex h-10 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary disabled:pointer-events-none disabled:opacity-40"
     >
       {children}
     </button>

@@ -8,6 +8,7 @@ import { useChannelMessages, useLatestMessageId } from "../../hooks/useMessages"
 import { useMarkRead } from "../../hooks/useMessageActions";
 import { useCurrentMember } from "../../hooks/useCurrentMember";
 import { useCommunityStore } from "../../stores/community.store";
+import { isSameDay } from "../../utils/time";
 import { MessageItem } from "./MessageItem";
 import { TypingDots, MemberAvatar } from "../atoms";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -57,6 +58,14 @@ export function MessageList({
     const map = new Map<string, CommunityMessage>();
     for (const m of messages) map.set(m.id, m);
     return (id: string | null) => (id ? (map.get(id) ?? null) : null);
+  }, [messages]);
+
+  // Map message id → position in the feed so itemContent can look up the
+  // previous/next message to compute grouping and day dividers.
+  const indexById = useMemo(() => {
+    const map = new Map<string, number>();
+    messages.forEach((m, i) => map.set(m.id, i));
+    return map;
   }, [messages]);
 
   // Auto-scroll to the newest message: always on the first load, then only
@@ -138,7 +147,14 @@ export function MessageList({
     .filter(Boolean);
 
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div
+      className="relative flex-1 overflow-hidden"
+      style={{
+        backgroundImage:
+          "radial-gradient(hsl(var(--border) / 0.55) 1px, transparent 1px)",
+        backgroundSize: "22px 22px",
+      }}
+    >
       <Virtuoso
         ref={virtuosoRef}
         data={messages}
@@ -159,14 +175,26 @@ export function MessageList({
           if (hasNext && !isFetchingNextPage) void fetchNextPage();
         }}
         computeItemKey={(_, message) => message.id}
-        itemContent={(_, message) => (
-          <MessageItem
-            message={message}
-            resolveMessage={resolveMessage}
-            onReply={onReply ?? (() => undefined)}
-            onOpenThread={onOpenThread ?? (() => undefined)}
-          />
-        )}
+        itemContent={(_, message) => {
+          const i = indexById.get(message.id) ?? -1;
+          const prev = i > 0 ? messages[i - 1] : undefined;
+          const next = i >= 0 && i < messages.length - 1 ? messages[i + 1] : undefined;
+          const groupStart = !prev || prev.author?.id !== message.author?.id;
+          const groupEnd = !next || next.author?.id !== message.author?.id;
+          const showDayDivider =
+            !prev || !isSameDay(prev.created_at, message.created_at);
+          return (
+            <MessageItem
+              message={message}
+              resolveMessage={resolveMessage}
+              onReply={onReply ?? (() => undefined)}
+              onOpenThread={onOpenThread ?? (() => undefined)}
+              groupStart={groupStart}
+              groupEnd={groupEnd}
+              showDayDivider={showDayDivider}
+            />
+          );
+        }}
         components={{
           Header: () =>
             isFetchingNextPage ? (

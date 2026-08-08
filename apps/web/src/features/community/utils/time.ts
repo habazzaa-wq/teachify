@@ -109,3 +109,54 @@ export function formatMessageTimestamp(
 export function formatTooltip(value: string | null | undefined): string {
   return value ? new Date(value).toLocaleString("ar") : "";
 }
+
+/** Whether two timestamps fall on the same calendar day. */
+export function isSameDay(
+  a: string | Date | null | undefined,
+  b: string | Date | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  const da = a instanceof Date ? a : new Date(a);
+  const db = b instanceof Date ? b : new Date(b);
+  if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return false;
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
+/**
+ * Day label for chat date dividers:
+ * - today → "اليوم"
+ * - yesterday → "أمس"
+ * - within a week → weekday
+ * - otherwise → full date
+ */
+export function formatDayLabel(
+  value: string | Date | null | undefined,
+  now: number = Date.now(),
+): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfValue = new Date(date);
+  startOfValue.setHours(0, 0, 0, 0);
+
+  const dayDiff = Math.round(
+    (startOfToday.getTime() - startOfValue.getTime()) / DAY,
+  );
+
+  if (dayDiff === 0) return "اليوم";
+  if (dayDiff === 1) return "أمس";
+  if (dayDiff < 7) {
+    return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(date);
+  }
+  return new Intl.DateTimeFormat("ar", {
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}

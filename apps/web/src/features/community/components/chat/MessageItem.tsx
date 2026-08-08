@@ -9,6 +9,7 @@ import {
   Copy,
   Edit,
   Flag,
+  Loader2,
   MessageSquareReply,
   MoreHorizontal,
   Pin,
@@ -30,7 +31,7 @@ import {
   AppDropdownMenuTrigger,
 } from "@/components/ui/AppDropdown";
 import { AppConfirmDialog } from "@/components/ui/AppConfirmDialog";
-import { formatClock, formatTooltip } from "../../utils/time";
+import { formatClock, formatDayLabel, formatTooltip } from "../../utils/time";
 import { useCurrentMember } from "../../hooks/useCurrentMember";
 import { useMessageActions } from "./MessageActionsContext";
 import { MessageContent } from "./MessageContent";
@@ -45,7 +46,12 @@ interface MessageItemProps {
   resolveMessage: (id: string | null) => CommunityMessage | null;
   onReply: (message: CommunityMessage) => void;
   onOpenThread: (message: CommunityMessage) => void;
-  compact?: boolean;
+  /** First message of a consecutive run by the same author. */
+  groupStart?: boolean;
+  /** Last message of a consecutive run by the same author. */
+  groupEnd?: boolean;
+  /** Render a "today / yesterday / date" divider above this message. */
+  showDayDivider?: boolean;
 }
 
 /** A single chat bubble with hover actions, reactions and moderation. */
@@ -54,7 +60,9 @@ export const MessageItem = memo(function MessageItem({
   resolveMessage,
   onReply,
   onOpenThread,
-  compact = false,
+  groupStart = false,
+  groupEnd = false,
+  showDayDivider = false,
 }: MessageItemProps) {
   const { memberId, canModerate } = useCurrentMember();
   const actions = useMessageActions();
@@ -65,6 +73,13 @@ export const MessageItem = memo(function MessageItem({
   const isSending = message.status === "sending";
   const bookmarked = Boolean(message.metadata?.bookmarked);
   const replied = resolveMessage(message.reply_to_message_id);
+  const hasFlags =
+    message.pinned ||
+    message.announcement ||
+    message.solved ||
+    message.official_answer ||
+    message.accepted_answer ||
+    message.highlighted;
 
   const toggleFlag = (
     fn: { mutate: (v: { messageId: string; value: boolean }) => void },
@@ -94,178 +109,248 @@ export const MessageItem = memo(function MessageItem({
   };
 
   return (
-    <div
-      className={cn(
-        "group relative flex gap-3 px-4 py-2 transition-colors hover:bg-accent/30",
-        isSending && "opacity-70",
+    <>
+      {showDayDivider && (
+        <div className="flex justify-center px-4 pb-1 pt-4">
+          <span className="rounded-full bg-muted/90 px-3 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur">
+            {formatDayLabel(message.created_at)}
+          </span>
+        </div>
       )}
-    >
-      <MemberAvatar
-        name={message.author?.name}
-        avatar={message.avatar ?? message.author?.avatar}
-        size={compact ? "sm" : "md"}
-        className="mt-1"
-      />
 
-      <div className="min-w-0 flex-1">
-        {/* Flags */}
-        {(message.pinned || message.announcement || message.solved || message.official_answer || message.accepted_answer || message.highlighted) && (
-          <div className="mb-1 flex flex-wrap gap-1">
-            {message.announcement && <FlagBadge label="إعلان" className="bg-amber-500/10 text-amber-600 ring-amber-500/25" />}
-            {message.pinned && <FlagBadge label="مثبتة" icon={<Pin className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
-            {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-sky-500/10 text-sky-600 ring-sky-500/25" />}
-            {message.accepted_answer && <FlagBadge label="إجابة مقبولة" icon={<Check className="h-3 w-3" />} className="bg-emerald-500/10 text-emerald-600 ring-emerald-500/25" />}
-            {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-violet-500/10 text-violet-600 ring-violet-500/25" />}
-            {message.highlighted && <FlagBadge label="مميزة" icon={<Sparkles className="h-3 w-3" />} className="bg-fuchsia-500/10 text-fuchsia-600 ring-fuchsia-500/25" />}
+      <div
+        className={cn(
+          "group relative flex w-full px-3",
+          isOwn ? "justify-end" : "justify-start",
+          groupStart ? "pt-3" : "pt-1",
+          groupEnd ? "pb-2" : "pb-0.5",
+          isSending && "opacity-70",
+        )}
+      >
+        {/* Avatar column (incoming only) — reserved so bubbles align in a group */}
+        {!isOwn && (
+          <div className={cn("me-2 w-9 shrink-0", !groupStart && "invisible")}>
+            <MemberAvatar
+              name={message.author?.name}
+              avatar={message.avatar ?? message.author?.avatar}
+              size="sm"
+              className="mt-0.5"
+            />
           </div>
         )}
 
-        {/* Author row */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="text-sm font-bold text-foreground">
-            {message.author?.name ?? "عضو"}
-          </span>
-          <RoleBadge role={message.author?.role ?? message.role} />
-          <span
-            className="text-[10px] text-muted-foreground"
-            title={formatTooltip(message.created_at)}
-          >
-            {formatClock(message.created_at)}
-          </span>
-          {message.edited && (
-            <span className="text-[10px] italic text-muted-foreground/70">(معدّلة)</span>
-          )}
-          {isSending && <span className="text-[10px] text-muted-foreground">جارٍ الإرسال…</span>}
-        </div>
-
-        {/* Reply-to quote */}
-        {replied && (
-          <button
-            type="button"
-            onClick={() => {
-              // Scroll handling is delegated to the virtualized list via onOpenThread-less jump:
-              document
-                .getElementById(`community-message-${replied.id}`)
-                ?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="mb-1 flex max-w-md items-start gap-2 rounded-lg border-s-2 border-primary/50 bg-muted/50 px-2.5 py-1.5 text-start"
-          >
-            <MessageSquareReply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <span className="min-w-0">
-              <span className="block text-[11px] font-bold text-primary">
-                رد على {replied.author?.name ?? "رسالة"}
-              </span>
-              <span className="line-clamp-1 block text-xs text-muted-foreground">
-                {replied.body_text ?? replied.body}
-              </span>
-            </span>
-          </button>
-        )}
-
-        {/* Body */}
-        {editing ? (
-          <EditBox
-            initial={message.body}
-            onCancel={() => setEditing(false)}
-            onSave={(body) => {
-              actions.editMessage.mutate(
-                { messageId: message.id, body, content_type: message.content_type },
-                { onSuccess: () => setEditing(false) },
-              );
-            }}
-          />
-        ) : (
-          <MessageContent body={message.body} content_type={message.content_type} />
-        )}
-
-        <AttachmentGrid attachments={message.attachments} />
-
-        <ReactionBar message={message} />
-
-        {/* Hover action row */}
         <div
           className={cn(
-            "mt-1 flex items-center gap-0.5 opacity-100 lg:opacity-0 lg:transition-opacity lg:group-hover:opacity-100",
+            "flex min-w-0 max-w-[82%] flex-col md:max-w-[72%]",
+            isOwn ? "items-end" : "items-start",
           )}
         >
-          {QUICK_EMOJIS.slice(0, 4).map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => actions.toggleReaction.mutate({ messageId: message.id, emoji })}
-              className="rounded-md px-1 py-0.5 text-sm transition-transform hover:scale-125"
-            >
-              {emoji}
-            </button>
-          ))}
-
-          <ActionIconButton label="رد" onClick={() => onReply(message)}>
-            <MessageSquareReply className="h-3.5 w-3.5" />
-          </ActionIconButton>
-
-          {(message.reply_count > 0 || message.thread_count > 0) && (
-            <ActionIconButton
-              label={`${message.reply_count} ردود`}
-              onClick={() => onOpenThread(message)}
-            >
-              <MessageSquareReply className="h-3.5 w-3.5 text-primary" />
-            </ActionIconButton>
+          {/* Author name (incoming, top of a group) */}
+          {!isOwn && groupStart && (
+            <div className="mb-1 flex items-center gap-1.5 px-1">
+              <span className="text-xs font-bold text-foreground">
+                {message.author?.name ?? "عضو"}
+              </span>
+              <RoleBadge role={message.author?.role ?? message.role} />
+            </div>
           )}
 
-          <ActionIconButton label="نسخ" onClick={copyMessage}>
-            <Copy className="h-3.5 w-3.5" />
-          </ActionIconButton>
-          <ActionIconButton label="مشاركة" onClick={shareMessage}>
-            <Share2 className="h-3.5 w-3.5" />
-          </ActionIconButton>
-
-          {!bookmarked && (
-            <ActionIconButton
-              label="مفضلة"
-              onClick={() => actions.bookmark.mutate({ message, bookmark: true })}
+          {/* Flags */}
+          {hasFlags && (
+            <div
+              className={cn(
+                "mb-1 flex flex-wrap gap-1",
+                isOwn ? "justify-end" : "justify-start",
+              )}
             >
-              <Bookmark className="h-3.5 w-3.5" />
-            </ActionIconButton>
+              {message.announcement && <FlagBadge label="إعلان" className="bg-amber-500/10 text-amber-600 ring-amber-500/25" />}
+              {message.pinned && <FlagBadge label="مثبتة" icon={<Pin className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
+              {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-sky-500/10 text-sky-600 ring-sky-500/25" />}
+              {message.accepted_answer && <FlagBadge label="إجابة مقبولة" icon={<Check className="h-3 w-3" />} className="bg-emerald-500/10 text-emerald-600 ring-emerald-500/25" />}
+              {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-violet-500/10 text-violet-600 ring-violet-500/25" />}
+              {message.highlighted && <FlagBadge label="مميزة" icon={<Sparkles className="h-3 w-3" />} className="bg-fuchsia-500/10 text-fuchsia-600 ring-fuchsia-500/25" />}
+            </div>
           )}
 
-          <MoreMenu
-            message={message}
-            isOwn={isOwn}
-            canModerate={canModerate}
-            bookmarked={bookmarked}
-            onToggleBookmark={() =>
-              actions.bookmark.mutate({ message, bookmark: !bookmarked })
-            }
-            onEdit={() => setEditing(true)}
-            onDelete={() => setConfirmDelete(true)}
-            onTogglePin={() => toggleFlag(actions.pinMessage, message.pinned)}
-            onToggleSolve={() => toggleFlag(actions.solveMessage, message.solved)}
-            onToggleAccept={() => toggleFlag(actions.acceptMessage, message.accepted_answer)}
-            onToggleOfficial={() => toggleFlag(actions.officialMessage, message.official_answer)}
-            onToggleHighlight={() => toggleFlag(actions.highlightMessage, message.highlighted)}
-            onReport={() => toast.info("تم إرسال البلاغ إلى المشرفين")}
-          />
+          {editing ? (
+            <EditBox
+              initial={message.body}
+              onCancel={() => setEditing(false)}
+              onSave={(body) => {
+                actions.editMessage.mutate(
+                  { messageId: message.id, body, content_type: message.content_type },
+                  { onSuccess: () => setEditing(false) },
+                );
+              }}
+            />
+          ) : (
+            <div
+              className={cn(
+                "relative w-fit min-w-10 rounded-2xl px-3 py-1.5 text-start shadow-sm",
+                isOwn
+                  ? "rounded-ee-sm bg-primary text-primary-foreground"
+                  : "rounded-se-sm bg-secondary text-secondary-foreground",
+                "break-words",
+              )}
+            >
+              {/* Reply-to quote */}
+              {replied && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById(`community-message-${replied.id}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                  className={cn(
+                    "mb-1.5 flex w-full max-w-[19rem] items-start gap-2 rounded-lg border-s-2 px-2 py-1.5 text-start",
+                    isOwn
+                      ? "border-white/50 bg-black/10"
+                      : "border-primary/50 bg-background/60",
+                  )}
+                >
+                  <MessageSquareReply className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                  <span className="min-w-0">
+                    <span
+                      className={cn(
+                        "block text-[11px] font-bold",
+                        isOwn ? "text-white" : "text-primary",
+                      )}
+                    >
+                      رد على {replied.author?.name ?? "رسالة"}
+                    </span>
+                    <span
+                      className={cn(
+                        "line-clamp-1 block text-xs",
+                        isOwn ? "text-white/80" : "text-muted-foreground",
+                      )}
+                    >
+                      {replied.body_text ?? replied.body}
+                    </span>
+                  </span>
+                </button>
+              )}
+
+              <MessageContent
+                body={message.body}
+                content_type={message.content_type}
+                tone={isOwn ? "primary" : "secondary"}
+              />
+
+              <AttachmentGrid attachments={message.attachments} />
+
+              {/* Bubble footer: time + sending indicator */}
+              <div
+                className={cn(
+                  "mt-1 flex items-center gap-1 text-[10px]",
+                  isOwn ? "justify-end" : "justify-start",
+                )}
+              >
+                {isSending && (
+                  <Loader2 className="h-3 w-3 animate-spin opacity-80" />
+                )}
+                <span
+                  className={cn(
+                    "opacity-80",
+                    isOwn ? "text-primary-foreground" : "text-secondary-foreground",
+                  )}
+                  title={formatTooltip(message.created_at)}
+                >
+                  {formatClock(message.created_at)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <ReactionBar message={message} />
+
+          {/* Hover action row */}
+          <div
+            className={cn(
+              "mt-1 flex items-center gap-0.5",
+              isOwn ? "justify-end" : "justify-start",
+              "opacity-100 lg:opacity-0 lg:transition-opacity lg:group-hover:opacity-100",
+            )}
+          >
+            {QUICK_EMOJIS.slice(0, 4).map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => actions.toggleReaction.mutate({ messageId: message.id, emoji })}
+                className="rounded-md px-1 py-0.5 text-sm transition-transform hover:scale-125"
+              >
+                {emoji}
+              </button>
+            ))}
+
+            <ActionIconButton label="رد" onClick={() => onReply(message)}>
+              <MessageSquareReply className="h-3.5 w-3.5" />
+            </ActionIconButton>
+
+            {(message.reply_count > 0 || message.thread_count > 0) && (
+              <ActionIconButton
+                label={`${message.reply_count} ردود`}
+                onClick={() => onOpenThread(message)}
+              >
+                <MessageSquareReply className="h-3.5 w-3.5 text-primary" />
+              </ActionIconButton>
+            )}
+
+            <ActionIconButton label="نسخ" onClick={copyMessage}>
+              <Copy className="h-3.5 w-3.5" />
+            </ActionIconButton>
+            <ActionIconButton label="مشاركة" onClick={shareMessage}>
+              <Share2 className="h-3.5 w-3.5" />
+            </ActionIconButton>
+
+            {!bookmarked && (
+              <ActionIconButton
+                label="مفضلة"
+                onClick={() => actions.bookmark.mutate({ message, bookmark: true })}
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+              </ActionIconButton>
+            )}
+
+            <MoreMenu
+              message={message}
+              isOwn={isOwn}
+              canModerate={canModerate}
+              bookmarked={bookmarked}
+              onToggleBookmark={() =>
+                actions.bookmark.mutate({ message, bookmark: !bookmarked })
+              }
+              onEdit={() => setEditing(true)}
+              onDelete={() => setConfirmDelete(true)}
+              onTogglePin={() => toggleFlag(actions.pinMessage, message.pinned)}
+              onToggleSolve={() => toggleFlag(actions.solveMessage, message.solved)}
+              onToggleAccept={() => toggleFlag(actions.acceptMessage, message.accepted_answer)}
+              onToggleOfficial={() => toggleFlag(actions.officialMessage, message.official_answer)}
+              onToggleHighlight={() => toggleFlag(actions.highlightMessage, message.highlighted)}
+              onReport={() => toast.info("تم إرسال البلاغ إلى المشرفين")}
+            />
+          </div>
         </div>
+
+        {/* Id anchor for reply jump */}
+        <span id={`community-message-${message.id}`} className="absolute" />
+
+        <AppConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title="حذف الرسالة"
+          description="سيتم حذف الرسالة نهائياً ولا يمكن التراجع."
+          confirmLabel="حذف"
+          cancelLabel="إلغاء"
+          destructive
+          loading={actions.deleteMessage.isPending}
+          onConfirm={() => {
+            actions.deleteMessage.mutate(message);
+            setConfirmDelete(false);
+          }}
+        />
       </div>
-
-      {/* Id anchor for reply jump */}
-      <span id={`community-message-${message.id}`} className="absolute" />
-
-      <AppConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title="حذف الرسالة"
-        description="سيتم حذف الرسالة نهائياً ولا يمكن التراجع."
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
-        destructive
-        loading={actions.deleteMessage.isPending}
-        onConfirm={() => {
-          actions.deleteMessage.mutate(message);
-          setConfirmDelete(false);
-        }}
-      />
-    </div>
+    </>
   );
 });
 
