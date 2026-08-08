@@ -28,8 +28,14 @@ export function MessageList({
   onOpenThread,
   onReply,
 }: MessageListProps) {
-  const { messages, isLoading, isFetchingNextPage, fetchNextPage, hasNext } =
-    useChannelMessages(channelId, threadId);
+  const {
+    messages,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNext,
+    olderCount,
+  } = useChannelMessages(channelId, threadId);
   const latestId = useLatestMessageId(messages);
   const { markRead } = useMarkRead();
   const { memberId } = useCurrentMember();
@@ -42,6 +48,10 @@ export function MessageList({
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [atBottom, setAtBottom] = useState(true);
   const prevCount = useRef(messages.length);
+  const didInitialScroll = useRef(false);
+
+  /** Absolute index (with `firstItemIndex` offset) of the newest message. */
+  const absoluteEnd = olderCount + messages.length - 1;
 
   const resolveMessage = useMemo(() => {
     const map = new Map<string, CommunityMessage>();
@@ -49,19 +59,37 @@ export function MessageList({
     return (id: string | null) => (id ? (map.get(id) ?? null) : null);
   }, [messages]);
 
-  // Auto-scroll to the newest message when it arrives and we're at the bottom.
+  // Auto-scroll to the newest message: always on the first load, then only
+  // when a new message arrives while we're already at the bottom.
   useEffect(() => {
+    if (messages.length === 0) {
+      prevCount.current = 0;
+      didInitialScroll.current = false;
+      return;
+    }
+    if (!didInitialScroll.current) {
+      didInitialScroll.current = true;
+      requestAnimationFrame(() => {
+        virtuosoRef.current?.scrollToIndex({
+          index: olderCount + messages.length - 1,
+          behavior: "auto",
+          align: "end",
+        });
+      });
+      prevCount.current = messages.length;
+      return;
+    }
     if (messages.length > prevCount.current && atBottom) {
       requestAnimationFrame(() => {
         virtuosoRef.current?.scrollToIndex({
-          index: messages.length - 1,
+          index: olderCount + messages.length - 1,
           behavior: "smooth",
           align: "end",
         });
       });
     }
     prevCount.current = messages.length;
-  }, [messages.length, atBottom]);
+  }, [messages.length, olderCount, atBottom]);
 
   // Best-effort read receipt when the newest message is in view.
   const markLatestRead = useCallback(() => {
@@ -114,10 +142,14 @@ export function MessageList({
       <Virtuoso
         ref={virtuosoRef}
         data={messages}
-        initialTopMostItemIndex={messages.length - 1}
+        firstItemIndex={olderCount}
+        initialTopMostItemIndex={{
+          index: Math.max(0, absoluteEnd),
+          align: "end",
+        }}
         increaseViewportBy={{ top: 400, bottom: 100 }}
         rangeChanged={(range) => {
-          const bottom = range.endIndex >= Math.max(0, messages.length - 1);
+          const bottom = range.endIndex >= Math.max(0, absoluteEnd);
           setAtBottom(bottom);
           if (bottom && latestId) {
             markRead({ channelId, messageId: latestId, threadId });
@@ -136,15 +168,18 @@ export function MessageList({
           />
         )}
         components={{
-          Footer: () => (
-            <div className="px-4 py-2">
-              {isFetchingNextPage && (
+          Header: () =>
+            isFetchingNextPage ? (
+              <div className="px-4 py-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Skeleton className="h-8 w-8 rounded-full" />
                   جارٍ تحميل رسائل أقدم…
                 </div>
-              )}
-              {typingNames.length > 0 && (
+              </div>
+            ) : null,
+          Footer: () =>
+            typingNames.length > 0 ? (
+              <div className="px-4 py-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MemberAvatar
                     name={typingNames[0]}
@@ -156,9 +191,8 @@ export function MessageList({
                   <span>يكتب</span>
                   <TypingDots className="text-primary" />
                 </div>
-              )}
-            </div>
-          ),
+              </div>
+            ) : null,
         }}
       />
 
@@ -168,7 +202,7 @@ export function MessageList({
           type="button"
           onClick={() =>
             virtuosoRef.current?.scrollToIndex({
-              index: messages.length - 1,
+              index: Math.max(0, absoluteEnd),
               behavior: "smooth",
               align: "end",
             })

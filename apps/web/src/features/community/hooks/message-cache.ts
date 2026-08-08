@@ -32,9 +32,9 @@ export function getMessagesCache(
   return state?.data?.pages ?? null;
 }
 
-/** Flatten pages into a single newest-first array. */
+/** Flatten pages into a single oldest-first (ascending id) array for display. */
 export function flattenPages(pages: MessagesPage[] | null): CommunityMessage[] {
-  return pages?.flatMap((p) => p.data) ?? [];
+  return pages?.flatMap((p) => p.data).reverse() ?? [];
 }
 
 /** Compare two message ids numerically (ids are numeric strings). */
@@ -53,7 +53,11 @@ export function insertDescSorted(
     next[idx] = message;
     return next;
   }
-  const insertAt = list.findIndex((m) => byIdDesc(m, message) > 0);
+  // Optimistic (temp) ids aren't numeric — treat them as the newest message.
+  const isNumeric = Number.isFinite(Number(message.id));
+  const insertAt = isNumeric
+    ? list.findIndex((m) => byIdDesc(m, message) > 0)
+    : 0;
   if (insertAt < 0) return [...list, message];
   const next = [...list];
   next.splice(insertAt, 0, message);

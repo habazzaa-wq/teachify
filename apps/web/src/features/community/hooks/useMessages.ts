@@ -78,8 +78,12 @@ export function useMessage(messageId: string | null) {
 export function useLatestMessageId(
   messages: CommunityMessage[],
 ): string | null {
-  return useMemo(
-    () => (messages.length > 0 ? messages[0]!.id : null),
-    [messages],
-  );
+  return useMemo(() => {
+    // Walk from the newest end; skip optimistic temp ids (non-numeric).
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const id = messages[i]!.id;
+      if (Number.isFinite(Number(id))) return id;
+    }
+    return null;
+  }, [messages]);
 }
