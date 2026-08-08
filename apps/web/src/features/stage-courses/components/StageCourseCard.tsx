@@ -258,12 +258,29 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             </span>
           )}
 
-          <span
-            className="text-xs font-bold transition-all duration-300 group-hover:-translate-x-1"
-            style={{ color: PRIMARY }}
-          >
-            التفاصيل
-          </span>
+          {isFree ? (
+            <span
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
+              style={{
+                background: `linear-gradient(135deg, ${ACCENT}, #F59E0B)`,
+                color: "#1a1510",
+                boxShadow: `0 4px 16px ${ACCENT}55`,
+              }}
+            >
+              اشترك الآن مجاناً
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-300 group-hover:-translate-x-1"
+              style={{
+                background: `${PRIMARY}16`,
+                color: PRIMARY,
+                border: `1px solid ${PRIMARY}40`,
+              }}
+            >
+              اشترك الآن
+            </span>
+          )}
         </div>
       </div>
 
