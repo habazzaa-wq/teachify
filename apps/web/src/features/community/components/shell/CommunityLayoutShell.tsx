@@ -31,7 +31,7 @@ export function CommunityLayoutShell({
   const isXl = useMediaQuery("(min-width: 1280px)");
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
+    <div className="flex h-full w-full overflow-hidden bg-background text-foreground">
       {/* Desktop channel sidebar */}
       <aside className="hidden w-72 shrink-0 border-e lg:flex lg:flex-col">
         {channelSidebar}
