@@ -8,7 +8,14 @@ import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
 import { TenantDocumentMeta } from "@/components/layout/TenantDocumentMeta";
-import { env } from "@/config/env";
+import {
+  getSiteDescription,
+  getSiteName,
+  getSiteTitleTemplate,
+  getVerificationTokens,
+} from "@/lib/seo/metadata";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
+import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -17,21 +24,46 @@ const cairo = Cairo({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  let tenantName: string | null = null;
-  try {
-    const headersList = await headers();
-    const tenantContextRaw = headersList.get("x-tenant-context");
-    if (tenantContextRaw) {
-      const parsed = JSON.parse(Buffer.from(tenantContextRaw, "base64").toString("utf-8"));
-      if (parsed?.name) tenantName = String(parsed.name);
-    }
-  } catch {
-    // Ignore — fall back to the static app name.
-  }
+  const [tenant, origin] = await Promise.all([getTenantSeoContext(), getRequestOrigin()]);
+  const siteName = getSiteName(tenant);
+  const description = getSiteDescription(tenant);
+  const logo = resolveAssetUrl(tenant?.branding?.logo ?? null, origin);
+  const verification = getVerificationTokens(tenant);
 
   return {
-    title: tenantName ?? env.appName,
-    description: "منصة إدارة التعلم — لوحة تحكم الأكاديمية",
+    metadataBase: new URL(origin),
+    title: {
+      default: siteName,
+      template: getSiteTitleTemplate(tenant) ?? `%s | ${siteName}`,
+    },
+    description,
+    robots: { index: true, follow: true },
+    ...(verification.google || verification.bing
+      ? {
+          verification: {
+            ...(verification.google ? { google: verification.google } : {}),
+            ...(verification.bing
+              ? { other: { "msvalidate.01": verification.bing } }
+              : {}),
+          },
+        }
+      : {}),
+    openGraph: {
+      type: "website",
+      locale: "ar_SA",
+      siteName,
+      title: siteName,
+      description,
+      url: origin,
+      ...(logo
+        ? { images: [{ url: logo, alt: siteName, width: 512, height: 512 }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary",
+      title: siteName,
+      description,
+    },
   };
 }
 

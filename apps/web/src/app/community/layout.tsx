@@ -1,7 +1,12 @@
 import "katex/dist/katex.min.css";
+import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { AuthProviders } from "@/providers/AuthProviders";
 import { CommunityProvider } from "@/features/community/providers/CommunityProvider";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const NewsTicker = dynamic(
   () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),

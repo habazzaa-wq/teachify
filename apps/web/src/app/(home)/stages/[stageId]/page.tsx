@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/get-query-client";
-import { env } from "@/config/env";
 import { STAGE_COURSES_QUERY_KEY, STAGE_QUERY_KEY } from "@/features/stage-courses/constants";
 import { stageServerService } from "@/features/stage-courses/server-services";
 import { StagePage } from "@/features/stage-courses/components/StagePage";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { routes } from "@/constants/routes";
+import { buildSeoMetadata } from "@/lib/seo/metadata";
+import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
+import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
 
 interface PageProps {
   params: Promise<{ stageId: string }>;
@@ -17,13 +22,6 @@ function toStageId(raw: string): number {
   return Number.isFinite(id) && id > 0 ? id : 0;
 }
 
-async function pageOrigin(): Promise<string> {
-  const h = await headers();
-  const protocol = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost";
-  return `${protocol}://${host}`;
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { stageId } = await params;
   const id = toStageId(stageId);
@@ -31,33 +29,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "المرحلة الدراسية" };
   }
 
-  const stage = await stageServerService.getStage(id);
+  const [tenant, origin, stage, courses] = await Promise.all([
+    getTenantSeoContext(),
+    getRequestOrigin(),
+    stageServerService.getStage(id),
+    stageServerService.getCourses(id, {}, 1),
+  ]);
+
   if (!stage) {
     return { title: "المرحلة الدراسية غير موجودة" };
   }
 
-  const description =
-    stage.description ?? `استكشف الدورات التعليمية المتاحة في المرحلة الدراسية ${stage.name}`;
+  const subjectNames = [
+    ...new Set(
+      (courses?.data ?? [])
+        .map((course) => course.subject?.name)
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ];
 
-  return {
-    title: `${stage.name} | ${env.appName}`,
-    description,
-    alternates: { canonical: `/stages/${stage.id}` },
-    openGraph: {
-      title: `${stage.name} | ${env.appName}`,
+  const description =
+    stage.description ??
+    (subjectNames.length > 0
+      ? `استكشف دورات ${stage.name} في ${subjectNames.slice(0, 5).join("، ")} وأكثر، وسجّل الآن لبدء رحلة التعلّم.`
+      : `استكشف الدورات التعليمية المتاحة في المرحلة الدراسية ${stage.name}`);
+
+  return buildSeoMetadata(
+    {
+      title: `دورات ${stage.name}`,
       description,
-      type: "website",
-      locale: "ar_SA",
-      siteName: env.appName,
-      images: stage.image ? [{ url: stage.image, alt: stage.name }] : [],
+      canonical: canonicalUrl(origin, `/stages/${stage.id}`),
+      ogImage: stage.image,
+      ogImageAlt: stage.name,
     },
-    twitter: {
-      card: "summary_large_image",
-      title: `${stage.name} | ${env.appName}`,
-      description,
-      images: stage.image ? [stage.image] : [],
-    },
-  };
+    tenant,
+    origin,
+  );
 }
 
 export default async function StagePageRoute({ params }: PageProps) {
@@ -67,9 +74,10 @@ export default async function StagePageRoute({ params }: PageProps) {
     notFound();
   }
 
-  const [stage, courses] = await Promise.all([
+  const [stage, courses, origin] = await Promise.all([
     stageServerService.getStage(id),
     stageServerService.getCourses(id, {}, 1),
+    getRequestOrigin(),
   ]);
 
   if (!stage) {
@@ -80,7 +88,7 @@ export default async function StagePageRoute({ params }: PageProps) {
   queryClient.setQueryData([STAGE_QUERY_KEY, "public", id], stage);
   queryClient.setQueryData([STAGE_COURSES_QUERY_KEY, id, {}, 1], courses);
 
-  const origin = await pageOrigin();
+  const stageUrl = canonicalUrl(origin, `/stages/${stage.id}`);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -93,17 +101,23 @@ export default async function StagePageRoute({ params }: PageProps) {
       item: {
         "@type": "Course",
         name: course.title,
-        url: `${origin}/courses/${course.slug}`,
+        url: canonicalUrl(origin, `/courses/${course.slug}`),
       },
     })),
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      <JsonLd data={jsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "الرئيسية", url: canonicalUrl(origin, routes.home) },
+          { name: stage.name, url: stageUrl },
+        ])}
       />
+      <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <Breadcrumbs items={[{ name: "الرئيسية", href: routes.home }, { name: stage.name }]} />
+      </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <StagePage stageId={id} />
       </HydrationBoundary>

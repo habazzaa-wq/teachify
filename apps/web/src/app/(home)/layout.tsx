@@ -1,9 +1,13 @@
 import { PublicLayout } from "@/layouts/PublicLayout";
+import { getSiteName } from "@/lib/seo/metadata";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 
-export default function HomeRouteLayout({
+export default async function HomeRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <PublicLayout>{children}</PublicLayout>;
+  const tenant = await getTenantSeoContext();
+
+  return <PublicLayout tenantName={getSiteName(tenant)}>{children}</PublicLayout>;
 }

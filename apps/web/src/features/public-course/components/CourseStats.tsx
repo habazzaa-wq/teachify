@@ -9,7 +9,6 @@ import {
   FolderOpen,
   Clock,
   Users,
-  Star,
   AudioLines,
 } from "lucide-react";
 import { formatNumber } from "@/lib/format";
@@ -82,17 +81,11 @@ function CourseStatsInner({ course, modules }: CourseStatsProps) {
         label: "طالب",
         color: PRIMARY,
       },
-      {
-        icon: Star,
-        value: "4.8",
-        label: "التقييم",
-        color: "#f59e0b",
-      },
     ];
 
     return list.filter((s) => {
       const meaningful = s.value !== "0" && s.value !== "—";
-      const always = s.label === "التقييم" || s.label === "طالب" || s.label === "درس";
+      const always = s.label === "طالب" || s.label === "درس";
       return meaningful || always;
     });
   }, [course, moduleStats]);

@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
 import type { WhyChooseUsSettings } from "./types";
 
 export const whyChooseUsServerService = {
-  async getPublicWhyChooseUs(): Promise<WhyChooseUsSettings | null> {
+  getPublicWhyChooseUs: cache(async (): Promise<WhyChooseUsSettings | null> => {
     try {
       const h = await headers();
       const tenantId = h.get("x-tenant-id") ?? "";
@@ -29,5 +30,5 @@ export const whyChooseUsServerService = {
     } catch {
       return null;
     }
-  },
+  }),
 };

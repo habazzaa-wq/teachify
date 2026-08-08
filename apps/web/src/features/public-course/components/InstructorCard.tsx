@@ -92,10 +92,11 @@ function InstructorCardInner({ instructor }: InstructorCardProps) {
               )}
             </div>
 
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {instructor.bio ||
-                "مدرب معتمد بخبرة واسعة في هذا المجال، يقدّم محتوى تعليمي عالي الجودة لمساعدة الطلاب على تحقيق أهدافهم المهنية والعلمية."}
-            </p>
+            {instructor.bio && (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {instructor.bio}
+              </p>
+            )}
 
             <div className="flex items-center justify-center gap-6 sm:justify-start">
               {stats.map((stat) => (

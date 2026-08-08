@@ -4,7 +4,6 @@ import { memo, useCallback, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  Star,
   Users,
   Clock,
   BookOpen,
@@ -38,33 +37,6 @@ interface CourseHeroProps {
   isEnrolled: boolean;
   onEnroll: () => void;
   onLogin: () => void;
-}
-
-function RatingStars({ rating, size = 14 }: { rating: number; size?: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => {
-        const fill = Math.max(0, Math.min(1, rating - i));
-        return (
-          <span key={i} className="relative" style={{ width: size, height: size }}>
-            <Star
-              className="absolute inset-0 text-amber-500/25"
-              style={{ width: size, height: size }}
-            />
-            <span
-              className="absolute inset-0 overflow-hidden"
-              style={{ width: `${fill * 100}%` }}
-            >
-              <Star
-                className="fill-amber-400 text-amber-400"
-                style={{ width: size, height: size }}
-              />
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
 }
 
 function HeroBadge({
@@ -111,7 +83,6 @@ function CourseHeroInner({
   const isDark = theme === "dark";
   const [wishlisted, setWishlisted] = useState(false);
 
-  const rating = 4.8;
   const hasDiscount =
     !isEnrolled &&
     course.pricingType !== "free" &&
@@ -123,7 +94,7 @@ function CourseHeroInner({
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice - course.discountPrice!) / originalPrice) * 100)
     : 0;
-  const currency = "ج.م";
+  const currency = course.currency;
 
   const coverSrc = course.coverImage || course.thumbnail;
 
@@ -296,14 +267,6 @@ function CourseHeroInner({
               className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm"
               style={{ color: isDark ? "rgba(250,246,241,0.6)" : "#6b6156" }}
             >
-              <div className="flex items-center gap-2">
-                <RatingStars rating={rating} />
-                <span className="font-bold text-amber-500">{rating.toFixed(1)}</span>
-                <span className="text-xs opacity-70">({formatNumber(course.studentsCount)} تقييم)</span>
-              </div>
-
-              <span className="hidden h-4 w-px sm:block" style={{ background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)" }} />
-
               <span className="inline-flex items-center gap-1.5 font-medium">
                 <Users className="h-4 w-4" style={{ color: PRIMARY }} />
                 {formatNumber(course.studentsCount)} طالب
@@ -404,19 +367,12 @@ function CourseHeroInner({
                   className="absolute bottom-4 start-4 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/90 px-4 py-3 shadow-lg shadow-black/10"
                   style={{ backdropFilter: "none" }}
                 >
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-xl text-lg font-extrabold text-white shadow-md"
-                    style={{ background: CTA_GRADIENT }}
-                  >
-                    {rating.toFixed(1)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <RatingStars rating={rating} size={12} />
-                    </div>
-                    <p className="mt-1 text-[11px] font-semibold text-gray-600">
-                      تقييم {formatNumber(course.studentsCount)} طالب
-                    </p>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-[#BF6D58]" />
+                    <span className="text-sm font-extrabold text-gray-800">
+                      {formatNumber(course.studentsCount)}
+                    </span>
+                    <p className="text-[11px] font-semibold text-gray-600">طالب</p>
                   </div>
                 </div>
 
@@ -445,11 +401,13 @@ function CourseHeroInner({
                   <span className="text-3xl font-extrabold tracking-tight text-foreground">
                     {formatNumber(displayPrice)}
                   </span>
-                  <span className="mb-1 text-sm font-semibold text-muted-foreground">{currency}</span>
+                  {currency && (
+                    <span className="mb-1 text-sm font-semibold text-muted-foreground">{currency}</span>
+                  )}
                   {hasDiscount && (
                     <>
                       <span className="mb-1 text-base text-muted-foreground line-through">
-                        {formatNumber(originalPrice)} {currency}
+                        {formatNumber(originalPrice)} {currency ?? ""}
                       </span>
                       <span
                         className="mb-1 rounded-lg px-2.5 py-0.5 text-xs font-extrabold"

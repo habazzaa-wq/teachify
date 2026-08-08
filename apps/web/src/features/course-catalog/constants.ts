@@ -3,6 +3,9 @@ export const CATALOG_STAGES_KEY = "catalog-stages";
 
 export const CATALOG_PAGE_SIZE = 12;
 
+/** Larger page size used only by the sitemap crawler (fewer API round-trips). */
+export const CATALOG_SITEMAP_PAGE_SIZE = 100;
+
 export const PRIMARY = "#BF6D58";
 export const ACCENT = "#FFB50E";
 

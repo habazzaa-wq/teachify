@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Sun, Moon, GraduationCap, LogIn,
-  Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
+  Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
@@ -76,7 +76,6 @@ const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
-  { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
 function prefersReducedMotion(): boolean {

@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { AuthProviders } from "@/providers/AuthProviders";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function TenantRouteLayout({
+export default function WalletRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthProviders>{children}</AuthProviders>;
+  return <>{children}</>;
 }

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/get-query-client";
-import { env } from "@/config/env";
+import { routes } from "@/constants/routes";
+import { buildSeoMetadata } from "@/lib/seo/metadata";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
+import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
 import { catalogKeys } from "@/features/course-catalog/keys";
 import { catalogServerService } from "@/features/course-catalog/server-services";
 import type {
@@ -12,38 +14,23 @@ import type {
 } from "@/features/course-catalog/types";
 import { CatalogPage } from "@/features/course-catalog/components/CatalogPage";
 
-async function pageOrigin(): Promise<string> {
-  const h = await headers();
-  const protocol = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost";
-  return `${protocol}://${host}`;
-}
-
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value ?? undefined;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: `جميع الكورسات | ${env.appName}`,
-    description:
-      "استعرض جميع الدورات التعليمية المتاحة، وصفِّ النتائج حسب المرحلة الدراسية أو المادة أو المدرّس أو السعر، وابدأ رحلة تعلّم جديدة.",
-    alternates: { canonical: "/courses" },
-    openGraph: {
-      title: `جميع الكورسات | ${env.appName}`,
+  const [tenant, origin] = await Promise.all([getTenantSeoContext(), getRequestOrigin()]);
+
+  return buildSeoMetadata(
+    {
+      title: "جميع الكورسات",
       description:
-        "استعرض جميع الدورات التعليمية المتاحة وابدأ رحلة تعلّم جديدة.",
-      type: "website",
-      locale: "ar_SA",
-      siteName: env.appName,
+        "استعرض جميع الدورات التعليمية المتاحة، وصفِّ النتائج حسب المرحلة الدراسية أو المادة أو المدرّس أو السعر، وابدأ رحلة تعلّم جديدة.",
+      canonical: canonicalUrl(origin, routes.publicCourse),
     },
-    twitter: {
-      card: "summary_large_image",
-      title: `جميع الكورسات | ${env.appName}`,
-      description:
-        "استعرض جميع الدورات التعليمية المتاحة وابدأ رحلة تعلّم جديدة.",
-    },
-  };
+    tenant,
+    origin,
+  );
 }
 
 export default async function CoursesPage({
@@ -77,7 +64,18 @@ export default async function CoursesPage({
     queryClient.setQueryData(catalogKeys.courses(initialFilters, initialPage), courses);
   }
 
-  const origin = await pageOrigin();
+  const origin = await getRequestOrigin();
+
+  const hasFilters = Boolean(
+    initialFilters.search ||
+      initialFilters.stageId ||
+      initialFilters.subjectId ||
+      initialFilters.teacherId ||
+      initialFilters.pricing ||
+      initialFilters.sort ||
+      initialPage > 1,
+  );
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -101,10 +99,12 @@ export default async function CoursesPage({
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {!hasFilters && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <HydrationBoundary state={dehydrate(queryClient)}>
         <CatalogPage key={stateKey} initialFilters={initialFilters} initialPage={initialPage} />
       </HydrationBoundary>

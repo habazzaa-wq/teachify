@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
+import { CATALOG_PAGE_SIZE } from "./constants";
 import type { StageItem } from "@/features/homepage/educational-stages/types";
 import { formatCatalogCoursesResponse } from "./format";
 import { buildCatalogParams } from "./params";
@@ -38,8 +40,8 @@ async function serverFetch<T>(path: string): Promise<T> {
   return res.json();
 }
 
-function toQuery(filters: CatalogFilters, page: number): string {
-  const params = buildCatalogParams(filters, page);
+function toQuery(filters: CatalogFilters, page: number, perPage: number): string {
+  const params = buildCatalogParams(filters, page, perPage);
 
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -55,7 +57,7 @@ function toQuery(filters: CatalogFilters, page: number): string {
 
 /** Server-only public course catalog API (reads tenant headers from next/headers). */
 export const catalogServerService = {
-  async getStages(): Promise<StageItem[] | null> {
+  getStages: cache(async (): Promise<StageItem[] | null> => {
     try {
       const json = await serverFetch<{ items: Raw[] }>("/public/educational-stages");
       if (!Array.isArray(json?.items)) {
@@ -72,17 +74,20 @@ export const catalogServerService = {
     } catch {
       return null;
     }
-  },
+  }),
 
-  async getCourses(
-    filters: CatalogFilters = {},
-    page = 1,
-  ): Promise<CatalogCoursesResponse | null> {
-    try {
-      const json = await serverFetch<Raw>(`/public/courses${toQuery(filters, page)}`);
-      return formatCatalogCoursesResponse(json);
-    } catch {
-      return null;
-    }
-  },
+  getCourses: cache(
+    async (
+      filters: CatalogFilters = {},
+      page = 1,
+      perPage: number = CATALOG_PAGE_SIZE,
+    ): Promise<CatalogCoursesResponse | null> => {
+      try {
+        const json = await serverFetch<Raw>(`/public/courses${toQuery(filters, page, perPage)}`);
+        return formatCatalogCoursesResponse(json);
+      } catch {
+        return null;
+      }
+    },
+  ),
 };

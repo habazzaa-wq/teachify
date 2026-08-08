@@ -27,6 +27,12 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-hostname", hostname);
 
+  if (!isPlatform) {
+    // Tenant host — make the resolved domain explicit for server services and
+    // SEO helpers (they still fall back to the Host header if absent).
+    requestHeaders.set("x-tenant-domain", hostname);
+  }
+
   if (isPlatform) {
     if (pathname === "/") {
       const url = request.nextUrl.clone();

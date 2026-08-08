@@ -49,7 +49,7 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = "ج.م";
+  const currency = course.currency;
 
   const discountPercent = useMemo(() => {
     if (!hasDiscount || !originalPrice || !course.discountPrice) return 0;
@@ -114,13 +114,15 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
                 <span className="text-3xl font-extrabold tracking-tight text-foreground">
                   {formatNumber(displayPrice)}
                 </span>
-                <span className="mb-1 text-sm font-semibold text-muted-foreground">
-                  {currency}
-                </span>
+                {currency && (
+                  <span className="mb-1 text-sm font-semibold text-muted-foreground">
+                    {currency}
+                  </span>
+                )}
                 {hasDiscount && (
                   <>
                     <span className="mb-1 text-base text-muted-foreground line-through">
-                      {formatNumber(originalPrice)} {currency}
+                      {formatNumber(originalPrice)} {currency ?? ""}
                     </span>
                     <span
                       className="mb-1 rounded-lg px-2 py-0.5 text-[11px] font-extrabold"

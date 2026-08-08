@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
 import type { StageItem } from "@/features/homepage/educational-stages/types";
@@ -56,7 +57,7 @@ function toQuery(filters: StageCourseFilters, page: number): string {
 
 /** Server-only public stage + courses API (reads tenant headers from next/headers). */
 export const stageServerService = {
-  async getStage(stageId: number): Promise<StageItem | null> {
+  getStage: cache(async (stageId: number): Promise<StageItem | null> => {
     try {
       const json = await serverFetch<{ data: Raw }>(`/public/educational-stages/${stageId}`);
       if (!json.data) {
@@ -73,22 +74,24 @@ export const stageServerService = {
     } catch {
       return null;
     }
-  },
+  }),
 
-  async getCourses(
-    stageId: number,
-    filters: StageCourseFilters = {},
-    page = 1,
-  ): Promise<StageCoursesResponse | null> {
-    try {
-      const json = await serverFetch<Raw>(
-        `/public/courses?educational_stage_id=${stageId}${toQuery(filters, page)}`,
-      );
-      return formatStageCoursesResponse(json);
-    } catch {
-      return null;
-    }
-  },
+  getCourses: cache(
+    async (
+      stageId: number,
+      filters: StageCourseFilters = {},
+      page = 1,
+    ): Promise<StageCoursesResponse | null> => {
+      try {
+        const json = await serverFetch<Raw>(
+          `/public/courses?educational_stage_id=${stageId}${toQuery(filters, page)}`,
+        );
+        return formatStageCoursesResponse(json);
+      } catch {
+        return null;
+      }
+    },
+  ),
 
   /** Raw course used for JSON-LD (title + slug only). */
   formatCourse: formatStageCourse,

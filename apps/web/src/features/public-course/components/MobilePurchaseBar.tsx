@@ -20,7 +20,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
   const hasDiscount = !isFree && originalPrice > displayPrice && displayPrice > 0;
-  const currency = "ج.م";
+  const currency = course.currency;
 
   const discountPercent = useMemo(
     () =>
@@ -47,7 +47,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
           ) : (
             <div className="flex flex-wrap items-baseline gap-x-2">
               <span className="text-lg font-extrabold text-[#BF6D58]">
-                {formatNumber(displayPrice)} {currency}
+                {formatNumber(displayPrice)} {currency ?? ""}
               </span>
               {hasDiscount && (
                 <>

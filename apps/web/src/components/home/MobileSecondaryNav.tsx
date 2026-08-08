@@ -29,7 +29,6 @@ const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
-  { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
 export function MobileSecondaryNav() {
