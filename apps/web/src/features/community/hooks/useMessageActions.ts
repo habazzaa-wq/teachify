@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { communityApi, isExamBlockedError } from "../api/community.api";
+import { communityApi, isExamBlockedError, reportClientError } from "../api/community.api";
 import { communityKeys } from "../queryKeys";
 import {
   insertDescSorted,
@@ -90,13 +90,22 @@ export function useSendMessage() {
 
     onSuccess: (serverMessage, { channelId }, context) => {
       if (!context) return;
-      removeMessageFromCache(queryClient, channelId, context.tempId);
-      upsertMessageInCache(queryClient, channelId, serverMessage);
-      clearUnread(channelId);
-      if (serverMessage.thread_id) {
-        void queryClient.invalidateQueries({
-          queryKey: communityKeys.thread(serverMessage.thread_id),
+      try {
+        removeMessageFromCache(queryClient, channelId, context.tempId);
+        upsertMessageInCache(queryClient, channelId, serverMessage);
+        clearUnread(channelId);
+        if (serverMessage?.thread_id) {
+          void queryClient.invalidateQueries({
+            queryKey: communityKeys.thread(serverMessage.thread_id),
+          });
+        }
+      } catch (err) {
+        // The message was persisted server-side; a local cache update failure
+        // must never surface as a failed send.
+        console.error("[community] send: cache update failed", err, {
+          serverMessage,
         });
+        void reportClientError("community.send.cache", err);
       }
     },
 
@@ -107,6 +116,8 @@ export function useSendMessage() {
         setExamBlocked(true);
         return;
       }
+      console.error("[community] send failed", error);
+      void reportClientError("community.send", error);
       toast.error("تعذّر إرسال الرسالة. حاول مرة أخرى.");
     },
   });

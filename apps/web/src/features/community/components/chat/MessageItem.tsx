@@ -163,12 +163,12 @@ export const MessageItem = memo(function MessageItem({
                 isOwn ? "justify-end" : "justify-start",
               )}
             >
-              {message.announcement && <FlagBadge label="إعلان" className="bg-amber-500/10 text-amber-600 ring-amber-500/25" />}
+              {message.announcement && <FlagBadge label="إعلان" className="bg-[#FFB50E]/15 text-[#7a5400] ring-[#FFB50E]/40" />}
               {message.pinned && <FlagBadge label="مثبتة" icon={<Pin className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
-              {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-sky-500/10 text-sky-600 ring-sky-500/25" />}
-              {message.accepted_answer && <FlagBadge label="إجابة مقبولة" icon={<Check className="h-3 w-3" />} className="bg-emerald-500/10 text-emerald-600 ring-emerald-500/25" />}
-              {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-violet-500/10 text-violet-600 ring-violet-500/25" />}
-              {message.highlighted && <FlagBadge label="مميزة" icon={<Sparkles className="h-3 w-3" />} className="bg-fuchsia-500/10 text-fuchsia-600 ring-fuchsia-500/25" />}
+              {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-[#FFB50E]/15 text-[#7a5400] ring-[#FFB50E]/40" />}
+              {message.accepted_answer && <FlagBadge label="إجابة مقبولة" icon={<Check className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
+              {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-[#FFB50E]/15 text-[#7a5400] ring-[#FFB50E]/40" />}
+              {message.highlighted && <FlagBadge label="مميزة" icon={<Sparkles className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
             </div>
           )}
 

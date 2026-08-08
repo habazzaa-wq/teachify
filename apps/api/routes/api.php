@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\v1\Community\CommunityReactionController;
 use App\Http\Controllers\Api\v1\Community\CommunitySearchController;
 use App\Http\Controllers\Api\v1\Community\CommunityStatsController;
 use App\Http\Controllers\Api\v1\Community\CommunityThreadController;
+use App\Http\Controllers\Api\v1\Community\ClientDiagnosticsController;
 use App\Http\Controllers\Api\v1\Courses\CategoryController;
 use App\Http\Controllers\Api\v1\Courses\CourseController;
 use App\Http\Controllers\Api\v1\Courses\CourseInstructorController;
@@ -510,6 +511,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/stats', [CommunityStatsController::class, 'show']);
         });
+
+        Route::post('/debug/client-error', [ClientDiagnosticsController::class, 'report']);
 
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
         Route::get('/audit-logs/entity', [AuditLogController::class, 'entity']);

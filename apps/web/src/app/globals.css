@@ -428,6 +428,27 @@
     --studio-warning: 35 85% 55%;
     --studio-danger: 0 65% 55%;
   }
+
+  /* ───────── Community Theme (homepage palette: coral #D87B63 + gold #FFB50E) ───────── */
+  .community-theme {
+    --primary: 12 60% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 41 100% 53%;
+    --secondary-foreground: 30 80% 12%;
+    --accent: 12 60% 93%;
+    --accent-foreground: 12 55% 25%;
+    --ring: 12 60% 62%;
+  }
+
+  .dark.community-theme {
+    --primary: 12 65% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 41 100% 55%;
+    --secondary-foreground: 0 0% 10%;
+    --accent: 12 55% 26%;
+    --accent-foreground: 12 65% 92%;
+    --ring: 12 65% 68%;
+  }
 }
 
 @layer utilities {

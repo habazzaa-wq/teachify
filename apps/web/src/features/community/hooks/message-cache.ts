@@ -29,7 +29,7 @@ export function getMessagesCache(
   const state = queryClient.getQueryState<MessagesCacheData>(
     communityKeys.messages(channelId, scope),
   );
-  return state?.data?.pages ?? null;
+  return Array.isArray(state?.data?.pages) ? state.data.pages : null;
 }
 
 /** Flatten pages into a single oldest-first (ascending id) array for display. */
@@ -47,6 +47,7 @@ export function insertDescSorted(
   list: CommunityMessage[],
   message: CommunityMessage,
 ): CommunityMessage[] {
+  if (!message || message.id == null) return list;
   const idx = list.findIndex((m) => m.id === message.id);
   if (idx >= 0) {
     const next = [...list];
@@ -70,14 +71,18 @@ export function upsertMessageInCache(
   channelId: string,
   message: CommunityMessage,
 ): void {
+  if (!message || message.id == null) return;
   const scopes = new Set<string>([
     "main",
     ...(message.thread_id ? [message.thread_id] : []),
   ]);
   for (const scope of scopes) {
     const pages = getMessagesCache(queryClient, channelId, scope);
-    if (!pages) continue;
-    const firstPage = { ...pages[0]!, data: insertDescSorted(pages[0]!.data, message) };
+    if (!pages || pages.length === 0) continue;
+    const firstPage = {
+      ...pages[0]!,
+      data: insertDescSorted(pages[0]!.data, message),
+    };
     queryClient.setQueryData<MessagesCacheData>(
       communityKeys.messages(channelId, scope),
       (old) =>
@@ -97,13 +102,14 @@ export function replaceMessageInCache(
   channelId: string,
   message: CommunityMessage,
 ): void {
+  if (!message || message.id == null) return;
   const scopes = new Set<string>([
     "main",
     ...(message.thread_id ? [message.thread_id] : []),
   ]);
   for (const scope of scopes) {
     const pages = getMessagesCache(queryClient, channelId, scope);
-    if (!pages) continue;
+    if (!pages || pages.length === 0) continue;
     queryClient.setQueryData<MessagesCacheData>(
       communityKeys.messages(channelId, scope),
       (old) => {
@@ -128,32 +134,32 @@ export function removeMessageFromCache(
 ): void {
   for (const scope of ["main"]) {
     const pages = getMessagesCache(queryClient, channelId, scope);
-    if (!pages) continue;
+    if (!pages || pages.length === 0) continue;
     queryClient.setQueryData<MessagesCacheData>(
       communityKeys.messages(channelId, scope),
       (old) => {
-        if (!old) return old;
+        if (!old || !Array.isArray(old.pages)) return old;
         const next = old.pages
           .map((p) => ({
             ...p,
             data: p.data.filter((m) => m.id !== messageId),
           }))
           .filter((p) => p.data.length > 0);
-        return next.length ? { ...old, pages: next } : old;
+        return { ...old, pages: next };
       },
     );
   }
   queryClient.setQueriesData<MessagesCacheData>(
     { queryKey: ["community", "messages", channelId] },
     (old) => {
-      if (!old) return old;
+      if (!old || !Array.isArray(old.pages)) return old;
       const next = old.pages
         .map((p) => ({
           ...p,
           data: p.data.filter((m) => m.id !== messageId),
         }))
         .filter((p) => p.data.length > 0);
-      return next.length ? { ...old, pages: next } : old;
+      return { ...old, pages: next };
     },
   );
 }

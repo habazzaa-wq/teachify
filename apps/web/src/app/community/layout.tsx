@@ -27,7 +27,7 @@ export default function CommunityRouteLayout({
   return (
     <AuthProviders>
       <CommunityProvider>
-        <div className="flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
+        <div className="community-theme flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
           <NewsTicker />
           <PublicNavbar />
           <MobileSecondaryNav />

@@ -46,6 +46,27 @@ export function isExamBlockedError(error: unknown): boolean {
   );
 }
 
+/** TEMP: forward a client-side error to the server log for diagnosis. */
+export async function reportClientError(
+  context: string,
+  error: unknown,
+): Promise<void> {
+  try {
+    const apiError = error as ApiError | null;
+    await api.post("/debug/client-error", {
+      context,
+      message:
+        apiError?.message ??
+        (error instanceof Error ? error.message : String(error)),
+      status: apiError?.status ?? null,
+      fieldErrors: apiError?.fieldErrors ?? null,
+      raw: apiError?.raw ?? null,
+    });
+  } catch {
+    // Best-effort; never let diagnostics break the app.
+  }
+}
+
 const unwrap = <T>(
   collection: T[] | { data: T[]; meta?: unknown },
 ): T[] => {
