@@ -271,11 +271,11 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             </span>
           ) : (
             <span
-              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-300 group-hover:-translate-x-1"
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
-                background: `${PRIMARY}16`,
-                color: PRIMARY,
-                border: `1px solid ${PRIMARY}40`,
+                background: "#F7A20B",
+                color: "#1a1510",
+                boxShadow: "0 4px 16px rgba(247,162,11,0.4)",
               }}
             >
               اشترك الآن
