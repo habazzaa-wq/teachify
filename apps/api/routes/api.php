@@ -95,6 +95,7 @@ use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
+use App\Http\Controllers\Api\v1\PublicSeoContentController;
 use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
@@ -103,6 +104,11 @@ use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizResultController;
+use App\Http\Controllers\Api\v1\Seo\SeoContentController;
+use App\Http\Controllers\Api\v1\Seo\SeoKeywordController;
+use App\Http\Controllers\Api\v1\Seo\SeoLinkSearchController;
+use App\Http\Controllers\Api\v1\Seo\SeoOverviewController;
+use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
 use App\Http\Controllers\Api\v1\StudentController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
@@ -149,6 +155,11 @@ Route::prefix('v1')->group(function () {
     Route::post('/public/register', [PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
+    Route::get('/public/seo/articles', [PublicSeoContentController::class, 'index'])->defaults('type', 'article');
+    Route::get('/public/seo/guides', [PublicSeoContentController::class, 'index'])->defaults('type', 'guide');
+    Route::get('/public/seo/articles/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'article');
+    Route::get('/public/seo/guides/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'guide');
+    Route::get('/public/seo/faq-collections/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'faq_collection');
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
@@ -569,6 +580,27 @@ Route::prefix('v1')->group(function () {
 
         Route::apiResource('teacher/news', NewsController::class)->names('teacher.news');
         Route::post('/teacher/news/reorder', [NewsController::class, 'reorder']);
+
+        // Teacher SEO & Content Studio
+        Route::get('/seo/overview', [SeoOverviewController::class, 'index']);
+        Route::get('/seo/contents', [SeoContentController::class, 'index']);
+        Route::post('/seo/contents', [SeoContentController::class, 'store']);
+        Route::get('/seo/contents/{seoContent}', [SeoContentController::class, 'show']);
+        Route::match(['put', 'patch'], '/seo/contents/{seoContent}', [SeoContentController::class, 'update']);
+        Route::delete('/seo/contents/{seoContent}', [SeoContentController::class, 'destroy']);
+        Route::post('/seo/contents/{seoContent}/publish', [SeoContentController::class, 'publish']);
+        Route::post('/seo/contents/{seoContent}/unpublish', [SeoContentController::class, 'unpublish']);
+        Route::post('/seo/contents/{seoContent}/archive', [SeoContentController::class, 'archive']);
+        Route::post('/seo/contents/{seoContent}/restore', [SeoContentController::class, 'restore']);
+        Route::get('/seo/contents/{seoContent}/revisions', [SeoContentController::class, 'revisions']);
+        Route::get('/seo/link-search', [SeoLinkSearchController::class, 'index']);
+        Route::get('/seo/keywords', [SeoKeywordController::class, 'index']);
+        Route::post('/seo/keywords', [SeoKeywordController::class, 'store']);
+        Route::get('/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'show']);
+        Route::match(['put', 'patch'], '/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'update']);
+        Route::delete('/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'destroy']);
+        Route::get('/seo/settings', [SeoSettingController::class, 'show']);
+        Route::put('/seo/settings', [SeoSettingController::class, 'update']);
 
         Route::apiResource('teacher/educational-stages', EducationalStageController::class)->names('teacher.educational-stages');
         Route::post('/teacher/educational-stages/reorder', [EducationalStageController::class, 'reorder']);
