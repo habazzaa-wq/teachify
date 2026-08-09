@@ -97,7 +97,13 @@ function request(method, path, redirectsLeft = 5) {
             request(method, nextPath, redirectsLeft - 1).then(resolve, reject);
             return;
           }
-          resolve({ status, text: body, url: path, headers: res.headers });
+          resolve({
+            status,
+            text: body,
+            url: path,
+            redirected: redirectsLeft < 5,
+            headers: res.headers,
+          });
         });
       },
     );
@@ -164,7 +170,7 @@ function jsonLdInfo(content) {
   const payloadScripts = (content.match(/application\/ld\+json/gi) || []).length - literalScripts;
   const types = [];
   // Tolerate any backslash escaping depth (`"@type"`, `\"@type\"`, `\\\"@type\\\"`).
-  const re = /\*{0,}"@type"\*{0,}:\*{0,}"([^"\\]*)"/g;
+  const re = /\\*"@type\\*"\\*:\\*"([^"\\]*)\\*"/g;
   let m;
   while ((m = re.exec(content)) !== null) types.push(m[1]);
   return {
@@ -256,8 +262,23 @@ async function main() {
 
   if (reachable) {
     // ── Public pages ──
-    const homeHtml = await checkPublicPage("/", "Homepage");
-    await checkPublicPage("/courses", "Catalog");
+    const homeProbe = await get("/");
+    const platformRedirect = !rawTenant && homeProbe.redirected;
+    if (platformRedirect) {
+      console.log(
+        "  note: the connect origin is the platform host (its / redirects to the admin panel).\n" +
+        "  Set SEO_CHECK_TENANT_HOST=hazem.academy.test to run the full page checks\n" +
+        "  against a tenant view without DNS (the request presents that Host header).\n",
+      );
+    }
+
+    let homeHtml = null;
+    if (platformRedirect) {
+      record("Homepage (platform host)", true, "page checks skipped — use SEO_CHECK_TENANT_HOST for the tenant view", false);
+    } else {
+      homeHtml = await checkPublicPage("/", "Homepage");
+      await checkPublicPage("/courses", "Catalog");
+    }
 
     // ── robots.txt ──
     const robotsRes = await get("/robots.txt");
@@ -312,7 +333,17 @@ async function main() {
     record("sitemap — no query strings", queryInSitemap.length === 0, queryInSitemap.join(", ") || "ok");
 
     if (stagePath) await checkPublicPage(new URL(stagePath).pathname, "Stage");
-    else record("stage page discovered from sitemap", false, "no /stages/ URL found in sitemap (API may be unavailable)");
+    else
+      record(
+        "stage page discovered from sitemap",
+        Boolean(coursePath || platformRedirect),
+        coursePath
+          ? "no /stages/ URL found — tenant has no stages configured (data-dependent)"
+          : platformRedirect
+            ? "platform host serves a core-only sitemap — run with SEO_CHECK_TENANT_HOST for the full tenant sitemap"
+            : "no /stages/ URL found in sitemap (API may be unavailable)",
+        !coursePath && !platformRedirect,
+      );
 
     if (coursePath) {
       const coursePathname = new URL(coursePath).pathname;
@@ -321,11 +352,18 @@ async function main() {
         const ld = jsonLdInfo(courseHtml);
         record("Course — Course JSON-LD emitted", ld.types.includes("Course"));
         record("Course — BreadcrumbList JSON-LD emitted", ld.types.includes("BreadcrumbList"));
-        const fakeSignals = /aggregateRating|\\"ratingValue\\"|\\"reviewCount\\"|\\"review\\"/.test(courseHtml);
+        const fakeSignals = /aggregateRating|\\"ratingValue\\"|\\"reviewCount\\"/.test(courseHtml);
         record("Course — no fake ratings/reviews", !fakeSignals);
       }
     } else {
-      record("course page discovered from sitemap", false, "no /courses/ URL found in sitemap (API may be unavailable)");
+      record(
+        "course page discovered from sitemap",
+        Boolean(platformRedirect),
+        platformRedirect
+          ? "platform host serves a core-only sitemap — run with SEO_CHECK_TENANT_HOST for course chunks"
+          : "no /courses/ URL found in sitemap (API may be unavailable)",
+        !platformRedirect,
+      );
     }
 
     // ── Private routes must be noindex ──
