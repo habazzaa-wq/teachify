@@ -547,9 +547,15 @@ class ResumableUploadService
 
         $session->chunks()->delete();
 
-        // Abandoned uploads leave an empty placeholder asset behind.
-        if (! $session->completed && $session->asset) {
-            $session->asset->delete();
+        // Abandoned uploads leave an empty placeholder asset behind. Load the
+        // asset outside the tenant scope — the GC command runs without tenant
+        // context, and the scope would call currentTenant() and crash.
+        $asset = MediaAsset::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->find($session->media_asset_id);
+
+        if (! $session->completed && $asset) {
+            $asset->delete();
         }
 
         $session->delete();
