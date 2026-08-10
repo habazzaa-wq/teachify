@@ -540,7 +540,7 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
       ref={ref}
       dir="rtl"
       aria-labelledby="wcu-title"
-      className={`section-lazy relative w-full overflow-hidden py-14 sm:py-20 lg:py-24${inView ? " wcu-in-view" : ""}`}
+      className={`section-lazy wcu-scene relative w-full overflow-hidden py-14 sm:py-20 lg:py-24${inView ? " wcu-in-view" : ""}`}
       style={{
         background: isDark
           ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
