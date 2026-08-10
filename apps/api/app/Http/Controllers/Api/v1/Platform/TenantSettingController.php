@@ -30,6 +30,7 @@ class TenantSettingController extends Controller
                 'logo_type' => $values['logo_type'] ?? null,
                 'logo_icon' => $values['logo_icon'] ?? null,
                 'logo_image' => $values['logo_image'] ?? null,
+                'font' => $values['font'] ?? null,
             ],
         ]);
     }
@@ -46,6 +47,7 @@ class TenantSettingController extends Controller
             'values.logo_type' => ['sometimes', 'nullable', 'string', Rule::in(['icon', 'image'])],
             'values.logo_icon' => ['sometimes', 'nullable', 'string', 'max:100'],
             'values.logo_image' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.font' => ['sometimes', 'nullable', 'string', 'max:200'],
         ]);
 
         $tenant = currentTenant();
@@ -55,7 +57,7 @@ class TenantSettingController extends Controller
             $tenant->update(['name' => trim((string) $values['name'])]);
         }
 
-        $brandingKeys = ['favicon', 'logo', 'dark_logo', 'light_logo', 'logo_type', 'logo_icon', 'logo_image'];
+        $brandingKeys = ['favicon', 'logo', 'dark_logo', 'light_logo', 'logo_type', 'logo_icon', 'logo_image', 'font'];
         $brandingValues = array_intersect_key($values, array_flip($brandingKeys));
 
         if (! empty($brandingValues)) {
@@ -92,6 +94,7 @@ class TenantSettingController extends Controller
                 'logo_type' => $brandingValues['logo_type'] ?? null,
                 'logo_icon' => $brandingValues['logo_icon'] ?? null,
                 'logo_image' => $brandingValues['logo_image'] ?? null,
+                'font' => $brandingValues['font'] ?? null,
             ],
         ]);
     }

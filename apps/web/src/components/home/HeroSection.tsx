@@ -466,7 +466,7 @@ export function HeroSection() {
         {/* ── Title ── */}
         <h1
           className="home-enter-up mb-5 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
-          style={{ fontFamily: "'Cairo', sans-serif" }}
+          style={{ fontFamily: "var(--font-sans)" }}
         >
           {(() => {
             const fullTitle = title;
@@ -493,7 +493,7 @@ export function HeroSection() {
         {hero?.subtitle && (
           <p
             className="home-enter-up mb-6 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
-            style={{ color: secondary, fontFamily: "'Cairo', sans-serif", animationDelay: "0.15s" }}
+            style={{ color: secondary, fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
           >
             {hero.subtitle}
           </p>

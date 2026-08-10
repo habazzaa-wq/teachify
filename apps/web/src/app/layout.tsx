@@ -16,6 +16,7 @@ import {
 } from "@/lib/seo/metadata";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
+import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -84,9 +85,27 @@ export default async function RootLayout({
     }
   }
 
+  const tenant = await getTenantSeoContext();
+  const tenantFont = tenant?.branding?.font ?? null;
+  const fontCssUrl = getFontCssUrl(tenantFont);
+  const fontStack = buildFontStack(tenantFont);
+
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${cairo.variable} h-full`}
+      style={fontStack ? ({ "--font-sans": fontStack } as React.CSSProperties) : undefined}
+      suppressHydrationWarning
+    >
       <head>
+        {fontCssUrl && (
+          <>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link id="tenant-dynamic-font" rel="stylesheet" href={fontCssUrl} />
+          </>
+        )}
         <ThemeScript />
       </head>
       <body className="min-h-full bg-background font-sans antialiased" suppressHydrationWarning>

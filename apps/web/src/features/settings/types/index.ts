@@ -21,6 +21,8 @@ export interface SiteSettings {
   logo_icon?: string | null;
   /** Media-library image URL when logo_type === "image". */
   logo_image?: string | null;
+  /** Google Fonts family name used across the whole platform. */
+  font?: string | null;
 }
 
 export type NavbarLogoType = "icon" | "image";

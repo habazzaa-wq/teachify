@@ -1,19 +1,29 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Save, Globe, ImageIcon } from "lucide-react";
+import { Save, Globe, ImageIcon, Type } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
   AppCard, AppCardHeader, AppCardTitle, AppCardDescription, AppCardContent,
   AppInput, Label,
+  AppSelect, AppSelectTrigger, AppSelectValue, AppSelectContent,
+  AppSelectGroup, AppSelectLabel, AppSelectItem,
   AppLoadingState, AppErrorState,
 } from "@/components/ui";
 import { useSiteSettings, useUpdateSiteSettings } from "@/features/settings/hooks";
 import type { SiteSettings } from "@/features/settings/types";
+import {
+  GOOGLE_FONTS,
+  FONT_CATEGORY_LABELS,
+  getFontOption,
+  buildFontStack,
+} from "@/features/settings/constants/google-fonts";
 import { useTenantStore } from "@/stores/tenant.store";
 import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
 import { mediaLibraryService } from "@/features/media-library/services";
 import { toAbsoluteAssetUrl } from "@/lib/url";
+
+const FONT_CATEGORY_ORDER = ["arabic", "professional", "serif", "display", "handwriting", "mono"] as const;
 
 function SiteForm({ initial }: { initial: SiteSettings }) {
   const updateSite = useUpdateSiteSettings();
@@ -21,10 +31,12 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
 
   const [name, setName] = useState(initial.name ?? "");
   const [favicon, setFavicon] = useState(initial.favicon ?? "");
+  const [font, setFont] = useState<string | null>(initial.font ?? null);
 
   const handleSave = useCallback(() => {
     const values: Partial<SiteSettings> = {
       favicon: favicon.trim() || null,
+      font: font?.trim() || null,
     };
     const trimmedName = name.trim();
     if (trimmedName) values.name = trimmedName;
@@ -34,10 +46,13 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
         setTenantSite({
           name: result.name,
           favicon: result.favicon ?? null,
+          font: result.font ?? null,
         });
       },
     });
-  }, [name, favicon, updateSite, setTenantSite]);
+  }, [name, favicon, font, updateSite, setTenantSite]);
+
+  const selectedFont = getFontOption(font);
 
   return (
     <div className="space-y-8">
@@ -141,6 +156,66 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
         </AppCardContent>
       </AppCard>
 
+      {/* Font */}
+      <AppCard>
+        <AppCardHeader>
+          <AppCardTitle className="flex items-center gap-2">
+            <Type className="h-4 w-4" /> نوع الخط
+          </AppCardTitle>
+          <AppCardDescription>
+            اختر الخط الذي سيُطبَّق على الموقع والمنصة بالكامل — لوحة التحكم، صفحات الدورات، وكل الأقسام
+          </AppCardDescription>
+        </AppCardHeader>
+        <AppCardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>الخط</Label>
+            <AppSelect
+              value={font ?? ""}
+              onValueChange={(value) => setFont(value === "__default__" ? null : value)}
+            >
+              <AppSelectTrigger className="w-full">
+                <AppSelectValue placeholder="الخط الافتراضي (القاهرة)" />
+              </AppSelectTrigger>
+              <AppSelectContent className="max-h-[26rem]">
+                <AppSelectGroup>
+                  <AppSelectItem value="__default__">الخط الافتراضي (القاهرة)</AppSelectItem>
+                </AppSelectGroup>
+                {FONT_CATEGORY_ORDER.map((category) => (
+                  <AppSelectGroup key={category}>
+                    <AppSelectLabel>{FONT_CATEGORY_LABELS[category]}</AppSelectLabel>
+                    {GOOGLE_FONTS.filter((option) => option.category === category).map((option) => (
+                      <AppSelectItem key={option.family} value={option.family}>
+                        <span style={{ fontFamily: `"${option.family}", "system-ui", "sans-serif"` }}>
+                          {option.family}
+                          <span className="ms-2 text-xs text-muted-foreground">— {option.label}</span>
+                        </span>
+                      </AppSelectItem>
+                    ))}
+                  </AppSelectGroup>
+                ))}
+              </AppSelectContent>
+            </AppSelect>
+          </div>
+
+          <div
+            className="rounded-lg border border-studio-border bg-studio-soft px-4 py-4"
+            style={{ fontFamily: buildFontStack(font) ?? undefined }}
+          >
+            <div className="text-lg font-bold text-studio-fg">
+              أهلاً بكم في منصتكم التعليمية
+            </div>
+            <div className="mt-1 text-sm text-studio-fg-muted" dir="ltr">
+              The quick brown fox jumps over the lazy dog 0123456789
+            </div>
+            <div className="mt-2 text-xs text-studio-fg-subtle">
+              {selectedFont
+                ? `معاينة مباشرة بخط ${selectedFont.family}`
+                : "الخط الافتراضي: القاهرة (Cairo)"}
+            </div>
+          </div>
+        </AppCardContent>
+      </AppCard>
+
       {/* Actions */}
       <div className="flex justify-end">
         <AppButton onClick={handleSave} loading={updateSite.isPending}>
@@ -162,7 +237,7 @@ function SiteSettingsPage() {
     <AppPage maxWidth="lg">
       <AppPageHeader
         title="إعدادات الموقع"
-        description="عدّل اسم الموقع وأيقونة المتصفح (favicon) الخاصة بالأكاديمية"
+        description="عدّل اسم الموقع وأيقونة المتصفح (favicon) ونوع الخط المُطبَّق على المنصة بالكامل"
       />
       <AppDivider className="mb-8" />
 

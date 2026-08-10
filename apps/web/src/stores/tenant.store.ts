@@ -42,6 +42,7 @@ interface TenantState {
     logo_type?: string | null;
     logo_icon?: string | null;
     logo_image?: string | null;
+    font?: string | null;
   }) => void;
   setTenantContext: (context: {
     tenant: ActiveTenant;
@@ -82,7 +83,7 @@ export const useTenantStore = create<TenantState>()(
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
 
-    setTenantSite: ({ name, favicon, logo_type, logo_icon, logo_image }) =>
+    setTenantSite: ({ name, favicon, logo_type, logo_icon, logo_image, font }) =>
       set((state) => {
         const brandingBase = state.activeTenant?.branding ?? {
           logo: null,
@@ -101,6 +102,7 @@ export const useTenantStore = create<TenantState>()(
           ...(logo_type !== undefined && { logo_type }),
           ...(logo_icon !== undefined && { logo_icon }),
           ...(logo_image !== undefined && { logo_image }),
+          ...(font !== undefined && { font }),
         };
 
         const activeTenant = state.activeTenant
@@ -120,6 +122,7 @@ export const useTenantStore = create<TenantState>()(
                 ...(logo_type !== undefined && { logoType: logo_type }),
                 ...(logo_icon !== undefined && { logoIcon: logo_icon }),
                 ...(logo_image !== undefined && { logoImage: logo_image }),
+                ...(font !== undefined && { font }),
               }
             : state.branding,
         };
