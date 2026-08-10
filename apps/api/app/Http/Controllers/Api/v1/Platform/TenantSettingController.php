@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TenantSettingController extends Controller
 {
@@ -26,6 +27,9 @@ class TenantSettingController extends Controller
                 'logo' => $values['logo'] ?? null,
                 'dark_logo' => $values['dark_logo'] ?? null,
                 'light_logo' => $values['light_logo'] ?? null,
+                'logo_type' => $values['logo_type'] ?? null,
+                'logo_icon' => $values['logo_icon'] ?? null,
+                'logo_image' => $values['logo_image'] ?? null,
             ],
         ]);
     }
@@ -36,6 +40,12 @@ class TenantSettingController extends Controller
             'values' => ['required', 'array'],
             'values.name' => ['sometimes', 'string', 'max:255'],
             'values.favicon' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.dark_logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.light_logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.logo_type' => ['sometimes', 'nullable', 'string', Rule::in(['icon', 'image'])],
+            'values.logo_icon' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'values.logo_image' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ]);
 
         $tenant = currentTenant();
@@ -45,12 +55,15 @@ class TenantSettingController extends Controller
             $tenant->update(['name' => trim((string) $values['name'])]);
         }
 
-        if (array_key_exists('favicon', $values)) {
+        $brandingKeys = ['favicon', 'logo', 'dark_logo', 'light_logo', 'logo_type', 'logo_icon', 'logo_image'];
+        $brandingValues = array_intersect_key($values, array_flip($brandingKeys));
+
+        if (! empty($brandingValues)) {
             $existing = $tenant->settings()
                 ->where('group', 'branding')
                 ->first();
 
-            $merged = array_merge($existing?->values ?? [], ['favicon' => $values['favicon'] ?? null]);
+            $merged = array_merge($existing?->values ?? [], $brandingValues);
 
             TenantSetting::updateOrCreate(
                 [
@@ -65,13 +78,20 @@ class TenantSettingController extends Controller
         $branding = $tenant->settings()
             ->where('group', 'branding')
             ->first();
+        $brandingValues = $branding?->values ?? [];
 
         return response()->json([
             'message' => 'Site settings updated.',
             'group' => 'site',
             'values' => [
                 'name' => $tenant->name,
-                'favicon' => $branding?->values['favicon'] ?? null,
+                'favicon' => $brandingValues['favicon'] ?? null,
+                'logo' => $brandingValues['logo'] ?? null,
+                'dark_logo' => $brandingValues['dark_logo'] ?? null,
+                'light_logo' => $brandingValues['light_logo'] ?? null,
+                'logo_type' => $brandingValues['logo_type'] ?? null,
+                'logo_icon' => $brandingValues['logo_icon'] ?? null,
+                'logo_image' => $brandingValues['logo_image'] ?? null,
             ],
         ]);
     }

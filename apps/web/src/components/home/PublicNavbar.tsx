@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -18,6 +17,7 @@ import { useTenantStore } from "@/stores/tenant.store";
 import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
 import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
+import { getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { cn } from "@/lib/cn";
 
 const PublicRegisterCard = dynamic(
@@ -192,6 +192,36 @@ function NavLinkItem({
         )}>{label}</span>
       </div>
     </Link>
+  );
+}
+
+function NavbarLogoImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      className="h-auto w-auto max-h-9 max-w-[200px] object-contain transition-all duration-500 group-hover:scale-105"
+    />
+  );
+}
+
+function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
+  return (
+    <div
+      className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
+      style={{
+        backgroundColor: primary,
+        boxShadow: `0 2px 20px ${primary}40`,
+      }}
+    >
+      <Icon className="h-5 w-5 text-white" />
+      {/* Hover: border = secondary */}
+      <span
+        className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
+      />
+    </div>
   );
 }
 
@@ -425,6 +455,14 @@ export function PublicNavbar() {
     : tenant?.branding?.light_logo ?? tenant?.branding?.logo;
   const tenantName = tenant?.name ?? "أكاديميتي";
 
+  const logoType = tenant?.branding?.logo_type;
+  const navbarLogoIcon = getNavbarIcon(tenant?.branding?.logo_icon);
+  const navbarLogoImage = tenant?.branding?.logo_image;
+
+  const showDynamicImage = logoType === "image" && !!navbarLogoImage;
+  const showDynamicIcon = logoType === "icon" && !!navbarLogoIcon;
+  const showLegacyImage = !showDynamicImage && !showDynamicIcon && !!logo;
+
   return (
     <>
       <header
@@ -450,9 +488,20 @@ export function PublicNavbar() {
             {/* ── Logo ── */}
             <div className="relative z-10 flex items-center">
               <Link href="/" className="group relative flex items-center gap-2.5">
-                {logo ? (
+                {showDynamicImage ? (
                   <div className="relative">
-                    <Image src={logo} alt={tenantName} width={100} height={28} className="h-7 w-auto transition-all duration-500 group-hover:scale-105" />
+                    <NavbarLogoImage src={navbarLogoImage} alt={tenantName} />
+                    {/* Hover: border = secondary */}
+                    <span
+                      className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}45` }}
+                    />
+                  </div>
+                ) : showDynamicIcon ? (
+                  <NavbarLogoIcon icon={navbarLogoIcon} />
+                ) : showLegacyImage ? (
+                  <div className="relative">
+                    <NavbarLogoImage src={logo} alt={tenantName} />
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -460,20 +509,7 @@ export function PublicNavbar() {
                     />
                   </div>
                 ) : (
-                  <div
-                    className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
-                    style={{
-                      backgroundColor: primary,
-                      boxShadow: `0 2px 20px ${primary}40`,
-                    }}
-                  >
-                    <GraduationCap className="h-5 w-5 text-white" />
-                    {/* Hover: border = secondary */}
-                    <span
-                      className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
-                    />
-                  </div>
+                  <NavbarLogoIcon icon={GraduationCap} />
                 )}
                 <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
                   {tenantName}

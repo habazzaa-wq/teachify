@@ -22,6 +22,7 @@ import {
   BookOpen,
   TicketCheck,
   CreditCard,
+  ImageIcon,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -249,6 +250,13 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith(routes.dashboardSiteSettings)}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => router.push(routes.dashboardSiteSettings)}
+              />
+              <StudioSidebarItem
+                icon={<ImageIcon className="h-4 w-4" />}
+                label="الشعار واسم المنصة"
+                active={pathname.startsWith(routes.dashboardBranding)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.dashboardBranding)}
               />
               <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}

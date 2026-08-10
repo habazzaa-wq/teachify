@@ -62,6 +62,9 @@ class PublicTenantController extends Controller
             'font' => $values['font'] ?? null,
             'darkLogo' => $values['dark_logo'] ?? null,
             'lightLogo' => $values['light_logo'] ?? null,
+            'logoType' => $values['logo_type'] ?? null,
+            'logoIcon' => $values['logo_icon'] ?? null,
+            'logoImage' => $values['logo_image'] ?? null,
         ];
     }
 }

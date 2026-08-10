@@ -7,6 +7,12 @@ export interface TenantBranding {
   font: string | null;
   darkLogo: string | null;
   lightLogo: string | null;
+  /** "icon" | "image" | null — how the navbar logo should be rendered. */
+  logoType?: string | null;
+  /** Icon key from the built-in icon library when logoType === "icon". */
+  logoIcon?: string | null;
+  /** Media-library image URL when logoType === "image". */
+  logoImage?: string | null;
 }
 
 /**

@@ -11,6 +11,7 @@ import type {
   Ability,
   NavigationItem,
 } from "@/types/tenant.types";
+import type { AuthBranding } from "@/types/auth.types";
 import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 
 export type BootstrapStatus =
@@ -35,7 +36,13 @@ interface TenantState {
   bootstrapError: string | null;
 
   setActiveTenant: (tenant: ActiveTenant | null) => void;
-  setTenantSite: (site: { name: string; favicon: string | null }) => void;
+  setTenantSite: (site: {
+    name: string;
+    favicon: string | null;
+    logo_type?: string | null;
+    logo_icon?: string | null;
+    logo_image?: string | null;
+  }) => void;
   setTenantContext: (context: {
     tenant: ActiveTenant;
     membership: Membership;
@@ -75,31 +82,46 @@ export const useTenantStore = create<TenantState>()(
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
 
-    setTenantSite: ({ name, favicon }) =>
+    setTenantSite: ({ name, favicon, logo_type, logo_icon, logo_image }) =>
       set((state) => {
+        const brandingBase = state.activeTenant?.branding ?? {
+          logo: null,
+          favicon: null,
+          primary_color: null,
+          secondary_color: null,
+          accent_color: null,
+          font: null,
+          dark_logo: null,
+          light_logo: null,
+        };
+
+        const mergedBranding: AuthBranding = {
+          ...brandingBase,
+          favicon,
+          ...(logo_type !== undefined && { logo_type }),
+          ...(logo_icon !== undefined && { logo_icon }),
+          ...(logo_image !== undefined && { logo_image }),
+        };
+
         const activeTenant = state.activeTenant
           ? {
               ...state.activeTenant,
               name,
-              branding: {
-                ...(state.activeTenant.branding ?? {
-                  logo: null,
-                  favicon: null,
-                  primary_color: null,
-                  secondary_color: null,
-                  accent_color: null,
-                  font: null,
-                  dark_logo: null,
-                  light_logo: null,
-                }),
-                favicon,
-              },
+              branding: mergedBranding,
             }
           : null;
 
         return {
           activeTenant,
-          branding: state.branding ? { ...state.branding, favicon } : state.branding,
+          branding: state.branding
+            ? {
+                ...state.branding,
+                favicon,
+                ...(logo_type !== undefined && { logoType: logo_type }),
+                ...(logo_icon !== undefined && { logoIcon: logo_icon }),
+                ...(logo_image !== undefined && { logoImage: logo_image }),
+              }
+            : state.branding,
         };
       }),
 
@@ -130,6 +152,9 @@ export const useTenantStore = create<TenantState>()(
             font: data.branding.font,
             dark_logo: data.branding.darkLogo,
             light_logo: data.branding.lightLogo,
+            logo_type: data.branding.logoType ?? null,
+            logo_icon: data.branding.logoIcon ?? null,
+            logo_image: data.branding.logoImage ?? null,
             domain: data.domain,
           },
         },
