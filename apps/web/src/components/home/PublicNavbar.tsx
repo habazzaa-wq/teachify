@@ -9,7 +9,9 @@ import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
+  Menu, X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useAuthStore } from "@/stores/auth.store";
@@ -237,6 +239,7 @@ export function PublicNavbar() {
   const [registeredName, setRegisteredName] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [studentRegistered, setStudentRegistered] = useState<{
     name: string;
@@ -275,6 +278,20 @@ export function PublicNavbar() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Close the mobile menu on Escape or when the user navigates back/forward.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    const onPop = () => setMobileMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("popstate", onPop);
+    };
   }, []);
 
   const setAuthTokens = useAuthStore((s) => s.setTokens);
@@ -367,6 +384,18 @@ export function PublicNavbar() {
       }, 120);
     },
     [],
+  );
+
+  const handleMobileNavClick = useCallback(
+    (link: NavLink, e: React.MouseEvent<HTMLAnchorElement>) => {
+      setMobileMenuOpen(false);
+      if (link.scrollTarget && pathname === "/") {
+        e.preventDefault();
+        scrollToSection(link.scrollTarget);
+      }
+      setActiveSection(link.href);
+    },
+    [pathname, scrollToSection],
   );
 
   const handleLoginSuccess = useCallback(
@@ -465,26 +494,16 @@ export function PublicNavbar() {
 
   return (
     <>
-      <header
-        className="sticky top-0 z-50 w-full py-2"
-        role="banner"
-      >
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div
-            className="nav-touch-solid relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
-            style={{
-              borderColor: `var(--brand-primary)`,
-              boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.082)`,
-            }}
-          >
-            <div
-              className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
-            />
-
+      <header className="sticky top-0 z-50 w-full" role="banner">
+        <div
+          className="nav-touch-solid relative flex h-16 w-full items-center justify-between gap-2 bg-background/75 px-4 backdrop-blur-2xl sm:px-6 lg:px-8"
+          style={{
+            boxShadow: `0 8px 32px rgba(0,0,0,0.06)`,
+          }}
+        >
             {/* ── Logo ── */}
             <div className="relative z-10 flex items-center">
-              <Link href="/" className="group relative flex items-center gap-2.5">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="group relative flex items-center gap-2.5">
                 {showDynamicImage ? (
                   <div className="relative">
                     <NavbarLogoImage src={navbarLogoImage} alt={tenantName} />
@@ -541,20 +560,39 @@ export function PublicNavbar() {
             </nav>
 
             {/* ── Right actions ── */}
-            <div className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+            <div className="relative z-10 flex items-center gap-1 sm:gap-1.5 lg:gap-2">
+              {/* Mobile menu toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-label={mobileMenuOpen ? "إغلاق القائمة" : "فتح القائمة"}
+                aria-expanded={mobileMenuOpen}
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 md:hidden"
+              >
+                <span
+                  className="absolute inset-0 rounded-xl"
+                  style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
+                />
+                {mobileMenuOpen ? (
+                  <X className="h-5 w-5 relative z-10 transition-transform duration-200 group-hover:scale-110" />
+                ) : (
+                  <Menu className="h-5 w-5 relative z-10 transition-transform duration-200 group-hover:scale-110" />
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
                 title="بحث عن كورس (Ctrl+K)"
                 aria-label="بحث عن كورس"
-                className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
               >
                 <span
-                  className="absolute inset-0 rounded-2xl"
+                  className="absolute inset-0 rounded-xl"
                   style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
                 />
                 <span
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
                   style={{
                     backgroundColor: secondary,
                     border: `3px solid var(--brand-primary)`,
@@ -764,7 +802,7 @@ export function PublicNavbar() {
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
                         <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
-                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
+                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors max-sm:hidden">تسجيل الدخول</span>
                       </button>
                     </div>
 
@@ -784,8 +822,8 @@ export function PublicNavbar() {
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                         <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
-                        <span className="relative z-10">إنشاء حساب</span>
-                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />
+                        <span className="relative z-10 max-sm:hidden">إنشاء حساب</span>
+                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
                       </button>
                     </div>
                   </>
@@ -794,7 +832,37 @@ export function PublicNavbar() {
 
             </div>
           </div>
-        </div>
+
+          {/* ── Mobile menu ── */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="nav-touch-solid overflow-hidden bg-background/95 backdrop-blur-2xl md:hidden"
+                style={{ boxShadow: `0 16px 32px rgba(0,0,0,0.08)` }}
+              >
+                <nav
+                  className="flex flex-col gap-1 px-4 pb-4 pt-2 sm:px-6"
+                  role="navigation"
+                  aria-label="القائمة الرئيسية"
+                >
+                  {navLinks.map((link) => (
+                    <NavLinkItem
+                      key={link.href}
+                      href={link.href}
+                      label={link.label}
+                      icon={link.icon}
+                      isActive={activeSection === link.href}
+                      onClick={(e) => handleMobileNavClick(link, e)}
+                    />
+                  ))}
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
       </header>
 
       <PublicRegisterCard
