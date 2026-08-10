@@ -61,6 +61,13 @@ export function mixWithBlack(hex: string, amount: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+/** Mix a hex color toward white. `amount` in 0..1 (1 = pure white). */
+export function mixWithWhite(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
+  const toHex = (c: number) => Math.round(c + (255 - c) * amount).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 /**
  * Community / public-site palette derived from the tenant's two brand colors.
  * Returns the HSL tokens overridden on `.community-theme` (and dark variant)

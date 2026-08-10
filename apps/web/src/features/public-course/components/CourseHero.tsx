@@ -379,8 +379,8 @@ function CourseHeroInner({
                 {/* floating certificate badge */}
                 {course.certificateEnabled && (
                   <div
-                    className="absolute end-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg"
-                    style={{ background: ACCENT_GRADIENT, boxShadow: "0 6px 20px rgba(245,158,11,0.4)" }}
+                    className="absolute end-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold shadow-lg"
+                    style={{ background: ACCENT_GRADIENT, color: "var(--brand-secondary-contrast)", boxShadow: "0 6px 20px rgb(var(--brand-secondary-rgb) / 0.4)" }}
                   >
                     <Award className="h-3.5 w-3.5" />
                     شهادة معتمدة

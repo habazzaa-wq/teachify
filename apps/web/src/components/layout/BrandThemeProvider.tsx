@@ -5,6 +5,7 @@ import { useTenantStore } from "@/stores/tenant.store";
 import {
   hexToRgbTriplet,
   mixWithBlack,
+  mixWithWhite,
   generateCommunityThemeColors,
 } from "@/lib/color";
 import { resolveBrandHexColors, brandContrast } from "@/lib/brand";
@@ -43,6 +44,8 @@ export function BrandThemeProvider() {
   --brand-secondary-rgb: ${hexToRgbTriplet(secondary)};
   --brand-primary-dark: ${mixWithBlack(primary, 0.5)};
   --brand-secondary-dark: ${mixWithBlack(secondary, 0.5)};
+  --brand-primary-light: ${mixWithWhite(primary, 0.25)};
+  --brand-secondary-light: ${mixWithWhite(secondary, 0.25)};
   --brand-primary-contrast: ${brandContrast(primary)};
   --brand-secondary-contrast: ${brandContrast(secondary)};
 }

@@ -44,11 +44,11 @@ export function CatalogStageStrip({ stages, activeStageId, onSelect }: CatalogSt
       >
         <Layers
           className="h-4 w-4"
-          style={{ color: !activeStageId ? "#fff" : isDark ? "#8a8290" : "#9CA3AF" }}
+          style={{ color: !activeStageId ? "var(--brand-primary-contrast)" : isDark ? "#8a8290" : "#9CA3AF" }}
         />
         <span
           className="text-xs font-bold"
-          style={{ color: !activeStageId ? "#fff" : isDark ? "#F0ECE6" : "#1a1510" }}
+          style={{ color: !activeStageId ? "var(--brand-primary-contrast)" : isDark ? "#F0ECE6" : "#1a1510" }}
         >
           كل المراحل
         </span>
@@ -75,7 +75,7 @@ export function CatalogStageStrip({ stages, activeStageId, onSelect }: CatalogSt
           >
             <span
               className="text-xs font-bold"
-              style={{ color: active ? "#fff" : isDark ? "#F0ECE6" : "#1a1510" }}
+              style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#F0ECE6" : "#1a1510" }}
             >
               {stage.name}
             </span>

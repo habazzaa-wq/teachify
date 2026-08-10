@@ -99,7 +99,7 @@ function WalletBalanceBadgeFallback(): React.ReactNode {
         className="flex h-5 w-5 items-center justify-center rounded-full"
         style={{ background: "linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))" }}
       >
-        <Wallet className="h-3 w-3 text-white" />
+        <Wallet className="h-3 w-3 text-[var(--brand-primary-contrast)]" />
       </span>
       <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: primary }} />
     </button>
@@ -135,7 +135,7 @@ function ThemeBtn() {
       />
       <span
         key={theme}
-        className="home-icon-swap relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300"
+        className="home-icon-swap relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300"
       >
         {theme === "light" ? (
           <Moon className="h-[18px] w-[18px]" />
@@ -184,11 +184,11 @@ function NavLinkItem({
         )}
         <Icon className={cn(
           "h-4 w-4 relative z-10 transition-all duration-300",
-          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00] group-hover:scale-110",
+          isActive ? "text-[var(--brand-primary-contrast)]" : "text-muted-foreground/70 group-hover:text-[var(--brand-secondary-contrast)] group-hover:scale-110",
         )} />
         <span className={cn(
           "relative z-10 transition-colors duration-300",
-          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
+          isActive ? "text-[var(--brand-primary-contrast)]" : "text-muted-foreground/70 group-hover:text-[var(--brand-secondary-contrast)]",
         )}>{label}</span>
       </div>
     </Link>
@@ -215,7 +215,7 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
         boxShadow: `0 2px 20px rgb(var(--brand-primary-rgb) / 0.251)`,
       }}
     >
-      <Icon className="h-5 w-5 text-white" />
+      <Icon className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
       {/* Hover: border = secondary */}
       <span
         className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -564,7 +564,7 @@ export function PublicNavbar() {
                     boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.251)`,
                   }}
                 />
-                <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300" />
+                <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300" />
               </button>
 
               <ThemeBtn />
@@ -586,7 +586,7 @@ export function PublicNavbar() {
                         }}
                       >
                       <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold overflow-hidden"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold overflow-hidden text-[var(--brand-primary-contrast)]"
                         style={{ backgroundColor: primary }}
                       >
                         {sessionAvatar ? (
@@ -625,7 +625,7 @@ export function PublicNavbar() {
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-white text-sm font-bold overflow-hidden shrink-0"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden shrink-0 text-[var(--brand-primary-contrast)]"
                                 style={{
                                   backgroundColor: primary,
                                   boxShadow: `0 2px 12px rgb(var(--brand-primary-rgb) / 0.251)`,
@@ -770,8 +770,8 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
-                        <span className="relative z-10 group-hover:text-[#2D1B00] transition-colors">تسجيل الدخول</span>
+                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
+                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
 
@@ -779,7 +779,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-white transition-all duration-300"
+                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px rgb(var(--brand-primary-rgb) / 0.271)`,

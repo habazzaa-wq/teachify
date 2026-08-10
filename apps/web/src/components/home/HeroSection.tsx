@@ -39,9 +39,9 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
               borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)",
             }}
           >
-            <Phone className="h-5 w-5 text-white" />
+            <Phone className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
           </div>
-          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
             {icons?.phone?.label || "رقم الهاتف"}
           </span>
         </div>
@@ -542,9 +542,9 @@ export function HeroSection() {
               style={{ animationDelay: "0.3s" }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
-                <Gift className="h-5 w-5 text-white" />
+                <Gift className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
             </div>
@@ -563,9 +563,9 @@ export function HeroSection() {
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
-                  <Facebook className="h-5 w-5 text-white" />
+                  <Facebook className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
@@ -584,9 +584,9 @@ export function HeroSection() {
               style={{ animationDelay: "0.42s" }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
-                <MessageCircle className="h-5 w-5 text-white" />
+                <MessageCircle className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
             </div>
@@ -605,9 +605,9 @@ export function HeroSection() {
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
-                  <Youtube className="h-5 w-5 text-white" />
+                  <Youtube className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
@@ -626,9 +626,9 @@ export function HeroSection() {
               style={{ animationDelay: "0.54s" }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
-                <Star className="h-5 w-5 text-white" />
+                <Star className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
             </div>

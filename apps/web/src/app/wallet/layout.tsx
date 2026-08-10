@@ -9,5 +9,5 @@ export default function WalletRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <div className="community-theme">{children}</div>;
 }

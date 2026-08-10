@@ -65,13 +65,13 @@ export function StageTeachersStrip({ teachers, activeTeacherId, onSelect }: Stag
             )}
             <span
               className="text-xs font-bold"
-              style={{ color: active ? "#fff" : isDark ? "#F0ECE6" : "#1a1510" }}
+              style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#F0ECE6" : "#1a1510" }}
             >
               {teacher.name}
             </span>
             <span
               className="flex items-center gap-1 text-[10px] font-bold tabular-nums"
-              style={{ color: active ? "rgba(255,255,255,0.85)" : isDark ? "#8a8290" : "#9CA3AF" }}
+              style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#8a8290" : "#9CA3AF", opacity: active ? 0.85 : undefined }}
             >
               <Users className="h-3 w-3" />
               {formatNumber(teacher.coursesCount)}

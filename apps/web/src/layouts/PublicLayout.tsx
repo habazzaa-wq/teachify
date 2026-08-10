@@ -35,7 +35,7 @@ async function PublicLayout({
   const stages = await stagesServerService.getPublicStages();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="community-theme flex min-h-screen flex-col bg-background">
       <NewsTicker />
       <PublicNavbar />
       <MobileSecondaryNav />

@@ -74,10 +74,11 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
         {/* featured ribbon */}
         {course.featured && (
           <span
-            className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-white shadow-lg"
+            className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg"
             style={{
               background: "linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))",
-              boxShadow: "0 4px 16px rgba(245,158,11,0.4)",
+              color: "var(--brand-secondary-contrast)",
+              boxShadow: "0 4px 16px rgb(var(--brand-secondary-rgb) / 0.4)",
             }}
           >
             <Sparkles className="h-3 w-3" />
@@ -277,7 +278,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
                 background: `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`,
-                color: "#1a1510",
+                color: "var(--brand-secondary-contrast)",
                 boxShadow: `0 4px 16px rgb(var(--brand-secondary-rgb) / 0.333)`,
               }}
             >
@@ -287,9 +288,9 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
-                background: "#F7A20B",
-                color: "#1a1510",
-                boxShadow: "0 4px 16px rgba(247,162,11,0.4)",
+                background: `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`,
+                color: "var(--brand-secondary-contrast)",
+                boxShadow: `0 4px 16px rgb(var(--brand-secondary-rgb) / 0.4)`,
               }}
             >
               اشترك الآن

@@ -149,9 +149,9 @@ function FeatureTile({
   if (index === 0) {
     return (
       <div
-        className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-white sm:p-8"
+        className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-[var(--brand-primary-contrast)] sm:p-8"
         style={{
-          background: `linear-gradient(160deg, #E08A6C 0%, var(--brand-primary) 100%)`,
+          background: `linear-gradient(160deg, var(--brand-primary-light) 0%, var(--brand-primary) 100%)`,
           boxShadow: `0 18px 44px rgb(var(--brand-primary-rgb) / 0.22)`,
           ["--wc-delay" as string]: "0.05s",
         }}
@@ -268,7 +268,7 @@ function CtaTile({ isDark }: { isDark: boolean }) {
       <span className="pointer-events-none absolute end-5 top-4 select-none text-4xl font-black" style={{ color: `rgb(var(--brand-secondary-rgb) / 0.078)` }}>+</span>
 
       <span
-        className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-110"
+        className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--brand-primary-contrast)] transition-transform duration-300 group-hover:scale-110"
         style={{
           background: primary,
           boxShadow: `0 10px 24px rgb(var(--brand-primary-rgb) / 0.239)`,

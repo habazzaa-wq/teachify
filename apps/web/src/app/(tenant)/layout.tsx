@@ -10,5 +10,9 @@ export default function TenantRouteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthProviders>{children}</AuthProviders>;
+  return (
+    <AuthProviders>
+      <div className="community-theme">{children}</div>
+    </AuthProviders>
+  );
 }

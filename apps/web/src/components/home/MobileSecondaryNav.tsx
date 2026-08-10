@@ -45,12 +45,12 @@ export function MobileSecondaryNav() {
   const social = hero?.socialLinks;
 
   const mobileIconItems = [
-    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, visible: icons?.gifts?.visible },
-    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, visible: icons?.facebook?.visible, href: social?.facebook },
-    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, visible: icons?.chat?.visible },
-    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, visible: icons?.youtube?.visible, href: social?.youtube },
-    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, visible: icons?.bestStudents?.visible },
-    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
+    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, contrast: "var(--brand-primary-contrast)", visible: icons?.gifts?.visible },
+    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, contrast: "var(--brand-secondary-contrast)", visible: icons?.facebook?.visible, href: social?.facebook },
+    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, contrast: "var(--brand-primary-contrast)", visible: icons?.chat?.visible },
+    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, contrast: "var(--brand-secondary-contrast)", visible: icons?.youtube?.visible, href: social?.youtube },
+    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: "rgb(var(--brand-primary-rgb) / 0.4)", badge: primaryBadge, contrast: "var(--brand-primary-contrast)", visible: icons?.bestStudents?.visible },
+    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)", badge: secondaryBadge, contrast: "var(--brand-secondary-contrast)", visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
   ];
 
   const visibleIcons = mobileIconItems.filter((item) => item.visible !== false);
@@ -127,7 +127,7 @@ export function MobileSecondaryNav() {
                   onClick={handleClick}
                   className={cn(
                     "relative whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
-                    isActive ? "text-white" : "text-foreground/70 hover:text-foreground",
+                    isActive ? "text-[var(--brand-primary-contrast)]" : "text-foreground/70 hover:text-foreground",
                   )}
                   style={{
                     backgroundColor: isActive ? primary : "transparent",
@@ -168,11 +168,11 @@ export function MobileSecondaryNav() {
                           borderColor: item.borderColor,
                         }}
                       >
-                        <item.icon className="h-[18px] w-[18px] text-white" />
+                        <item.icon className="h-[18px] w-[18px]" style={{ color: item.contrast }} />
                       </div>
                       <span
-                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
-                        style={{ backgroundColor: item.badge }}
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-sm"
+                        style={{ backgroundColor: item.badge, color: item.contrast }}
                       >
                         {item.label}
                       </span>
