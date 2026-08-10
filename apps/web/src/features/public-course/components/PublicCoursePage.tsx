@@ -187,7 +187,7 @@ export function PublicCoursePage({ slug }: Props) {
 
             {!isEnrolled && curriculumSection}
 
-            <SubscriptionCta onEnroll={handleEnroll} />
+            {!isEnrolled && <SubscriptionCta onEnroll={handleEnroll} />}
           </div>
 
           {/* Sticky sidebar */}
