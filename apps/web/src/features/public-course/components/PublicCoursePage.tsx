@@ -116,6 +116,22 @@ export function PublicCoursePage({ slug }: Props) {
     }
   }, [activeLesson]);
 
+  const curriculumSection = modulesLoading ? (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-64" />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+      ))}
+    </div>
+  ) : modules && modules.length > 0 ? (
+    <CurriculumSection
+      modules={modules}
+      isEnrolled={isEnrolled}
+      onLockedClick={handleLockedClick}
+      onPlay={handlePlayLesson}
+    />
+  ) : null;
+
   if (courseLoading || !course) {
     return <CoursePageSkeleton />;
   }
@@ -148,6 +164,8 @@ export function PublicCoursePage({ slug }: Props) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
           {/* Main content */}
           <div className="min-w-0 space-y-14">
+            {isEnrolled && curriculumSection}
+
             <CourseInformation
               description={course.description}
               fullDescription={course.fullDescription}
@@ -167,21 +185,7 @@ export function PublicCoursePage({ slug }: Props) {
 
             {course.instructor && <InstructorCard instructor={course.instructor} />}
 
-            {modulesLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-10 w-64" />
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                ))}
-              </div>
-            ) : modules && modules.length > 0 ? (
-              <CurriculumSection
-                modules={modules}
-                isEnrolled={isEnrolled}
-                onLockedClick={handleLockedClick}
-                onPlay={handlePlayLesson}
-              />
-            ) : null}
+            {!isEnrolled && curriculumSection}
 
             <SubscriptionCta onEnroll={handleEnroll} />
           </div>
