@@ -163,11 +163,11 @@ export const MessageItem = memo(function MessageItem({
                 isOwn ? "justify-end" : "justify-start",
               )}
             >
-              {message.announcement && <FlagBadge label="إعلان" className="bg-[rgb(var(--brand-secondary-rgb)/0.15)] text-[var(--brand-secondary-contrast)] ring-[rgb(var(--brand-secondary-rgb)/0.4)]" />}
+              {message.announcement && <FlagBadge label="إعلان" className="bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] ring-[var(--brand-secondary)]" />}
               {message.pinned && <FlagBadge label="مثبتة" icon={<Pin className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
-              {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-[rgb(var(--brand-secondary-rgb)/0.15)] text-[var(--brand-secondary-contrast)] ring-[rgb(var(--brand-secondary-rgb)/0.4)]" />}
+              {message.official_answer && <FlagBadge label="إجابة رسمية" icon={<BadgeCheck className="h-3 w-3" />} className="bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] ring-[var(--brand-secondary)]" />}
               {message.accepted_answer && <FlagBadge label="إجابة مقبولة" icon={<Check className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
-              {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-[rgb(var(--brand-secondary-rgb)/0.15)] text-[var(--brand-secondary-contrast)] ring-[rgb(var(--brand-secondary-rgb)/0.4)]" />}
+              {message.solved && <FlagBadge label="تم الحل" icon={<CheckCheck className="h-3 w-3" />} className="bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] ring-[var(--brand-secondary)]" />}
               {message.highlighted && <FlagBadge label="مميزة" icon={<Sparkles className="h-3 w-3" />} className="bg-primary/10 text-primary ring-primary/25" />}
             </div>
           )}

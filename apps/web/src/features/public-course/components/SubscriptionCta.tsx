@@ -27,7 +27,7 @@ function SubscriptionCtaInner({ onEnroll }: SubscriptionCtaProps) {
       className="scroll-mt-24"
     >
       <div
-        className="relative overflow-hidden rounded-3xl p-8 text-center shadow-2xl shadow-[rgb(var(--brand-primary-rgb)/0.25)] sm:p-12"
+        className="relative overflow-hidden rounded-3xl p-8 text-center shadow-2xl shadow-[rgba(0,0,0,0.25)] sm:p-12"
         style={{ background: CTA_GRADIENT }}
       >
         {/* Decorative orbs */}

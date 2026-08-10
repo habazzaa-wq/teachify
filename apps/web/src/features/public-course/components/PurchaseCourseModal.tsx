@@ -80,16 +80,11 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
               className="fixed z-[100] inset-x-0 inset-y-0 m-auto w-[calc(100vw-2rem)] max-w-lg h-fit max-h-[90vh] rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/10 flex flex-col overflow-hidden"
-              style={{ boxShadow: `0 25px 60px -12px rgb(var(--brand-primary-rgb) / 0.145), 0 0 0 1px rgb(var(--brand-primary-rgb) / 0.063)` }}
+              style={{ boxShadow: `0 25px 60px -12px rgba(0,0,0,0.145), 0 0 0 1px rgba(0,0,0,0.063)` }}
               role="dialog"
               aria-modal="true"
               aria-label="تأكيد الاشتراك في الدورة"
             >
-              <div
-                className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
-                style={{ background: `linear-gradient(90deg, var(--brand-primary), var(--brand-secondary), var(--brand-primary))` }}
-              />
-
               <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1 overflow-y-auto">
                 {/* Success */}
                 {purchase.data ? (
@@ -103,7 +98,6 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
                       className="mb-5 flex h-20 w-20 items-center justify-center rounded-full"
-                      style={{ background: `linear-gradient(135deg, rgb(var(--brand-secondary-rgb) / 0.145), rgb(var(--brand-primary-rgb) / 0.094))` }}
                     >
                       <CheckCircle className="h-10 w-10" style={{ color: secondary }} />
                     </motion.div>
@@ -131,8 +125,8 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                       onClick={handleClose}
                       className="mt-6 h-10 px-8 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                       style={{
-                        background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.867))`,
-                        boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                        background: "var(--brand-primary)",
+                        boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
                       }}
                     >
                       ابدأ التعلم
@@ -144,8 +138,8 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                       <div
                         className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
                         style={{
-                          background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-                          boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                          background: "var(--brand-primary)",
+                          boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
                         }}
                       >
                         <BookOpen className="h-6 w-6 text-white" />
@@ -189,8 +183,8 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                             onClick={() => setRechargeOnline(true)}
                             className="relative flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-bold text-white transition-all duration-300 group overflow-hidden"
                             style={{
-                              background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.867))`,
-                              boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                              background: "var(--brand-primary)",
+                              boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
                             }}
                           >
                             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
@@ -254,7 +248,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                             className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                             style={{
                               background: CTA_GRADIENT,
-                              boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                              boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
                             }}
                           >
                             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />

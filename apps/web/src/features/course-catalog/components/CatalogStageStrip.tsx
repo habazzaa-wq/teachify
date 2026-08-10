@@ -36,7 +36,7 @@ export function CatalogStageStrip({ stages, activeStageId, onSelect }: CatalogSt
           background: !activeStageId ? PRIMARY : isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.85)",
           border: `1px solid ${!activeStageId ? PRIMARY : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
           boxShadow: !activeStageId
-            ? `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`
+            ? "0 4px 16px rgba(0,0,0,0.251)"
             : isDark
               ? "0 1px 2px rgba(0,0,0,0.2)"
               : "0 1px 3px rgba(120,90,60,0.05)",
@@ -67,7 +67,7 @@ export function CatalogStageStrip({ stages, activeStageId, onSelect }: CatalogSt
               background: active ? PRIMARY : isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.85)",
               border: `1px solid ${active ? PRIMARY : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
               boxShadow: active
-                ? `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`
+                ? "0 4px 16px rgba(0,0,0,0.251)"
                 : isDark
                   ? "0 1px 2px rgba(0,0,0,0.2)"
                   : "0 1px 3px rgba(120,90,60,0.05)",

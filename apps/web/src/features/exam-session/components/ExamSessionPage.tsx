@@ -316,8 +316,8 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
                           ? setSubmitOpen(true)
                           : navigateTo(currentIndex + 1)
                       }
-                      className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)] transition-all duration-300 hover:-translate-y-0.5"
-                      style={{ background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))" }}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5"
+                      style={{ background: "var(--brand-primary)" }}
                     >
                       {currentIndex === questions.length - 1 ? "تسليم الامتحان" : "التالي"}
                       <ChevronLeft className="h-4 w-4" />
@@ -415,8 +415,8 @@ function SessionErrorScreen({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)]"
-            style={{ background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))" }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
+            style={{ background: "var(--brand-primary)" }}
           >
             <ListChecks className="h-4 w-4" />
             إعادة المحاولة

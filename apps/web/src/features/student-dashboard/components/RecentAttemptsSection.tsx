@@ -9,7 +9,7 @@ import {
   StudentEmptyState,
   useBrandTheme,
 } from "./StudentCard";
-import { BRAND_PRIMARY, BRAND_SECONDARY } from "../constants";
+import { BRAND_PRIMARY, BRAND_SECONDARY, BRAND_TEXT_ON_SECONDARY } from "../constants";
 import { formatDateTime, formatNumber } from "@/lib/format";
 
 interface RecentAttemptsSectionProps {
@@ -22,8 +22,8 @@ function resultBadge(attempt: RecentAttemptItem, t: ReturnType<typeof useBrandTh
       <span
         className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold tabular-nums"
         style={{
-          backgroundColor: `rgb(var(--brand-secondary-rgb) / 0.11)`,
-          color: BRAND_SECONDARY,
+          backgroundColor: BRAND_SECONDARY,
+          color: BRAND_TEXT_ON_SECONDARY,
         }}
       >
         ناجح · {formatNumber(attempt.percentage ?? 0)}%

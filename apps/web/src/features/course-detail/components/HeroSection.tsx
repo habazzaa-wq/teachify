@@ -41,9 +41,6 @@ export function HeroSection({ course }: HeroSectionProps) {
             "radial-gradient(ellipse at 50% 30%, var(--course-hero-gradient-from) 0%, var(--course-hero-gradient-via) 40%, var(--course-hero-gradient-to) 80%)",
         }}
       />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(circle at 30% 70%, rgb(var(--brand-primary-rgb) / 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgb(var(--brand-secondary-rgb) / 0.03) 0%, transparent 50%)",
-      }} />
 
       <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">

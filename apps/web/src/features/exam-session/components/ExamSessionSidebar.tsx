@@ -49,12 +49,12 @@ function ExamSessionSidebarInner({
               className={cn(
                 "flex h-10 items-center justify-center rounded-xl text-xs font-extrabold tabular-nums transition-all duration-150",
                 isCurrent
-                  ? "scale-105 text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)]"
+                  ? "scale-105 text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
                   : answered
                     ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/30 hover:bg-emerald-500/20"
                     : "bg-muted/60 text-muted-foreground ring-1 ring-border/40 hover:bg-muted",
               )}
-              style={isCurrent ? { background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))" } : undefined}
+              style={isCurrent ? { background: "var(--brand-primary)" } : undefined}
             >
               {index + 1}
             </button>
@@ -65,7 +65,7 @@ function ExamSessionSidebarInner({
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/30 pt-3">
         <LegendDot className="bg-emerald-500/15 text-emerald-600 ring-emerald-500/30" label="مُجاب" />
-        <LegendDot className="bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)] ring-[rgb(var(--brand-primary-rgb)/0.25)]" label="الحالي" />
+        <LegendDot className="bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] ring-[var(--brand-primary)]" label="الحالي" />
         <LegendDot className="bg-muted text-muted-foreground ring-border/40" label="بدون إجابة" />
       </div>
     </div>

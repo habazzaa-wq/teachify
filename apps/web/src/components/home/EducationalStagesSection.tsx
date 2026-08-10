@@ -45,7 +45,7 @@ function cardShell(isDark: boolean): CSSProperties {
       ? "0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2)"
       : "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgba(120,90,60,0.08)",
     ["--stage-border" as string]: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)",
-    ["--stage-border-hover" as string]: isDark ? "rgb(var(--brand-primary-rgb) / 0.55)" : "rgb(var(--brand-primary-rgb) / 0.5)",
+    ["--stage-border-hover" as string]: "var(--brand-primary)",
     transition: "transform 300ms ease, border-color 300ms ease",
   } as CSSProperties;
 }
@@ -68,22 +68,20 @@ function StageFallbackCover({ index, isDark }: { index: number; isDark: boolean 
     <div
       className="absolute inset-0 overflow-hidden"
       style={{
-        background: isDark
-          ? `linear-gradient(150deg, ${main}30 0%, ${main}12 45%, transparent 100%)`
-          : `linear-gradient(150deg, ${main}20 0%, ${main}0c 45%, transparent 100%)`,
+        background: main,
       }}
     >
-      <div className="absolute -end-6 -top-6 h-24 w-24 rounded-full border" style={{ borderColor: `${main}40` }} />
-      <div className="absolute -bottom-8 -start-8 h-32 w-32 rounded-full border" style={{ borderColor: `${main}30` }} />
+      <div className="absolute -end-6 -top-6 h-24 w-24 rounded-full border" style={{ borderColor: main }} />
+      <div className="absolute -bottom-8 -start-8 h-32 w-32 rounded-full border" style={{ borderColor: main }} />
       <div className="absolute bottom-[16%] start-[18%] h-1.5 w-1.5 rounded-full" style={{ background: main }} />
-      <div className="absolute end-[22%] top-[24%] h-2 w-2 rounded-full" style={{ background: `${main}80` }} />
+      <div className="absolute end-[22%] top-[24%] h-2 w-2 rounded-full" style={{ background: main }} />
       <div className="absolute inset-0 flex items-center justify-center">
         <span
           className="flex h-11 w-11 items-center justify-center rounded-2xl"
           style={{
             background: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.8)",
             color: main,
-            border: `1px solid ${main}30`,
+            border: `1px solid ${main}`,
             boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
           }}
         >
@@ -124,9 +122,7 @@ function StageCover({
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          background: isDark
-            ? `radial-gradient(120% 120% at 50% 0%, rgb(var(--brand-primary-rgb) / 0.149) 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, rgb(var(--brand-secondary-rgb) / 0.11) 0%, transparent 65%), #1a1622`
-            : `radial-gradient(120% 120% at 50% 0%, rgb(var(--brand-primary-rgb) / 0.086) 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, rgb(var(--brand-secondary-rgb) / 0.071) 0%, transparent 65%), #f6efe6`,
+          background: isDark ? "#1a1622" : "#f6efe6",
         }}
       />
       <div
@@ -241,7 +237,7 @@ function ExploreCta() {
       استكشف المرحلة
       <span
         className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--brand-secondary-contrast)] transition-transform duration-300 group-hover:scale-110"
-        style={{ background: ACCENT, boxShadow: `0 4px 10px rgb(var(--brand-secondary-rgb) / 0.251)` }}
+        style={{ background: ACCENT, boxShadow: `0 4px 10px rgba(0,0,0,0.251)` }}
       >
         <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
       </span>
@@ -272,7 +268,7 @@ function StageCard({
     <Link
       href={`/stages/${stage.id}`}
       aria-label={`${stage.name} — استكشف المرحلة`}
-      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.7)] focus-visible:rounded-3xl"
+      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:rounded-3xl"
     >
       <div className="flex h-full flex-col overflow-hidden rounded-3xl lg:hover:-translate-y-1" style={cardShell(isDark)}>
         <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
@@ -281,7 +277,7 @@ function StageCard({
           {popular ? (
             <span
               className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold"
-              style={{ background: `rgb(var(--brand-secondary-rgb) / 0.933)`, color: "var(--brand-secondary-contrast)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
+              style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
             >
               <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
               شائع
@@ -411,17 +407,6 @@ export function EducationalStagesSection() {
           }}
         />
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full"
-          style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.071) 0%, transparent 70%)` }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full"
-          style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.051) 0%, transparent 70%)` }}
-        />
-
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           {decoShapes.map((d, i) => (
             <span
@@ -436,13 +421,11 @@ export function EducationalStagesSection() {
           {/* centered header */}
           <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-10">
             <span
-              className="home-enter-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold sm:text-xs"
+              className="home-enter-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold text-[var(--brand-primary-contrast)] sm:text-xs"
               style={{
-                background: isDark
-                  ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.122), rgb(var(--brand-secondary-rgb) / 0.059))`
-                  : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.055), rgb(var(--brand-secondary-rgb) / 0.031))`,
-                color: PRIMARY,
-                border: `1px solid ${isDark ? `rgb(var(--brand-primary-rgb) / 0.188)` : `rgb(var(--brand-primary-rgb) / 0.11)`}`,
+                background: "var(--brand-primary)",
+                color: "var(--brand-primary-contrast)",
+                border: `1px solid var(--brand-primary)`,
               }}
             >
               <Sparkles aria-hidden="true" className="h-3 w-3" />
@@ -499,7 +482,7 @@ export function EducationalStagesSection() {
                     onClick={() => setExpanded((v) => !v)}
                     aria-expanded={expanded}
                     aria-controls="educational-stages-grid"
-                    className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2.5 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.6)]"
+                    className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2.5 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
                     style={{
                       color: isDark ? "#F0ECE6" : "#1a1510",
                       borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",

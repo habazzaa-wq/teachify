@@ -60,8 +60,8 @@ function LessonRowInner({
       }}
       className={cn(
         "group/lesson flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200",
-        "hover:bg-[rgb(var(--brand-primary-rgb)/0.05)] dark:hover:bg-white/[0.03]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)] focus-visible:ring-inset",
+        "dark:hover:bg-white/[0.03]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-inset",
       )}
     >
       {/* Type Icon */}
@@ -114,7 +114,7 @@ function LessonRowInner({
           <Lock className="h-3.5 w-3.5" />
         </div>
       ) : (
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)] transition-transform duration-200 group-hover/lesson:scale-110">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] transition-transform duration-200 group-hover/lesson:scale-110">
           <Play className="h-3.5 w-3.5 fill-current" />
         </div>
       )}

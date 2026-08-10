@@ -66,14 +66,8 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
       />
 
       {/* orbs */}
-      <div
-        className="pointer-events-none absolute -start-32 top-1/4 h-[420px] w-[420px] rounded-full blur-[130px]"
-        style={{ background: `rgb(var(--brand-primary-rgb) / 0.051)` }}
-      />
-      <div
-        className="pointer-events-none absolute -end-32 bottom-1/4 h-[360px] w-[360px] rounded-full blur-[120px]"
-        style={{ background: `rgb(var(--brand-secondary-rgb) / 0.039)` }}
-      />
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-[420px] w-[420px] rounded-full blur-[130px]" />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-[360px] w-[360px] rounded-full blur-[120px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8 lg:pb-14 lg:pt-12">
         {/* breadcrumb */}
@@ -119,11 +113,9 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
               <span
                 className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold sm:text-sm"
                 style={{
-                  background: isDark
-                    ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.122), rgb(var(--brand-secondary-rgb) / 0.059))`
-                    : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.059), rgb(var(--brand-secondary-rgb) / 0.031))`,
-                  color: PRIMARY,
-                  border: `1px solid ${isDark ? `rgb(var(--brand-primary-rgb) / 0.188)` : `rgb(var(--brand-primary-rgb) / 0.11)`}`,
+                  background: "var(--brand-primary)",
+                  color: "var(--brand-primary-contrast)",
+                  border: "1px solid var(--brand-primary)",
                 }}
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -201,9 +193,6 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
             <div
               className="relative aspect-[4/3] overflow-hidden rounded-[2rem]"
               style={{
-                background: isDark
-                  ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.133), rgb(var(--brand-secondary-rgb) / 0.071))`
-                  : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.078), rgb(var(--brand-secondary-rgb) / 0.051))`,
                 border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}`,
               }}
             >
@@ -218,18 +207,18 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="h-24 w-24" style={{ color: `rgb(var(--brand-primary-rgb) / 0.251)` }} />
+                  <GraduationCap className="h-24 w-24" style={{ color: "var(--brand-primary)" }} />
                 </div>
               )}
 
               {/* decorative ring */}
               <div
                 className="pointer-events-none absolute -end-8 -top-8 h-40 w-40 rounded-full border"
-                style={{ borderColor: `rgb(var(--brand-secondary-rgb) / 0.2)` }}
+                style={{ borderColor: "var(--brand-secondary)" }}
               />
               <div
                 className="pointer-events-none absolute -bottom-10 -start-10 h-48 w-48 rounded-full border"
-                style={{ borderColor: `rgb(var(--brand-primary-rgb) / 0.18)` }}
+                style={{ borderColor: "var(--brand-primary)" }}
               />
             </div>
           </motion.div>

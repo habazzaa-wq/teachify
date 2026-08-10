@@ -39,21 +39,6 @@ export function resolveBrandHexColors(
   };
 }
 
-/**
- * Alpha variant of a brand accent for inline styles. Accepts the solid brand
- * var reference (e.g. `var(--brand-primary)`) and returns the matching
- * `rgb(var(--brand-…-rgb) / a)` so dynamic accents keep their alpha.
- */
-export function brandAlpha(accent: string, alpha: number): string {
-  if (accent.startsWith("var(--brand-primary")) {
-    return `rgb(var(--brand-primary-rgb) / ${alpha})`;
-  }
-  if (accent.startsWith("var(--brand-secondary")) {
-    return `rgb(var(--brand-secondary-rgb) / ${alpha})`;
-  }
-  return accent;
-}
-
 /** Highest-contrast text color (white or near-black) for a given background hex. */
 export function brandContrast(hex: string): string {
   const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };

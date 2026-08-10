@@ -21,7 +21,7 @@ export const SectionHeader = memo(function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className={cn("flex items-start gap-3.5", className)}>
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[rgb(var(--brand-primary-rgb)/0.15)] bg-gradient-to-br from-[rgb(var(--brand-primary-rgb)/0.12)] to-[rgb(var(--brand-primary-rgb)/0.05)] text-[var(--brand-primary)]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]">
         {icon}
       </div>
       <div className="min-w-0">
@@ -63,7 +63,7 @@ export const SubscribeButton = memo(function SubscribeButton({
       whileTap={prefersReduced ? undefined : { scale: 0.98 }}
       className={cn(
         "group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl font-bold text-white shadow-lg transition-shadow duration-300",
-        "shadow-[0_8px_28px_rgb(var(--brand-primary-rgb) / 0.35)] hover:shadow-[0_12px_40px_rgb(var(--brand-primary-rgb) / 0.45)]",
+        "shadow-[0_8px_28px_rgba(0,0,0,0.35)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.45)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         size === "lg" ? "px-7 py-4 text-base" : "px-6 py-3 text-sm",
         className,

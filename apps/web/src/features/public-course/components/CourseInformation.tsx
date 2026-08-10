@@ -64,7 +64,7 @@ function CourseInformationInner({
                 "prose-strong:text-foreground",
                 "prose-ul:my-4 prose-ul:space-y-1.5",
                 "prose-li:text-muted-foreground prose-li:marker:text-[var(--brand-primary)]",
-                "prose-blockquote:border-[rgb(var(--brand-primary-rgb)/0.3)] prose-blockquote:text-muted-foreground",
+                "prose-blockquote:border-[var(--brand-primary)] prose-blockquote:text-muted-foreground",
                 "prose-img:rounded-2xl",
               )}
               dangerouslySetInnerHTML={{ __html: html }}
@@ -75,9 +75,9 @@ function CourseInformationInner({
         {/* Side stack: audience + objectives teaser */}
         <div className="flex flex-col gap-5">
           {targetAudience.length > 0 && (
-            <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-card to-[rgb(var(--brand-primary-rgb)/0.04)] p-6 shadow-sm shadow-black/[0.02]">
+            <div className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm shadow-black/[0.02]">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]">
                   <Users className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-bold text-foreground">لمن هذه الدورة؟</h3>
@@ -97,9 +97,9 @@ function CourseInformationInner({
           )}
 
           {objectives.length > 0 && (
-            <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-card to-[rgb(var(--brand-secondary-rgb)/0.05)] p-6 shadow-sm shadow-black/[0.02]">
+            <div className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm shadow-black/[0.02]">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgb(var(--brand-secondary-rgb)/0.12)] text-[var(--brand-secondary-contrast)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)]">
                   <Target className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-bold text-foreground">أهداف الدورة</h3>

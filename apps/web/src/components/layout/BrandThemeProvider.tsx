@@ -2,12 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useTenantStore } from "@/stores/tenant.store";
-import {
-  hexToRgbTriplet,
-  mixWithBlack,
-  mixWithWhite,
-  generateCommunityThemeColors,
-} from "@/lib/color";
+import { generateCommunityThemeColors } from "@/lib/color";
 import { resolveBrandHexColors, brandContrast } from "@/lib/brand";
 
 const STYLE_ID = "brand-theme-vars";
@@ -40,12 +35,6 @@ export function BrandThemeProvider() {
 :root {
   --brand-primary: ${primary};
   --brand-secondary: ${secondary};
-  --brand-primary-rgb: ${hexToRgbTriplet(primary)};
-  --brand-secondary-rgb: ${hexToRgbTriplet(secondary)};
-  --brand-primary-dark: ${mixWithBlack(primary, 0.5)};
-  --brand-secondary-dark: ${mixWithBlack(secondary, 0.5)};
-  --brand-primary-light: ${mixWithWhite(primary, 0.25)};
-  --brand-secondary-light: ${mixWithWhite(secondary, 0.25)};
   --brand-primary-contrast: ${brandContrast(primary)};
   --brand-secondary-contrast: ${brandContrast(secondary)};
 }

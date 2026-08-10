@@ -24,7 +24,7 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
             </p>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-[var(--brand-primary)] to-[var(--brand-primary-dark)] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.25)] transition-all duration-300 hover:from-[var(--brand-primary-dark)] hover:to-[var(--brand-primary)] hover:shadow-xl hover:shadow-[rgb(var(--brand-primary-rgb)/0.3)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-primary)] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-xl hover:shadow-[rgba(0,0,0,0.3)] hover:-translate-y-0.5"
             >
               اشتراك الآن
               <Lock className="h-4 w-4" />
@@ -48,21 +48,21 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
 
               {/* Floating icons */}
               <div
-                className="absolute -top-2 -end-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[rgb(var(--brand-primary-rgb)/0.2)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute -top-2 -end-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite" }}
               >
                 <span className="text-sm font-bold course-accent-text">&lt;/&gt;</span>
               </div>
 
               <div
-                className="absolute top-8 -start-6 flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--brand-primary-rgb)/0.2)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute top-8 -start-6 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite 0.5s" }}
               >
                 <span className="text-sm font-bold course-accent-text">{"{}"}</span>
               </div>
 
               <div
-                className="absolute -top-4 start-12 flex h-11 w-11 items-center justify-center rounded-xl border border-[rgb(var(--brand-primary-rgb)/0.2)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute -top-4 start-12 flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite 1s" }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="var(--brand-primary)">
@@ -76,7 +76,7 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
               </div>
 
               <div
-                className="absolute bottom-16 -end-8 flex h-10 w-14 items-center justify-center rounded-lg border border-[rgb(var(--brand-primary-rgb)/0.15)] bg-[var(--course-card-bg)] shadow-md"
+                className="absolute bottom-16 -end-8 flex h-10 w-14 items-center justify-center rounded-lg border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-md"
                 style={{ animation: "float-soft 3s ease-in-out infinite 1.5s" }}
               >
                 <span className="text-[10px] font-bold course-accent-text">JS</span>

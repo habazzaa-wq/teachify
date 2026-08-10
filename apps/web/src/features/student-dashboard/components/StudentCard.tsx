@@ -4,8 +4,14 @@ import * as React from "react";
 import type { LucideIcon } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
-import { BRAND_PRIMARY } from "../constants";
-import { brandAlpha } from "@/lib/brand";
+import { BRAND_PRIMARY, BRAND_SECONDARY } from "../constants";
+
+/** Returns the matching contrast token for a solid brand accent. */
+export function contrastFor(accent: string): string {
+  return accent === BRAND_SECONDARY
+    ? "var(--brand-secondary-contrast)"
+    : "var(--brand-primary-contrast)";
+}
 
 /** Shared neutral ink/muted/border tokens derived from the active theme. */
 export function useBrandTheme() {
@@ -84,9 +90,9 @@ function StudentCardHeader({
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
           style={{
-            backgroundColor: brandAlpha(accent, 0.102),
-            color: accent,
-            boxShadow: `0 4px 12px ${brandAlpha(accent, 0.133)}`,
+            backgroundColor: accent,
+            color: contrastFor(accent),
+            boxShadow: "0 4px 12px rgba(0,0,0,0.133)",
           }}
         >
           <Icon className="h-5 w-5" aria-hidden="true" />
@@ -123,8 +129,8 @@ function StudentChip({ children, accent, text, className }: StudentChipProps) {
         className,
       )}
       style={{
-        backgroundColor: brandAlpha(accent, 0.11),
-        color: text ?? accent,
+        backgroundColor: accent,
+        color: text ?? contrastFor(accent),
       }}
     >
       {children}
@@ -150,7 +156,7 @@ function StudentEmptyState({
     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
       <div
         className="flex h-12 w-12 items-center justify-center rounded-full"
-        style={{ backgroundColor: brandAlpha(accent, 0.071), color: accent }}
+        style={{ backgroundColor: accent, color: contrastFor(accent) }}
       >
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>

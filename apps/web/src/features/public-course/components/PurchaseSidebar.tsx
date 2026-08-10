@@ -126,7 +126,7 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
                     </span>
                     <span
                       className="mb-1 rounded-lg px-2 py-0.5 text-[11px] font-extrabold"
-                      style={{ background: `rgb(var(--brand-secondary-rgb) / 0.133)`, color: "var(--brand-secondary-contrast)" }}
+                      style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
                     >
                       خصم {discountPercent}%
                     </span>
@@ -169,8 +169,8 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
           <ul className="grid grid-cols-1 gap-2.5">
             {includes.map((item) => (
               <li key={item.text} className="flex items-center gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--brand-primary-rgb)/0.1)]">
-                  <Check className="h-3 w-3 text-[var(--brand-primary)]" strokeWidth={3} />
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]">
+                  <Check className="h-3 w-3 text-[var(--brand-primary-contrast)]" strokeWidth={3} />
                 </span>
                 <span className="text-sm font-medium text-muted-foreground">{item.text}</span>
               </li>

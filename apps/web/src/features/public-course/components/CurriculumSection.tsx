@@ -172,8 +172,8 @@ function CurriculumSectionInner({
             className={cn(
               "flex h-10 w-full rounded-xl border bg-card/60 px-4 py-2 pe-10 ps-3 text-sm text-foreground",
               "border-border/50 placeholder:text-muted-foreground/40",
-              "transition-all duration-200 focus-visible:border-[rgb(var(--brand-primary-rgb)/0.4)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.25)]",
+              "transition-all duration-200 focus-visible:border-[var(--brand-primary)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
             )}
           />
         </div>
@@ -184,8 +184,8 @@ function CurriculumSectionInner({
           aria-label={allExpanded ? "طي الكل" : "توسيع الكل"}
           className={cn(
             "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all duration-200",
-            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:text-[var(--brand-primary)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.25)]",
+            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
           )}
         >
           {allExpanded ? (

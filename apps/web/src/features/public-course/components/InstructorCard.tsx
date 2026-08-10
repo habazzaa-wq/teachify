@@ -60,18 +60,18 @@ function InstructorCardInner({ instructor }: InstructorCardProps) {
         className="mb-6"
       />
 
-      <div className="overflow-hidden rounded-3xl border border-[rgb(var(--brand-primary-rgb)/0.15)] bg-card shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-[var(--brand-primary)] bg-card shadow-sm">
         <div
           className="h-1.5 w-full"
           style={{ background: CTA_GRADIENT }}
         />
         <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:p-8">
           <div className="shrink-0 self-center sm:self-auto">
-            <AppAvatar className="h-24 w-24 border-4 border-[rgb(var(--brand-primary-rgb)/0.15)] shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.1)] sm:h-28 sm:w-28">
+            <AppAvatar className="h-24 w-24 border-4 border-[var(--brand-primary)] shadow-lg shadow-[rgba(0,0,0,0.1)] sm:h-28 sm:w-28">
               {instructor.avatar ? (
                 <AppAvatarImage src={instructor.avatar} alt={instructor.name} />
               ) : null}
-              <AppAvatarFallback className="bg-gradient-to-br from-[rgb(var(--brand-primary-rgb)/0.2)] to-[rgb(var(--brand-secondary-rgb)/0.1)] text-2xl font-extrabold text-[var(--brand-primary)]">
+              <AppAvatarFallback className="bg-[var(--brand-primary)] text-2xl font-extrabold text-[var(--brand-primary-contrast)]">
                 {initialsOf(instructor.name)}
               </AppAvatarFallback>
             </AppAvatar>
@@ -79,7 +79,7 @@ function InstructorCardInner({ instructor }: InstructorCardProps) {
 
           <div className="flex min-w-0 flex-1 flex-col gap-4 text-center sm:text-start">
             <div>
-              <p className="mb-1 inline-block rounded-full bg-[rgb(var(--brand-primary-rgb)/0.08)] px-3 py-1 text-[11px] font-bold text-[var(--brand-primary)]">
+              <p className="mb-1 inline-block rounded-full bg-[var(--brand-primary)] px-3 py-1 text-[11px] font-bold text-[var(--brand-primary-contrast)]">
                 المدرب
               </p>
               <h3 className="text-xl font-extrabold text-foreground sm:text-2xl">
@@ -124,8 +124,8 @@ function InstructorCardInner({ instructor }: InstructorCardProps) {
                     aria-label={social.platform}
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200",
-                      "border-border/50 text-muted-foreground hover:border-[rgb(var(--brand-primary-rgb)/0.4)] hover:text-[var(--brand-primary)]",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]",
+                      "border-border/50 text-muted-foreground hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
                     )}
                   >
                     <Icon className="h-4 w-4" />

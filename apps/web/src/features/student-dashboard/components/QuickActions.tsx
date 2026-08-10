@@ -38,7 +38,7 @@ export function QuickActions({ data }: QuickActionsProps) {
             style={{
               backgroundColor: BRAND_PRIMARY,
               color: BRAND_TEXT_ON_PRIMARY,
-              boxShadow: `0 8px 20px rgb(var(--brand-primary-rgb) / 0.2)`,
+              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
             }}
           >
             <BookOpen className="h-4 w-4" aria-hidden="true" />
@@ -51,7 +51,7 @@ export function QuickActions({ data }: QuickActionsProps) {
             style={{
               backgroundColor: BRAND_SECONDARY,
               color: BRAND_TEXT_ON_SECONDARY,
-              boxShadow: `0 8px 20px rgb(var(--brand-secondary-rgb) / 0.2)`,
+              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
             }}
           >
             <GraduationCap className="h-4 w-4" aria-hidden="true" />

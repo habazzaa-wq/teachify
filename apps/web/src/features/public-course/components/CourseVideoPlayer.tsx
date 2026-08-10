@@ -46,7 +46,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
       <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
         <div
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
-          style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))`, boxShadow: `0 4px 14px rgb(var(--brand-primary-rgb) / 0.2)` }}
+          style={{ background: "var(--brand-primary)", boxShadow: "0 4px 14px rgba(0,0,0,0.2)" }}
         >
           <MonitorPlay style={{ width: 18, height: 18 }} />
         </div>
@@ -75,7 +75,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
           type="button"
           onClick={onClose}
           aria-label="إغلاق المشغل"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:text-[var(--brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
         >
           <X className="h-4 w-4" />
         </button>

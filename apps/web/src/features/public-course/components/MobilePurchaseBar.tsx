@@ -55,7 +55,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
                   </span>
                   <span
                     className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold"
-                    style={{ background: `rgb(var(--brand-secondary-rgb) / 0.133)`, color: "var(--brand-secondary-contrast)" }}
+                    style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
                   >
                     -{discountPercent}%
                   </span>

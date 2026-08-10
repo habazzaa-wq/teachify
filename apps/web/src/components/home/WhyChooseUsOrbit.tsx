@@ -5,7 +5,6 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
-import { brandAlpha } from "@/lib/brand";
 import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } from "@/features/homepage/why-choose-us/types";
 
 /* ───────────────────────────────────────
@@ -151,8 +150,8 @@ function FeatureTile({
       <div
         className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-[var(--brand-primary-contrast)] sm:p-8"
         style={{
-          background: `linear-gradient(160deg, var(--brand-primary-light) 0%, var(--brand-primary) 100%)`,
-          boxShadow: `0 18px 44px rgb(var(--brand-primary-rgb) / 0.22)`,
+          background: "var(--brand-primary)",
+          boxShadow: `0 18px 44px rgba(0,0,0,0.22)`,
           ["--wc-delay" as string]: "0.05s",
         }}
       >
@@ -202,28 +201,19 @@ function FeatureTile({
       className="wc-reveal group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 sm:p-6"
       style={{
         background: cardBg(isDark),
-        borderColor: brandAlpha(accent, 0.122),
+        borderColor: accent,
         boxShadow: isDark
           ? "0 10px 30px rgba(0,0,0,0.28)"
-          : `0 10px 30px ${brandAlpha(accent, 0.071)}`,
+          : "0 10px 30px rgba(0,0,0,0.071)",
         ["--wc-delay" as string]: `${0.08 + index * 0.06}s`,
       }}
     >
-      {/* watermark number */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -end-1 -top-3 select-none text-[64px] font-black leading-none sm:text-[76px]"
-        style={{ color: brandAlpha(accent, 0.071) }}
-      >
-        {f.num}
-      </span>
-
       {/* icon */}
       <div
         className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14"
         style={{
-          background: isDark ? brandAlpha(accent, 0.09) : brandAlpha(accent, 0.071),
-          border: `1px solid ${brandAlpha(accent, 0.2)}`,
+          background: accent,
+          border: `1px solid ${accent}`,
         }}
       >
         <div className="h-7 w-7 sm:h-8 sm:w-8"><Ill /></div>
@@ -235,13 +225,6 @@ function FeatureTile({
       <p className="relative mt-1.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: muted(isDark) }}>
         {f.desc}
       </p>
-
-      {/* corner glow on hover */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-10 -end-10 h-28 w-28 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
-        style={{ background: `radial-gradient(circle, ${brandAlpha(accent, 0.18)}, transparent 70%)` }}
-      />
     </div>
   );
 }
@@ -253,40 +236,36 @@ function CtaTile({ isDark }: { isDark: boolean }) {
   return (
     <a
       href="#educational-stages"
-      className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.6)]"
+      className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
       style={{
-        background: isDark
-          ? "linear-gradient(150deg, rgb(var(--brand-primary-rgb) / 0.16), rgb(var(--brand-primary-rgb) / 0.06)), #16141E"
-          : "linear-gradient(150deg, rgb(var(--brand-primary-rgb) / 0.10), rgb(var(--brand-primary-rgb) / 0.05)), #ffffff",
-        borderColor: isDark ? "rgb(var(--brand-primary-rgb) / 0.35)" : `rgb(var(--brand-primary-rgb) / 0.188)`,
+        background: "var(--brand-primary)",
+        borderColor: "var(--brand-primary)",
         boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.28)" : "0 10px 30px rgba(0,0,0,0.05)",
         ["--wc-delay" as string]: "0.34s",
       }}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-12 h-32 w-32 rounded-full border-2 border-dashed" style={{ borderColor: `rgb(var(--brand-primary-rgb) / 0.18)` }} />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -start-10 h-28 w-28 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.133), transparent 70%)` }} />
-      <span className="pointer-events-none absolute end-5 top-4 select-none text-4xl font-black" style={{ color: `rgb(var(--brand-secondary-rgb) / 0.078)` }}>+</span>
+      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-12 h-32 w-32 rounded-full border-2 border-dashed" style={{ borderColor: "var(--brand-primary)" }} />
 
       <span
-        className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--brand-primary-contrast)] transition-transform duration-300 group-hover:scale-110"
+        className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--brand-primary)] transition-transform duration-300 group-hover:scale-110"
         style={{
-          background: primary,
-          boxShadow: `0 10px 24px rgb(var(--brand-primary-rgb) / 0.239)`,
+          background: "var(--brand-primary-contrast)",
+          boxShadow: `0 10px 24px rgba(0,0,0,0.239)`,
         }}
       >
         <ArrowLeft aria-hidden="true" className="h-6 w-6" />
       </span>
-      <h3 className="relative text-lg font-extrabold leading-snug" style={{ color: ink(isDark) }}>
+      <h3 className="relative text-lg font-extrabold leading-snug" style={{ color: "var(--brand-primary-contrast)" }}>
         جاهز للانطلاق؟
       </h3>
-      <p className="relative -mt-2 text-sm leading-relaxed" style={{ color: muted(isDark) }}>
+      <p className="relative -mt-2 text-sm leading-relaxed" style={{ color: "var(--brand-primary-contrast)" }}>
         ابدأ رحلة النجاح مع منظومة تعليمية متكاملة تواكب طموحك
       </p>
       <span
         className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-[var(--brand-secondary-contrast)] transition-transform duration-300 group-hover:scale-[1.03]"
         style={{
           background: secondary,
-          boxShadow: `0 10px 26px rgb(var(--brand-secondary-rgb) / 0.22)`,
+          boxShadow: `0 10px 26px rgba(0,0,0,0.22)`,
         }}
       >
         استكشف المراحل
@@ -376,8 +355,6 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
             : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
         }}
       />
-      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.071) 0%, transparent 70%)` }} />
-      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.051) 0%, transparent 70%)` }} />
       <BackgroundDecor isDark={isDark} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -385,11 +362,11 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
         <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-12">
           <div className="wc-reveal" style={{ ["--wc-delay" as string]: "0s" }}>
             <span
-              className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold"
+              className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-[var(--brand-primary-contrast)]"
               style={{
-                background: isDark ? `rgb(var(--brand-primary-rgb) / 0.122)` : `rgb(var(--brand-primary-rgb) / 0.055)`,
-                color: primary,
-                border: `1px solid ${isDark ? `rgb(var(--brand-primary-rgb) / 0.188)` : `rgb(var(--brand-primary-rgb) / 0.11)`}`,
+                background: "var(--brand-primary)",
+                color: "var(--brand-primary-contrast)",
+                border: `1px solid var(--brand-primary)`,
               }}
             >
               <Sparkles aria-hidden="true" className="h-3.5 w-3.5" style={{ color: secondary }} />

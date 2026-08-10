@@ -51,12 +51,6 @@
        BrandThemeProvider. These values are the platform fallback. */
     --brand-primary: #D87B63;
     --brand-secondary: #FFB50E;
-    --brand-primary-rgb: 216 123 99;
-    --brand-secondary-rgb: 255 181 14;
-    --brand-primary-dark: #613e32;
-    --brand-secondary-dark: #805b07;
-    --brand-primary-light: #e29c8a;
-    --brand-secondary-light: #ffc74a;
     --brand-primary-contrast: #ffffff;
     --brand-secondary-contrast: #17130d;
 
@@ -839,7 +833,7 @@ body.page-is-scrolling .news-marquee-track {
 
 /* — Hero section (قسم الترحيب): cream-themed decorations — */
 .hero-avatar-ring {
-  box-shadow: 0 0 32px var(--hero-glow, rgb(var(--brand-primary-rgb) / 0.30)), 0 0 64px var(--hero-glow, rgb(var(--brand-primary-rgb) / 0.12));
+  box-shadow: 0 0 32px var(--hero-glow, rgba(0,0,0,0.30)), 0 0 64px var(--hero-glow, rgba(0,0,0,0.12));
 }
 
 /* — Hero background decorations — */

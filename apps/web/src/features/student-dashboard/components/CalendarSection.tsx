@@ -9,10 +9,10 @@ import {
   StudentChip,
   StudentEmptyState,
   useBrandTheme,
+  contrastFor,
 } from "./StudentCard";
 import { BRAND_PRIMARY, BRAND_SECONDARY, CALENDAR_ITEM_LABELS } from "../constants";
 import { formatDate } from "@/lib/format";
-import { brandAlpha } from "@/lib/brand";
 
 interface CalendarSectionProps {
   calendar: CalendarDay[];
@@ -84,8 +84,8 @@ export function CalendarSection({ calendar }: CalendarSectionProps) {
                         <div
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
                           style={{
-                            backgroundColor: brandAlpha(accent, 0.102),
-                            color: accent,
+                            backgroundColor: accent,
+                            color: contrastFor(accent),
                           }}
                         >
                           <Icon className="h-3.5 w-3.5" aria-hidden="true" />

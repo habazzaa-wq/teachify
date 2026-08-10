@@ -144,8 +144,8 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
         <span
           className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold text-white"
           style={{
-            background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-            boxShadow: `0 2px 10px rgb(var(--brand-primary-rgb) / 0.208)`,
+            background: "var(--brand-primary)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.208)",
           }}
         >
           {formatNumber(price)} {currency}
@@ -157,7 +157,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
 
   if (!open) return null;
 
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : `rgb(var(--brand-primary-rgb) / 0.125)`;
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "var(--brand-primary)";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[12vh]">
@@ -174,7 +174,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
         className="relative z-10 w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border bg-background shadow-2xl animate-scale-up"
         style={{
           borderColor,
-          boxShadow: `0 24px 80px rgba(0,0,0,0.25), 0 0 0 1px rgb(var(--brand-primary-rgb) / 0.071)`,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.071)",
         }}
       >
         {/* ── Search input ── */}
@@ -184,7 +184,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
         >
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
-            style={{ background: `rgb(var(--brand-primary-rgb) / 0.078)`, color: PRIMARY }}
+            style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
           >
             <Search className="h-[18px] w-[18px]" />
           </span>
@@ -269,11 +269,8 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-4 py-14 text-center">
-              <div
-                className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ background: `rgb(var(--brand-primary-rgb) / 0.071)` }}
-              >
-                <Search className="h-5 w-5" style={{ color: `rgb(var(--brand-primary-rgb) / 0.376)` }} />
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl">
+                <Search className="h-5 w-5" style={{ color: "var(--brand-primary)" }} />
               </div>
               <p className="text-sm font-bold" style={{ color: isDark ? "#F0ECE6" : "#1a1510" }}>
                 لا توجد نتائج مطابقة
@@ -307,7 +304,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
                       "flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors",
                       !selected && "hover:bg-accent/60",
                     )}
-                    style={selected ? { background: isDark ? `rgb(var(--brand-primary-rgb) / 0.149)` : `rgb(var(--brand-primary-rgb) / 0.063)` } : undefined}
+                    style={selected ? { background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" } : undefined}
                   >
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
                       {course.thumbnail || course.coverImage ? (
@@ -319,13 +316,8 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
                           className="object-cover"
                         />
                       ) : (
-                        <div
-                          className="absolute inset-0 flex items-center justify-center"
-                          style={{
-                            background: `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.133), rgb(var(--brand-secondary-rgb) / 0.059))`,
-                          }}
-                        >
-                          <BookOpen className="h-5 w-5" style={{ color: `rgb(var(--brand-primary-rgb) / 0.333)` }} />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <BookOpen className="h-5 w-5" style={{ color: "var(--brand-primary)" }} />
                         </div>
                       )}
                     </div>
@@ -376,8 +368,8 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
             onClick={close}
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:scale-105 active:scale-95"
             style={{
-              background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-              boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+              background: "var(--brand-primary)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
             }}
           >
             {searching ? "عرض جميع النتائج" : "تصفح جميع الكورسات"}

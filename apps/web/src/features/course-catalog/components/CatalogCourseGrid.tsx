@@ -73,7 +73,7 @@ export function CatalogCourseGrid({
           <Link
             href="/courses"
             className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all duration-300 hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
+            style={{ background: "var(--brand-primary)" }}
           >
             <Home className="h-4 w-4" />
             عرض كل الدورات

@@ -50,9 +50,9 @@ function HeroBadge({
 }) {
   const tones = {
     brand:
-      "border-[rgb(var(--brand-primary-rgb)/0.25)] bg-[rgb(var(--brand-primary-rgb)/0.12)] text-[var(--brand-primary)] dark:border-[rgb(var(--brand-primary-rgb)/0.3)] dark:bg-[rgb(var(--brand-primary-rgb)/0.15)] dark:text-[var(--brand-primary)]",
+      "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] dark:border-[var(--brand-primary)] dark:bg-[var(--brand-primary)] dark:text-[var(--brand-primary-contrast)]",
     accent:
-      "border-[rgb(var(--brand-secondary-rgb)/0.3)] bg-[rgb(var(--brand-secondary-rgb)/0.12)] text-[var(--brand-secondary-contrast)] dark:border-[rgb(var(--brand-secondary-rgb)/0.3)] dark:bg-[rgb(var(--brand-secondary-rgb)/0.12)] dark:text-[var(--brand-secondary)]",
+      "border-[var(--brand-secondary)] bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] dark:border-[var(--brand-secondary)] dark:bg-[var(--brand-secondary)] dark:text-[var(--brand-secondary-contrast)]",
     neutral:
       "border-border/60 bg-background/70 text-muted-foreground dark:bg-white/[0.04]",
     success:
@@ -141,17 +141,6 @@ function CourseHeroInner({
           background: isDark
             ? "linear-gradient(180deg, #0c0e12 0%, #0f1116 34%, #131019 70%, #160e0e 100%)"
             : "linear-gradient(180deg, #faf6f1 0%, #f7f1ea 36%, #f3ecdf 72%, #f7e8dd 100%)",
-        }}
-      />
-
-      {/* subtle radial color washes */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: isDark
-            ? `radial-gradient(700px 420px at 82% 12%, rgb(var(--brand-primary-rgb) / 0.149), transparent 60%), radial-gradient(520px 360px at 8% 88%, rgb(var(--brand-secondary-rgb) / 0.078), transparent 60%)`
-            : `radial-gradient(720px 440px at 82% 10%, rgb(var(--brand-primary-rgb) / 0.078), transparent 62%), radial-gradient(540px 380px at 8% 90%, rgb(var(--brand-secondary-rgb) / 0.071), transparent 62%)`,
         }}
       />
 
@@ -346,11 +335,9 @@ function CourseHeroInner({
                 ) : (
                   <div
                     className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      background: `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.165), rgb(var(--brand-secondary-rgb) / 0.078))`,
-                    }}
+                    style={{ background: "var(--brand-primary)" }}
                   >
-                    <BookOpen className="h-20 w-20" style={{ color: `rgb(var(--brand-primary-rgb) / 0.333)` }} />
+                    <BookOpen className="h-20 w-20 text-[var(--brand-primary-contrast)]" />
                   </div>
                 )}
                 {/* legibility gradient */}
@@ -380,7 +367,7 @@ function CourseHeroInner({
                 {course.certificateEnabled && (
                   <div
                     className="absolute end-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold shadow-lg"
-                    style={{ background: ACCENT_GRADIENT, color: "var(--brand-secondary-contrast)", boxShadow: "0 6px 20px rgb(var(--brand-secondary-rgb) / 0.4)" }}
+                    style={{ background: ACCENT_GRADIENT, color: "var(--brand-secondary-contrast)", boxShadow: "0 6px 20px rgba(0,0,0,0.4)" }}
                   >
                     <Award className="h-3.5 w-3.5" />
                     شهادة معتمدة
@@ -411,7 +398,7 @@ function CourseHeroInner({
                       </span>
                       <span
                         className="mb-1 rounded-lg px-2.5 py-0.5 text-xs font-extrabold"
-                        style={{ background: `rgb(var(--brand-secondary-rgb) / 0.133)`, color: "var(--brand-secondary-contrast)" }}
+                        style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
                       >
                         خصم {discountPercent}%
                       </span>
@@ -430,9 +417,9 @@ function CourseHeroInner({
                   aria-label={wishlisted ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
                   className={cn(
                     "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border text-sm font-bold transition-colors duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
                     wishlisted
-                      ? "border-[rgb(var(--brand-primary-rgb)/0.3)] bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)]"
+                      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]"
                       : "border-border bg-background text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -446,7 +433,7 @@ function CourseHeroInner({
                   type="button"
                   onClick={handleShare}
                   aria-label="مشاركة الدورة"
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
                 >
                   <Share2 className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
                 </button>
@@ -490,7 +477,7 @@ function SubscribeButtonHero({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         enrolled
           ? "bg-emerald-600 shadow-lg shadow-emerald-600/25 hover:bg-emerald-500"
-          : "shadow-[0_10px_32px_rgb(var(--brand-primary-rgb) / 0.4)] hover:shadow-[0_14px_44px_rgb(var(--brand-primary-rgb) / 0.5)]",
+          : "shadow-[0_10px_32px_rgba(0,0,0,0.4)] hover:shadow-[0_14px_44px_rgba(0,0,0,0.5)]",
       )}
       style={enrolled ? undefined : { background: CTA_GRADIENT }}
     >

@@ -37,7 +37,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
     >
       <Link
         href={`/courses/${course.slug}`}
-        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:shadow-lg hover:shadow-[rgb(var(--brand-primary-rgb)/0.1)]"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--brand-primary)] hover:shadow-lg hover:shadow-[rgba(0,0,0,0.1)]"
       >
         {/* Cover */}
         <div className="relative aspect-video w-full overflow-hidden">
@@ -52,9 +52,9 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
           ) : (
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.25), rgb(var(--brand-secondary-rgb) / 0.12))" }}
+              style={{ background: "var(--brand-primary)" }}
             >
-              <GraduationCap className="h-10 w-10 text-[rgb(var(--brand-primary-rgb)/0.6)]" />
+              <GraduationCap className="h-10 w-10 text-[var(--brand-primary-contrast)]" />
             </div>
           )}
           <div
@@ -115,7 +115,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
               <span className="text-xs text-muted-foreground">—</span>
             )}
 
-            <span className="text-[11px] font-bold text-[rgb(var(--brand-primary-rgb)/0.7)] transition-colors group-hover:text-[var(--brand-primary)]">
+            <span className="text-[11px] font-bold text-[var(--brand-primary)] transition-colors group-hover:text-[var(--brand-primary)]">
               عرض الدورة
             </span>
           </div>

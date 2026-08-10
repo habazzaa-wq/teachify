@@ -56,16 +56,11 @@ function StartExamDialogInner({
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-[rgb(var(--brand-primary-rgb)/0.2)] p-0 sm:max-w-md">
+      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-[var(--brand-primary)] p-0 sm:max-w-md">
         {/* Accent header */}
-        <div
-          className="flex flex-col items-center gap-3 px-6 py-7 text-center"
-          style={{
-            background: `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.14), rgb(var(--brand-secondary-rgb) / 0.07))`,
-          }}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgb(var(--brand-primary-rgb)/0.25)] bg-gradient-to-br from-[rgb(var(--brand-primary-rgb)/0.2)] to-[rgb(var(--brand-secondary-rgb)/0.1)] shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.1)]">
-            <ClipboardCheck className="h-8 w-8 text-[var(--brand-primary)]" strokeWidth={1.8} />
+        <div className="flex flex-col items-center gap-3 px-6 py-7 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--brand-primary)] bg-[var(--brand-primary)] shadow-lg shadow-[rgba(0,0,0,0.1)]">
+            <ClipboardCheck className="h-8 w-8 text-[var(--brand-primary-contrast)]" strokeWidth={1.8} />
           </div>
           <AppDialogHeader>
             <AppDialogTitle className="text-xl font-extrabold text-foreground">
@@ -105,7 +100,7 @@ function StartExamDialogInner({
                 key={warning}
                 className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground"
               >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--brand-primary-rgb)/0.5)]" />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]" />
                 {warning}
               </li>
             ))}
@@ -131,7 +126,7 @@ function StartExamDialogInner({
           <AppButton
             onClick={handleStart}
             loading={startExam.isPending}
-            className="flex-1 border-0 text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)]"
+            className="flex-1 border-0 text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
             style={{ background: CTA_GRADIENT }}
           >
             {startExam.isPending ? (

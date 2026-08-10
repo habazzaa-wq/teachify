@@ -33,15 +33,15 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
       <div className="home-enter-pop relative flex flex-col items-center group/phone" style={{ animationDelay: "0.45s" }}>
         <div className="flex flex-col items-center">
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgb(var(--brand-secondary-rgb)/0.38),0_8px_25px_rgba(0,0,0,0.3)]"
+            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgba(0,0,0,0.38),0_8px_25px_rgba(0,0,0,0.3)]"
             style={{
               backgroundColor: "var(--brand-secondary)",
-              borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)",
+              borderColor: "var(--brand-secondary)",
             }}
           >
             <Phone className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
           </div>
-          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "var(--brand-secondary)" }}>
             {icons?.phone?.label || "رقم الهاتف"}
           </span>
         </div>
@@ -50,8 +50,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
           style={{ direction: "rtl", boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)" }}
         >
           <a href={social?.phone ? `tel:${social.phone}` : "#"} className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-amber-50 hover:to-orange-50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.13)" }}>
-              <PhoneCall className="h-5 w-5" style={{ color: "var(--brand-secondary)" }} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-secondary)] transition-transform duration-200 group-hover:scale-110">
+              <PhoneCall className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-gray-800">اتصل بنا</span>
@@ -74,8 +74,7 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
   );
 }
 
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
+const neutralDeco = "#c9ae8f";
 
 function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "square"; size: number; color: string }) {
   if (shape === "circle") {
@@ -97,18 +96,11 @@ function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "s
    - mobile (md:hidden): a simplified background with a handful of static
      accents and zero animations.
    ───────────────────────────────────────────────────────────────────────── */
-const DESKTOP_ORBS = [
-  { x: "10%", y: "20%", size: 140, color: primary, opacity: 0.22, duration: 14, delay: 0 },
-  { x: "80%", y: "15%", size: 120, color: secondary, opacity: 0.2, duration: 16, delay: 2 },
-  { x: "5%", y: "75%", size: 100, color: secondary, opacity: 0.18, duration: 12, delay: 1 },
-  { x: "85%", y: "72%", size: 130, color: primary, opacity: 0.2, duration: 15, delay: 3 },
-];
-
 const DESKTOP_SHAPES = [
-  { x: "18%", y: "12%", size: 14, color: primary, shape: "circle" as const },
-  { x: "78%", y: "25%", size: 12, color: secondary, shape: "diamond" as const },
-  { x: "22%", y: "78%", size: 12, color: primary, shape: "diamond" as const },
-  { x: "75%", y: "85%", size: 14, color: secondary, shape: "square" as const },
+  { x: "18%", y: "12%", size: 14, color: neutralDeco, shape: "circle" as const },
+  { x: "78%", y: "25%", size: 12, color: neutralDeco, shape: "diamond" as const },
+  { x: "22%", y: "78%", size: 12, color: neutralDeco, shape: "diamond" as const },
+  { x: "75%", y: "85%", size: 14, color: neutralDeco, shape: "square" as const },
 ];
 
 const DESKTOP_MATH = [
@@ -119,17 +111,17 @@ const DESKTOP_MATH = [
 ];
 
 const DESKTOP_DOTS = [
-  { x: "14%", y: "22%", size: 5, color: primary },
-  { x: "86%", y: "20%", size: 6, color: secondary },
-  { x: "10%", y: "58%", size: 5, color: secondary },
-  { x: "90%", y: "55%", size: 5, color: primary },
-  { x: "20%", y: "90%", size: 6, color: primary },
-  { x: "78%", y: "88%", size: 5, color: secondary },
+  { x: "14%", y: "22%", size: 5, color: neutralDeco },
+  { x: "86%", y: "20%", size: 6, color: neutralDeco },
+  { x: "10%", y: "58%", size: 5, color: neutralDeco },
+  { x: "90%", y: "55%", size: 5, color: neutralDeco },
+  { x: "20%", y: "90%", size: 6, color: neutralDeco },
+  { x: "78%", y: "88%", size: 5, color: neutralDeco },
 ];
 
 const DESKTOP_STARS = [
-  { x: "12%", y: "10%", size: 14, color: primary },
-  { x: "85%", y: "8%", size: 12, color: secondary },
+  { x: "12%", y: "10%", size: 14, color: neutralDeco },
+  { x: "85%", y: "8%", size: 12, color: neutralDeco },
 ];
 
 const DESKTOP_PLUS = [
@@ -138,18 +130,14 @@ const DESKTOP_PLUS = [
 ];
 
 const MOBILE_DECOR = {
-  orbs: [
-    { x: "-20%", y: "-10%", size: 160, color: primary, opacity: 0.2 },
-    { x: "78%", y: "58%", size: 120, color: secondary, opacity: 0.16 },
-  ],
   dots: [
-    { x: "12%", y: "24%", size: 5, color: primary },
-    { x: "86%", y: "18%", size: 6, color: secondary },
-    { x: "8%", y: "70%", size: 5, color: secondary },
+    { x: "12%", y: "24%", size: 5, color: neutralDeco },
+    { x: "86%", y: "18%", size: 6, color: neutralDeco },
+    { x: "8%", y: "70%", size: 5, color: neutralDeco },
   ],
   shapes: [
-    { x: "78%", y: "25%", size: 10, color: secondary, shape: "diamond" as const },
-    { x: "16%", y: "80%", size: 12, color: primary, shape: "circle" as const },
+    { x: "78%", y: "25%", size: 10, color: neutralDeco, shape: "diamond" as const },
+    { x: "16%", y: "80%", size: 12, color: neutralDeco, shape: "circle" as const },
   ],
   math: [{ char: "π", x: "88%", y: "68%", size: 22, rotate: 8 }],
 };
@@ -159,36 +147,6 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
     <>
       {/* Desktop — richer background, heavily reduced element count */}
       <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block" aria-hidden="true">
-        {/* Blurred gradient orbs — the only continuously animated elements */}
-        {DESKTOP_ORBS.map((orb, i) => (
-          <div
-            key={`orb-${i}`}
-            className="hero-bg-orb absolute rounded-full"
-            style={{
-              left: orb.x,
-              top: orb.y,
-              width: orb.size,
-              height: orb.size,
-              background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
-              opacity: isDark ? orb.opacity * 0.6 : orb.opacity,
-              filter: isDark ? "blur(30px)" : "blur(25px)",
-              "--orb-duration": `${orb.duration}s`,
-              "--orb-delay": `${orb.delay}s`,
-              "--orb-opacity": isDark ? orb.opacity * 0.6 : orb.opacity,
-            } as React.CSSProperties}
-          />
-        ))}
-
-        {/* Static ring outlines */}
-        <div
-          className="absolute rounded-full border"
-          style={{ left: "8%", top: "18%", width: 60, height: 60, borderColor: isDark ? "rgb(var(--brand-primary-rgb) / 0.10)" : "rgb(var(--brand-primary-rgb) / 0.18)" }}
-        />
-        <div
-          className="absolute rounded-full border border-dashed"
-          style={{ left: "46%", bottom: "8%", width: 48, height: 48, borderColor: isDark ? "rgba(200,170,140,0.05)" : "rgba(160,130,100,0.10)" }}
-        />
-
         {/* Static geometric shapes */}
         {DESKTOP_SHAPES.map((s, i) => (
           <div key={`shape-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.35 }}>
@@ -247,22 +205,6 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
           />
         </svg>
 
-        {/* Static concentric center rings */}
-        {[240, 300].map((size, i) => (
-          <div
-            key={`ring-${i}`}
-            className="absolute rounded-full border"
-            style={{
-              width: size,
-              height: size,
-              borderColor: isDark
-                ? `rgb(var(--brand-primary-rgb) / ${0.06 - i * 0.01})`
-                : `rgb(var(--brand-primary-rgb) / ${0.22 - i * 0.04})`,
-              borderWidth: i === 0 ? 1.5 : 1,
-            }}
-          />
-        ))}
-
         {/* Static stars */}
         {DESKTOP_STARS.map((s, i) => (
           <div key={`star-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.32 }}>
@@ -276,8 +218,8 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
         {DESKTOP_PLUS.map((p, i) => (
           <div key={`plus-${i}`} className="absolute" style={{ left: p.x, top: p.y, opacity: isDark ? 0.12 : 0.22, transform: `rotate(${p.rotate}deg)` }}>
             <svg width={p.size} height={p.size} viewBox="0 0 10 10">
-              <line x1="5" y1="0" x2="5" y2="10" style={{ stroke: primary }} strokeWidth="1.2" />
-              <line x1="0" y1="5" x2="10" y2="5" style={{ stroke: primary }} strokeWidth="1.2" />
+              <line x1="5" y1="0" x2="5" y2="10" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
+              <line x1="0" y1="5" x2="10" y2="5" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
             </svg>
           </div>
         ))}
@@ -285,21 +227,6 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
 
       {/* Mobile — simplified background, fully static */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden md:hidden" aria-hidden="true">
-        {MOBILE_DECOR.orbs.map((orb, i) => (
-          <div
-            key={`orb-${i}`}
-            className="absolute rounded-full"
-            style={{
-              left: orb.x,
-              top: orb.y,
-              width: orb.size,
-              height: orb.size,
-              background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
-              opacity: isDark ? orb.opacity * 0.6 : orb.opacity,
-              filter: isDark ? "blur(30px)" : "blur(25px)",
-            }}
-          />
-        ))}
         {MOBILE_DECOR.dots.map((d, i) => (
           <div
             key={`dot-${i}`}
@@ -386,15 +313,6 @@ export function HeroSection() {
         className="absolute inset-0 transition-colors duration-500"
         style={{ background: isDark ? darkBg : lightBg }}
       />
-      <div
-        className="absolute inset-0 transition-colors duration-500"
-        style={{
-          background: isDark
-            ? "radial-gradient(circle at 30% 70%, rgb(var(--brand-primary-rgb) / 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgb(var(--brand-secondary-rgb) / 0.02) 0%, transparent 50%)"
-            : "radial-gradient(circle at 30% 70%, rgb(var(--brand-primary-rgb) / 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgb(var(--brand-secondary-rgb) / 0.03) 0%, transparent 50%)",
-        }}
-      />
-
       <HeroBackground isDark={isDark} />
 
       {/* ── Content ── */}
@@ -415,14 +333,14 @@ export function HeroSection() {
               style={{
                 boxShadow: isDark
                   ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgb(var(--brand-secondary-rgb) / 0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
               }}
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
                 style={{
-                  background: "linear-gradient(135deg, var(--brand-secondary), rgb(var(--brand-secondary-rgb) / 0.8))",
-                  boxShadow: "0 4px 12px rgb(var(--brand-secondary-rgb) / 0.25)",
+                  background: "var(--brand-secondary)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
                 }}
               >
                 <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
@@ -446,14 +364,14 @@ export function HeroSection() {
               style={{
                 boxShadow: isDark
                   ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgb(var(--brand-primary-rgb) / 0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
               }}
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
                 style={{
-                  background: "linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))",
-                  boxShadow: "0 4px 12px rgb(var(--brand-primary-rgb) / 0.25)",
+                  background: "var(--brand-primary)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
                 }}
               >
                 <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
@@ -501,15 +419,6 @@ export function HeroSection() {
 
         {/* ── Profile circle wrapper: 340×340 ── */}
         <div className="home-enter-pop-soft relative mx-auto h-[340px] w-[340px]" style={{ animationDelay: "0.25s" }}>
-          {/* Glow behind image */}
-          <div
-            className="absolute rounded-full blur-3xl"
-            style={{
-              inset: -40,
-              background: "radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.09), transparent 70%)",
-            }}
-          />
-
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
             {heroImage ? (
@@ -541,10 +450,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.3s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
                 <Gift className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
             </div>
@@ -562,10 +471,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.36s" }}
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
                   <Facebook className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
@@ -583,10 +492,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.42s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
                 <MessageCircle className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
             </div>
@@ -604,10 +513,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.48s" }}
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
                   <Youtube className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
@@ -625,10 +534,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.54s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
                 <Star className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
             </div>

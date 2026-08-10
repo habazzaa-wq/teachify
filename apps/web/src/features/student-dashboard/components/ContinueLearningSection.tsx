@@ -9,7 +9,7 @@ import {
   StudentEmptyState,
   useBrandTheme,
 } from "./StudentCard";
-import { BRAND_PRIMARY } from "../constants";
+import { BRAND_PRIMARY, BRAND_TEXT_ON_PRIMARY } from "../constants";
 import { formatNumber } from "@/lib/format";
 
 interface ContinueLearningSectionProps {
@@ -50,9 +50,9 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                   <div
                     className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl text-lg font-extrabold"
                     style={{
-                      backgroundColor: `rgb(var(--brand-primary-rgb) / 0.102)`,
-                      color: BRAND_PRIMARY,
-                      boxShadow: `0 4px 12px rgb(var(--brand-primary-rgb) / 0.094)`,
+                      backgroundColor: BRAND_PRIMARY,
+                      color: BRAND_TEXT_ON_PRIMARY,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.094)",
                     }}
                   >
                     {item.courseTitle.slice(0, 1)}
@@ -73,8 +73,8 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                       <span
                         className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold tabular-nums"
                         style={{
-                          backgroundColor: `rgb(var(--brand-primary-rgb) / 0.102)`,
-                          color: BRAND_PRIMARY,
+                          backgroundColor: BRAND_PRIMARY,
+                          color: BRAND_TEXT_ON_PRIMARY,
                         }}
                       >
                         {formatNumber(item.progressPercent)}%
@@ -92,7 +92,7 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                         style={{
                           width: `${Math.min(100, Math.max(0, item.progressPercent))}%`,
                           background: BRAND_PRIMARY,
-                          boxShadow: `0 0 8px rgb(var(--brand-primary-rgb) / 0.4)`,
+                          boxShadow: "0 0 8px rgba(0,0,0,0.4)",
                         }}
                       />
                     </div>

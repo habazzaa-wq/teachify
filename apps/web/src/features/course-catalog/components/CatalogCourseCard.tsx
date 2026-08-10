@@ -59,15 +59,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background: isDark
-                ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.125), rgb(var(--brand-secondary-rgb) / 0.051))`
-                : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.071), rgb(var(--brand-secondary-rgb) / 0.031))`,
-            }}
-          >
-            <BookOpen className="h-12 w-12" style={{ color: `rgb(var(--brand-primary-rgb) / 0.251)` }} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <BookOpen className="h-12 w-12" style={{ color: "var(--brand-primary)" }} />
           </div>
         )}
 
@@ -76,9 +69,9 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
           <span
             className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg"
             style={{
-              background: "linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))",
+              background: "var(--brand-secondary)",
               color: "var(--brand-secondary-contrast)",
-              boxShadow: "0 4px 16px rgb(var(--brand-secondary-rgb) / 0.4)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
             }}
           >
             <Sparkles className="h-3 w-3" />
@@ -91,8 +84,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
           <span
             className="absolute start-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg"
             style={{
-              background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-              boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+              background: "var(--brand-primary)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
             }}
           >
             <Tag className="h-3 w-3" />
@@ -186,7 +179,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             ) : (
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
+                style={{ background: "var(--brand-primary)" }}
               >
                 {initialsOf(course.instructor.name)}
               </div>
@@ -244,8 +237,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
               <span
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg"
                 style={{
-                  background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-                  boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                  background: "var(--brand-primary)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
                 }}
               >
                 {formatNumber(course.discountPrice!)} {currency}
@@ -261,8 +254,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
               style={{
-                background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
-                boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
+                background: "var(--brand-primary)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
               }}
             >
               {formatNumber(course.price)} {currency}
@@ -277,9 +270,9 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
-                background: `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`,
+                background: "var(--brand-secondary)",
                 color: "var(--brand-secondary-contrast)",
-                boxShadow: `0 4px 16px rgb(var(--brand-secondary-rgb) / 0.333)`,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.333)",
               }}
             >
               اشترك الآن مجاناً
@@ -288,9 +281,9 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
-                background: `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`,
+                background: "var(--brand-secondary)",
                 color: "var(--brand-secondary-contrast)",
-                boxShadow: `0 4px 16px rgb(var(--brand-secondary-rgb) / 0.4)`,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               }}
             >
               اشترك الآن
@@ -302,7 +295,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
       {/* bottom accent bar */}
       <div
         className="h-[3px] w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))` }}
+        style={{ background: "var(--brand-primary)" }}
       />
     </div>
   );

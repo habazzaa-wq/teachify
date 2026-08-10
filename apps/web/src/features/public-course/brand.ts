@@ -5,16 +5,15 @@
 
 export const PRIMARY = "var(--brand-primary)";
 export const ACCENT = "var(--brand-secondary)";
-export const PRIMARY_DARK = "var(--brand-primary-dark)";
 
-/** Premium CTA gradient used on every subscribe button. */
-export const CTA_GRADIENT = `linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))`;
+/** Premium CTA background used on every subscribe button. */
+export const CTA_GRADIENT = `var(--brand-primary)`;
 
-/** Warm hero accent gradient used for badges, chips and highlights. */
-export const ACCENT_GRADIENT = `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`;
+/** Warm hero accent background used for badges, chips and highlights. */
+export const ACCENT_GRADIENT = `var(--brand-secondary)`;
 
-/** Locked-content banner gradient (terracotta → deep warm). */
-export const LOCKED_GRADIENT = `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.12), rgb(var(--brand-secondary-rgb) / 0.06))`;
+/** Locked-content banner background. */
+export const LOCKED_GRADIENT = `var(--brand-primary)`;
 
 export const DIFFICULTY_LABELS: Record<string, string> = {
   beginner: "مبتدئ",
