@@ -23,6 +23,10 @@ export interface SiteSettings {
   logo_image?: string | null;
   /** Google Fonts family name used across the whole platform. */
   font?: string | null;
+  /** Primary brand color (hex) — drives the whole public site theme. */
+  primary_color?: string | null;
+  /** Secondary brand color (hex) — drives the whole public site theme. */
+  secondary_color?: string | null;
 }
 
 export type NavbarLogoType = "icon" | "image";

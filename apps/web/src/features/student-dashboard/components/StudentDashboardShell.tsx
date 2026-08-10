@@ -71,7 +71,7 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
         <footer
           className="border-t py-6"
           style={{
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.12)",
+            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgb(var(--brand-primary-rgb) / 0.12)",
           }}
         >
           <div className="container text-center text-sm text-muted-foreground">

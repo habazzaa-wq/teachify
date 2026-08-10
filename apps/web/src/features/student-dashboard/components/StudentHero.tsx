@@ -35,22 +35,22 @@ export function StudentHero({ data }: StudentHeroProps) {
         background: t.isDark
           ? "linear-gradient(160deg, #121418 0%, #16181d 55%, #181a1f 100%)"
           : "linear-gradient(160deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
-        borderColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.14)",
+        borderColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgb(var(--brand-primary-rgb) / 0.14)",
         boxShadow: t.isDark
           ? "0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2)"
-          : "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgba(216,123,99,0.10)",
+          : "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgb(var(--brand-primary-rgb) / 0.10)",
       }}
       aria-label="ترحيب الطالب"
     >
       {/* Decorative orbs — one brand color per orb */}
       <div
         className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full blur-3xl"
-        style={{ background: `radial-gradient(circle, ${BRAND_PRIMARY}30, transparent 70%)` }}
+        style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.188), transparent 70%)` }}
         aria-hidden="true"
       />
       <div
         className="pointer-events-none absolute -bottom-20 -start-10 h-56 w-56 rounded-full blur-3xl"
-        style={{ background: `radial-gradient(circle, ${BRAND_SECONDARY}26, transparent 70%)` }}
+        style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.149), transparent 70%)` }}
         aria-hidden="true"
       />
 
@@ -60,7 +60,7 @@ export function StudentHero({ data }: StudentHeroProps) {
           <div className="home-enter-pop relative shrink-0" style={{ animationDelay: "0.1s" }}>
             <div
               className="absolute inset-0 rounded-full blur-2xl"
-              style={{ background: `radial-gradient(circle, ${BRAND_PRIMARY}45, transparent 70%)` }}
+              style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.271), transparent 70%)` }}
               aria-hidden="true"
             />
             <div
@@ -68,7 +68,7 @@ export function StudentHero({ data }: StudentHeroProps) {
               style={{
                 borderColor: BRAND_PRIMARY,
                 color: BRAND_PRIMARY,
-                boxShadow: `0 0 24px ${BRAND_PRIMARY}40, 0 8px 20px rgba(0,0,0,0.12)`,
+                boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.251), 0 8px 20px rgba(0,0,0,0.12)`,
               }}
             >
               {student.avatar ? (
@@ -124,7 +124,7 @@ export function StudentHero({ data }: StudentHeroProps) {
             style={{
               backgroundColor: BRAND_SECONDARY,
               color: BRAND_TEXT_ON_SECONDARY,
-              boxShadow: `0 4px 14px ${BRAND_SECONDARY}40`,
+              boxShadow: `0 4px 14px rgb(var(--brand-secondary-rgb) / 0.251)`,
             }}
           >
             <Flame className="h-3.5 w-3.5" aria-hidden="true" />
@@ -136,7 +136,7 @@ export function StudentHero({ data }: StudentHeroProps) {
               style={{
                 backgroundColor: BRAND_PRIMARY,
                 color: BRAND_TEXT_ON_PRIMARY,
-                boxShadow: `0 4px 14px ${BRAND_PRIMARY}40`,
+                boxShadow: `0 4px 14px rgb(var(--brand-primary-rgb) / 0.251)`,
               }}
             >
               <Trophy className="h-3.5 w-3.5" aria-hidden="true" />

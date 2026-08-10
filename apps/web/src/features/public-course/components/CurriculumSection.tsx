@@ -140,18 +140,18 @@ function CurriculumSectionInner({
       {/* Stats chips */}
       <motion.div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-          <Layers className="h-4 w-4 text-[#BF6D58]" />
+          <Layers className="h-4 w-4 text-[var(--brand-primary)]" />
           <b className="tabular-nums text-foreground">{stats.sections}</b>
           {stats.sections === 1 ? "قسم" : "أقسام"}
         </span>
         <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-          <GraduationCap className="h-4 w-4 text-[#BF6D58]" />
+          <GraduationCap className="h-4 w-4 text-[var(--brand-primary)]" />
           <b className="tabular-nums text-foreground">{stats.lessons}</b>
           {stats.lessons === 1 ? "درس" : "درسًا"}
         </span>
         {stats.duration > 0 && (
           <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-            <Clock className="h-4 w-4 text-[#BF6D58]" />
+            <Clock className="h-4 w-4 text-[var(--brand-primary)]" />
             <b className="tabular-nums text-foreground">{formatDuration(stats.duration)}</b>
             مدة التعلم
           </span>
@@ -172,8 +172,8 @@ function CurriculumSectionInner({
             className={cn(
               "flex h-10 w-full rounded-xl border bg-card/60 px-4 py-2 pe-10 ps-3 text-sm text-foreground",
               "border-border/50 placeholder:text-muted-foreground/40",
-              "transition-all duration-200 focus-visible:border-[#BF6D58]/40",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
+              "transition-all duration-200 focus-visible:border-[rgb(var(--brand-primary-rgb)/0.4)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.25)]",
             )}
           />
         </div>
@@ -184,8 +184,8 @@ function CurriculumSectionInner({
           aria-label={allExpanded ? "طي الكل" : "توسيع الكل"}
           className={cn(
             "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all duration-200",
-            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[#BF6D58]/30 hover:text-[#BF6D58]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
+            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:text-[var(--brand-primary)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.25)]",
           )}
         >
           {allExpanded ? (

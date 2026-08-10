@@ -8,6 +8,7 @@ import {
   Check,
   Sparkles,
   Trash2,
+  Palette,
 } from "lucide-react";
 import {
   AppPage,
@@ -32,19 +33,20 @@ import { ChooseMediaButton } from "@/features/media-library/components/ChooseMed
 import { mediaLibraryService } from "@/features/media-library/services";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 import { cn } from "@/lib/cn";
-
-const NAVBAR_PRIMARY = "#D87B63";
+import { BRAND_PRIMARY_DEFAULT, BRAND_SECONDARY_DEFAULT } from "@/lib/brand";
 
 function NavbarLogoPreview({
   logoType,
   logoIcon,
   logoImage,
   name,
+  primaryColor,
 }: {
   logoType: string | null;
   logoIcon: string | null;
   logoImage: string | null;
   name: string;
+  primaryColor: string;
 }) {
   const icon = getNavbarIcon(logoIcon);
   const showIcon = logoType === "icon" && !!icon;
@@ -71,7 +73,7 @@ function NavbarLogoPreview({
         ) : (
           <div
             className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: NAVBAR_PRIMARY }}
+            style={{ backgroundColor: primaryColor }}
           >
             {showIcon && icon ? (
               createElement(icon, { className: "h-5 w-5 text-white" })
@@ -80,7 +82,7 @@ function NavbarLogoPreview({
             )}
           </div>
         )}
-        <span className="text-lg font-bold tracking-tight" style={{ color: NAVBAR_PRIMARY }}>
+        <span className="text-lg font-bold tracking-tight" style={{ color: primaryColor }}>
           {name || "اسم المنصة"}
         </span>
       </div>
@@ -99,6 +101,8 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
   const [logoType, setLogoType] = useState<string | null>(initial.logo_type ?? null);
   const [logoIcon, setLogoIcon] = useState<string | null>(initial.logo_icon ?? null);
   const [logoImage, setLogoImage] = useState<string | null>(initial.logo_image ?? null);
+  const [primaryColor, setPrimaryColor] = useState<string>(initial.primary_color ?? BRAND_PRIMARY_DEFAULT);
+  const [secondaryColor, setSecondaryColor] = useState<string>(initial.secondary_color ?? BRAND_SECONDARY_DEFAULT);
 
   const handleSave = useCallback(() => {
     const values: Partial<SiteSettings> = {
@@ -106,6 +110,8 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
       logo_type: logoType,
       logo_icon: logoType === "icon" ? (logoIcon ?? null) : null,
       logo_image: logoType === "image" ? (logoImage ?? null) : null,
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
     };
 
     updateSite.mutate(values, {
@@ -116,10 +122,12 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
           logo_type: result.logo_type ?? null,
           logo_icon: result.logo_icon ?? null,
           logo_image: result.logo_image ?? null,
+          primary_color: result.primary_color ?? primaryColor,
+          secondary_color: result.secondary_color ?? secondaryColor,
         });
       },
     });
-  }, [name, logoType, logoIcon, logoImage, updateSite, setTenantSite]);
+  }, [name, logoType, logoIcon, logoImage, primaryColor, secondaryColor, updateSite, setTenantSite]);
 
   const canSave = name.trim().length > 0 && (logoType !== "icon" || !!logoIcon);
 
@@ -313,6 +321,85 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
         </AppCardContent>
       </AppCard>
 
+      {/* Site colors */}
+      <AppCard>
+        <AppCardHeader>
+          <AppCardTitle className="flex items-center gap-2">
+            <Palette className="h-4 w-4" /> ألوان الموقع
+          </AppCardTitle>
+          <AppCardDescription>
+            اللونان الأساسيان للمنصة — يظهران في شريط التنقّل والأزرار والكورسات وكامل صفحات الموقع
+          </AppCardDescription>
+        </AppCardHeader>
+        <AppCardContent className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Primary */}
+            <div className="space-y-2 rounded-2xl border border-studio-border bg-studio-soft p-4">
+              <Label>اللون الأساسي</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                  className="h-12 w-12 shrink-0 cursor-pointer rounded-xl border border-studio-border bg-transparent p-1"
+                  aria-label="اللون الأساسي"
+                />
+                <AppInput
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  placeholder="#D87B63"
+                  maxLength={7}
+                  dir="ltr"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                يُستخدم في الأزرار، العناصر النشطة، واسم المنصة
+              </p>
+            </div>
+
+            {/* Secondary */}
+            <div className="space-y-2 rounded-2xl border border-studio-border bg-studio-soft p-4">
+              <Label>اللون الثانوي</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                  className="h-12 w-12 shrink-0 cursor-pointer rounded-xl border border-studio-border bg-transparent p-1"
+                  aria-label="اللون الثانوي"
+                />
+                <AppInput
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value)}
+                  placeholder="#FFB50E"
+                  maxLength={7}
+                  dir="ltr"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                يُستخدم في لمسات التحديد والـ hover والشارات
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-2xl border border-studio-border bg-studio-surface p-4">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-8 w-8 rounded-full border border-black/10"
+                style={{ backgroundColor: primaryColor }}
+              />
+              <span
+                className="h-8 w-8 rounded-full border border-black/10"
+                style={{ backgroundColor: secondaryColor }}
+              />
+            </div>
+            <div className="text-sm text-studio-fg-muted">
+              معاينة اللونين الجاري استخدامهما في كامل الموقع. احفظ لتطبيقها فوراً.
+            </div>
+          </div>
+        </AppCardContent>
+      </AppCard>
+
       {/* Live preview */}
       <AppCard>
         <AppCardHeader>
@@ -325,6 +412,7 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
             logoIcon={logoIcon}
             logoImage={logoImage}
             name={name}
+            primaryColor={primaryColor}
           />
           <p className="mt-3 text-xs text-muted-foreground">
             المعاينة تعرض البيانات الحالية. احفظ التغييرات لتطبيقها على الموقع.
@@ -358,7 +446,7 @@ function BrandingSettingsPage() {
       <AppDivider className="mb-8" />
 
       <BrandingForm
-        key={[data.name, data.logo_type, data.logo_icon, data.logo_image].join("|")}
+        key={[data.name, data.logo_type, data.logo_icon, data.logo_image, data.primary_color, data.secondary_color].join("|")}
         initial={data}
       />
     </AppPage>

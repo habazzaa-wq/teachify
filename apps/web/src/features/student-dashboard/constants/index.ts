@@ -18,11 +18,13 @@ import type {
 /**
  * Brand palette shared with the public site (the-mechanist.com).
  * Each visual element uses exactly ONE of these two colors — never both.
+ * Values are CSS-var references so the student dashboard follows the site-wide
+ * branding configured by the teacher in site settings.
  */
-export const BRAND_PRIMARY = "#D87B63";
-export const BRAND_SECONDARY = "#FFB50E";
-export const BRAND_TEXT_ON_PRIMARY = "#FFFFFF";
-export const BRAND_TEXT_ON_SECONDARY = "#5A3A00";
+export const BRAND_PRIMARY = "var(--brand-primary)";
+export const BRAND_SECONDARY = "var(--brand-secondary)";
+export const BRAND_TEXT_ON_PRIMARY = "var(--brand-primary-contrast)";
+export const BRAND_TEXT_ON_SECONDARY = "var(--brand-secondary-contrast)";
 
 /** Maps a stat-card semantic color to a single brand color. */
 export function brandColorFor(color: StatCardConfig["color"]): string {

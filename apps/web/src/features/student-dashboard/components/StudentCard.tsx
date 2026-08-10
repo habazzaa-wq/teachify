@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { BRAND_PRIMARY } from "../constants";
+import { brandAlpha } from "@/lib/brand";
 
 /** Shared neutral ink/muted/border tokens derived from the active theme. */
 export function useBrandTheme() {
@@ -83,9 +84,9 @@ function StudentCardHeader({
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
           style={{
-            backgroundColor: `${accent}1a`,
+            backgroundColor: brandAlpha(accent, 0.102),
             color: accent,
-            boxShadow: `0 4px 12px ${accent}22`,
+            boxShadow: `0 4px 12px ${brandAlpha(accent, 0.133)}`,
           }}
         >
           <Icon className="h-5 w-5" aria-hidden="true" />
@@ -122,7 +123,7 @@ function StudentChip({ children, accent, text, className }: StudentChipProps) {
         className,
       )}
       style={{
-        backgroundColor: `${accent}1c`,
+        backgroundColor: brandAlpha(accent, 0.11),
         color: text ?? accent,
       }}
     >
@@ -149,7 +150,7 @@ function StudentEmptyState({
     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
       <div
         className="flex h-12 w-12 items-center justify-center rounded-full"
-        style={{ backgroundColor: `${accent}12`, color: accent }}
+        style={{ backgroundColor: brandAlpha(accent, 0.071), color: accent }}
       >
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>

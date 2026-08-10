@@ -33,15 +33,15 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
       <div className="home-enter-pop relative flex flex-col items-center group/phone" style={{ animationDelay: "0.45s" }}>
         <div className="flex flex-col items-center">
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgba(255,181,14,0.38),0_8px_25px_rgba(0,0,0,0.3)]"
+            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgb(var(--brand-secondary-rgb)/0.38),0_8px_25px_rgba(0,0,0,0.3)]"
             style={{
-              backgroundColor: secondary,
-              borderColor: "#FFE0A0",
+              backgroundColor: "var(--brand-secondary)",
+              borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)",
             }}
           >
             <Phone className="h-5 w-5 text-white" />
           </div>
-          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300 group-hover/phone:bg-[#FFB50E]" style={{ backgroundColor: `${secondary}dd` }}>
+          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
             {icons?.phone?.label || "رقم الهاتف"}
           </span>
         </div>
@@ -50,8 +50,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
           style={{ direction: "rtl", boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)" }}
         >
           <a href={social?.phone ? `tel:${social.phone}` : "#"} className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-amber-50 hover:to-orange-50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110" style={{ backgroundColor: `${secondary}20` }}>
-              <PhoneCall className="h-5 w-5" style={{ color: secondary }} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.13)" }}>
+              <PhoneCall className="h-5 w-5" style={{ color: "var(--brand-secondary)" }} />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-gray-800">اتصل بنا</span>
@@ -74,8 +74,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
   );
 }
 
-const primary = "#D87B63";
-const secondary = "#FFB50E";
+const primary = "var(--brand-primary)";
+const secondary = "var(--brand-secondary)";
 
 function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "square"; size: number; color: string }) {
   if (shape === "circle") {
@@ -182,7 +182,7 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
         {/* Static ring outlines */}
         <div
           className="absolute rounded-full border"
-          style={{ left: "8%", top: "18%", width: 60, height: 60, borderColor: isDark ? "rgba(216,123,99,0.10)" : "rgba(216,123,99,0.18)" }}
+          style={{ left: "8%", top: "18%", width: 60, height: 60, borderColor: isDark ? "rgb(var(--brand-primary-rgb) / 0.10)" : "rgb(var(--brand-primary-rgb) / 0.18)" }}
         />
         <div
           className="absolute rounded-full border border-dashed"
@@ -256,8 +256,8 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
               width: size,
               height: size,
               borderColor: isDark
-                ? `rgba(216,123,99,${0.06 - i * 0.01})`
-                : `rgba(216,123,99,${0.22 - i * 0.04})`,
+                ? `rgb(var(--brand-primary-rgb) / ${0.06 - i * 0.01})`
+                : `rgb(var(--brand-primary-rgb) / ${0.22 - i * 0.04})`,
               borderWidth: i === 0 ? 1.5 : 1,
             }}
           />
@@ -267,7 +267,7 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
         {DESKTOP_STARS.map((s, i) => (
           <div key={`star-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.32 }}>
             <svg width={s.size} height={s.size} viewBox="0 0 16 16">
-              <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill={s.color} />
+              <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" style={{ fill: s.color }} />
             </svg>
           </div>
         ))}
@@ -276,8 +276,8 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
         {DESKTOP_PLUS.map((p, i) => (
           <div key={`plus-${i}`} className="absolute" style={{ left: p.x, top: p.y, opacity: isDark ? 0.12 : 0.22, transform: `rotate(${p.rotate}deg)` }}>
             <svg width={p.size} height={p.size} viewBox="0 0 10 10">
-              <line x1="5" y1="0" x2="5" y2="10" stroke={primary} strokeWidth="1.2" />
-              <line x1="0" y1="5" x2="10" y2="5" stroke={primary} strokeWidth="1.2" />
+              <line x1="5" y1="0" x2="5" y2="10" style={{ stroke: primary }} strokeWidth="1.2" />
+              <line x1="0" y1="5" x2="10" y2="5" style={{ stroke: primary }} strokeWidth="1.2" />
             </svg>
           </div>
         ))}
@@ -390,8 +390,8 @@ export function HeroSection() {
         className="absolute inset-0 transition-colors duration-500"
         style={{
           background: isDark
-            ? "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.02) 0%, transparent 50%)"
-            : "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.03) 0%, transparent 50%)",
+            ? "radial-gradient(circle at 30% 70%, rgb(var(--brand-primary-rgb) / 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgb(var(--brand-secondary-rgb) / 0.02) 0%, transparent 50%)"
+            : "radial-gradient(circle at 30% 70%, rgb(var(--brand-primary-rgb) / 0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgb(var(--brand-secondary-rgb) / 0.03) 0%, transparent 50%)",
         }}
       />
 
@@ -415,19 +415,19 @@ export function HeroSection() {
               style={{
                 boxShadow: isDark
                   ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgba(255,181,14,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  : `0 8px 32px rgb(var(--brand-secondary-rgb) / 0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
               }}
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
                 style={{
-                  background: `linear-gradient(135deg, ${secondary}, ${secondary}cc)`,
-                  boxShadow: `0 4px 12px ${secondary}40`,
+                  background: "linear-gradient(135deg, var(--brand-secondary), rgb(var(--brand-secondary-rgb) / 0.8))",
+                  boxShadow: "0 4px 12px rgb(var(--brand-secondary-rgb) / 0.25)",
                 }}
               >
                 <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
               </div>
-              <span style={{ color: secondary }}>{hero.badge2Text}</span>
+              <span style={{ color: "var(--brand-secondary)" }}>{hero.badge2Text}</span>
             </div>
           </div>
         )}
@@ -446,19 +446,19 @@ export function HeroSection() {
               style={{
                 boxShadow: isDark
                   ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgba(216,123,99,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  : `0 8px 32px rgb(var(--brand-primary-rgb) / 0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
               }}
             >
               <div
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
                 style={{
-                  background: `linear-gradient(135deg, ${primary}, ${primary}cc)`,
-                  boxShadow: `0 4px 12px ${primary}40`,
+                  background: "linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))",
+                  boxShadow: "0 4px 12px rgb(var(--brand-primary-rgb) / 0.25)",
                 }}
               >
                 <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
               </div>
-              <span style={{ color: primary }}>{hero.badge1Text}</span>
+              <span style={{ color: "var(--brand-primary)" }}>{hero.badge1Text}</span>
             </div>
           </div>
         )}
@@ -476,24 +476,24 @@ export function HeroSection() {
               const rest = parts.slice(1).join(separator);
               return (
                 <>
-                  <span style={{ color: primary }}>{parts[0] + separator}</span>
+                  <span style={{ color: "var(--brand-primary)" }}>{parts[0] + separator}</span>
                   {rest && (
                     <>
                       <br />
-                      <span style={{ color: secondary }}>{rest}</span>
+                      <span style={{ color: "var(--brand-secondary)" }}>{rest}</span>
                     </>
                   )}
                 </>
               );
             }
-            return <span style={{ color: primary }}>{fullTitle}</span>;
+            return <span style={{ color: "var(--brand-primary)" }}>{fullTitle}</span>;
           })()}
         </h1>
 
         {hero?.subtitle && (
           <p
             className="home-enter-up mb-6 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
-            style={{ color: secondary, fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
+            style={{ color: "var(--brand-secondary)", fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
           >
             {hero.subtitle}
           </p>
@@ -506,12 +506,12 @@ export function HeroSection() {
             className="absolute rounded-full blur-3xl"
             style={{
               inset: -40,
-              background: `radial-gradient(circle, ${secondary}18, transparent 70%)`,
+              background: "radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.09), transparent 70%)",
             }}
           />
 
           {/* Profile image */}
-          <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-orange-400 shadow-2xl">
+          <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
             {heroImage ? (
               <Image
                 src={heroImage}
@@ -541,10 +541,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.3s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
                 <Gift className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
             </div>
@@ -562,10 +562,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.36s" }}
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
                   <Facebook className="h-5 w-5 text-white" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
@@ -583,10 +583,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.42s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
                 <MessageCircle className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
             </div>
@@ -604,10 +604,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.48s" }}
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "rgb(var(--brand-secondary-rgb) / 0.4)" }}>
                   <Youtube className="h-5 w-5 text-white" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-secondary-rgb) / 0.87)" }}>
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
@@ -625,10 +625,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.54s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "rgb(var(--brand-primary-rgb) / 0.4)" }}>
                 <Star className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: "rgb(var(--brand-primary-rgb) / 0.87)" }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
             </div>

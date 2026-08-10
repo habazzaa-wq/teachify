@@ -50,9 +50,9 @@ function HeroBadge({
 }) {
   const tones = {
     brand:
-      "border-[#BF6D58]/25 bg-[#BF6D58]/12 text-[#BF6D58] dark:border-[#BF6D58]/30 dark:bg-[#BF6D58]/15 dark:text-[#ffd6c9]",
+      "border-[rgb(var(--brand-primary-rgb)/0.25)] bg-[rgb(var(--brand-primary-rgb)/0.12)] text-[var(--brand-primary)] dark:border-[rgb(var(--brand-primary-rgb)/0.3)] dark:bg-[rgb(var(--brand-primary-rgb)/0.15)] dark:text-[var(--brand-primary)]",
     accent:
-      "border-[#FFB50E]/30 bg-[#FFB50E]/12 text-[#b45309] dark:border-[#FFB50E]/30 dark:bg-[#FFB50E]/12 dark:text-[#FFB50E]",
+      "border-[rgb(var(--brand-secondary-rgb)/0.3)] bg-[rgb(var(--brand-secondary-rgb)/0.12)] text-[var(--brand-secondary-contrast)] dark:border-[rgb(var(--brand-secondary-rgb)/0.3)] dark:bg-[rgb(var(--brand-secondary-rgb)/0.12)] dark:text-[var(--brand-secondary)]",
     neutral:
       "border-border/60 bg-background/70 text-muted-foreground dark:bg-white/[0.04]",
     success:
@@ -150,8 +150,8 @@ function CourseHeroInner({
         className="pointer-events-none absolute inset-0"
         style={{
           background: isDark
-            ? `radial-gradient(700px 420px at 82% 12%, ${PRIMARY}26, transparent 60%), radial-gradient(520px 360px at 8% 88%, ${ACCENT}14, transparent 60%)`
-            : `radial-gradient(720px 440px at 82% 10%, ${PRIMARY}14, transparent 62%), radial-gradient(540px 380px at 8% 90%, ${ACCENT}12, transparent 62%)`,
+            ? `radial-gradient(700px 420px at 82% 12%, rgb(var(--brand-primary-rgb) / 0.149), transparent 60%), radial-gradient(520px 360px at 8% 88%, rgb(var(--brand-secondary-rgb) / 0.078), transparent 60%)`
+            : `radial-gradient(720px 440px at 82% 10%, rgb(var(--brand-primary-rgb) / 0.078), transparent 62%), radial-gradient(540px 380px at 8% 90%, rgb(var(--brand-secondary-rgb) / 0.071), transparent 62%)`,
         }}
       />
 
@@ -347,10 +347,10 @@ function CourseHeroInner({
                   <div
                     className="absolute inset-0 flex items-center justify-center"
                     style={{
-                      background: `linear-gradient(135deg, ${PRIMARY}2a, ${ACCENT}14)`,
+                      background: `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.165), rgb(var(--brand-secondary-rgb) / 0.078))`,
                     }}
                   >
-                    <BookOpen className="h-20 w-20" style={{ color: `${PRIMARY}55` }} />
+                    <BookOpen className="h-20 w-20" style={{ color: `rgb(var(--brand-primary-rgb) / 0.333)` }} />
                   </div>
                 )}
                 {/* legibility gradient */}
@@ -368,7 +368,7 @@ function CourseHeroInner({
                   style={{ backdropFilter: "none" }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4 text-[#BF6D58]" />
+                    <Users className="h-4 w-4 text-[var(--brand-primary)]" />
                     <span className="text-sm font-extrabold text-gray-800">
                       {formatNumber(course.studentsCount)}
                     </span>
@@ -411,7 +411,7 @@ function CourseHeroInner({
                       </span>
                       <span
                         className="mb-1 rounded-lg px-2.5 py-0.5 text-xs font-extrabold"
-                        style={{ background: `${ACCENT}22`, color: "#b45309" }}
+                        style={{ background: `rgb(var(--brand-secondary-rgb) / 0.133)`, color: "var(--brand-secondary-contrast)" }}
                       >
                         خصم {discountPercent}%
                       </span>
@@ -430,14 +430,14 @@ function CourseHeroInner({
                   aria-label={wishlisted ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
                   className={cn(
                     "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border text-sm font-bold transition-colors duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]",
                     wishlisted
-                      ? "border-[#BF6D58]/30 bg-[#BF6D58]/10 text-[#BF6D58]"
+                      ? "border-[rgb(var(--brand-primary-rgb)/0.3)] bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)]"
                       : "border-border bg-background text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Heart
-                    className={cn("h-4.5 w-4.5 transition-colors", wishlisted && "fill-[#BF6D58] text-[#BF6D58]")}
+                    className={cn("h-4.5 w-4.5 transition-colors", wishlisted && "fill-[var(--brand-primary)] text-[var(--brand-primary)]")}
                     style={{ width: 18, height: 18 }}
                   />
                   {wishlisted ? "في المفضلة" : "مفضلة"}
@@ -446,7 +446,7 @@ function CourseHeroInner({
                   type="button"
                   onClick={handleShare}
                   aria-label="مشاركة الدورة"
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]"
                 >
                   <Share2 className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
                 </button>
@@ -487,10 +487,10 @@ function SubscribeButtonHero({
       onClick={onClick}
       className={cn(
         "group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-7 py-4 text-base font-extrabold text-white transition-all duration-300",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         enrolled
           ? "bg-emerald-600 shadow-lg shadow-emerald-600/25 hover:bg-emerald-500"
-          : "shadow-[0_10px_32px_rgba(191,109,88,0.4)] hover:shadow-[0_14px_44px_rgba(191,109,88,0.5)]",
+          : "shadow-[0_10px_32px_rgb(var(--brand-primary-rgb) / 0.4)] hover:shadow-[0_14px_44px_rgb(var(--brand-primary-rgb) / 0.5)]",
       )}
       style={enrolled ? undefined : { background: CTA_GRADIENT }}
     >

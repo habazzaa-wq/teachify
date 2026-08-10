@@ -20,8 +20,8 @@ import type { StageItem, StageStats } from "@/features/homepage/educational-stag
 import { formatNumber } from "@/lib/format";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
-const PRIMARY = "#BF6D58";
-const ACCENT = "#FFB50E";
+const PRIMARY = "var(--brand-primary)";
+const ACCENT = "var(--brand-secondary)";
 
 const SHOWCASE_CAP = 3;
 
@@ -45,7 +45,7 @@ function cardShell(isDark: boolean): CSSProperties {
       ? "0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2)"
       : "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgba(120,90,60,0.08)",
     ["--stage-border" as string]: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)",
-    ["--stage-border-hover" as string]: isDark ? "rgba(191,109,88,0.55)" : "rgba(191,109,88,0.5)",
+    ["--stage-border-hover" as string]: isDark ? "rgb(var(--brand-primary-rgb) / 0.55)" : "rgb(var(--brand-primary-rgb) / 0.5)",
     transition: "transform 300ms ease, border-color 300ms ease",
   } as CSSProperties;
 }
@@ -125,8 +125,8 @@ function StageCover({
         className="absolute inset-0"
         style={{
           background: isDark
-            ? `radial-gradient(120% 120% at 50% 0%, ${PRIMARY}26 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, ${ACCENT}1c 0%, transparent 65%), #1a1622`
-            : `radial-gradient(120% 120% at 50% 0%, ${PRIMARY}16 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, ${ACCENT}12 0%, transparent 65%), #f6efe6`,
+            ? `radial-gradient(120% 120% at 50% 0%, rgb(var(--brand-primary-rgb) / 0.149) 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, rgb(var(--brand-secondary-rgb) / 0.11) 0%, transparent 65%), #1a1622`
+            : `radial-gradient(120% 120% at 50% 0%, rgb(var(--brand-primary-rgb) / 0.086) 0%, transparent 62%), radial-gradient(130% 130% at 50% 110%, rgb(var(--brand-secondary-rgb) / 0.071) 0%, transparent 65%), #f6efe6`,
         }}
       />
       <div
@@ -240,8 +240,8 @@ function ExploreCta() {
     >
       استكشف المرحلة
       <span
-        className="flex h-6 w-6 items-center justify-center rounded-full text-[#5a3a00] transition-transform duration-300 group-hover:scale-110"
-        style={{ background: ACCENT, boxShadow: `0 4px 10px ${ACCENT}40` }}
+        className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--brand-secondary-contrast)] transition-transform duration-300 group-hover:scale-110"
+        style={{ background: ACCENT, boxShadow: `0 4px 10px rgb(var(--brand-secondary-rgb) / 0.251)` }}
       >
         <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
       </span>
@@ -272,7 +272,7 @@ function StageCard({
     <Link
       href={`/stages/${stage.id}`}
       aria-label={`${stage.name} — استكشف المرحلة`}
-      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/70 focus-visible:rounded-3xl"
+      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.7)] focus-visible:rounded-3xl"
     >
       <div className="flex h-full flex-col overflow-hidden rounded-3xl lg:hover:-translate-y-1" style={cardShell(isDark)}>
         <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
@@ -281,7 +281,7 @@ function StageCard({
           {popular ? (
             <span
               className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold"
-              style={{ background: `${ACCENT}ee`, color: "#5a3a00", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
+              style={{ background: `rgb(var(--brand-secondary-rgb) / 0.933)`, color: "var(--brand-secondary-contrast)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
             >
               <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
               شائع
@@ -414,12 +414,12 @@ export function EducationalStagesSection() {
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full"
-          style={{ background: `radial-gradient(circle, ${PRIMARY}12 0%, transparent 70%)` }}
+          style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.071) 0%, transparent 70%)` }}
         />
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full"
-          style={{ background: `radial-gradient(circle, ${ACCENT}0d 0%, transparent 70%)` }}
+          style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.051) 0%, transparent 70%)` }}
         />
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -439,10 +439,10 @@ export function EducationalStagesSection() {
               className="home-enter-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold sm:text-xs"
               style={{
                 background: isDark
-                  ? `linear-gradient(135deg, ${PRIMARY}1f, ${ACCENT}0f)`
-                  : `linear-gradient(135deg, ${PRIMARY}0e, ${ACCENT}08)`,
+                  ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.122), rgb(var(--brand-secondary-rgb) / 0.059))`
+                  : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.055), rgb(var(--brand-secondary-rgb) / 0.031))`,
                 color: PRIMARY,
-                border: `1px solid ${isDark ? `${PRIMARY}30` : `${PRIMARY}1c`}`,
+                border: `1px solid ${isDark ? `rgb(var(--brand-primary-rgb) / 0.188)` : `rgb(var(--brand-primary-rgb) / 0.11)`}`,
               }}
             >
               <Sparkles aria-hidden="true" className="h-3 w-3" />
@@ -499,7 +499,7 @@ export function EducationalStagesSection() {
                     onClick={() => setExpanded((v) => !v)}
                     aria-expanded={expanded}
                     aria-controls="educational-stages-grid"
-                    className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2.5 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/60"
+                    className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2.5 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.6)]"
                     style={{
                       color: isDark ? "#F0ECE6" : "#1a1510",
                       borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",

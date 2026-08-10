@@ -50,9 +50,9 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                   <div
                     className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl text-lg font-extrabold"
                     style={{
-                      backgroundColor: `${BRAND_PRIMARY}1a`,
+                      backgroundColor: `rgb(var(--brand-primary-rgb) / 0.102)`,
                       color: BRAND_PRIMARY,
-                      boxShadow: `0 4px 12px ${BRAND_PRIMARY}18`,
+                      boxShadow: `0 4px 12px rgb(var(--brand-primary-rgb) / 0.094)`,
                     }}
                   >
                     {item.courseTitle.slice(0, 1)}
@@ -73,7 +73,7 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                       <span
                         className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold tabular-nums"
                         style={{
-                          backgroundColor: `${BRAND_PRIMARY}1a`,
+                          backgroundColor: `rgb(var(--brand-primary-rgb) / 0.102)`,
                           color: BRAND_PRIMARY,
                         }}
                       >
@@ -92,7 +92,7 @@ export function ContinueLearningSection({ items }: ContinueLearningSectionProps)
                         style={{
                           width: `${Math.min(100, Math.max(0, item.progressPercent))}%`,
                           background: BRAND_PRIMARY,
-                          boxShadow: `0 0 8px ${BRAND_PRIMARY}66`,
+                          boxShadow: `0 0 8px rgb(var(--brand-primary-rgb) / 0.4)`,
                         }}
                       />
                     </div>

@@ -37,7 +37,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
     >
       <Link
         href={`/courses/${course.slug}`}
-        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-[#BF6D58]/30 hover:shadow-lg hover:shadow-[#BF6D58]/10"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm shadow-black/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:shadow-lg hover:shadow-[rgb(var(--brand-primary-rgb)/0.1)]"
       >
         {/* Cover */}
         <div className="relative aspect-video w-full overflow-hidden">
@@ -52,9 +52,9 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
           ) : (
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, rgba(191,109,88,0.25), rgba(255,181,14,0.12))" }}
+              style={{ background: "linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.25), rgb(var(--brand-secondary-rgb) / 0.12))" }}
             >
-              <GraduationCap className="h-10 w-10 text-[#BF6D58]/60" />
+              <GraduationCap className="h-10 w-10 text-[rgb(var(--brand-primary-rgb)/0.6)]" />
             </div>
           )}
           <div
@@ -71,7 +71,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
 
         {/* Body */}
         <div className="flex flex-1 flex-col gap-2 p-4">
-          <h3 className="line-clamp-2 text-sm font-extrabold leading-snug text-foreground transition-colors group-hover:text-[#BF6D58]">
+          <h3 className="line-clamp-2 text-sm font-extrabold leading-snug text-foreground transition-colors group-hover:text-[var(--brand-primary)]">
             {course.title}
           </h3>
           {course.instructor && (
@@ -100,7 +100,7 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
               </span>
             ) : hasDiscount ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-extrabold text-[#BF6D58]">
+                <span className="text-sm font-extrabold text-[var(--brand-primary)]">
                   {formatNumber(displayPrice)} {currency ?? ""}
                 </span>
                 <span className="text-xs text-muted-foreground line-through">
@@ -108,14 +108,14 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
                 </span>
               </div>
             ) : displayPrice > 0 ? (
-              <span className="text-sm font-extrabold text-[#BF6D58]">
+              <span className="text-sm font-extrabold text-[var(--brand-primary)]">
                 {formatNumber(displayPrice)} {currency ?? ""}
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">—</span>
             )}
 
-            <span className="text-[11px] font-bold text-[#BF6D58]/70 transition-colors group-hover:text-[#BF6D58]">
+            <span className="text-[11px] font-bold text-[rgb(var(--brand-primary-rgb)/0.7)] transition-colors group-hover:text-[var(--brand-primary)]">
               عرض الدورة
             </span>
           </div>

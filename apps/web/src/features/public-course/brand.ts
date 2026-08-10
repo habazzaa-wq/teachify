@@ -3,18 +3,18 @@
  * Kept in one place so every section uses identical colors & gradients.
  */
 
-export const PRIMARY = "#BF6D58";
-export const ACCENT = "#FFB50E";
-export const PRIMARY_DARK = "#a85a47";
+export const PRIMARY = "var(--brand-primary)";
+export const ACCENT = "var(--brand-secondary)";
+export const PRIMARY_DARK = "var(--brand-primary-dark)";
 
 /** Premium CTA gradient used on every subscribe button. */
-export const CTA_GRADIENT = `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY_DARK})`;
+export const CTA_GRADIENT = `linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))`;
 
 /** Warm hero accent gradient used for badges, chips and highlights. */
-export const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT}, #f59e0b)`;
+export const ACCENT_GRADIENT = `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`;
 
 /** Locked-content banner gradient (terracotta → deep warm). */
-export const LOCKED_GRADIENT = `linear-gradient(135deg, rgba(191,109,88,0.12), rgba(255,181,14,0.06))`;
+export const LOCKED_GRADIENT = `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.12), rgb(var(--brand-secondary-rgb) / 0.06))`;
 
 export const DIFFICULTY_LABELS: Record<string, string> = {
   beginner: "مبتدئ",

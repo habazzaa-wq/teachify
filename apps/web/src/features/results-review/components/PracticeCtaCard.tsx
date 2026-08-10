@@ -114,7 +114,7 @@ function PracticeCtaCardInner({
               onClick={handleStart}
               loading={startPractice.isPending}
               disabled={wrongCount === 0}
-              className="w-full rounded-2xl bg-[#BF6D58] px-6 text-sm font-extrabold text-white shadow-lg shadow-[#BF6D58]/30 hover:bg-[#B0604C] sm:w-auto"
+              className="w-full rounded-2xl bg-[var(--brand-primary)] px-6 text-sm font-extrabold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)] hover:bg-[var(--brand-primary-dark)] sm:w-auto"
             >
               ابدأ التدريب
               <ArrowLeft className="h-4 w-4" />

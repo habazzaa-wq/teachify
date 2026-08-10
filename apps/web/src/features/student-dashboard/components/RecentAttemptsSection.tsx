@@ -22,7 +22,7 @@ function resultBadge(attempt: RecentAttemptItem, t: ReturnType<typeof useBrandTh
       <span
         className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold tabular-nums"
         style={{
-          backgroundColor: `${BRAND_SECONDARY}1c`,
+          backgroundColor: `rgb(var(--brand-secondary-rgb) / 0.11)`,
           color: BRAND_SECONDARY,
         }}
       >

@@ -46,6 +46,18 @@
 
     --radius: 0.75rem;
 
+    /* ───────── Brand colors (site primary + secondary) ─────────
+       Dynamic: overridden at runtime by the tenant's branding settings via
+       BrandThemeProvider. These values are the platform fallback. */
+    --brand-primary: #D87B63;
+    --brand-secondary: #FFB50E;
+    --brand-primary-rgb: 216 123 99;
+    --brand-secondary-rgb: 255 181 14;
+    --brand-primary-dark: #613e32;
+    --brand-secondary-dark: #805b07;
+    --brand-primary-contrast: #ffffff;
+    --brand-secondary-contrast: #17130d;
+
     --chart-1: 230 65% 50%;
     --chart-2: 160 84% 39%;
     --chart-3: 35 92% 50%;
@@ -825,7 +837,7 @@ body.page-is-scrolling .news-marquee-track {
 
 /* — Hero section (قسم الترحيب): cream-themed decorations — */
 .hero-avatar-ring {
-  box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.30)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.12));
+  box-shadow: 0 0 32px var(--hero-glow, rgb(var(--brand-primary-rgb) / 0.30)), 0 0 64px var(--hero-glow, rgb(var(--brand-primary-rgb) / 0.12));
 }
 
 /* — Hero background decorations — */

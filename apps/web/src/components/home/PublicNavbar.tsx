@@ -60,8 +60,8 @@ const OnlineRechargeModal = dynamic(
   { ssr: false },
 );
 
-const primary = "#D87B63";
-const secondary = "#FFB50E";
+const primary = "var(--brand-primary)";
+const secondary = "var(--brand-secondary)";
 
 const STUDENT_PROFILE_QUERY_KEY = ["student-profile", "profile"];
 
@@ -93,11 +93,11 @@ function WalletBalanceBadgeFallback(): React.ReactNode {
       aria-label="رصيد المحفظة"
       onClick={() => walletBadgeOnClick?.()}
       className="group relative flex h-8 items-center gap-1.5 rounded-full px-2.5 opacity-60"
-      style={{ border: "1px solid #FFB50E66" }}
+      style={{ border: "1px solid rgb(var(--brand-secondary-rgb) / 0.4)" }}
     >
       <span
         className="flex h-5 w-5 items-center justify-center rounded-full"
-        style={{ background: "linear-gradient(135deg, #D87B63, #D87B63cc)" }}
+        style={{ background: "linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))" }}
       >
         <Wallet className="h-3 w-3 text-white" />
       </span>
@@ -129,8 +129,8 @@ function ThemeBtn() {
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
         style={{
           backgroundColor: secondary,
-          border: `3px solid ${primary}`,
-          boxShadow: `0 0 24px ${primary}40`,
+          border: `3px solid var(--brand-primary)`,
+          boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.251)`,
         }}
       />
       <span
@@ -164,12 +164,12 @@ function NavLinkItem({
               className="absolute inset-0 rounded-2xl"
               style={{
                 backgroundColor: primary,
-                boxShadow: `0 4px 24px ${primary}50`,
+                boxShadow: `0 4px 24px rgb(var(--brand-primary-rgb) / 0.314)`,
               }}
             />
             <span
               className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
+              style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgb(var(--brand-secondary-rgb) / 0.314)` }}
             />
           </>
         ) : (
@@ -177,8 +177,8 @@ function NavLinkItem({
             className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
             style={{
               backgroundColor: secondary,
-              border: `3px solid ${primary}`,
-              boxShadow: `0 0 24px ${primary}40`,
+              border: `3px solid var(--brand-primary)`,
+              boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.251)`,
             }}
           />
         )}
@@ -212,14 +212,14 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
       className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
       style={{
         backgroundColor: primary,
-        boxShadow: `0 2px 20px ${primary}40`,
+        boxShadow: `0 2px 20px rgb(var(--brand-primary-rgb) / 0.251)`,
       }}
     >
       <Icon className="h-5 w-5 text-white" />
       {/* Hover: border = secondary */}
       <span
         className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
+        style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgb(var(--brand-secondary-rgb) / 0.314)` }}
       />
     </div>
   );
@@ -474,14 +474,14 @@ export function PublicNavbar() {
           <div
             className="nav-touch-solid relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
             style={{
-              borderColor: `${primary}30`,
-              boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px ${primary}15`,
+              borderColor: `rgb(var(--brand-primary-rgb) / 0.188)`,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px rgb(var(--brand-primary-rgb) / 0.082)`,
             }}
           >
             <div
               className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
               style={{
-                background: `linear-gradient(135deg, ${primary}50, transparent 40%, transparent 60%, ${secondary}40)`,
+                background: `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.314), transparent 40%, transparent 60%, rgb(var(--brand-secondary-rgb) / 0.251))`,
               }}
             />
 
@@ -494,7 +494,7 @@ export function PublicNavbar() {
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}45` }}
+                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgb(var(--brand-secondary-rgb) / 0.271)` }}
                     />
                   </div>
                 ) : showDynamicIcon ? (
@@ -505,7 +505,7 @@ export function PublicNavbar() {
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}45` }}
+                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgb(var(--brand-secondary-rgb) / 0.271)` }}
                     />
                   </div>
                 ) : (
@@ -560,8 +560,8 @@ export function PublicNavbar() {
                   className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
                   style={{
                     backgroundColor: secondary,
-                    border: `3px solid ${primary}`,
-                    boxShadow: `0 0 24px ${primary}40`,
+                    border: `3px solid var(--brand-primary)`,
+                    boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.251)`,
                   }}
                 />
                 <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300" />
@@ -580,9 +580,9 @@ export function PublicNavbar() {
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                         className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                         style={{
-                          border: `1px solid ${profileDropdownOpen ? primary : `${primary}30`}`,
-                          backgroundColor: profileDropdownOpen ? `${primary}15` : `${primary}08`,
-                          boxShadow: profileDropdownOpen ? `0 4px 20px ${primary}30` : undefined,
+                          border: `1px solid ${profileDropdownOpen ? primary : `rgb(var(--brand-primary-rgb) / 0.188)`}`,
+                          backgroundColor: profileDropdownOpen ? `rgb(var(--brand-primary-rgb) / 0.082)` : `rgb(var(--brand-primary-rgb) / 0.031)`,
+                          boxShadow: profileDropdownOpen ? `0 4px 20px rgb(var(--brand-primary-rgb) / 0.188)` : undefined,
                         }}
                       >
                       <div
@@ -614,21 +614,21 @@ export function PublicNavbar() {
                         profileDropdownOpen ? "visible translate-y-0 scale-100 opacity-100" : "invisible pointer-events-none translate-y-2 scale-95 opacity-0"
                       }`}
                       style={{
-                        borderColor: `${primary}25`,
-                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${primary}10`,
+                        borderColor: `rgb(var(--brand-primary-rgb) / 0.145)`,
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgb(var(--brand-primary-rgb) / 0.063)`,
                       }}
                     >
                           {/* Header */}
                           <div
                             className="px-4 py-3 border-b"
-                            style={{ borderColor: `${primary}15` }}
+                            style={{ borderColor: `rgb(var(--brand-primary-rgb) / 0.082)` }}
                           >
                             <div className="flex items-center gap-3">
                               <div
                                 className="flex h-10 w-10 items-center justify-center rounded-full text-white text-sm font-bold overflow-hidden shrink-0"
                                 style={{
                                   backgroundColor: primary,
-                                  boxShadow: `0 2px 12px ${primary}40`,
+                                  boxShadow: `0 2px 12px rgb(var(--brand-primary-rgb) / 0.251)`,
                                 }}
                               >
                                 {sessionAvatar ? (
@@ -664,7 +664,7 @@ export function PublicNavbar() {
                             >
                               <span
                                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                style={{ backgroundColor: `${primary}08` }}
+                                style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.031)` }}
                               />
                               <User className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">المعلومات الشخصية</span>
@@ -677,7 +677,7 @@ export function PublicNavbar() {
                             >
                               <span
                                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                style={{ backgroundColor: `${primary}08` }}
+                                style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.031)` }}
                               />
                               <Settings className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">الإعدادات</span>
@@ -693,7 +693,7 @@ export function PublicNavbar() {
                             >
                               <span
                                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                style={{ backgroundColor: `${primary}08` }}
+                                style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.031)` }}
                               />
                               <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">تغيير كلمة المرور</span>
@@ -709,7 +709,7 @@ export function PublicNavbar() {
                             >
                               <span
                                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                style={{ backgroundColor: `${primary}08` }}
+                                style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.031)` }}
                               />
                               <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">شحن المحفظة بالكود</span>
@@ -725,13 +725,13 @@ export function PublicNavbar() {
                             >
                               <span
                                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                style={{ backgroundColor: `${primary}08` }}
+                                style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.031)` }}
                               />
                               <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">شحن المحفظة أونلاين</span>
                             </button>
 
-                            <div className="my-1 mx-3 border-t" style={{ borderColor: `${primary}10` }} />
+                            <div className="my-1 mx-3 border-t" style={{ borderColor: `rgb(var(--brand-primary-rgb) / 0.063)` }} />
 
                             <button
                               type="button"
@@ -765,8 +765,8 @@ export function PublicNavbar() {
                           className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
                           style={{
                             backgroundColor: secondary,
-                            border: `3px solid ${primary}`,
-                            boxShadow: `0 0 24px ${primary}45`,
+                            border: `3px solid var(--brand-primary)`,
+                            boxShadow: `0 0 24px rgb(var(--brand-primary-rgb) / 0.271)`,
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
@@ -782,16 +782,16 @@ export function PublicNavbar() {
                         className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-white transition-all duration-300"
                         style={{
                           backgroundColor: primary,
-                          boxShadow: `0 4px 20px ${primary}45`,
+                          boxShadow: `0 4px 20px rgb(var(--brand-primary-rgb) / 0.271)`,
                         }}
                       >
                         <span
                           className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 28px ${secondary}55` }}
+                          style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgb(var(--brand-secondary-rgb) / 0.333)` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <span className="absolute -top-1 -start-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
-                        <span className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
+                        <span className="absolute -top-1 -start-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.376)` }} />
+                        <span className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `rgb(var(--brand-primary-rgb) / 0.376)` }} />
                         <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
                         <span className="relative z-10">إنشاء حساب</span>
                         <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />

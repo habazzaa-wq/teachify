@@ -31,8 +31,8 @@ function ExamSessionTopBarInner({
     <header className="sticky top-0 z-30 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#BF6D58]/25 bg-gradient-to-br from-[#BF6D58]/15 to-[#FFB50E]/8">
-            <ClipboardCheck className="h-5 w-5 text-[#BF6D58]" strokeWidth={1.9} />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--brand-primary-rgb)/0.25)] bg-gradient-to-br from-[rgb(var(--brand-primary-rgb)/0.15)] to-[rgb(var(--brand-secondary-rgb)/0.08)]">
+            <ClipboardCheck className="h-5 w-5 text-[var(--brand-primary)]" strokeWidth={1.9} />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -60,8 +60,8 @@ function ExamSessionTopBarInner({
             type="button"
             onClick={onSubmitClick}
             disabled={submitting}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[#BF6D58]/30 transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #BF6D58, #a85a47)" }}
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))" }}
           >
             <Send className="h-4 w-4" />
             <span className="hidden sm:inline">تسليم الامتحان</span>

@@ -6,8 +6,7 @@ import { Eye, EyeOff, Loader2, Lock, KeyRound, CheckCircle, ShieldCheck } from "
 import { changePasswordService } from "@/features/auth/services/change-password.service";
 import { cn } from "@/lib/cn";
 
-const primary = "#D87B63";
-const secondary = "#FFB50E";
+const secondary = "var(--brand-secondary)";
 
 interface ChangePasswordModalProps {
   open: boolean;
@@ -205,14 +204,14 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
             className="fixed z-[100] inset-x-0 inset-y-0 m-auto w-[calc(100vw-2rem)] max-w-md h-fit max-h-[90vh] rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/10 flex flex-col overflow-hidden"
-            style={{ boxShadow: `0 25px 60px -12px ${primary}25, 0 0 0 1px ${primary}10` }}
+            style={{ boxShadow: `0 25px 60px -12px rgb(var(--brand-primary-rgb) / 0.145), 0 0 0 1px rgb(var(--brand-primary-rgb) / 0.063)` }}
             role="dialog"
             aria-modal="true"
             aria-label="تغيير كلمة المرور"
           >
             <div
               className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
-              style={{ background: `linear-gradient(90deg, ${primary}, ${secondary}, ${primary})` }}
+              style={{ background: `linear-gradient(90deg, var(--brand-primary), var(--brand-secondary), var(--brand-primary))` }}
             />
 
             <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1 overflow-y-auto">
@@ -227,7 +226,7 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
                     className="mb-5 flex h-16 w-16 items-center justify-center rounded-full"
-                    style={{ background: `linear-gradient(135deg, ${secondary}20, ${primary}15)` }}
+                    style={{ background: `linear-gradient(135deg, rgb(var(--brand-secondary-rgb) / 0.125), rgb(var(--brand-primary-rgb) / 0.082))` }}
                   >
                     <CheckCircle className="h-8 w-8" style={{ color: secondary }} />
                   </motion.div>
@@ -240,8 +239,8 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
                     onClick={handleClose}
                     className="mt-6 h-10 px-8 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                     style={{
-                      background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
-                      boxShadow: `0 4px 16px ${primary}40`,
+                      background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.867))`,
+                      boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
                     }}
                   >
                     تم
@@ -253,8 +252,8 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
                     <div
                       className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
                       style={{
-                        background: `linear-gradient(135deg, ${primary}, ${primary}cc)`,
-                        boxShadow: `0 4px 16px ${primary}40`,
+                        background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
+                        boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
                       }}
                     >
                       <KeyRound className="h-5 w-5 text-white" />
@@ -405,8 +404,8 @@ export function ChangePasswordModal({ open, onClose, onSuccess }: ChangePassword
                         disabled={isPending}
                         className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                         style={{
-                          background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
-                          boxShadow: `0 4px 16px ${primary}40`,
+                          background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.867))`,
+                          boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
                         }}
                       >
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />

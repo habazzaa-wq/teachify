@@ -76,8 +76,8 @@ function CurriculumModuleInner({
         "overflow-hidden rounded-2xl border transition-colors duration-300",
         "border-border/50 dark:border-white/[0.07]",
         isExpanded
-          ? "border-[#BF6D58]/25 bg-card shadow-sm"
-          : "bg-card/60 hover:border-[#BF6D58]/25",
+          ? "border-[rgb(var(--brand-primary-rgb)/0.25)] bg-card shadow-sm"
+          : "bg-card/60 hover:border-[rgb(var(--brand-primary-rgb)/0.25)]",
       )}
     >
       {/* Module Header */}
@@ -88,8 +88,8 @@ function CurriculumModuleInner({
         className={cn(
           "flex w-full items-center gap-3 px-4 py-4 text-start sm:px-5",
           "transition-colors duration-200 focus-visible:outline-none",
-          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#BF6D58]/40",
-          isExpanded ? "bg-[#BF6D58]/[0.04]" : "hover:bg-muted/30",
+          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]",
+          isExpanded ? "bg-[rgb(var(--brand-primary-rgb)/0.04)]" : "hover:bg-muted/30",
         )}
       >
         {/* Module Number Badge */}
@@ -97,8 +97,8 @@ function CurriculumModuleInner({
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold tabular-nums transition-all duration-300",
             isExpanded
-              ? "scale-105 bg-gradient-to-br from-[#BF6D58] to-[#a85a47] text-white shadow-md shadow-[#BF6D58]/30"
-              : "border border-[#BF6D58]/20 bg-[#BF6D58]/8 text-[#BF6D58]",
+              ? "scale-105 bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-md shadow-[rgb(var(--brand-primary-rgb)/0.3)]"
+              : "border border-[rgb(var(--brand-primary-rgb)/0.2)] bg-[rgb(var(--brand-primary-rgb)/0.08)] text-[var(--brand-primary)]",
           )}
         >
           {moduleNumber}
@@ -111,16 +111,16 @@ function CurriculumModuleInner({
           </h3>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground/70">
             <span className="inline-flex items-center gap-1">
-              <Layers className="h-3 w-3 text-[#BF6D58]/60" />
+              <Layers className="h-3 w-3 text-[rgb(var(--brand-primary-rgb)/0.6)]" />
               {stats.sections} {stats.sections === 1 ? "قسم" : "أقسام"}
             </span>
             <span className="inline-flex items-center gap-1">
-              <GraduationCap className="h-3 w-3 text-[#BF6D58]/60" />
+              <GraduationCap className="h-3 w-3 text-[rgb(var(--brand-primary-rgb)/0.6)]" />
               {stats.lessons} {stats.lessons === 1 ? "درس" : "دروس"}
             </span>
             {duration && (
               <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3 text-[#BF6D58]/60" />
+                <Clock className="h-3 w-3 text-[rgb(var(--brand-primary-rgb)/0.6)]" />
                 {duration}
               </span>
             )}
@@ -134,7 +134,7 @@ function CurriculumModuleInner({
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
             isExpanded
-              ? "bg-[#BF6D58]/10 text-[#BF6D58]"
+              ? "bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)]"
               : "bg-muted/50 text-muted-foreground/50",
           )}
         >
@@ -175,7 +175,7 @@ function CurriculumModuleInner({
               {/* Locked subscribe CTA card */}
               {!isEnrolled && (
                 <div
-                  className="overflow-hidden rounded-xl border border-[#BF6D58]/20"
+                  className="overflow-hidden rounded-xl border border-[rgb(var(--brand-primary-rgb)/0.2)]"
                   style={{ background: LOCKED_GRADIENT }}
                 >
                   <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -249,18 +249,18 @@ function SectionAccordionInner({
         aria-expanded={isExpanded}
         className={cn(
           "flex w-full items-center gap-2.5 px-3 py-2.5 text-start transition-colors duration-200",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#BF6D58]/40",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]",
           "hover:bg-muted/30",
         )}
       >
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#BF6D58]/70" />
+        <BookOpen className="h-3.5 w-3.5 shrink-0 text-[rgb(var(--brand-primary-rgb)/0.7)]" />
         <span className="line-clamp-1 flex-1 text-xs font-bold text-foreground/80">
           {section.title}
         </span>
         <span
           className={cn(
             "inline-flex shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums",
-            "bg-[#BF6D58]/8 text-[#BF6D58]",
+            "bg-[rgb(var(--brand-primary-rgb)/0.08)] text-[var(--brand-primary)]",
           )}
         >
           {lessons.length || section.lessonsCount} دروس

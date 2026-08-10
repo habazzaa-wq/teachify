@@ -7,6 +7,7 @@ import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
 import { TenantProvider } from "./TenantProvider";
 import { TenantFontProvider } from "@/components/layout/TenantFontProvider";
+import { BrandThemeProvider } from "@/components/layout/BrandThemeProvider";
 import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
 
 const Toaster = dynamic(
@@ -60,6 +61,7 @@ export function AppProviders({
           <TenantProvider>
             <PauseAnimationsWhileScrolling />
             <TenantFontProvider />
+            <BrandThemeProvider />
             {children}
             <ActiveExamProvider />
             <Toaster />

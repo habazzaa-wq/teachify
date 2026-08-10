@@ -12,6 +12,7 @@ import {
 } from "./StudentCard";
 import { BRAND_PRIMARY, BRAND_SECONDARY } from "../constants";
 import { formatDateTime } from "@/lib/format";
+import { brandAlpha } from "@/lib/brand";
 
 interface UpcomingTasksSectionProps {
   tasks: UpcomingTask[];
@@ -57,9 +58,9 @@ export function UpcomingTasksSection({ tasks }: UpcomingTasksSectionProps) {
                       <div
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
                         style={{
-                          backgroundColor: `${accent}1a`,
+                          backgroundColor: brandAlpha(accent, 0.102),
                           color: accent,
-                          boxShadow: `0 4px 10px ${accent}1c`,
+                          boxShadow: `0 4px 10px ${brandAlpha(accent, 0.11)}`,
                         }}
                       >
                         <Icon className="h-4 w-4" aria-hidden="true" />

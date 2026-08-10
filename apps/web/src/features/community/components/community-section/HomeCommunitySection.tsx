@@ -33,8 +33,8 @@ const PublicLoginCard = dynamic(
    Homepage brand palette — each color is
    used on its own, never mixed together.
    ─────────────────────────────────────── */
-const PRIMARY = "#D87B63";
-const SECONDARY = "#FFB50E";
+const PRIMARY = "var(--brand-primary)";
+const SECONDARY = "var(--brand-secondary)";
 
 const FEATURES = [
   { icon: Zap, label: "إجابات سريعة من الزملاء والمعلمين" },
@@ -136,8 +136,8 @@ export function HomeCommunitySection() {
       />
 
       {/* Ambient single-color glows */}
-      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, ${PRIMARY}12 0%, transparent 70%)` }} />
-      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${SECONDARY}0d 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.071) 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.051) 0%, transparent 70%)` }} />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
@@ -149,27 +149,27 @@ export function HomeCommunitySection() {
             borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.6)",
             boxShadow: isDark
               ? "0 24px 80px rgba(0,0,0,0.45)"
-              : `0 24px 80px rgba(216,123,99,0.18)`,
+              : `0 24px 80px rgb(var(--brand-primary-rgb) / 0.18)`,
           }}
         >
           {/* Decorative top sheen — single color */}
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-30"
-            style={{ background: `linear-gradient(180deg, ${PRIMARY}14, transparent)` }}
+            style={{ background: `linear-gradient(180deg, rgb(var(--brand-primary-rgb) / 0.078), transparent)` }}
           />
           <div
             className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full blur-2xl"
-            style={{ background: `radial-gradient(circle, ${SECONDARY}30, transparent 70%)` }}
+            style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.188), transparent 70%)` }}
           />
 
           <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:p-12">
             {/* Content side */}
             <div>
               <span
-                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-[#5a3a00] shadow-md"
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-[var(--brand-secondary-contrast)] shadow-md"
                 style={{
                   backgroundColor: SECONDARY,
-                  boxShadow: `0 6px 18px ${SECONDARY}40`,
+                  boxShadow: `0 6px 18px rgb(var(--brand-secondary-rgb) / 0.251)`,
                 }}
               >
                 <GraduationCap className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function HomeCommunitySection() {
 
               <h2
                 className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-4xl lg:text-[2.6rem]"
-                style={{ textShadow: "0 2px 24px rgba(216,123,99,0.12)" }}
+                style={{ textShadow: "0 2px 24px rgb(var(--brand-primary-rgb) / 0.12)" }}
               >
                 <span style={{ color: PRIMARY }}>مكان يجتمع فيه الطلاب</span>
                 <br />
@@ -195,7 +195,7 @@ export function HomeCommunitySection() {
               <div
                 className="mt-6 flex items-start gap-3 rounded-2xl border p-4 backdrop-blur-sm"
                 style={{
-                  borderColor: isDark ? "rgba(255,181,14,0.22)" : "rgba(255,181,14,0.35)",
+                  borderColor: isDark ? "rgb(var(--brand-secondary-rgb) / 0.22)" : "rgb(var(--brand-secondary-rgb) / 0.35)",
                   background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.75)",
                 }}
               >
@@ -231,7 +231,7 @@ export function HomeCommunitySection() {
                     className="group inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                     style={{
                       backgroundColor: PRIMARY,
-                      boxShadow: `0 10px 30px ${PRIMARY}55`,
+                      boxShadow: `0 10px 30px rgb(var(--brand-primary-rgb) / 0.333)`,
                     }}
                   >
                     <MessagesSquare className="h-5 w-5" />
@@ -246,7 +246,7 @@ export function HomeCommunitySection() {
                       className="group inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
                       style={{
                         backgroundColor: PRIMARY,
-                        boxShadow: `0 10px 30px ${PRIMARY}55`,
+                        boxShadow: `0 10px 30px rgb(var(--brand-primary-rgb) / 0.333)`,
                       }}
                     >
                       <MessagesSquare className="h-5 w-5" />

@@ -27,7 +27,7 @@ function SubscriptionCtaInner({ onEnroll }: SubscriptionCtaProps) {
       className="scroll-mt-24"
     >
       <div
-        className="relative overflow-hidden rounded-3xl p-8 text-center shadow-2xl shadow-[#BF6D58]/25 sm:p-12"
+        className="relative overflow-hidden rounded-3xl p-8 text-center shadow-2xl shadow-[rgb(var(--brand-primary-rgb)/0.25)] sm:p-12"
         style={{ background: CTA_GRADIENT }}
       >
         {/* Decorative orbs */}
@@ -55,7 +55,7 @@ function SubscriptionCtaInner({ onEnroll }: SubscriptionCtaProps) {
                 key={perk.label}
                 className="flex items-center gap-2.5 rounded-xl bg-white/10 px-4 py-3 text-start ring-1 ring-white/15"
               >
-                <perk.icon className="h-4 w-4 shrink-0 text-[#FFB50E]" />
+                <perk.icon className="h-4 w-4 shrink-0 text-[var(--brand-secondary)]" />
                 <span className="text-xs font-bold text-white sm:text-sm">
                   {perk.label}
                 </span>
@@ -71,16 +71,16 @@ function SubscriptionCtaInner({ onEnroll }: SubscriptionCtaProps) {
               whileTap={{ scale: 0.98 }}
               className={cn(
                 "group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl",
-                "bg-white px-8 py-4 text-base font-extrabold text-[#BF6D58] shadow-lg shadow-black/20 sm:w-auto",
+                "bg-white px-8 py-4 text-base font-extrabold text-[var(--brand-primary)] shadow-lg shadow-black/20 sm:w-auto",
                 "transition-shadow duration-300 hover:shadow-xl",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#BF6D58]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-primary)]",
               )}
             >
               <Zap className="h-5 w-5" />
               اشترك الآن
             </motion.button>
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85">
-              <ShieldCheck className="h-4 w-4 text-[#FFB50E]" />
+              <ShieldCheck className="h-4 w-4 text-[var(--brand-secondary)]" />
               ضمان استرجاع خلال 30 يومًا
             </span>
           </div>

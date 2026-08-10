@@ -52,7 +52,7 @@ function ExamQuestionViewInner({
       {/* Question header */}
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-[#BF6D58]/10 px-3 py-1 text-xs font-extrabold text-[#BF6D58] ring-1 ring-[#BF6D58]/20">
+          <span className="inline-flex items-center rounded-full bg-[rgb(var(--brand-primary-rgb)/0.1)] px-3 py-1 text-xs font-extrabold text-[var(--brand-primary)] ring-1 ring-[rgb(var(--brand-primary-rgb)/0.2)]">
             سؤال {index + 1} من {total}
           </span>
           <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
@@ -93,8 +93,8 @@ function ExamQuestionViewInner({
                   "flex h-24 items-center justify-center gap-2 rounded-2xl border-2 text-base font-extrabold transition-all duration-200",
                   selectable && "cursor-pointer hover:-translate-y-0.5",
                   selected
-                    ? "border-[#BF6D58] bg-[#BF6D58]/10 text-[#BF6D58] shadow-lg shadow-[#BF6D58]/10"
-                    : "border-border/60 bg-background/50 text-foreground/70 hover:border-[#BF6D58]/40",
+                    ? "border-[var(--brand-primary)] bg-[rgb(var(--brand-primary-rgb)/0.1)] text-[var(--brand-primary)] shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.1)]"
+                    : "border-border/60 bg-background/50 text-foreground/70 hover:border-[rgb(var(--brand-primary-rgb)/0.4)]",
                   readOnly &&
                     !selected &&
                     reveal &&
@@ -141,7 +141,7 @@ function ExamQuestionViewInner({
             placeholder="أدخل الإجابة الرقمية"
             className={cn(
               "h-14 w-full rounded-2xl border-2 px-4 text-lg font-extrabold tabular-nums text-foreground outline-none transition-all duration-200 placeholder:text-base placeholder:font-semibold placeholder:text-muted-foreground/50",
-              selectable && "cursor-text hover:border-[#BF6D58]/40 focus:border-[#BF6D58] focus:shadow-lg focus:shadow-[#BF6D58]/10",
+              selectable && "cursor-text hover:border-[rgb(var(--brand-primary-rgb)/0.4)] focus:border-[var(--brand-primary)] focus:shadow-lg focus:shadow-[rgb(var(--brand-primary-rgb)/0.1)]",
               readOnly &&
                 question.isCorrect !== null &&
                 (question.isCorrect
@@ -182,8 +182,8 @@ function ExamQuestionViewInner({
                   "group relative flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-start transition-all duration-200",
                   selectable && "cursor-pointer hover:-translate-y-0.5",
                   selected
-                    ? "border-[#BF6D58] bg-[#BF6D58]/10 shadow-lg shadow-[#BF6D58]/10"
-                    : "border-border/60 bg-background/50 hover:border-[#BF6D58]/40",
+                    ? "border-[var(--brand-primary)] bg-[rgb(var(--brand-primary-rgb)/0.1)] shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.1)]"
+                    : "border-border/60 bg-background/50 hover:border-[rgb(var(--brand-primary-rgb)/0.4)]",
                   readOnly &&
                     reveal &&
                     option.correct &&
@@ -201,8 +201,8 @@ function ExamQuestionViewInner({
                   className={cn(
                     "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     selected
-                      ? "border-[#BF6D58] bg-[#BF6D58] text-white"
-                      : "border-border/70 bg-background group-hover:border-[#BF6D58]/50",
+                      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white"
+                      : "border-border/70 bg-background group-hover:border-[rgb(var(--brand-primary-rgb)/0.5)]",
                     readOnly &&
                       reveal &&
                       option.correct &&

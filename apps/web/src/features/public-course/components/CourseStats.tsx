@@ -100,7 +100,7 @@ function CourseStatsInner({ course, modules }: CourseStatsProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-30px" }}
             transition={{ duration: 0.3, delay: (i % 8) * 0.04, ease: "easeOut" }}
-            className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-2 py-4 text-center shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BF6D58]/25"
+            className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-2 py-4 text-center shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--brand-primary-rgb)/0.25)]"
           >
             <div
               className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"

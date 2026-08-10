@@ -63,11 +63,11 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             className="absolute inset-0 flex items-center justify-center"
             style={{
               background: isDark
-                ? `linear-gradient(135deg, ${PRIMARY}20, ${ACCENT}0d)`
-                : `linear-gradient(135deg, ${PRIMARY}12, ${ACCENT}08)`,
+                ? `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.125), rgb(var(--brand-secondary-rgb) / 0.051))`
+                : `linear-gradient(135deg, rgb(var(--brand-primary-rgb) / 0.071), rgb(var(--brand-secondary-rgb) / 0.031))`,
             }}
           >
-            <BookOpen className="h-12 w-12" style={{ color: `${PRIMARY}40` }} />
+            <BookOpen className="h-12 w-12" style={{ color: `rgb(var(--brand-primary-rgb) / 0.251)` }} />
           </div>
         )}
 
@@ -76,7 +76,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
           <span
             className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-white shadow-lg"
             style={{
-              background: "linear-gradient(135deg, #FFB50E, #F59E0B)",
+              background: "linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))",
               boxShadow: "0 4px 16px rgba(245,158,11,0.4)",
             }}
           >
@@ -90,8 +90,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
           <span
             className="absolute start-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg"
             style={{
-              background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-              boxShadow: `0 4px 16px ${PRIMARY}40`,
+              background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
+              boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
             }}
           >
             <Tag className="h-3 w-3" />
@@ -185,7 +185,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             ) : (
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${ACCENT})` }}
+                style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))` }}
               >
                 {initialsOf(course.instructor.name)}
               </div>
@@ -243,8 +243,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
               <span
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-                  boxShadow: `0 4px 16px ${PRIMARY}40`,
+                  background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
+                  boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
                 }}
               >
                 {formatNumber(course.discountPrice!)} {currency}
@@ -260,8 +260,8 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
               style={{
-                background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-                boxShadow: `0 4px 16px ${PRIMARY}40`,
+                background: `linear-gradient(135deg, var(--brand-primary), rgb(var(--brand-primary-rgb) / 0.8))`,
+                boxShadow: `0 4px 16px rgb(var(--brand-primary-rgb) / 0.251)`,
               }}
             >
               {formatNumber(course.price)} {currency}
@@ -276,9 +276,9 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
               style={{
-                background: `linear-gradient(135deg, ${ACCENT}, #F59E0B)`,
+                background: `linear-gradient(135deg, var(--brand-secondary), var(--brand-secondary-dark))`,
                 color: "#1a1510",
-                boxShadow: `0 4px 16px ${ACCENT}55`,
+                boxShadow: `0 4px 16px rgb(var(--brand-secondary-rgb) / 0.333)`,
               }}
             >
               اشترك الآن مجاناً
@@ -301,7 +301,7 @@ export function CatalogCourseCard({ course, index }: CatalogCourseCardProps) {
       {/* bottom accent bar */}
       <div
         className="h-[3px] w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${ACCENT})` }}
+        style={{ background: `linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))` }}
       />
     </div>
   );

@@ -84,7 +84,7 @@ function ReviewSectionInner({ items, revealCorrect }: ReviewSectionProps) {
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-extrabold transition-all duration-200",
                 active
-                  ? "bg-[#BF6D58] text-white shadow-lg shadow-[#BF6D58]/25"
+                  ? "bg-[var(--brand-primary)] text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.25)]"
                   : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
               )}
             >

@@ -51,7 +51,7 @@ function ExamActiveReminderInner({
           <motion.div
             animate={{ scale: [1, 1.06, 1] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-[#BF6D58]/25"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.25)]"
             style={{ background: CTA_GRADIENT }}
           >
             <ClipboardCheck className="h-5 w-5 text-white" strokeWidth={2.1} />
@@ -87,7 +87,7 @@ function ExamActiveReminderInner({
           <button
             type="button"
             onClick={onReturn}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-lg shadow-[#BF6D58]/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-lg shadow-[rgb(var(--brand-primary-rgb)/0.3)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
             style={{ background: CTA_GRADIENT }}
           >
             <ArrowLeft className="h-4 w-4" />

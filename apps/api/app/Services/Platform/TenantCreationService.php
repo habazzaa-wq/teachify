@@ -303,8 +303,8 @@ class TenantCreationService
             'branding' => [
                 'logo_path' => null,
                 'favicon_path' => null,
-                'primary_color' => '#2563eb',
-                'secondary_color' => '#111827',
+                'primary_color' => '#D87B63',
+                'secondary_color' => '#FFB50E',
                 'theme' => 'system',
             ],
             'locale' => [

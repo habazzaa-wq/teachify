@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { X, Clock, MonitorPlay, VideoOff, Loader2 } from "lucide-react";
 import { useLessonVideo } from "../hooks";
 import { formatDuration } from "../utils";
-import { PRIMARY, ACCENT } from "../brand";
+import { ACCENT } from "../brand";
 import type { PublicCourseLesson } from "../types";
 
 interface CourseVideoPlayerProps {
@@ -46,7 +46,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
       <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
         <div
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
-          style={{ background: `linear-gradient(135deg, ${PRIMARY}, #a85a47)`, boxShadow: `0 4px 14px ${PRIMARY}33` }}
+          style={{ background: `linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark))`, boxShadow: `0 4px 14px rgb(var(--brand-primary-rgb) / 0.2)` }}
         >
           <MonitorPlay style={{ width: 18, height: 18 }} />
         </div>
@@ -75,7 +75,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
           type="button"
           onClick={onClose}
           aria-label="إغلاق المشغل"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[#BF6D58]/30 hover:text-[#BF6D58] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground transition-colors hover:border-[rgb(var(--brand-primary-rgb)/0.3)] hover:text-[var(--brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.4)]"
         >
           <X className="h-4 w-4" />
         </button>

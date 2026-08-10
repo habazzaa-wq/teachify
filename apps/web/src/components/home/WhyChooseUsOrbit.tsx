@@ -5,13 +5,14 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
+import { brandAlpha } from "@/lib/brand";
 import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } from "@/features/homepage/why-choose-us/types";
 
 /* ───────────────────────────────────────
    Brand palette
    ─────────────────────────────────────── */
-const primary = "#D87B63";
-const secondary = "#FFB50E";
+const primary = "var(--brand-primary)";
+const secondary = "var(--brand-secondary)";
 
 interface DisplayFeature {
   num: string;
@@ -150,8 +151,8 @@ function FeatureTile({
       <div
         className="wc-reveal relative flex h-full flex-col justify-between overflow-hidden rounded-3xl p-6 text-white sm:p-8"
         style={{
-          background: `linear-gradient(160deg, #E08A6C 0%, ${primary} 100%)`,
-          boxShadow: `0 18px 44px ${primary}38`,
+          background: `linear-gradient(160deg, #E08A6C 0%, var(--brand-primary) 100%)`,
+          boxShadow: `0 18px 44px rgb(var(--brand-primary-rgb) / 0.22)`,
           ["--wc-delay" as string]: "0.05s",
         }}
       >
@@ -201,10 +202,10 @@ function FeatureTile({
       className="wc-reveal group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 sm:p-6"
       style={{
         background: cardBg(isDark),
-        borderColor: `${accent}1f`,
+        borderColor: brandAlpha(accent, 0.122),
         boxShadow: isDark
           ? "0 10px 30px rgba(0,0,0,0.28)"
-          : `0 10px 30px ${accent}12`,
+          : `0 10px 30px ${brandAlpha(accent, 0.071)}`,
         ["--wc-delay" as string]: `${0.08 + index * 0.06}s`,
       }}
     >
@@ -212,7 +213,7 @@ function FeatureTile({
       <span
         aria-hidden="true"
         className="pointer-events-none absolute -end-1 -top-3 select-none text-[64px] font-black leading-none sm:text-[76px]"
-        style={{ color: `${accent}12` }}
+        style={{ color: brandAlpha(accent, 0.071) }}
       >
         {f.num}
       </span>
@@ -221,8 +222,8 @@ function FeatureTile({
       <div
         className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14"
         style={{
-          background: isDark ? `${accent}17` : `${accent}12`,
-          border: `1px solid ${accent}33`,
+          background: isDark ? brandAlpha(accent, 0.09) : brandAlpha(accent, 0.071),
+          border: `1px solid ${brandAlpha(accent, 0.2)}`,
         }}
       >
         <div className="h-7 w-7 sm:h-8 sm:w-8"><Ill /></div>
@@ -239,7 +240,7 @@ function FeatureTile({
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -bottom-10 -end-10 h-28 w-28 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
-        style={{ background: `radial-gradient(circle, ${accent}2e, transparent 70%)` }}
+        style={{ background: `radial-gradient(circle, ${brandAlpha(accent, 0.18)}, transparent 70%)` }}
       />
     </div>
   );
@@ -252,25 +253,25 @@ function CtaTile({ isDark }: { isDark: boolean }) {
   return (
     <a
       href="#educational-stages"
-      className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D87B63]/60"
+      className="wc-reveal group relative flex h-full flex-col items-start justify-center gap-3.5 overflow-hidden rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand-primary-rgb)/0.6)]"
       style={{
         background: isDark
-          ? "linear-gradient(150deg, rgba(216,123,99,0.16), rgba(216,123,99,0.06)), #16141E"
-          : "linear-gradient(150deg, rgba(216,123,99,0.10), rgba(216,123,99,0.05)), #ffffff",
-        borderColor: isDark ? "rgba(216,123,99,0.35)" : `${primary}30`,
+          ? "linear-gradient(150deg, rgb(var(--brand-primary-rgb) / 0.16), rgb(var(--brand-primary-rgb) / 0.06)), #16141E"
+          : "linear-gradient(150deg, rgb(var(--brand-primary-rgb) / 0.10), rgb(var(--brand-primary-rgb) / 0.05)), #ffffff",
+        borderColor: isDark ? "rgb(var(--brand-primary-rgb) / 0.35)" : `rgb(var(--brand-primary-rgb) / 0.188)`,
         boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.28)" : "0 10px 30px rgba(0,0,0,0.05)",
         ["--wc-delay" as string]: "0.34s",
       }}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-12 h-32 w-32 rounded-full border-2 border-dashed" style={{ borderColor: `${primary}2e` }} />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -start-10 h-28 w-28 rounded-full" style={{ background: `radial-gradient(circle, ${secondary}22, transparent 70%)` }} />
-      <span className="pointer-events-none absolute end-5 top-4 select-none text-4xl font-black" style={{ color: `${secondary}14` }}>+</span>
+      <div aria-hidden="true" className="pointer-events-none absolute -end-10 -top-12 h-32 w-32 rounded-full border-2 border-dashed" style={{ borderColor: `rgb(var(--brand-primary-rgb) / 0.18)` }} />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -start-10 h-28 w-28 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.133), transparent 70%)` }} />
+      <span className="pointer-events-none absolute end-5 top-4 select-none text-4xl font-black" style={{ color: `rgb(var(--brand-secondary-rgb) / 0.078)` }}>+</span>
 
       <span
         className="relative flex h-12 w-12 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-110"
         style={{
           background: primary,
-          boxShadow: `0 10px 24px ${primary}3d`,
+          boxShadow: `0 10px 24px rgb(var(--brand-primary-rgb) / 0.239)`,
         }}
       >
         <ArrowLeft aria-hidden="true" className="h-6 w-6" />
@@ -282,10 +283,10 @@ function CtaTile({ isDark }: { isDark: boolean }) {
         ابدأ رحلة النجاح مع منظومة تعليمية متكاملة تواكب طموحك
       </p>
       <span
-        className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-[#5a3a00] transition-transform duration-300 group-hover:scale-[1.03]"
+        className="relative mt-1 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-[var(--brand-secondary-contrast)] transition-transform duration-300 group-hover:scale-[1.03]"
         style={{
           background: secondary,
-          boxShadow: `0 10px 26px ${secondary}38`,
+          boxShadow: `0 10px 26px rgb(var(--brand-secondary-rgb) / 0.22)`,
         }}
       >
         استكشف المراحل
@@ -375,8 +376,8 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
             : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
         }}
       />
-      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, ${primary}12 0%, transparent 70%)` }} />
-      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${secondary}0d 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-72 w-72 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-primary-rgb) / 0.071) 0%, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, rgb(var(--brand-secondary-rgb) / 0.051) 0%, transparent 70%)` }} />
       <BackgroundDecor isDark={isDark} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -386,9 +387,9 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
             <span
               className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold"
               style={{
-                background: isDark ? `${primary}1f` : `${primary}0e`,
+                background: isDark ? `rgb(var(--brand-primary-rgb) / 0.122)` : `rgb(var(--brand-primary-rgb) / 0.055)`,
                 color: primary,
-                border: `1px solid ${isDark ? `${primary}30` : `${primary}1c`}`,
+                border: `1px solid ${isDark ? `rgb(var(--brand-primary-rgb) / 0.188)` : `rgb(var(--brand-primary-rgb) / 0.11)`}`,
               }}
             >
               <Sparkles aria-hidden="true" className="h-3.5 w-3.5" style={{ color: secondary }} />
@@ -412,11 +413,11 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
 
           {/* divider */}
           <div className="wc-reveal mt-6 flex items-center justify-center gap-2" style={{ ["--wc-delay" as string]: "0.26s" }}>
-            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to left, ${primary}, transparent)` }} />
+            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to left, var(--brand-primary), transparent)` }} />
             <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: secondary }} />
             <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: primary, opacity: 0.6 }} />
             <span className="h-1.5 w-1.5 rotate-45 rounded-[2px]" style={{ background: secondary }} />
-            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to right, ${secondary}, transparent)` }} />
+            <span className="h-px w-10 sm:w-16" style={{ background: `linear-gradient(to right, var(--brand-secondary), transparent)` }} />
           </div>
         </div>
 

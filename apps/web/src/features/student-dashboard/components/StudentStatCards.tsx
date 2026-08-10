@@ -5,6 +5,7 @@ import type { StudentDashboardStats } from "../types";
 import { STAT_CARDS, brandColorFor } from "../constants";
 import { useBrandTheme } from "./StudentCard";
 import { formatNumber } from "@/lib/format";
+import { brandAlpha } from "@/lib/brand";
 
 interface StudentStatCardsProps {
   stats: StudentDashboardStats;
@@ -72,7 +73,7 @@ export function StudentStatCards({ stats }: StudentStatCardsProps) {
           >
             <div
               className="pointer-events-none absolute -end-8 -top-8 h-24 w-24 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              style={{ background: `radial-gradient(circle, ${accent}26, transparent 70%)` }}
+              style={{ background: `radial-gradient(circle, ${brandAlpha(accent, 0.149)}, transparent 70%)` }}
               aria-hidden="true"
             />
             <div className="relative z-10">
@@ -80,9 +81,9 @@ export function StudentStatCards({ stats }: StudentStatCardsProps) {
                 <div
                   className="flex h-11 w-11 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110"
                   style={{
-                    backgroundColor: `${accent}1a`,
+                    backgroundColor: brandAlpha(accent, 0.102),
                     color: accent,
-                    boxShadow: `0 4px 12px ${accent}22`,
+                    boxShadow: `0 4px 12px ${brandAlpha(accent, 0.133)}`,
                   }}
                 >
                   <card.icon className="h-5 w-5" aria-hidden="true" />

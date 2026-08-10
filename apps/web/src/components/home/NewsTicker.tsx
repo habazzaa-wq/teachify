@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Megaphone, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { useBrandColors } from "@/hooks/useBrandColors";
 import { usePublicNews } from "@/features/homepage/news/hooks";
 import { resolveTicker, contrastText, darkenHex } from "@/features/homepage/news/utils";
 import type { NewsItem } from "@/features/homepage/news/types";
@@ -68,8 +69,7 @@ export function NewsTicker({
   const { config } = resolved;
   const items = useMemo(() => data?.items ?? [], [data]);
 
-  const primary = "#D87B63";
-  const secondary = "#FFB50E";
+  const { primary, secondary } = useBrandColors();
   const bg = config.bgColor || primary;
   const accent = config.accentColor || secondary;
   const text = config.textColor || contrastText(bg);
