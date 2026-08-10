@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
 import { CourseHero } from "./CourseHero";
 import { CourseVideoPlayer } from "./CourseVideoPlayer";
+import { CourseFilePanel } from "./CourseFilePanel";
 import { CourseInformation } from "./CourseInformation";
 import { LearningOutcomes } from "./LearningOutcomes";
 import { CourseRequirements } from "./CourseRequirements";
@@ -20,6 +21,7 @@ import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import { isFileLesson } from "../utils";
 import type { PublicCourseLesson } from "../types";
 
 const PublicLoginCard = dynamic(
@@ -125,11 +127,19 @@ export function PublicCoursePage({ slug }: Props) {
       {activeLesson && (
         <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
           <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
-            <CourseVideoPlayer
-              slug={slug}
-              lesson={activeLesson}
-              onClose={handleClosePlayer}
-            />
+            {isFileLesson(activeLesson) ? (
+              <CourseFilePanel
+                slug={slug}
+                lesson={activeLesson}
+                onClose={handleClosePlayer}
+              />
+            ) : (
+              <CourseVideoPlayer
+                slug={slug}
+                lesson={activeLesson}
+                onClose={handleClosePlayer}
+              />
+            )}
           </div>
         </div>
       )}

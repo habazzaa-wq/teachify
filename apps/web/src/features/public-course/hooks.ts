@@ -62,6 +62,15 @@ export function useLessonVideo(slug: string | null, lessonId: string | null) {
   });
 }
 
+export function useLessonFiles(slug: string | null, lessonId: string | null) {
+  return useQuery({
+    queryKey: [PUBLIC_COURSE_QUERY_KEY, "files", slug, lessonId],
+    queryFn: () => publicCourseService.getLessonFiles(slug!, lessonId!),
+    enabled: !!slug && !!lessonId,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function usePurchaseCourse(slug: string | null) {
   const queryClient = useQueryClient();
 

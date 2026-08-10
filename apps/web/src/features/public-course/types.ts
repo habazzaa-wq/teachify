@@ -105,6 +105,30 @@ export interface PublicCourseLessonVideo {
   };
 }
 
+export interface PublicCourseLessonFile {
+  id: string;
+  title: string;
+  description: string | null;
+  downloadEnabled: boolean;
+  fileName: string | null;
+  mimeType: string | null;
+  extension: string | null;
+  sizeBytes: number | null;
+  type: string | null;
+  url: string | null;
+}
+
+export interface PublicCourseLessonFiles {
+  lesson: {
+    id: string;
+    title: string;
+    slug: string;
+    lessonType: string;
+    filesCount: number;
+  };
+  files: PublicCourseLessonFile[];
+}
+
 export interface RelatedCourse {
   id: string;
   title: string;

@@ -68,6 +68,26 @@ export function getLessonConfig(
   return LESSON_TYPE_CONFIG[lesson.lessonType] ?? FALLBACK_LESSON_CONFIG;
 }
 
+const FILE_LESSON_TYPES = new Set([
+  "file",
+  "pdf",
+  "document",
+  "resource",
+  "presentation",
+]);
+
+/**
+ * True when a lesson is a file/document lesson (opened via the file panel)
+ * rather than a video/audio lesson (opened via the video player).
+ */
+export function isFileLesson(
+  lesson: Pick<PublicCourseLesson, "lessonType" | "filesCount">,
+): boolean {
+  const type = lesson.lessonType;
+  if (type === "video" || type === "audio") return false;
+  return FILE_LESSON_TYPES.has(type) || (lesson.filesCount ?? 0) > 0;
+}
+
 /** Format a duration in seconds into a compact Arabic string. */
 export function formatDuration(seconds: number | null | undefined): string {
   if (!seconds || seconds <= 0) return "";

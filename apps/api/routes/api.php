@@ -90,6 +90,7 @@ use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
+use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
@@ -181,6 +182,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/courses/{slug}/modules', [PublicCourseController::class, 'modules']);
     Route::get('/public/courses/{slug}/related', [PublicCourseController::class, 'related']);
     Route::get('/public/courses/{slug}/lessons/{lesson}/video', [PublicCourseLessonVideoController::class, 'show']);
+    Route::get('/public/courses/{slug}/lessons/{lesson}/files', [PublicCourseLessonFileController::class, 'show']);
 
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
