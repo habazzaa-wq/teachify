@@ -425,9 +425,7 @@ export function PublicNavbar() {
         // ignore storage errors
       }
       setLoginOpen(false);
-      setRegisteredName(data.name);
       setStudentRegistered(state);
-      setRegisterSuccess(true);
       queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
     },
     [queryClient],
