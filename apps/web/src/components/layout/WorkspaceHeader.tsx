@@ -47,7 +47,7 @@ export function WorkspaceHeader() {
   return (
     <motion.header
       {...headerMotion}
-      className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-studio-border bg-studio-glass-toolbar text-studio-glass-toolbar-fg px-4 backdrop-blur-xl md:px-6"
+      className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-studio-border bg-studio-glass-toolbar text-studio-glass-toolbar-fg px-4 backdrop-blur-xl md:px-6"
       role="banner"
     >
       {/* Left: Logo + Title */}
