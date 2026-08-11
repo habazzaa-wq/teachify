@@ -46,6 +46,38 @@ export function isExamBlockedError(error: unknown): boolean {
   );
 }
 
+/**
+ * Pick a human-friendly Arabic message for a failed message send. The server
+ * returns 422 anti-spam messages that are surfaced raw (English); translate
+ * the known ones so the user understands why the send was rejected.
+ */
+export function communitySendErrorMessage(error: unknown): string {
+  const apiError = error as ApiError | null;
+  const message = apiError?.message ?? "";
+  const bodyErrors = apiError?.fieldErrors?.body ?? [];
+
+  const detail = [message, ...(Array.isArray(bodyErrors) ? bodyErrors : [])]
+    .join(" ")
+    .toLowerCase();
+
+  if (detail.includes("too quickly")) {
+    return "أنت ترسل الرسائل بسرعة كبيرة. انتظر لحظة ثم أعد المحاولة.";
+  }
+  if (detail.includes("already sent this message")) {
+    return "لقد أرسلت هذه الرسالة نفسها مؤخرًا. جرّب كتابة رسالة مختلفة.";
+  }
+  if (detail.includes("too many messages")) {
+    return "أرسلت عددًا كبيرًا من الرسائل في وقت قصير. انتظر قليلًا ثم أعد المحاولة.";
+  }
+  if (detail.includes("inappropriate language")) {
+    return "رسالتك تحتوي على كلمات غير مناسبة.";
+  }
+  if (detail.includes("external links are not allowed")) {
+    return "الروابط الخارجية غير مسموح بها في هذا المنتدى.";
+  }
+  return "تعذّر إرسال الرسالة. حاول مرة أخرى.";
+}
+
 /** TEMP: forward a client-side error to the server log for diagnosis. */
 export async function reportClientError(
   context: string,

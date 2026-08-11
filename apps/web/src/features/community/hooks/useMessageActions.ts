@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { communityApi, isExamBlockedError, reportClientError } from "../api/community.api";
+import { communityApi, communitySendErrorMessage, isExamBlockedError, reportClientError } from "../api/community.api";
 import { communityKeys } from "../queryKeys";
 import {
   insertDescSorted,
@@ -118,7 +118,7 @@ export function useSendMessage() {
       }
       console.error("[community] send failed", error);
       void reportClientError("community.send", error);
-      toast.error("تعذّر إرسال الرسالة. حاول مرة أخرى.");
+      toast.error(communitySendErrorMessage(error));
     },
   });
 }
