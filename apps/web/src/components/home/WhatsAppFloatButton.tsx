@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { cn } from "@/lib/cn";
 
@@ -18,29 +18,15 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function WhatsAppFloatButton() {
   const { data: hero } = usePublicHero();
   const [showTooltip, setShowTooltip] = useState(false);
-  const [visible, setVisible] = useState(false);
 
   const rawNumber = hero?.socialLinks?.whatsapp || hero?.socialLinks?.phone || "";
   const cleanNumber = rawNumber.replace(/[^0-9]/g, "");
   const href = cleanNumber ? `https://wa.me/${cleanNumber}` : "#";
 
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 240);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   if (!cleanNumber) return null;
 
   return (
-    <div
-      dir="rtl"
-      className={cn(
-        "fixed bottom-5 left-5 z-[70] transition-all duration-500 ease-out",
-        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0",
-      )}
-    >
+    <div dir="rtl" className={cn("fixed bottom-5 left-5 z-[70]")}>
       <div className="relative flex items-center">
         {/* Pulsing halo */}
         <span
