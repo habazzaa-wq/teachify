@@ -43,10 +43,12 @@ export function EmojiPicker({
   onSelect,
   onClose,
   className,
+  style,
 }: {
   onSelect: (emoji: string) => void;
   onClose: () => void;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const [query, setQuery] = useState("");
 
@@ -61,6 +63,7 @@ export function EmojiPicker({
       <div className="fixed inset-0 z-30" onClick={onClose} />
       <div
         dir="ltr"
+        style={style}
         className={cn(
           "absolute z-40 w-72 rounded-2xl border border-border bg-popover p-2 shadow-lg",
           className,
