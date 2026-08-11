@@ -51,10 +51,10 @@ export function useWallet(enabled = true) {
   });
 }
 
-export function useWalletTransactions(enabled = true) {
+export function useWalletTransactions(enabled = true, perPage = 15) {
   return useQuery({
-    queryKey: walletKeys.transactions(),
-    queryFn: () => walletService.getTransactions({ per_page: 15 }),
+    queryKey: [...walletKeys.transactions(), perPage] as const,
+    queryFn: () => walletService.getTransactions({ per_page: perPage }),
     enabled,
     staleTime: 30_000,
   });

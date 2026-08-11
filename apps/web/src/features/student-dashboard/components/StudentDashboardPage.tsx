@@ -9,7 +9,7 @@ import { OverviewView } from "./OverviewView";
 import { CoursesView } from "./CoursesView";
 import { ExamsView } from "./ExamsView";
 import { TasksView } from "./TasksView";
-import { TimelineView } from "./TimelineView";
+import { WalletHistoryView } from "./WalletHistoryView";
 import { AchievementsView } from "./AchievementsView";
 import { CalendarView } from "./CalendarView";
 
@@ -45,7 +45,7 @@ export function StudentDashboardPage() {
         {activeView === "courses" && <CoursesView items={data.continueLearning} />}
         {activeView === "exams" && <ExamsView attempts={data.recentAttempts} />}
         {activeView === "tasks" && <TasksView tasks={data.upcomingTasks} />}
-        {activeView === "timeline" && <TimelineView events={data.timeline} />}
+        {activeView === "wallet" && <WalletHistoryView />}
         {activeView === "achievements" && <AchievementsView achievements={data.achievements} />}
         {activeView === "calendar" && <CalendarView calendar={data.calendar} />}
       </div>

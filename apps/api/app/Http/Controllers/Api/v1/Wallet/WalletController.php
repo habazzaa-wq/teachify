@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantUser;
 use App\Models\Wallet;
 use App\Models\WalletPayment;
+use App\Models\WalletTransaction;
 use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Wallet\WalletService;
@@ -63,8 +64,40 @@ class WalletController extends Controller
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
         $items = $wallet->transactions()
+            ->with(['rechargeCode', 'walletPayment'])
             ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 20));
+
+        $payload = $items->getCollection()->map(function (WalletTransaction $transaction): array {
+            $method = match (true) {
+                $transaction->wallet_payment_id !== null => 'online',
+                $transaction->recharge_code_id !== null => 'recharge_code',
+                default => 'wallet_use',
+            };
+
+            return [
+                'id' => $transaction->id,
+                'wallet_id' => $transaction->wallet_id,
+                'tenant_user_id' => $transaction->tenant_user_id,
+                'type' => $transaction->type,
+                'amount' => (float) $transaction->amount,
+                'balance_after' => (float) $transaction->balance_after,
+                'description' => $transaction->description,
+                'created_at' => $transaction->created_at?->toIso8601String(),
+                'method' => $method,
+                'recharge_code' => $method === 'recharge_code'
+                    ? $transaction->rechargeCode?->code
+                    : null,
+                'payment' => $method === 'online' && $transaction->walletPayment ? [
+                    'reference' => $transaction->walletPayment->reference,
+                    'provider' => $transaction->walletPayment->provider,
+                    'status' => $transaction->walletPayment->status,
+                    'paid_at' => $transaction->walletPayment->paid_at?->toIso8601String(),
+                ] : null,
+            ];
+        });
+
+        $items->setCollection($payload);
 
         return response()->json([
             'data' => $items->items(),

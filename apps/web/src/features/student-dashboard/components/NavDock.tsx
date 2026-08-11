@@ -2,7 +2,6 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -11,6 +10,7 @@ import {
   GraduationCap,
   Home,
   Medal,
+  Wallet,
 } from "lucide-react";
 import { useBrandTheme } from "./StudentCard";
 import {
@@ -25,7 +25,7 @@ export type DashboardViewId =
   | "courses"
   | "exams"
   | "tasks"
-  | "timeline"
+  | "wallet"
   | "achievements"
   | "calendar";
 
@@ -40,7 +40,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { id: "courses", label: "دوراتي", icon: BookOpen },
   { id: "exams", label: "الاختبارات", icon: ClipboardCheck },
   { id: "tasks", label: "المهام", icon: CalendarClock },
-  { id: "timeline", label: "النشاط", icon: Activity },
+  { id: "wallet", label: "سجل المحفظة", icon: Wallet },
   { id: "achievements", label: "الإنجازات", icon: Medal },
   { id: "calendar", label: "المواعيد", icon: CalendarDays },
 ];
