@@ -64,7 +64,7 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
         <PublicNavbar />
         <MobileSecondaryNav />
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 md:py-10 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 md:py-10 lg:pr-28 xl:pr-32">
           {children}
         </main>
 
