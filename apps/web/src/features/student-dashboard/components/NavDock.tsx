@@ -130,11 +130,11 @@ export function NavDock({ active, onChange, streakDays }: NavDockProps) {
       {/* ─── Desktop: floating capsule dock ─── */}
       <nav
         aria-label="التنقل داخل لوحة الطالب"
-        className="animate-fade-in-left fixed inset-y-0 right-4 z-40 my-auto hidden lg:block"
+        className="animate-fade-in-left fixed bottom-0 right-4 top-[7.5rem] z-40 my-auto hidden lg:block"
         style={{ animationDelay: "0.15s" }}
       >
         <div
-          className="relative flex flex-col items-center gap-1.5 rounded-[2rem] border px-2.5 py-4 shadow-2xl backdrop-blur-xl"
+          className="relative flex max-h-[calc(100dvh-10rem)] flex-col items-center gap-1.5 overflow-y-auto rounded-[2rem] border px-2.5 py-4 shadow-2xl backdrop-blur-xl"
           style={{
             backgroundColor: t.isDark ? "rgba(20,18,26,0.9)" : "rgba(255,253,248,0.88)",
             borderColor: t.isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
