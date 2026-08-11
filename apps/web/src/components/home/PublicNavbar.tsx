@@ -630,58 +630,69 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                        className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+                        aria-expanded={profileDropdownOpen}
+                        aria-haspopup="menu"
+                        className="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                         style={{
-                          border: `1px solid ${profileDropdownOpen ? primary : `var(--brand-primary)`}`,
-                          backgroundColor: `var(--brand-primary)`,
-                          color: `var(--brand-primary-contrast)`,
-                          boxShadow: profileDropdownOpen ? `0 4px 20px rgba(0,0,0,0.188)` : undefined,
+                          border: `1px solid ${profileDropdownOpen ? primary : "hsl(var(--border))"}`,
+                          backgroundColor: profileDropdownOpen
+                            ? "hsl(var(--accent) / 0.6)"
+                            : "hsl(var(--background) / 0.5)",
+                          boxShadow: profileDropdownOpen ? `0 4px 20px rgba(0,0,0,0.1)` : undefined,
                         }}
                       >
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold overflow-hidden text-[var(--brand-primary-contrast)]"
-                        style={{ backgroundColor: primary }}
-                      >
-                        {sessionAvatar ? (
-                          <img
-                            src={sessionAvatar}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          sessionName?.charAt(0) ?? <User className="h-4 w-4" />
-                        )}
-                      </div>
-                      <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
-                        {sessionName}
-                      </span>
-                      <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground/60 hidden sm:block" />
-                      </div>
-                    </button>
+                        <div
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold overflow-hidden shrink-0"
+                          style={{
+                            backgroundColor: primary,
+                            color: `var(--brand-primary-contrast)`,
+                            border: `2px solid ${secondary}`,
+                            boxShadow: `0 2px 10px rgba(0,0,0,0.18)`,
+                          }}
+                        >
+                          {sessionAvatar ? (
+                            <img
+                              src={sessionAvatar}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            sessionName?.charAt(0) ?? <User className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
+                          {sessionName}
+                        </span>
+                        <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground/70 hidden sm:block" />
+                        </div>
+                      </button>
                     </div>
 
                     <div
                       aria-hidden={!profileDropdownOpen}
-                      className={`glass-touch-solid absolute top-full mt-2 end-0 z-50 w-64 origin-top rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-200 ease-out ${
+                      role="menu"
+                      className={`glass-touch-solid absolute top-full end-0 z-50 mt-2 w-64 origin-top rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-200 ease-out ${
                         profileDropdownOpen ? "visible translate-y-0 scale-100 opacity-100" : "invisible pointer-events-none translate-y-2 scale-95 opacity-0"
                       }`}
                       style={{
-                        borderColor: `var(--brand-primary)`,
-                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.063)`,
+                        borderColor: "hsl(var(--border))",
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)`,
                       }}
                     >
                           {/* Header */}
                           <div
                             className="px-4 py-3 border-b"
-                            style={{ borderColor: `var(--brand-primary)` }}
+                            style={{ borderColor: "hsl(var(--border))" }}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden shrink-0 text-[var(--brand-primary-contrast)]"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden shrink-0"
                                 style={{
                                   backgroundColor: primary,
-                                  boxShadow: `0 2px 12px rgba(0,0,0,0.251)`,
+                                  color: `var(--brand-primary-contrast)`,
+                                  border: `2px solid ${secondary}`,
+                                  boxShadow: `0 2px 12px rgba(0,0,0,0.25)`,
                                 }}
                               >
                                 {sessionAvatar ? (
@@ -706,31 +717,41 @@ export function PublicNavbar() {
                           </div>
 
                           {/* Menu items */}
-                          <div className="py-2">
+                          <div className="p-1.5">
                             <button
                               type="button"
                               onClick={() => {
                                 setProfileDropdownOpen(false);
                                 setProfileDrawerOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
                               />
-                              <User className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <User className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">المعلومات الشخصية</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
                               />
-                              <Settings className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <Settings className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">الإعدادات</span>
                             </button>
 
@@ -740,12 +761,17 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setChangePasswordOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
                               />
-                              <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">تغيير كلمة المرور</span>
                             </button>
 
@@ -755,12 +781,17 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setRechargeWalletOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
                               />
-                              <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">شحن المحفظة بالكود</span>
                             </button>
 
@@ -770,24 +801,29 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setOnlineRechargeOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
                               />
-                              <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">شحن المحفظة أونلاين</span>
                             </button>
 
-                            <div className="my-1 mx-3 border-t" style={{ borderColor: `var(--brand-primary)` }} />
+                            <div className="my-1.5 mx-1 border-t" style={{ borderColor: "hsl(var(--border))" }} />
 
                             <button
                               type="button"
                               onClick={handleLogout}
-                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:text-red-600 transition-colors"
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-500 hover:text-red-600 transition-colors"
                             >
                               <span
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                 style={{ backgroundColor: "rgba(239, 68, 68, 0.08)" }}
                               />
                               <LogOut className="h-4 w-4 relative z-10 group-hover:-translate-x-0.5 transition-transform" />
