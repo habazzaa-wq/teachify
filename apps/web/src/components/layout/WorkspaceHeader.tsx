@@ -16,6 +16,7 @@ import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
 import { useUiStore } from "@/stores/ui.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { useLogout } from "@/hooks/useAuthMutations";
 import { useRouter } from "next/navigation";
 
 const headerMotion = {
@@ -31,6 +32,7 @@ export function WorkspaceHeader() {
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
   const { tenant } = useActiveTenant();
   const router = useRouter();
+  const logout = useLogout();
 
   const tenantName = tenant?.name ?? "مساحة العمل";
 
@@ -136,7 +138,7 @@ export function WorkspaceHeader() {
             } else if (item.value === "settings") {
               router.push("/teacher/settings");
             } else if (item.value === "logout") {
-              // Logout handled by the auth store/route logic elsewhere.
+              logout.mutate();
             }
           }}
           items={[
