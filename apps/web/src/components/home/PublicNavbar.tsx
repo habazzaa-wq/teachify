@@ -361,6 +361,23 @@ export function PublicNavbar() {
     return () => window.removeEventListener("public-session-expired", onSessionExpired);
   }, [queryClient]);
 
+  useEffect(() => {
+    const onPublicAuthUpdated = () => {
+      try {
+        const stored = localStorage.getItem("public-register-state");
+        setStudentRegistered(
+          stored
+            ? (JSON.parse(stored) as { name: string; token: string; refreshToken?: string | null; avatar?: string | null })
+            : null,
+        );
+      } catch {
+        setStudentRegistered(null);
+      }
+    };
+    window.addEventListener("public-auth-updated", onPublicAuthUpdated);
+    return () => window.removeEventListener("public-auth-updated", onPublicAuthUpdated);
+  }, []);
+
   const scrollToSection = useCallback(
     (targetId: string) => {
       const scroll = () => {

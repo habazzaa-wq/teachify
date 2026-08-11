@@ -157,6 +157,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
           avatar: loginResult.user.avatar ?? null,
         };
         localStorage.setItem("public-register-state", JSON.stringify(userState));
+        window.dispatchEvent(new Event("public-auth-updated"));
 
         setDone(true);
         setTimeout(() => {
