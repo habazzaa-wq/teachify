@@ -23,6 +23,7 @@ import {
   TicketCheck,
   CreditCard,
   ImageIcon,
+  Search,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -244,6 +245,13 @@ export function WorkspaceLeftSidebar() {
 
             {/* Settings */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "الإعدادات"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Search className="h-4 w-4" />}
+                label="إعدادات SEO"
+                active={pathname.startsWith(routes.seoSettings)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => router.push(routes.seoSettings)}
+              />
               <StudioSidebarItem
                 icon={<Globe className="h-4 w-4" />}
                 label="إعدادات الموقع"
