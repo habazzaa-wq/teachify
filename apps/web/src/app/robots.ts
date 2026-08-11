@@ -18,7 +18,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         "/student/",
         "/community/",
         "/superadmin/",
-        "/tenant-login",
         "/tenant-not-found",
         "/exam-sessions/",
         "/exam-results/",

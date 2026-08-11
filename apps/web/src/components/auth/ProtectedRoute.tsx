@@ -20,7 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(routes.tenantLogin);
+      router.replace(routes.home);
     }
   }, [router, status]);
 

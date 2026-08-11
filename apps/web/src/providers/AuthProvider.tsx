@@ -11,6 +11,10 @@ import { useTenantStore } from "@/stores/tenant.store";
 import type { CurrentUserResponse, LoginRequest } from "@/types/auth.types";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  isStudentRoute,
+  resolveStudentSession,
+} from "@/services/api/tenant-student-fetch";
 import { isSuperAdminPath, routes } from "@/constants/routes";
 
 interface AuthProviderValue {
@@ -92,12 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateSession(queryClient);
     if (!isPublicRoute(window.location.pathname)) {
       clearTenant();
-      router.replace("/tenant-login");
+      router.replace(routes.home);
     }
   }, [clearAuth, clearTenant, queryClient, router]);
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
-    if (!refreshToken) {
+    // Read at call time — bootstrap may have just re-seeded the store with a
+    // different identity's token (student route after a teacher login).
+    const currentRefresh = useAuthStore.getState().refreshToken;
+    if (!currentRefresh) {
       handleStaleSession();
       return false;
     }
@@ -108,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     refreshingPromiseRef.current = (async (): Promise<boolean> => {
       try {
-        const result = await authService.refresh({ refresh_token: refreshToken });
+        const result = await authService.refresh({ refresh_token: currentRefresh });
         setAccessToken(result.access_token);
         queryClient.invalidateQueries({
           predicate: (query) => !isPublicQueryKey(query.queryKey),
@@ -125,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       refreshingPromiseRef.current = null;
     }
-  }, [refreshToken, setAccessToken, handleStaleSession, queryClient]);
+  }, [setAccessToken, handleStaleSession, queryClient]);
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
@@ -133,9 +140,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!accessToken) {
+    // On student routes the public student session (public-register-state) is
+    // the source of truth. A teacher/dashboard login must never resolve the
+    // student context, so prefer the student's own token here.
+    let token = accessToken;
+    let refresh = refreshToken;
+    if (isStudentRoute(pathname)) {
+      const studentSession = resolveStudentSession(pathname);
+      if (studentSession.accessToken) {
+        token = studentSession.accessToken;
+        refresh = studentSession.refreshToken ?? refresh;
+      }
+    }
+
+    if (!token) {
       setStatus("unauthenticated");
       return;
+    }
+
+    if (token !== accessToken || refresh !== refreshToken) {
+      setTokens(token, refresh ?? "");
     }
 
     setStatus("loading");
@@ -177,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStatus("authenticated");
       }
     }
-  }, [activeTenant, accessToken, setStatus, setUser, setTenantContext, refreshSession]);
+  }, [activeTenant, accessToken, refreshToken, pathname, setStatus, setUser, setTenantContext, refreshSession, setTokens]);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -224,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuth();
     clearTenant();
     invalidateSession(queryClient);
-    router.replace("/tenant-login");
+    router.replace(routes.home);
   }, [clearAuth, clearTenant, queryClient, router]);
 
   // Bootstrap session on mount when a tenant is already known
@@ -246,6 +270,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [activeTenant, bootstrap, isSuperAdminRoute, pathname, status, setStatus]);
+
+  // The student dashboard must always reflect the public student session, never
+  // a different dashboard identity (e.g. a teacher signed in on /tenant-login).
+  // When the shared auth store holds someone else's session while navigating on
+  // to a student route, re-seed it from the student session and re-bootstrap so
+  // the student's own context is resolved.
+  useEffect(() => {
+    if (status !== "authenticated" || isSuperAdminRoute) {
+      return;
+    }
+    if (!isStudentRoute(pathname)) {
+      return;
+    }
+
+    const studentSession = resolveStudentSession(pathname);
+    if (!studentSession.accessToken) {
+      return;
+    }
+
+    const current = useAuthStore.getState();
+    if (current.accessToken === studentSession.accessToken) {
+      return;
+    }
+
+    setTokens(
+      studentSession.accessToken,
+      studentSession.refreshToken ?? current.refreshToken ?? "",
+    );
+    if (studentSession.name || studentSession.avatar) {
+      setUser({
+        id: 0,
+        name: studentSession.name ?? "",
+        email: "",
+        avatar: studentSession.avatar ?? null,
+        is_platform_super_admin: false,
+      });
+    }
+    setStatus("idle");
+  }, [pathname, status, isSuperAdminRoute, setTokens, setUser, setStatus]);
 
   // React to 401 from tenant API requests
   useEffect(() => {

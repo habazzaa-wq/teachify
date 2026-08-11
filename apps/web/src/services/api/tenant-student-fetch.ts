@@ -1,17 +1,19 @@
 /**
- * Session-aware fetch for tenant student endpoints (profile, avatar, wallet).
+ * Session-aware fetch for tenant student endpoints (profile, dashboard, avatar,
+ * wallet, course enrollment).
  *
- * On public home pages the navbar student session (`public-register-state`) is the
- * source of truth, NOT the shared auth store — the auth store is overwritten every
- * time someone signs in on /tenant-login (teacher dashboard) and would otherwise
- * leak the wrong identity's token into student API calls. Inside dashboard/auth
- * routes the auth store is authoritative.
+ * Student context — public home pages and the `/student/*` dashboard — is driven
+ * by the navbar student session (`public-register-state`), NOT the shared auth
+ * store. The auth store is overwritten every time someone signs in on
+ * /tenant-login (teacher dashboard) and would otherwise leak the wrong
+ * identity's token into student API calls.
  *
- * Signing in on /tenant-login revokes every one of the user's tokens, including the
- * ones held in `public-register-state`. When the auth store ends up holding the SAME
- * identity's fresher token we prefer it on public pages too, so student calls keep
- * working right after a dashboard login. A *different* identity's session (e.g. a
- * teacher signed into the dashboard) is never used for student calls.
+ * Signing in on /tenant-login revokes every one of the user's tokens, including
+ * the ones held in `public-register-state`. When the auth store ends up holding
+ * the SAME identity's fresher token we prefer it, so student calls keep working
+ * right after a dashboard login for that same student. A *different* identity's
+ * session (e.g. a teacher signed into the dashboard) is never used for student
+ * calls.
  *
  * Handles tenant identification headers and one retry after a token refresh on 401.
  */
@@ -28,7 +30,7 @@ interface RegisterState {
   avatar?: string | null;
 }
 
-const DASHBOARD_PREFIXES = ["/teacher", "/student", "/superadmin", "/tenant-login", "/tenant-not-found"];
+const DASHBOARD_PREFIXES = ["/teacher", "/superadmin", "/tenant-login", "/tenant-not-found"];
 
 /**
  * True when the current route is a public home page where the navbar's student
@@ -40,6 +42,19 @@ export function isPublicHomeContext(pathname?: string): boolean {
   return !DASHBOARD_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
+}
+
+/**
+ * True when the current route belongs to the learner (student) dashboard.
+ *
+ * The student dashboard is driven by the navbar's student session, so the same
+ * identity rules as public home pages apply there — a teacher/dashboard login
+ * must never leak its token into student API calls.
+ */
+export function isStudentRoute(pathname?: string): boolean {
+  const path =
+    pathname ?? (typeof window !== "undefined" ? window.location.pathname : "");
+  return path === "/student" || path.startsWith("/student/");
 }
 
 function readRegisterState(): RegisterState | null {
@@ -111,27 +126,74 @@ function samePublicIdentity(stored: RegisterState | null): boolean {
   }
 }
 
-/** Resolve the access token that should be used for a student API call right now. */
-export function resolveStudentAccessToken(pathname?: string): string | null {
+interface ResolvedStudentSession {
+  name?: string;
+  avatar?: string | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+}
+
+/**
+ * Resolve the student identity that should back a learner-facing API call right
+ * now.
+ *
+ * Student context = public home pages + the `/student/*` dashboard. In that
+ * context the navbar's `public-register-state` session is the source of truth;
+ * the shared auth store is only trusted when it holds the same person's fresher
+ * token (a dashboard login for the same student) or a genuine student session.
+ * A teacher/dashboard login for a different person is never used for student
+ * calls.
+ */
+export function resolveStudentSession(pathname?: string): ResolvedStudentSession {
   const stored = readRegisterState();
   const authToken = authStoreToken();
-  if (isPublicHomeContext(pathname)) {
-    if (authToken && samePublicIdentity(stored)) return authToken;
-    if (stored?.token) return stored.token;
-    return authToken && authStoreSessionIsStudent() ? authToken : null;
+  const authRefresh = authStoreRefreshToken();
+
+  if (isPublicHomeContext(pathname) || isStudentRoute(pathname)) {
+    if (authToken && samePublicIdentity(stored)) {
+      return {
+        name: stored?.name,
+        avatar: stored?.avatar,
+        accessToken: authToken,
+        refreshToken: authRefresh ?? stored?.refreshToken ?? null,
+      };
+    }
+    if (stored?.token) {
+      return {
+        name: stored.name,
+        avatar: stored.avatar,
+        accessToken: stored.token,
+        refreshToken: stored.refreshToken ?? null,
+      };
+    }
+    if (authToken && authStoreSessionIsStudent()) {
+      const authUser = useAuthStore.getState().user;
+      return {
+        name: authUser?.name,
+        avatar: authUser?.avatar,
+        accessToken: authToken,
+        refreshToken: authRefresh,
+      };
+    }
+    return { accessToken: null, refreshToken: null };
   }
-  return authToken ?? stored?.token ?? null;
+
+  const authUser = useAuthStore.getState().user;
+  return {
+    name: authUser?.name,
+    avatar: authUser?.avatar,
+    accessToken: authToken ?? stored?.token ?? null,
+    refreshToken: authRefresh ?? stored?.refreshToken ?? null,
+  };
+}
+
+/** Resolve the access token that should be used for a student API call right now. */
+export function resolveStudentAccessToken(pathname?: string): string | null {
+  return resolveStudentSession(pathname).accessToken;
 }
 
 function resolveRefreshToken(pathname?: string): string | null {
-  const stored = readRegisterState();
-  const authRefresh = authStoreRefreshToken();
-  if (isPublicHomeContext(pathname)) {
-    if (authRefresh && samePublicIdentity(stored)) return authRefresh;
-    if (stored?.refreshToken) return stored.refreshToken;
-    return authRefresh && authStoreSessionIsStudent() ? authRefresh : null;
-  }
-  return authRefresh ?? stored?.refreshToken ?? null;
+  return resolveStudentSession(pathname).refreshToken;
 }
 
 function resolveTenantHeaders(): { tenantId: string | null; domain: string | null } {

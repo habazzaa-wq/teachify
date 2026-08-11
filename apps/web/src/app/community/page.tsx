@@ -18,10 +18,10 @@ export default function CommunityPage() {
   const setActiveChannel = useCommunityStore((s) => s.setActiveChannel);
   const { data: categories } = useCommunityCategories();
 
-  // Redirect guests to the tenant login.
+  // Redirect guests to the home page.
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(routes.tenantLogin);
+      router.replace(routes.home);
     }
   }, [status, router]);
 
