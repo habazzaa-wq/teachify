@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 import type { ApiError } from "@/types/common.types";
 import type { LoginRequest } from "@/types/auth.types";
 import { routes } from "@/constants/routes";
+import { hasStaffAccess } from "@/lib/tenant-access";
 import { useTenantStore } from "@/stores/tenant.store";
 
 /**
@@ -26,8 +27,9 @@ export function useLogin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.all });
       const roles = useTenantStore.getState().roles;
-      const isStudent = roles.some((role) => role.slug === "student");
-      router.replace(isStudent ? routes.studentDashboard : routes.dashboard);
+      // Only staff (owner/admin/instructor) may enter the teacher control
+      // panel. A student who signs in lands on their own dashboard.
+      router.replace(hasStaffAccess(roles) ? routes.dashboard : routes.studentDashboard);
     },
     onError: (error: ApiError) => {
       toast.error(error.message);
