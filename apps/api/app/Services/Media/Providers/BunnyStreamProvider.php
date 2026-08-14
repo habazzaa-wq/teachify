@@ -134,7 +134,13 @@ class BunnyStreamProvider implements MediaProvider
         }
 
         if ($playbackUrl === null && filled($pullZone)) {
-            $playbackUrl = 'https://'.trim((string) $pullZone, '/').'/'.$videoId.'/playlist.m3u8';
+            $host = trim((string) $pullZone, '/');
+            // The pull zone may already carry a scheme (e.g. the platform
+            // cdn_hostname). Never double-prefix the protocol.
+            if (! preg_match('#^[a-z][a-z0-9+.\-]*://#i', $host)) {
+                $host = 'https://'.$host;
+            }
+            $playbackUrl = rtrim($host, '/').'/'.$videoId.'/playlist.m3u8';
         }
 
         return [
