@@ -844,16 +844,15 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           style={{
-                            backgroundColor: secondary,
-                            border: `3px solid var(--brand-primary)`,
-                            boxShadow: `0 0 24px rgba(0,0,0,0.271)`,
+                            backgroundColor: "hsl(var(--foreground))",
+                            boxShadow: `0 4px 20px rgba(0,0,0,0.25)`,
                           }}
                         />
-                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
-                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors max-sm:hidden">تسجيل الدخول</span>
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[hsl(var(--background))] transition-colors duration-300" />
+                        <span className="relative z-10 group-hover:text-[hsl(var(--background))] transition-colors duration-300 max-sm:hidden">تسجيل الدخول</span>
                       </button>
                     </div>
 
@@ -868,13 +867,16 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
+                          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                          style={{
+                            backgroundColor: "var(--brand-primary-contrast)",
+                            boxShadow: `inset 0 0 0 1px var(--brand-primary), 0 8px 28px rgba(0,0,0,0.22)`,
+                          }}
                         />
-                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
-                        <span className="relative z-10 max-sm:hidden">إنشاء حساب</span>
-                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
+                        <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-primary)] transition-colors duration-300" />
+                        <span className="relative z-10 group-hover:text-[var(--brand-primary)] transition-colors duration-300 max-sm:hidden">إنشاء حساب</span>
+                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:text-[var(--brand-primary)] group-hover:-translate-x-1 transition-all duration-300 max-sm:hidden" />
                       </button>
                     </div>
                   </>
