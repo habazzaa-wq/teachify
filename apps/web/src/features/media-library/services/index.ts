@@ -145,6 +145,19 @@ export const mediaLibraryService = {
     };
   },
 
+  async listAllAssetIds(params?: MediaFilterParams): Promise<number[]> {
+    const ids: number[] = [];
+    let page = 1;
+    let lastPage = 1;
+    do {
+      const { data, meta } = await this.listAssets({ ...params, page, per_page: 100 });
+      ids.push(...data.map((a) => a.id));
+      lastPage = Number(meta.last_page ?? page);
+      page += 1;
+    } while (page <= lastPage);
+    return ids;
+  },
+
   async getAsset(id: number): Promise<MediaAsset | null> {
     const { data } = await api.get(`/media-library/assets/${id}`);
     return data.data ? formatAsset(data.data) : null;
