@@ -13,7 +13,12 @@ import { stagesKeys } from "@/features/homepage/educational-stages/keys";
 import { stagesServerService } from "@/features/homepage/educational-stages/server-services";
 import { getQueryClient } from "@/lib/get-query-client";
 import { routes } from "@/constants/routes";
-import { buildSeoMetadata, getSiteName } from "@/lib/seo/metadata";
+import {
+  buildSeoMetadata,
+  getHomepageDescription,
+  getHomepageTitle,
+  getSiteName,
+} from "@/lib/seo/metadata";
 import { organizationJsonLd, webSiteJsonLd } from "@/lib/seo/jsonld";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
@@ -51,13 +56,16 @@ export async function generateMetadata(): Promise<Metadata> {
   ]);
 
   const siteName = getSiteName(tenant);
+  const homepageTitle = getHomepageTitle(tenant);
+  const homepageDescription = getHomepageDescription(tenant);
   const description =
+    homepageDescription ||
     hero?.subtitle?.trim() ||
     `استكشف ${siteName} — دورات تعليمية ومناهج شرح للمراحل الدراسية المختلفة عبر الإنترنت`;
 
   return buildSeoMetadata(
     {
-      title: { absolute: siteName },
+      title: { absolute: homepageTitle || siteName },
       description,
       canonical: canonicalUrl(origin, routes.home),
       ogImage: hero?.teacherImage || null,

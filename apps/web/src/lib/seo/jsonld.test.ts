@@ -131,6 +131,37 @@ describe("organizationJsonLd", () => {
     expect(ld.name).toBe("أكاديمية أ");
     expect(ld.url).toBe("https://a.academy.test");
   });
+
+  it("uses saved organization name/description and social profiles (sameAs)", () => {
+    const ld = organizationJsonLd(
+      {
+        id: 1,
+        name: "أكاديمية أ",
+        slug: "a",
+        domain: "a.academy.test",
+        status: "active",
+        branding: {
+          logo: null,
+          favicon: null,
+          primaryColor: null,
+          secondaryColor: null,
+          accentColor: null,
+          font: null,
+          darkLogo: null,
+          lightLogo: null,
+        },
+        seo: {
+          organizationName: "مؤسسة التعلم أ",
+          organizationDescription: "منظمة تعليمية",
+          socialProfiles: ["https://facebook.com/a"],
+        },
+      },
+      "https://a.academy.test",
+    );
+    expect(ld.name).toBe("مؤسسة التعلم أ");
+    expect(ld.description).toBe("منظمة تعليمية");
+    expect(ld.sameAs).toEqual(["https://facebook.com/a"]);
+  });
 });
 
 describe("breadcrumbJsonLd", () => {

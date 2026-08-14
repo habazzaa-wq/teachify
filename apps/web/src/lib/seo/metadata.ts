@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { env } from "@/config/env";
 import { resolveAssetUrl } from "./url";
 import type { TenantSeoContext } from "./tenant-context";
+import type { TenantSeoRobotsPolicy } from "@/features/tenant-bootstrap/types";
 
 export const SITE_DEFAULT_DESCRIPTION =
   "منصة تعليمية متكاملة للتعلم عن بُعد — دورات ومحتوى تعليمي عالي الجودة للمراحل الدراسية المختلفة";
@@ -21,6 +22,57 @@ export function getSiteDescription(
   return tenant?.seo?.description?.trim() || fallback;
 }
 
+export function getHomepageTitle(tenant: TenantSeoContext | null): string | null {
+  return tenant?.seo?.homepageTitle?.trim() || null;
+}
+
+export function getHomepageDescription(
+  tenant: TenantSeoContext | null,
+  fallback: string = SITE_DEFAULT_DESCRIPTION,
+): string {
+  return tenant?.seo?.homepageDescription?.trim() || fallback;
+}
+
+export function getOrganizationName(tenant: TenantSeoContext | null): string {
+  return tenant?.seo?.organizationName?.trim() || getSiteName(tenant);
+}
+
+export function getOrganizationDescription(tenant: TenantSeoContext | null): string | null {
+  return tenant?.seo?.organizationDescription?.trim() || tenant?.seo?.description?.trim() || null;
+}
+
+/** Clean list of social profile URLs for `sameAs` in Organization JSON-LD. */
+export function getSocialProfiles(tenant: TenantSeoContext | null): string[] {
+  return (tenant?.seo?.socialProfiles ?? []).filter(
+    (profile) => typeof profile === "string" && profile.trim().length > 0,
+  );
+}
+
+export function getRobotsPolicy(tenant: TenantSeoContext | null): TenantSeoRobotsPolicy | null {
+  return tenant?.seo?.robotsPolicy ?? null;
+}
+
+/**
+ * Map a saved robots policy value to the Next.js `robots` metadata object.
+ * `index` implies "index, nofollow" in the settings vocabulary, so it differs
+ * from the default (index + follow) used when no policy is configured.
+ */
+export function robotsRulesForPolicy(
+  policy: TenantSeoRobotsPolicy | null | undefined,
+): NonNullable<Metadata["robots"]> {
+  switch (policy) {
+    case "index":
+      return { index: true, follow: false };
+    case "noindex":
+    case "noindex_nofollow":
+      return { index: false, follow: false };
+    case "index_follow":
+      return { index: true, follow: true };
+    default:
+      return { index: true, follow: true };
+  }
+}
+
 export interface VerificationTokens {
   google?: string;
   bing?: string;
@@ -32,8 +84,14 @@ export interface VerificationTokens {
  * Google Search Console / Bing Webmaster Tools without affecting others.
  */
 export function getVerificationTokens(tenant: TenantSeoContext | null): VerificationTokens {
-  const google = tenant?.seo?.googleVerification?.trim() || env.googleVerification || undefined;
-  const bing = tenant?.seo?.bingVerification?.trim() || env.bingVerification || undefined;
+  const google =
+    tenant?.seo?.googleVerification?.trim() ||
+    process.env.NEXT_PUBLIC_GSC_VERIFICATION?.trim() ||
+    undefined;
+  const bing =
+    tenant?.seo?.bingVerification?.trim() ||
+    process.env.NEXT_PUBLIC_BING_VERIFICATION?.trim() ||
+    undefined;
   return { google, bing };
 }
 
@@ -62,7 +120,11 @@ export function buildSeoMetadata(
   const siteName = getSiteName(tenant);
   const titleString = typeof input.title === "string" ? input.title : siteName;
   const description = input.description?.trim() || undefined;
-  const ogImage = resolveAssetUrl(input.ogImage ?? tenant?.branding?.logo ?? null, origin);
+  const ogImage = resolveAssetUrl(
+    input.ogImage ?? tenant?.seo?.ogImage ?? tenant?.branding?.logo ?? null,
+    origin,
+  );
+  const twitterImage = resolveAssetUrl(tenant?.seo?.twitterImage ?? ogImage, origin);
   const verification = getVerificationTokens(tenant);
 
   return {
@@ -72,7 +134,7 @@ export function buildSeoMetadata(
     alternates: input.noindex ? undefined : { canonical: input.canonical },
     robots: input.noindex
       ? { index: false, follow: false }
-      : { index: true, follow: true },
+      : robotsRulesForPolicy(getRobotsPolicy(tenant)),
     ...(verification.google || verification.bing
       ? {
           verification: {
@@ -95,10 +157,10 @@ export function buildSeoMetadata(
         : {}),
     },
     twitter: {
-      card: ogImage ? "summary_large_image" : "summary",
+      card: twitterImage ? "summary_large_image" : "summary",
       title: titleString,
       ...(description ? { description } : {}),
-      ...(ogImage ? { images: [ogImage] } : {}),
+      ...(twitterImage ? { images: [twitterImage] } : {}),
     },
   };
 }

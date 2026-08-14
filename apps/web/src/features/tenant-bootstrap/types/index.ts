@@ -15,6 +15,9 @@ export interface TenantBranding {
   logoImage?: string | null;
 }
 
+/** Robots meta policy values saved in the SEO settings (`default_robots_policy`). */
+export type TenantSeoRobotsPolicy = "index" | "noindex" | "index_follow" | "noindex_nofollow";
+
 /**
  * Tenant-level SEO configuration. All fields are optional so the server-side
  * fallbacks (platform env vars / brand defaults) apply until a tenant provides
@@ -31,6 +34,22 @@ export interface TenantSeoConfig {
   ogImage?: string | null;
   /** Optional `%s`-style title template (falls back to `%s | <site name>`). */
   titleTemplate?: string | null;
+  /** Saved meta title for the tenant homepage. */
+  homepageTitle?: string | null;
+  /** Saved meta description for the tenant homepage. */
+  homepageDescription?: string | null;
+  /** Organization display name used in the Organization JSON-LD graph. */
+  organizationName?: string | null;
+  /** Organization description used in the Organization JSON-LD graph. */
+  organizationDescription?: string | null;
+  /** Social profile URLs surfaced as `sameAs` in the Organization JSON-LD. */
+  socialProfiles?: string[] | null;
+  /** Default robots policy applied to public pages that have none of their own. */
+  robotsPolicy?: TenantSeoRobotsPolicy | null;
+  /** Whether the default/static routes (home, catalog, stages) enter the sitemap. */
+  sitemapIncludeDefault?: boolean | null;
+  /** Default Twitter card image. */
+  twitterImage?: string | null;
 }
 
 export interface TenantByDomainResponse {

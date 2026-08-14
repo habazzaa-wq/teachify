@@ -123,6 +123,86 @@ describe("getSiteDescription / getSiteTitleTemplate (layout-level tenant SEO)", 
   });
 });
 
+describe("homepage title/description + organization helpers", () => {
+  it("uses saved homepage title and description", async () => {
+    vi.resetModules();
+    const { getHomepageTitle, getHomepageDescription } = await import("@/lib/seo/metadata");
+    const t = tenant(1, "أكاديمية أ", {
+      homepageTitle: "أكاديمية أ — التعليم الأفضل",
+      homepageDescription: "وصف الصفحة الرئيسية",
+    });
+    expect(getHomepageTitle(t)).toBe("أكاديمية أ — التعليم الأفضل");
+    expect(getHomepageDescription(t)).toBe("وصف الصفحة الرئيسية");
+  });
+
+  it("falls back when homepage title/description are not saved", async () => {
+    vi.resetModules();
+    const { getHomepageTitle, getHomepageDescription, SITE_DEFAULT_DESCRIPTION } = await import(
+      "@/lib/seo/metadata"
+    );
+    const t = tenant(1, "أكاديمية أ");
+    expect(getHomepageTitle(t)).toBeNull();
+    expect(getHomepageDescription(t)).toBe(SITE_DEFAULT_DESCRIPTION);
+  });
+
+  it("prefers saved organization name/description, falls back to tenant/site", async () => {
+    vi.resetModules();
+    const { getOrganizationName, getOrganizationDescription } = await import("@/lib/seo/metadata");
+    const t = tenant(1, "أكاديمية أ", {
+      organizationName: "مؤسسة التعلم أ",
+      organizationDescription: "منظمة تعليمية",
+    });
+    expect(getOrganizationName(t)).toBe("مؤسسة التعلم أ");
+    expect(getOrganizationDescription(t)).toBe("منظمة تعليمية");
+    expect(getOrganizationName(tenant(1, "أكاديمية أ"))).toBe("أكاديمية أ");
+    expect(getOrganizationDescription(tenant(1, "أكاديمية أ"))).toBeNull();
+  });
+
+  it("filters empty social profile entries", async () => {
+    vi.resetModules();
+    const { getSocialProfiles } = await import("@/lib/seo/metadata");
+    const t = tenant(1, "أكاديمية أ", {
+      socialProfiles: ["https://facebook.com/a", "  ", "", "https://x.com/a"],
+    });
+    expect(getSocialProfiles(t)).toEqual(["https://facebook.com/a", "https://x.com/a"]);
+    expect(getSocialProfiles(tenant(1, "أكاديمية أ"))).toEqual([]);
+  });
+});
+
+describe("robots policy mapping", () => {
+  it("maps every saved policy value to robots metadata", async () => {
+    vi.resetModules();
+    const { robotsRulesForPolicy } = await import("@/lib/seo/metadata");
+    expect(robotsRulesForPolicy("index_follow")).toEqual({ index: true, follow: true });
+    expect(robotsRulesForPolicy("index")).toEqual({ index: true, follow: false });
+    expect(robotsRulesForPolicy("noindex")).toEqual({ index: false, follow: false });
+    expect(robotsRulesForPolicy("noindex_nofollow")).toEqual({ index: false, follow: false });
+    expect(robotsRulesForPolicy(null)).toEqual({ index: true, follow: true });
+    expect(robotsRulesForPolicy(undefined)).toEqual({ index: true, follow: true });
+  });
+
+  it("buildSeoMetadata applies the tenant robots policy", async () => {
+    const md = await buildWithEnv(
+      {},
+      tenant(1, "أكاديمية أ", { robotsPolicy: "noindex" }),
+      "https://a.academy.test",
+    );
+    const robots = md.robots as { index: boolean; follow: boolean };
+    expect(robots.index).toBe(false);
+    expect(robots.follow).toBe(false);
+  });
+
+  it("uses the tenant SEO OG image before the branding logo", async () => {
+    const md = await buildWithEnv(
+      {},
+      tenant(1, "أكاديمية أ", { ogImage: "https://cdn.academy.test/og.png" }),
+      "https://a.academy.test",
+    );
+    const images = md.openGraph?.images as Array<{ url: string }>;
+    expect(images?.[0]?.url).toBe("https://cdn.academy.test/og.png");
+  });
+});
+
 describe("buildSeoMetadata — base signals", () => {
   it("adds absolute canonical and index robots for public pages", async () => {
     const md = await buildWithEnv({}, null, "https://platform.test");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { stagesServerService } from "@/features/homepage/educational-stages/server-services";
 import { buildUrlsetXml, publicEntry, sitemapXmlHeaders } from "@/lib/seo/sitemap";
 import { getRequestOrigin } from "@/lib/seo/url";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 
 export const dynamic = "force-dynamic";
 
@@ -10,28 +11,37 @@ export const dynamic = "force-dynamic";
  * every public educational stage for the current tenant. Stages are fetched
  * from the same public API the site renders, so deactivated stages disappear
  * automatically and no private data is ever listed.
+ *
+ * Tenants that disable the "include default pages" sitemap setting opt out of
+ * these always-public routes; tenant course pages stay covered by the
+ * `/sitemap-courses/{n}` chunks referenced from `/sitemap.xml`.
  */
 export async function GET() {
-  const origin = await getRequestOrigin();
+  const [origin, tenant] = await Promise.all([getRequestOrigin(), getTenantSeoContext()]);
+  const includeDefault = tenant?.seo?.sitemapIncludeDefault !== false;
 
-  const entries = [
-    publicEntry(origin, "/", { changeFrequency: "daily", priority: 1 }),
-    publicEntry(origin, "/courses", { changeFrequency: "daily", priority: 0.9 }),
-  ];
+  const entries = includeDefault
+    ? [
+        publicEntry(origin, "/", { changeFrequency: "daily", priority: 1 }),
+        publicEntry(origin, "/courses", { changeFrequency: "daily", priority: 0.9 }),
+      ]
+    : [];
 
-  try {
-    const stages = await stagesServerService.getPublicStages();
-    for (const stage of stages?.items ?? []) {
-      entries.push(
-        publicEntry(origin, `/stages/${stage.id}`, {
-          changeFrequency: "weekly",
-          priority: 0.8,
-        }),
-      );
+  if (includeDefault) {
+    try {
+      const stages = await stagesServerService.getPublicStages();
+      for (const stage of stages?.items ?? []) {
+        entries.push(
+          publicEntry(origin, `/stages/${stage.id}`, {
+            changeFrequency: "weekly",
+            priority: 0.8,
+          }),
+        );
+      }
+    } catch {
+      // No tenant context (e.g. a platform-only host) or unreachable API: the
+      // sitemap still lists the always-public routes instead of 500-ing.
     }
-  } catch {
-    // No tenant context (e.g. a platform-only host) or unreachable API: the
-    // sitemap still lists the always-public routes instead of 500-ing.
   }
 
   return new NextResponse(buildUrlsetXml(entries), {

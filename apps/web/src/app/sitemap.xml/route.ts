@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { catalogServerService } from "@/features/course-catalog/server-services";
 import { buildSitemapIndexXml, courseSitemapPath, sitemapXmlHeaders, SITEMAP_COURSES_PER_PAGE } from "@/lib/seo/sitemap";
 import { getRequestOrigin } from "@/lib/seo/url";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,15 @@ export const dynamic = "force-dynamic";
  * sync automatically when courses are added, unpublished, or removed — no
  * manual edits. Every child URL is built from the current request origin, so
  * Tenant A's sitemap can never list Tenant B's URLs.
+ *
+ * Tenants that disable the "include default pages" sitemap setting drop the
+ * `/sitemap-core.xml` entry from the index (tenant course chunks remain).
  */
 export async function GET() {
-  const origin = await getRequestOrigin();
+  const [origin, tenant] = await Promise.all([getRequestOrigin(), getTenantSeoContext()]);
 
-  const locations: string[] = [`${origin}/sitemap-core.xml`];
+  const includeDefault = tenant?.seo?.sitemapIncludeDefault !== false;
+  const locations: string[] = includeDefault ? [`${origin}/sitemap-core.xml`] : [];
 
   try {
     const firstPage = await catalogServerService.getCourses({}, 1, SITEMAP_COURSES_PER_PAGE);

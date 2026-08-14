@@ -9,10 +9,12 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
 import { TenantDocumentMeta } from "@/components/layout/TenantDocumentMeta";
 import {
+  getRobotsPolicy,
   getSiteDescription,
   getSiteName,
   getSiteTitleTemplate,
   getVerificationTokens,
+  robotsRulesForPolicy,
 } from "@/lib/seo/metadata";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
@@ -28,7 +30,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const [tenant, origin] = await Promise.all([getTenantSeoContext(), getRequestOrigin()]);
   const siteName = getSiteName(tenant);
   const description = getSiteDescription(tenant);
-  const logo = resolveAssetUrl(tenant?.branding?.logo ?? null, origin);
+  const logo = resolveAssetUrl(
+    tenant?.seo?.ogImage ?? tenant?.branding?.logo ?? null,
+    origin,
+  );
+  const twitterImage = resolveAssetUrl(tenant?.seo?.twitterImage ?? logo, origin);
   const verification = getVerificationTokens(tenant);
 
   return {
@@ -38,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: getSiteTitleTemplate(tenant) ?? `%s | ${siteName}`,
     },
     description,
-    robots: { index: true, follow: true },
+    robots: robotsRulesForPolicy(getRobotsPolicy(tenant)),
     ...(verification.google || verification.bing
       ? {
           verification: {
@@ -61,9 +67,10 @@ export async function generateMetadata(): Promise<Metadata> {
         : {}),
     },
     twitter: {
-      card: "summary",
+      card: twitterImage ? "summary_large_image" : "summary",
       title: siteName,
       description,
+      ...(twitterImage ? { images: [twitterImage] } : {}),
     },
   };
 }

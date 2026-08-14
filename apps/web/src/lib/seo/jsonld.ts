@@ -2,6 +2,11 @@ import { env } from "@/config/env";
 import { canonicalUrl, resolveAssetUrl } from "./url";
 import type { TenantSeoContext } from "./tenant-context";
 import type { PublicCourse } from "@/features/public-course/types";
+import {
+  getOrganizationDescription,
+  getOrganizationName,
+  getSocialProfiles,
+} from "./metadata";
 
 export type JsonLdObject = Record<string, unknown>;
 
@@ -14,8 +19,10 @@ export function organizationJsonLd(
   tenant: TenantSeoContext | null,
   origin: string,
 ): JsonLdObject {
-  const name = tenant?.name?.trim() || env.appName;
+  const name = getOrganizationName(tenant);
+  const description = getOrganizationDescription(tenant);
   const logo = resolveAssetUrl(tenant?.branding?.logo ?? null, origin);
+  const sameAs = getSocialProfiles(tenant);
 
   return {
     "@context": "https://schema.org",
@@ -23,7 +30,9 @@ export function organizationJsonLd(
     "@id": `${origin}/#organization`,
     name,
     url: origin,
+    ...(description ? { description } : {}),
     ...(logo ? { logo: { "@type": "ImageObject", url: logo } } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 }
 
