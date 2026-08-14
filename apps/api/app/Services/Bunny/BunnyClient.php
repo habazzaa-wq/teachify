@@ -176,6 +176,24 @@ class BunnyClient implements BunnyClientInterface
                 ]));
             }
 
+            // Deleting an object that no longer exists is an idempotent success.
+            // Expired Bunny subscriptions often leave a library/storage zone that
+            // returns 404 for every delete, so treat it as already-deleted.
+            if ($response->status() === 404 && ($options['ignore_not_found'] ?? false)) {
+                Log::channel('bunny')->info('Bunny API resource already gone, treated as success', [
+                    'service' => $service,
+                    'operation' => $operation,
+                    'status' => $response->status(),
+                ]);
+
+                return [
+                    'success' => true,
+                    'deleted' => false,
+                    'not_found' => true,
+                    'status' => $response->status(),
+                ];
+            }
+
             $this->exceptionHandler->handle($response, $service, $operation);
         } catch (BunnyServiceException $bunnyException) {
             throw $bunnyException;

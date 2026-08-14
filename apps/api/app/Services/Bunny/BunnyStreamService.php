@@ -3,7 +3,6 @@
 namespace App\Services\Bunny;
 
 use App\Services\Bunny\Contracts\BunnyStreamInterface;
-use App\Services\Bunny\Exceptions\BunnyServiceException;
 use Illuminate\Support\Str;
 
 class BunnyStreamService implements BunnyStreamInterface
@@ -12,8 +11,7 @@ class BunnyStreamService implements BunnyStreamInterface
         private readonly BunnyClient $client,
         private readonly BunnyCacheService $cache,
         private readonly BunnySignedUrlService $signedUrlService,
-    ) {
-    }
+    ) {}
 
     public function createVideo(string $title, array $options = []): array
     {
@@ -49,6 +47,7 @@ class BunnyStreamService implements BunnyStreamInterface
 
         $result = $this->client->streamRequest('DELETE', "library/{$libraryId}/videos/{$videoId}", [
             'operation' => "delete_video {$videoId}",
+            'ignore_not_found' => true,
         ]);
 
         $this->cache->invalidateVideo($videoId);
@@ -210,9 +209,6 @@ class BunnyStreamService implements BunnyStreamInterface
         ]));
     }
 
-    /**
-     * @param string|int|null $status
-     */
     private function mapVideoStatus(string|int|null $status): string
     {
         return match (strtolower(trim((string) $status))) {
