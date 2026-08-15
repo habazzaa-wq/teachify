@@ -1,33 +1,42 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useInViewOnce } from "@/hooks/useInViewOnce";
 import {
   ArrowLeft,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
   GraduationCap,
-  Sparkles,
   Star,
-  Trophy,
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useUiStore } from "@/stores/ui.store";
+import { useBrandColors } from "@/hooks/useBrandColors";
+import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
 import type { StageItem, StageStats } from "@/features/homepage/educational-stages/types";
 import { formatNumber } from "@/lib/format";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
-const PRIMARY = "var(--brand-primary)";
-const ACCENT = "var(--brand-secondary)";
+const GAP_FALLBACK = 20;
 
-const SHOWCASE_CAP = 3;
+function clampNum(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
-const stageIcons: LucideIcon[] = [BookOpen, GraduationCap, Sparkles, Star, Trophy, Users];
-
-/* ────────────── helpers ────────────── */
+function motionAllowed(): boolean {
+  return typeof window === "undefined" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function stageTag(name: string): string {
   const t = name.trim();
@@ -37,55 +46,21 @@ function stageTag(name: string): string {
   return t.length > 14 ? `${t.slice(0, 12)}…` : t;
 }
 
-function cardShell(isDark: boolean): CSSProperties {
-  return {
-    background: isDark ? "#16141e" : "#ffffff",
-    border: "1px solid var(--stage-border)",
-    boxShadow: isDark
-      ? "0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.2)"
-      : "0 1px 2px rgba(0,0,0,0.03), 0 8px 24px rgba(120,90,60,0.08)",
-    ["--stage-border" as string]: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)",
-    ["--stage-border-hover" as string]: "var(--brand-primary)",
-    transition: "transform 300ms ease, border-color 300ms ease",
-  } as CSSProperties;
-}
+/* ────────────── image + branded fallback cover ────────────── */
 
-function ink(isDark: boolean): string {
-  return isDark ? "#F0ECE6" : "#1a1510";
-}
-
-function muted(isDark: boolean): string {
-  return isDark ? "#8a8290" : "#7a7168";
-}
-
-/* ────────────── image + fallback cover ────────────── */
-
-function StageFallbackCover({ index, isDark }: { index: number; isDark: boolean }) {
-  const Icon = stageIcons[index % stageIcons.length] ?? BookOpen;
-  const main = index % 2 === 1 ? ACCENT : PRIMARY;
+function StageFallbackCover({ index, primary, secondary }: { index: number; primary: string; secondary: string }) {
+  const main = index % 2 === 1 ? secondary : primary;
 
   return (
-    <div
-      className="absolute inset-0 overflow-hidden"
-      style={{
-        background: main,
-      }}
-    >
-      <div className="absolute -end-6 -top-6 h-24 w-24 rounded-full border" style={{ borderColor: main }} />
-      <div className="absolute -bottom-8 -start-8 h-32 w-32 rounded-full border" style={{ borderColor: main }} />
-      <div className="absolute bottom-[16%] start-[18%] h-1.5 w-1.5 rounded-full" style={{ background: main }} />
-      <div className="absolute end-[22%] top-[24%] h-2 w-2 rounded-full" style={{ background: main }} />
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(150deg, ${main}2e 0%, ${main}10 55%, transparent 100%)` }}>
+      <div className="absolute -end-10 -top-10 h-40 w-40 rounded-full border-[3px]" style={{ borderColor: `${main}33` }} />
+      <div className="absolute -bottom-14 -start-10 h-44 w-44 rounded-full border" style={{ borderColor: `${main}26` }} />
       <div className="absolute inset-0 flex items-center justify-center">
         <span
-          className="flex h-11 w-11 items-center justify-center rounded-2xl"
-          style={{
-            background: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.8)",
-            color: main,
-            border: `1px solid ${main}`,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-          }}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border bg-card/80 shadow-sm backdrop-blur-sm"
+          style={{ borderColor: `${main}40`, color: main }}
         >
-          <Icon className="h-5 w-5" />
+          <GraduationCap className="h-6 w-6" />
         </span>
       </div>
     </div>
@@ -93,21 +68,23 @@ function StageFallbackCover({ index, isDark }: { index: number; isDark: boolean 
 }
 
 /**
- * Always-visible cover. Renders the real stage image normalized through the
+ * Always-visible cover: renders the real stage image normalized through the
  * shared media URL helper without cropping (object-contain), so the whole
- * image is always visible. Falls back to a branded gradient cover when the
- * stage has no image or the stored URL can no longer be fetched.
+ * image stays visible on a soft brand-tinted backdrop. Falls back to a
+ * branded cover when the stage has no image or the URL can no longer load.
  */
 function StageCover({
   stage,
   index,
-  isDark,
+  primary,
+  secondary,
   priority,
   sizes,
 }: {
   stage: StageItem;
   index: number;
-  isDark: boolean;
+  primary: string;
+  secondary: string;
   priority?: boolean;
   sizes: string;
 }) {
@@ -117,24 +94,12 @@ function StageCover({
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* branded backdrop shown around contained images */}
       <div
         aria-hidden="true"
         className="absolute inset-0"
-        style={{
-          background: isDark ? "#1a1622" : "#f6efe6",
-        }}
+        style={{ background: `linear-gradient(160deg, ${primary}1a 0%, ${primary}0d 45%, ${secondary}0d 100%)` }}
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 0.5px, transparent 0.5px)`,
-          backgroundSize: "18px 18px",
-        }}
-      />
-
-      <div className="relative h-full w-full lg:transition-transform lg:duration-500 lg:ease-out lg:group-hover:scale-[1.03]">
+      <div className="relative h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]">
         {showImage ? (
           <Image
             src={src as string}
@@ -147,7 +112,7 @@ function StageCover({
             onError={() => setFailed(true)}
           />
         ) : (
-          <StageFallbackCover index={index} isDark={isDark} />
+          <StageFallbackCover index={index} primary={primary} secondary={secondary} />
         )}
       </div>
     </div>
@@ -156,15 +121,7 @@ function StageCover({
 
 function StageTagChip({ tag }: { tag: string }) {
   return (
-    <span
-      className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold"
-      style={{
-        background: "rgba(255,255,255,0.92)",
-        color: PRIMARY,
-        border: "1px solid rgba(0,0,0,0.05)",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-      }}
-    >
+    <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[10px] font-extrabold text-primary shadow-sm backdrop-blur-sm">
       {tag}
     </span>
   );
@@ -172,56 +129,34 @@ function StageTagChip({ tag }: { tag: string }) {
 
 /* ────────────── stats row ────────────── */
 
-function StatPill({
-  icon: Icon,
-  value,
-  label,
-  color,
-  isDark,
-}: {
-  icon: LucideIcon;
-  value: string;
-  label: string;
-  color: string;
-  isDark: boolean;
-}) {
+function StatPill({ icon: Icon, value, label, color }: { icon: LucideIcon; value: string; label: string; color: string }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1 text-[11px] font-semibold tabular-nums" style={{ color: muted(isDark) }}>
+    <span className="inline-flex min-w-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-muted-foreground">
       <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" style={{ color }} />
-      <span className="font-extrabold" style={{ color: ink(isDark) }}>{value}</span>
+      <span className="font-extrabold text-card-foreground">{value}</span>
       <span className="whitespace-nowrap">{label}</span>
     </span>
   );
 }
 
-function StageStatsRow({
-  stats,
-  loading,
-  isDark,
-}: {
-  stats?: StageStats;
-  loading: boolean;
-  isDark: boolean;
-}) {
-  const base: CSSProperties = { minHeight: 20 };
-
+function StageStatsRow({ stats, loading }: { stats?: StageStats; loading: boolean }) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2.5" style={base} aria-hidden="true">
-        <span className="h-3 w-12 animate-pulse rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)" }} />
-        <span className="h-3 w-12 animate-pulse rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)" }} />
+      <div className="flex items-center gap-2.5" aria-hidden="true">
+        <span className="h-3 w-12 animate-pulse rounded-full bg-muted" />
+        <span className="h-3 w-12 animate-pulse rounded-full bg-muted" />
       </div>
     );
   }
 
   if (!stats || (stats.coursesCount <= 0 && stats.teachersCount <= 0)) {
-    return <div style={base} />;
+    return <div className="min-h-5" />;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1" style={base}>
-      <StatPill icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" color={PRIMARY} isDark={isDark} />
-      <StatPill icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" color={ACCENT} isDark={isDark} />
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <StatPill icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" color="var(--brand-primary)" />
+      <StatPill icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" color="var(--brand-secondary)" />
     </div>
   );
 }
@@ -230,14 +165,11 @@ function StageStatsRow({
 
 function ExploreCta() {
   return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-extrabold transition-colors duration-300"
-      style={{ color: ACCENT }}
-    >
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary transition-colors duration-300">
       استكشف المرحلة
       <span
-        className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--brand-secondary-contrast)] transition-transform duration-300 group-hover:scale-110"
-        style={{ background: ACCENT, boxShadow: `0 4px 10px rgba(0,0,0,0.251)` }}
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-primary shadow-sm transition-transform duration-300 group-hover:scale-110"
+        style={{ color: "var(--brand-primary-contrast)" }}
       >
         <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
       </span>
@@ -245,12 +177,13 @@ function ExploreCta() {
   );
 }
 
-/* ────────────── uniform stage card ────────────── */
+/* ────────────── stage card ────────────── */
 
 function StageCard({
   stage,
   index,
-  isDark,
+  primary,
+  secondary,
   priority,
   stats,
   loading,
@@ -258,7 +191,8 @@ function StageCard({
 }: {
   stage: StageItem;
   index: number;
-  isDark: boolean;
+  primary: string;
+  secondary: string;
   priority?: boolean;
   stats?: StageStats;
   loading: boolean;
@@ -268,18 +202,27 @@ function StageCard({
     <Link
       href={`/stages/${stage.id}`}
       aria-label={`${stage.name} — استكشف المرحلة`}
-      className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:rounded-3xl"
+      className="group block h-full rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="flex h-full flex-col overflow-hidden rounded-3xl lg:hover:-translate-y-1" style={cardShell(isDark)}>
-        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
-          <StageCover stage={stage} index={index} isDark={isDark} priority={priority} sizes="(max-width: 639px) 90vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 400px" />
+      <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-muted/60">
+          <StageCover
+            stage={stage}
+            index={index}
+            primary={primary}
+            secondary={secondary}
+            priority={priority}
+            sizes="(max-width: 639px) 78vw, (max-width: 1023px) 47vw, (max-width: 1279px) 31vw, 23vw"
+          />
+
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent" />
 
           {popular ? (
             <span
-              className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold"
-              style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
+              className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm"
+              style={{ background: secondary, color: "var(--brand-secondary-contrast)" }}
             >
-              <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
+              <Star aria-hidden="true" className="h-3 w-3 fill-current" />
               شائع
             </span>
           ) : null}
@@ -288,28 +231,19 @@ function StageCard({
         </div>
 
         <div className="flex flex-1 flex-col p-4 sm:p-5">
-          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug sm:text-base" style={{ color: ink(isDark) }}>
-            {stage.name}
-          </h3>
+          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug text-card-foreground sm:text-base">{stage.name}</h3>
 
           {stage.description ? (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed sm:text-xs" style={{ color: muted(isDark) }}>
-              {stage.description}
-            </p>
+            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">{stage.description}</p>
           ) : null}
 
           <div className="mt-auto pt-3">
-            <StageStatsRow stats={stats} loading={loading} isDark={isDark} />
+            <StageStatsRow stats={stats} loading={loading} />
           </div>
 
-          <div
-            className="mt-3 flex items-center justify-between border-t pt-3"
-            style={{ borderColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)" }}
-          >
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
             <ExploreCta />
-            <span className="text-[10px] font-semibold tabular-nums" style={{ color: muted(isDark) }}>
-              {formatNumber(stats?.coursesCount ?? 0)} دورة
-            </span>
+            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">{formatNumber(stats?.coursesCount ?? 0)} دورة</span>
           </div>
         </div>
       </div>
@@ -319,20 +253,58 @@ function StageCard({
 
 /* ────────────── skeleton ────────────── */
 
-function StagesSkeleton({ isDark }: { isDark: boolean }) {
-  const block = (alpha: string) => ({ background: isDark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})` });
+const SLIDE_WIDTH = "w-[78%] sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)] xl:w-[calc((100%-3.75rem)/4)]";
+
+function StagesSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="animate-pulse overflow-hidden rounded-3xl" style={cardShell(isDark)}>
-          <div className="aspect-[4/3] w-full" style={block("0.05")} />
-          <div className="space-y-2.5 p-5">
-            <div className="h-3 w-16 rounded-full" style={block("0.05")} />
-            <div className="h-4 w-2/3 rounded-full" style={block("0.06")} />
-            <div className="h-3 w-full rounded-full" style={block("0.04")} />
-            <div className="h-3 w-3/4 rounded-full" style={block("0.04")} />
+    <div className="flex gap-5 overflow-hidden pb-3" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className={`${SLIDE_WIDTH} shrink-0`}>
+          <div className="animate-pulse overflow-hidden rounded-3xl border border-border bg-card">
+            <div className="aspect-[4/3] w-full bg-muted" />
+            <div className="space-y-2.5 p-4 sm:p-5">
+              <div className="h-3 w-16 rounded-full bg-muted" />
+              <div className="h-4 w-2/3 rounded-full bg-muted" />
+              <div className="h-3 w-full rounded-full bg-muted" />
+              <div className="h-3 w-3/4 rounded-full bg-muted" />
+            </div>
           </div>
         </div>
+      ))}
+    </div>
+  );
+}
+
+/* ────────────── carousel controls ────────────── */
+
+function NavButton({ dir, disabled, onClick }: { dir: "prev" | "next"; disabled: boolean; onClick: () => void }) {
+  const isNext = dir === "next";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={isNext ? "التالي" : "السابق"}
+      aria-controls="educational-stages-viewport"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+    >
+      {isNext ? <ChevronLeft aria-hidden="true" className="h-5 w-5" /> : <ChevronRight aria-hidden="true" className="h-5 w-5" />}
+    </button>
+  );
+}
+
+function ProgressSegments({ pages, current, onSelect }: { pages: number; current: number; onSelect: (i: number) => void }) {
+  return (
+    <div role="group" aria-label="التقدّم في المراحل" className="flex items-center gap-1.5">
+      {Array.from({ length: pages }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onSelect(i)}
+          aria-label={`الانتقال إلى الصفحة ${i + 1}`}
+          aria-current={i === current ? "step" : undefined}
+          className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${i === current ? "w-6 bg-primary" : "w-3 bg-primary/25 hover:bg-primary/45"}`}
+        />
       ))}
     </div>
   );
@@ -341,19 +313,21 @@ function StagesSkeleton({ isDark }: { isDark: boolean }) {
 /* ────────────── section ────────────── */
 
 export function EducationalStagesSection() {
-  const theme = useUiStore((s) => s.theme);
-  const isDark = theme === "dark";
+  const { primary, secondary } = useBrandColors();
   const { ref: sectionRef, inView } = useInViewOnce({ rootMargin: "-80px 0px" });
-  const [expanded, setExpanded] = useState(false);
+
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const stepRef = useRef(0);
+  const maxIndexRef = useRef(0);
+  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false, suppressClick: false });
+
+  const [maxIndex, setMaxIndex] = useState(0);
+  const [index, setIndex] = useState(0);
 
   const { data, isLoading } = usePublicStages();
   const all = useMemo(() => data?.items ?? [], [data]);
-
-  const showcase = useMemo(() => all.slice(0, SHOWCASE_CAP), [all]);
-  const showcaseIds = useMemo(() => showcase.map((s) => s.id), [showcase]);
   const allIds = useMemo(() => all.map((s) => s.id), [all]);
-
-  const { statsById, loadingIds } = useStageStatsState(expanded ? allIds : showcaseIds, inView);
+  const { statsById, loadingIds } = useStageStatsState(allIds, inView);
 
   const popularId = useMemo(() => {
     let bestId: number | null = null;
@@ -367,104 +341,186 @@ export function EducationalStagesSection() {
     return best > 0 ? bestId : null;
   }, [statsById]);
 
-  const hasMore = all.length > SHOWCASE_CAP;
-  const display = expanded ? all : showcase;
+  const count = all.length;
+  const pages = Math.max(1, maxIndex + 1);
+  const canPrev = index > 0;
+  const canNext = index < maxIndex;
+
+  const measure = useCallback(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const slide = vp.querySelector<HTMLElement>("[data-stage-slide]");
+    if (!slide) return;
+    const next = slide.nextElementSibling as HTMLElement | null;
+    const gap = next ? Math.abs(next.offsetLeft - slide.offsetLeft - slide.offsetWidth) : GAP_FALLBACK;
+    const stepPx = slide.offsetWidth + gap;
+    const maxScroll = Math.max(0, vp.scrollWidth - vp.clientWidth);
+    const pageCount = maxScroll > 0 ? Math.max(0, Math.round(maxScroll / stepPx)) : 0;
+    stepRef.current = stepPx;
+    maxIndexRef.current = pageCount;
+    setMaxIndex(pageCount);
+    setIndex((prev) => clampNum(prev, 0, pageCount));
+  }, []);
+
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(vp);
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (stepRef.current <= 0) return;
+        const cur = clampNum(Math.round(-vp.scrollLeft / stepRef.current), 0, maxIndexRef.current);
+        setIndex((prev) => (prev === cur ? prev : cur));
+      });
+    };
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      ro.disconnect();
+      vp.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [measure, count]);
+
+  const scrollToPage = useCallback((page: number) => {
+    const vp = viewportRef.current;
+    if (!vp || stepRef.current <= 0) return;
+    const target = clampNum(page, 0, maxIndexRef.current);
+    vp.scrollTo({ left: -target * stepRef.current, behavior: motionAllowed() ? "smooth" : "auto" });
+  }, []);
+
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "touch") return;
+    if (e.button !== 0) return;
+    const vp = viewportRef.current;
+    if (!vp) return;
+    dragRef.current = { down: true, startX: e.clientX, startScroll: vp.scrollLeft, moved: false, suppressClick: false };
+    vp.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d.down) return;
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const dx = e.clientX - d.startX;
+    if (!d.moved && Math.abs(dx) < 6) return;
+    d.moved = true;
+    vp.scrollLeft = d.startScroll + dx;
+  };
+
+  const endDrag = () => {
+    const d = dragRef.current;
+    if (!d.down) return;
+    d.down = false;
+    const vp = viewportRef.current;
+    if (d.moved && vp && stepRef.current > 0) {
+      d.suppressClick = true;
+      window.setTimeout(() => {
+        dragRef.current.suppressClick = false;
+      }, 120);
+      const nearest = clampNum(Math.round(-vp.scrollLeft / stepRef.current), 0, maxIndexRef.current);
+      vp.scrollTo({ left: -nearest * stepRef.current, behavior: motionAllowed() ? "smooth" : "auto" });
+    }
+  };
+
+  const handleClickCapture = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (dragRef.current.suppressClick) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
 
   if (all.length === 0 && !isLoading) return null;
-
-  const decoShapes = [
-    { x: "6%", y: "12%", s: 8, c: PRIMARY },
-    { x: "93%", y: "16%", s: 6, c: ACCENT },
-    { x: "8%", y: "84%", s: 6, c: ACCENT },
-    { x: "90%", y: "86%", s: 9, c: PRIMARY },
-    { x: "50%", y: "5%", s: 5, c: PRIMARY },
-    { x: "46%", y: "95%", s: 5, c: ACCENT },
-  ];
 
   return (
     <section
       ref={sectionRef}
       id="educational-stages"
       dir="rtl"
-      aria-label="المراحل الدراسية"
-      className="section-lazy relative w-full scroll-mt-28 overflow-hidden py-10 sm:py-14"
+      aria-labelledby="educational-stages-title"
+      className="section-lazy relative w-full scroll-mt-24 overflow-hidden py-14 sm:py-20"
     >
-        <div
-          className="absolute inset-0"
-          style={{
-            background: isDark
-              ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
-              : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
-          }}
-        />
+      <div aria-hidden="true" className="absolute inset-0 bg-background" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72"
+        style={{ background: `radial-gradient(55% 85% at 88% -12%, ${primary}0f, transparent 70%)` }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-56"
+        style={{ background: `radial-gradient(50% 75% at 10% 112%, ${secondary}0c, transparent 70%)` }}
+      />
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 0.5px, transparent 0.5px)`,
-            backgroundSize: "24px 24px",
-          }}
-        />
-
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          {decoShapes.map((d, i) => (
-            <span
-              key={i}
-              className="absolute rounded-full"
-              style={{ left: d.x, top: d.y, width: d.s, height: d.s, background: d.c, opacity: 0.14 }}
-            />
-          ))}
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          {/* centered header */}
-          <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-10">
-            <span
-              className="home-enter-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold text-[var(--brand-primary-contrast)] sm:text-xs"
-              style={{
-                background: "var(--brand-primary)",
-                color: "var(--brand-primary-contrast)",
-                border: `1px solid var(--brand-primary)`,
-              }}
-            >
-              <Sparkles aria-hidden="true" className="h-3 w-3" />
+      <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary sm:text-xs">
+              <GraduationCap aria-hidden="true" className="h-3.5 w-3.5" />
               المسار التعليمي
             </span>
-
-            <h2
-              className="home-enter-up mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl"
-              style={{ animationDelay: "0.05s" }}
-            >
-              <span style={{ color: PRIMARY }}>المراحل</span>{" "}
-              <span style={{ color: ACCENT }}>الدراسية</span>
+            <h2 id="educational-stages-title" className="mt-3 text-2xl font-extrabold tracking-tight text-card-foreground sm:text-3xl lg:text-4xl">
+              المراحل <span className="text-primary">الدراسية</span>
             </h2>
-
-            <p
-              className="home-enter-up max-w-xl text-xs leading-relaxed sm:text-sm"
-              style={{ color: muted(isDark), animationDelay: "0.1s" }}
-            >
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               اختر المسار المناسب لمستواك وابدأ رحلة التعلم
             </p>
           </div>
 
+          {maxIndex > 0 ? (
+            <div className="flex items-center gap-3 lg:pb-1">
+              <div className="hidden sm:block">
+                <ProgressSegments pages={pages} current={index} onSelect={scrollToPage} />
+              </div>
+              <div className="flex items-center gap-2">
+                <NavButton dir="prev" disabled={!canPrev} onClick={() => scrollToPage(index - 1)} />
+                <NavButton dir="next" disabled={!canNext} onClick={() => scrollToPage(index + 1)} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="relative mt-8 sm:mt-10">
           {isLoading ? (
-            <StagesSkeleton isDark={isDark} />
+            <StagesSkeleton />
           ) : (
             <>
-              {/* uniform grid — stacked single column on phones, side-by-side on larger screens */}
+              {canPrev ? (
+                <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 start-0 z-10 w-8 bg-gradient-to-l from-background to-transparent sm:w-14" />
+              ) : null}
+              {canNext ? (
+                <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 z-10 w-8 bg-gradient-to-r from-background to-transparent sm:w-14" />
+              ) : null}
+
               <div
-                id="educational-stages-grid"
-                className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                id="educational-stages-viewport"
+                ref={viewportRef}
+                role="region"
+                aria-roledescription="carousel"
+                aria-label="المراحل الدراسية"
+                tabIndex={0}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+                onClickCapture={handleClickCapture}
+                onDragStart={(e) => e.preventDefault()}
+                className="flex cursor-grab touch-pan-y select-none gap-5 overflow-x-auto overscroll-x-contain pb-3 outline-none snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-primary/70"
               >
-                {display.map((stage, i) => {
+                {all.map((stage, i) => {
                   const stats = statsById.get(stage.id);
                   return (
-                    <div key={stage.id} className="home-enter-up" style={{ animationDelay: `${(i % 6) * 0.06}s` }}>
+                    <div key={stage.id} data-stage-slide className={`${SLIDE_WIDTH} shrink-0 snap-start`}>
                       <StageCard
                         stage={stage}
                         index={i}
-                        isDark={isDark}
+                        primary={primary}
+                        secondary={secondary}
                         priority={i < 2}
                         stats={stats}
                         loading={loadingIds.has(stage.id)}
@@ -475,41 +531,23 @@ export function EducationalStagesSection() {
                 })}
               </div>
 
-              {hasMore ? (
-                <div className="mt-9 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded((v) => !v)}
-                    aria-expanded={expanded}
-                    aria-controls="educational-stages-grid"
-                    className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2.5 text-xs font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
-                    style={{
-                      color: isDark ? "#F0ECE6" : "#1a1510",
-                      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
-                      background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)",
-                    }}
-                  >
-                    {expanded ? "عرض أقل" : "عرض المزيد"}
-                    <ArrowLeft
-                      aria-hidden="true"
-                      className={`h-3 w-3 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-                    />
-                  </button>
+              {maxIndex > 0 ? (
+                <div className="mt-5 flex items-center justify-center gap-3 sm:hidden">
+                  <NavButton dir="prev" disabled={!canPrev} onClick={() => scrollToPage(index - 1)} />
+                  <div className="h-1 w-36 overflow-hidden rounded-full bg-primary/15">
+                    <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${pages > 1 ? (index / (pages - 1)) * 100 : 0}%` }} />
+                  </div>
+                  <NavButton dir="next" disabled={!canNext} onClick={() => scrollToPage(index + 1)} />
                 </div>
               ) : null}
+
+              <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                الصفحة {index + 1} من {pages}
+              </span>
             </>
           )}
         </div>
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-14"
-          style={{
-            background: isDark
-              ? "linear-gradient(to top, #0e0c14, transparent)"
-              : "linear-gradient(to top, #fdfbf7, transparent)",
-          }}
-        />
-      </section>
+      </div>
+    </section>
   );
 }
