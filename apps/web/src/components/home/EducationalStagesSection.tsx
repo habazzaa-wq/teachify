@@ -363,7 +363,7 @@ export function EducationalStagesSection() {
 
   const innerGrad = useMemo(
     () =>
-      `radial-gradient(${primary}10 1px, transparent 1px) 0 0/24px 24px, linear-gradient(165deg, ${primary}1c 0%, ${primary}0f 55%, ${secondary}0a 120%)`,
+      `radial-gradient(${primary}14 1px, transparent 1px) 0 0/24px 24px, linear-gradient(165deg, ${primary}22 0%, ${primary}12 55%, ${secondary}0f 120%)`,
     [primary, secondary],
   );
   const outerGrad = useMemo(
@@ -581,18 +581,6 @@ export function EducationalStagesSection() {
       className="relative w-full scroll-mt-24 overflow-hidden bg-background"
       style={{ background: outerGrad }}
     >
-      {/* inner rectangle — soft primary zone, blended edges */}
-      <div
-        ref={innerRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-1/2 w-[86%] -translate-x-1/2 sm:w-[76%] lg:w-[70%]"
-        style={{
-          background: innerGrad,
-          maskImage: "linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)",
-        }}
-      />
-
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         {/* centered header */}
         <div className="text-center">
@@ -612,9 +600,19 @@ export function EducationalStagesSection() {
           </p>
         </div>
 
-        {/* top controls — side of the section */}
-        {count > 1 ? (
-          <div className="mt-10 flex flex-col items-center gap-4 sm:mt-12 sm:flex-row sm:justify-between">
+        {/* panel — premium rounded stage zone */}
+        <div
+          ref={innerRef}
+          className="relative mt-10 rounded-[2rem] sm:mt-12 sm:rounded-[2.5rem] lg:rounded-[3rem]"
+          style={{
+            background: innerGrad,
+            boxShadow: `0 40px 110px -50px ${primary}4d, inset 0 1px 0 0 ${primary}1f, inset 0 0 0 1px ${primary}0f`,
+          }}
+        >
+          <div className="px-5 pb-8 pt-8 sm:px-8 sm:pb-10 sm:pt-9 lg:px-12">
+            {/* top controls — inside panel */}
+            {count > 1 ? (
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <span className="hidden text-xs font-bold tabular-nums text-muted-foreground sm:inline-block">
               {formatNumber(count)} مراحل
             </span>
@@ -640,19 +638,6 @@ export function EducationalStagesSection() {
             <StagesSkeleton />
           ) : (
             <>
-              {canPrev ? (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-l from-background to-transparent sm:w-16"
-                />
-              ) : null}
-              {canNext ? (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-r from-background to-transparent sm:w-16"
-                />
-              ) : null}
-
               <div
                 id="educational-stages-viewport"
                 ref={viewportRef}
@@ -696,6 +681,8 @@ export function EducationalStagesSection() {
               </span>
             </>
           )}
+        </div>
+        </div>
         </div>
       </div>
     </section>
