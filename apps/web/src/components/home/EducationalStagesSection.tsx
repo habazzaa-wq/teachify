@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -25,6 +26,7 @@ import { useBrandColors } from "@/hooks/useBrandColors";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
 import type { StageItem, StageStats } from "@/features/homepage/educational-stages/types";
+import { brandContrast } from "@/lib/brand";
 import { formatNumber } from "@/lib/format";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
@@ -46,45 +48,35 @@ function stageTag(name: string): string {
   return t.length > 14 ? `${t.slice(0, 12)}…` : t;
 }
 
-/* ────────────── image + branded fallback cover ────────────── */
+/* ────────────── color helpers (local — no external deps) ────────────── */
 
-function StageFallbackCover({ index, primary, secondary }: { index: number; primary: string; secondary: string }) {
-  const main = index % 2 === 1 ? secondary : primary;
-
-  return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(150deg, ${main}2e 0%, ${main}10 55%, transparent 100%)` }}>
-      <div className="absolute -end-10 -top-10 h-40 w-40 rounded-full border-[3px]" style={{ borderColor: `${main}33` }} />
-      <div className="absolute -bottom-14 -start-10 h-44 w-44 rounded-full border" style={{ borderColor: `${main}26` }} />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span
-          className="flex h-12 w-12 items-center justify-center rounded-2xl border bg-card/80 shadow-sm backdrop-blur-sm"
-          style={{ borderColor: `${main}40`, color: main }}
-        >
-          <GraduationCap className="h-6 w-6" />
-        </span>
-      </div>
-    </div>
-  );
+function hexRgb(hex: string): { r: number; g: number; b: number } | null {
+  const clean = (hex ?? "").replace("#", "").trim();
+  if (clean.length !== 6) return null;
+  const int = parseInt(clean, 16);
+  if (Number.isNaN(int)) return null;
+  return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
 }
 
-/**
- * Always-visible cover: renders the real stage image normalized through the
- * shared media URL helper without cropping (object-contain), so the whole
- * image stays visible on a soft brand-tinted backdrop. Falls back to a
- * branded cover when the stage has no image or the URL can no longer load.
- */
+/** Mix two hex colors; amount 0→a, 1→b. */
+function mixHex(a: string, b: string, amount: number): string {
+  const pa = hexRgb(a);
+  const pb = hexRgb(b);
+  if (!pa || !pb) return a;
+  const ch = (x: number, y: number) => Math.round(x + (y - x) * amount).toString(16).padStart(2, "0");
+  return `#${ch(pa.r, pb.r)}${ch(pa.g, pb.g)}${ch(pa.b, pb.b)}`.toUpperCase();
+}
+
+/* ────────────── stage cover (frosted tile on brand card) ────────────── */
+
 function StageCover({
   stage,
-  index,
-  primary,
-  secondary,
+  contrast,
   priority,
   sizes,
 }: {
   stage: StageItem;
-  index: number;
-  primary: string;
-  secondary: string;
+  contrast: string;
   priority?: boolean;
   sizes: string;
 }) {
@@ -93,13 +85,11 @@ function StageCover({
   const showImage = Boolean(src) && !failed;
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0"
-        style={{ background: `linear-gradient(160deg, ${primary}1a 0%, ${primary}0d 45%, ${secondary}0d 100%)` }}
-      />
-      <div className="relative h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]">
+    <div
+      className="relative mt-5 aspect-[4/3] w-full overflow-hidden rounded-2xl border backdrop-blur-sm"
+      style={{ borderColor: `${contrast}1a`, background: `${contrast}0a` }}
+    >
+      <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.035]">
         {showImage ? (
           <Image
             src={src as string}
@@ -108,76 +98,91 @@ function StageCover({
             sizes={sizes}
             priority={priority}
             loading={priority ? undefined : "lazy"}
-            className="object-contain"
+            className="object-contain p-2.5"
             onError={() => setFailed(true)}
           />
         ) : (
-          <StageFallbackCover index={index} primary={primary} secondary={secondary} />
+          <div className="flex h-full w-full items-center justify-center">
+            <span
+              className="flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ background: `${contrast}12`, color: contrast }}
+            >
+              <GraduationCap aria-hidden="true" className="h-7 w-7" />
+            </span>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function StageTagChip({ tag }: { tag: string }) {
+function StageTagChip({ tag, contrast }: { tag: string; contrast: string }) {
   return (
-    <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[10px] font-extrabold text-primary shadow-sm backdrop-blur-sm">
+    <span
+      className="pointer-events-none inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-extrabold backdrop-blur-sm"
+      style={{ borderColor: `${contrast}26`, background: `${contrast}14`, color: contrast }}
+    >
       {tag}
     </span>
   );
 }
 
-/* ────────────── stats row ────────────── */
+/* ────────────── stats row (glass chips) ────────────── */
 
-function StatPill({ icon: Icon, value, label, color }: { icon: LucideIcon; value: string; label: string; color: string }) {
+function StatChip({ icon: Icon, value, label, contrast }: { icon: LucideIcon; value: string; label: string; contrast: string }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-muted-foreground">
-      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" style={{ color }} />
-      <span className="font-extrabold text-card-foreground">{value}</span>
-      <span className="whitespace-nowrap">{label}</span>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tabular-nums"
+      style={{ background: `${contrast}14`, color: contrast }}
+    >
+      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+      {value} <span style={{ opacity: 0.72 }}>{label}</span>
     </span>
   );
 }
 
-function StageStatsRow({ stats, loading }: { stats?: StageStats; loading: boolean }) {
+function StageStatsRow({ stats, loading, contrast }: { stats?: StageStats; loading: boolean; contrast: string }) {
   if (loading) {
     return (
       <div className="flex items-center gap-2.5" aria-hidden="true">
-        <span className="h-3 w-12 animate-pulse rounded-full bg-muted" />
-        <span className="h-3 w-12 animate-pulse rounded-full bg-muted" />
+        <span className="h-7 w-20 animate-pulse rounded-full" style={{ background: `${contrast}14` }} />
+        <span className="h-7 w-20 animate-pulse rounded-full" style={{ background: `${contrast}14` }} />
       </div>
     );
   }
 
   if (!stats || (stats.coursesCount <= 0 && stats.teachersCount <= 0)) {
-    return <div className="min-h-5" />;
+    return <div className="min-h-7" />;
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <StatPill icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" color="var(--brand-primary)" />
-      <StatPill icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" color="var(--brand-secondary)" />
+    <div className="flex flex-wrap items-center gap-2">
+      <StatChip icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" contrast={contrast} />
+      <StatChip icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" contrast={contrast} />
     </div>
   );
 }
 
-/* ────────────── explore CTA ────────────── */
+/* ────────────── explore CTA (contrast pill) ────────────── */
 
-function ExploreCta() {
+function ExploreCta({ contrast, base }: { contrast: string; base: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary transition-colors duration-300">
+    <span
+      className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[11px] font-extrabold transition-transform duration-300 group-hover:scale-[1.03]"
+      style={{ background: contrast, color: base }}
+    >
       استكشف المرحلة
       <span
-        className="flex h-6 w-6 items-center justify-center rounded-full bg-primary shadow-sm transition-transform duration-300 group-hover:scale-110"
-        style={{ color: "var(--brand-primary-contrast)" }}
+        className="flex h-5 w-5 items-center justify-center rounded-full transition-transform duration-300 group-hover:-translate-x-0.5"
+        style={{ background: `${base}14`, color: base }}
       >
-        <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
+        <ArrowLeft aria-hidden="true" className="h-3 w-3" />
       </span>
     </span>
   );
 }
 
-/* ────────────── stage card ────────────── */
+/* ────────────── stage card (alternating brand backgrounds) ────────────── */
 
 function StageCard({
   stage,
@@ -198,52 +203,81 @@ function StageCard({
   loading: boolean;
   popular?: boolean;
 }) {
+  const useSecondary = index % 2 === 1;
+  const base = useSecondary ? secondary : primary;
+  const other = useSecondary ? primary : secondary;
+  const light = mixHex(base, "#FFFFFF", 0.14);
+  const deep = mixHex(base, "#000000", 0.32);
+  const contrast = brandContrast(base);
+
   return (
     <Link
       href={`/stages/${stage.id}`}
       aria-label={`${stage.name} — استكشف المرحلة`}
-      className="group block h-full rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group block h-full rounded-[1.75rem] outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card transition-[transform,border-color,box-shadow] duration-300 ease-out group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl">
-        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-muted/60">
-          <StageCover
-            stage={stage}
-            index={index}
-            primary={primary}
-            secondary={secondary}
-            priority={priority}
-            sizes="(max-width: 639px) 78vw, (max-width: 1023px) 47vw, (max-width: 1279px) 31vw, 23vw"
-          />
+      <div
+        className="relative flex h-full flex-col overflow-hidden rounded-[1.75rem] transition-[transform,box-shadow] duration-300 ease-out group-hover:-translate-y-2 group-hover:shadow-[0_28px_64px_-16px_var(--glow)]"
+        style={
+          {
+            "--glow": `${base}66`,
+            background: `linear-gradient(168deg, ${light} 0%, ${base} 48%, ${deep} 132%)`,
+            boxShadow: `0 16px 40px -22px ${base}59`,
+          } as CSSProperties
+        }
+      >
+        {/* decorative rings / orbs */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -end-14 -top-14 h-44 w-44 rounded-full border-[18px]"
+          style={{ borderColor: `${contrast}0f` }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-16 -start-16 h-48 w-48 rounded-full"
+          style={{ background: `${contrast}0a`, filter: "blur(2px)" }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute end-8 bottom-24 h-16 w-16 rounded-full border"
+          style={{ borderColor: `${contrast}14` }}
+        />
 
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent" />
-
-          {popular ? (
-            <span
-              className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm"
-              style={{ background: secondary, color: "var(--brand-secondary-contrast)" }}
-            >
-              <Star aria-hidden="true" className="h-3 w-3 fill-current" />
-              شائع
-            </span>
-          ) : null}
-
-          <StageTagChip tag={stageTag(stage.name)} />
-        </div>
-
-        <div className="flex flex-1 flex-col p-4 sm:p-5">
-          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug text-card-foreground sm:text-base">{stage.name}</h3>
-
-          {stage.description ? (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">{stage.description}</p>
-          ) : null}
-
-          <div className="mt-auto pt-3">
-            <StageStatsRow stats={stats} loading={loading} />
+        <div className="relative z-10 flex h-full flex-col p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <StageTagChip tag={stageTag(stage.name)} contrast={contrast} />
+            {popular ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm"
+                style={{ background: other, color: brandContrast(other) }}
+              >
+                <Star aria-hidden="true" className="h-3 w-3 fill-current" />
+                شائع
+              </span>
+            ) : null}
           </div>
 
-          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-            <ExploreCta />
-            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">{formatNumber(stats?.coursesCount ?? 0)} دورة</span>
+          <StageCover stage={stage} contrast={contrast} priority={priority} sizes="(max-width: 639px) 78vw, (max-width: 1023px) 47vw, (max-width: 1279px) 31vw, 23vw" />
+
+          <h3 className="mt-4 line-clamp-1 text-[15px] font-extrabold leading-snug sm:text-lg" style={{ color: contrast }}>
+            {stage.name}
+          </h3>
+
+          {stage.description ? (
+            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed sm:text-xs" style={{ color: `${contrast}b3` }}>
+              {stage.description}
+            </p>
+          ) : null}
+
+          <div className="mt-auto pt-4">
+            <StageStatsRow stats={stats} loading={loading} contrast={contrast} />
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: `${contrast}1f` }}>
+            <ExploreCta contrast={contrast} base={base} />
+            <span className="text-[10px] font-bold tabular-nums" style={{ color: `${contrast}8c` }}>
+              {formatNumber(stats?.coursesCount ?? 0)} دورة
+            </span>
           </div>
         </div>
       </div>
@@ -251,26 +285,40 @@ function StageCard({
   );
 }
 
-/* ────────────── skeleton ────────────── */
+/* ────────────── skeleton (mirrors brand cards) ────────────── */
 
 const SLIDE_WIDTH = "w-[78%] sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)] xl:w-[calc((100%-3.75rem)/4)]";
 
-function StagesSkeleton() {
+function StagesSkeleton({ primary, secondary }: { primary: string; secondary: string }) {
   return (
     <div className="flex gap-5 overflow-hidden pb-3" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className={`${SLIDE_WIDTH} shrink-0`}>
-          <div className="animate-pulse overflow-hidden rounded-3xl border border-border bg-card">
-            <div className="aspect-[4/3] w-full bg-muted" />
-            <div className="space-y-2.5 p-4 sm:p-5">
-              <div className="h-3 w-16 rounded-full bg-muted" />
-              <div className="h-4 w-2/3 rounded-full bg-muted" />
-              <div className="h-3 w-full rounded-full bg-muted" />
-              <div className="h-3 w-3/4 rounded-full bg-muted" />
+      {[0, 1, 2].map((i) => {
+        const base = i % 2 === 1 ? secondary : primary;
+        const light = mixHex(base, "#FFFFFF", 0.14);
+        const deep = mixHex(base, "#000000", 0.32);
+        const contrast = brandContrast(base);
+        return (
+          <div key={i} className={`${SLIDE_WIDTH} shrink-0`}>
+            <div
+              className="animate-pulse overflow-hidden rounded-[1.75rem]"
+              style={{ background: `linear-gradient(168deg, ${light} 0%, ${base} 48%, ${deep} 132%)` }}
+            >
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <span className="h-5 w-14 rounded-full" style={{ background: `${contrast}1a` }} />
+                  <span className="h-5 w-12 rounded-full" style={{ background: `${contrast}1a` }} />
+                </div>
+                <div className="mt-5 aspect-[4/3] w-full rounded-2xl" style={{ background: `${contrast}12` }} />
+                <div className="mt-5 h-4 w-2/3 rounded-full" style={{ background: `${contrast}26` }} />
+                <div className="mt-3 space-y-2">
+                  <div className="h-3 w-full rounded-full" style={{ background: `${contrast}1f` }} />
+                  <div className="h-3 w-3/4 rounded-full" style={{ background: `${contrast}1f` }} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -443,18 +491,34 @@ export function EducationalStagesSection() {
       id="educational-stages"
       dir="rtl"
       aria-labelledby="educational-stages-title"
-      className="section-lazy relative w-full scroll-mt-24 overflow-hidden py-14 sm:py-20"
+      className="relative w-full scroll-mt-24 overflow-hidden py-14 sm:py-20"
     >
+      {/* layered brand background */}
       <div aria-hidden="true" className="absolute inset-0 bg-background" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-72"
-        style={{ background: `radial-gradient(55% 85% at 88% -12%, ${primary}0f, transparent 70%)` }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-80"
+        style={{ background: `radial-gradient(50% 70% at 90% -10%, ${primary}1f, transparent 70%)` }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-56"
-        style={{ background: `radial-gradient(50% 75% at 10% 112%, ${secondary}0c, transparent 70%)` }}
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-80"
+        style={{ background: `radial-gradient(52% 72% at 8% 115%, ${secondary}17, transparent 70%)` }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: `linear-gradient(180deg, ${primary}08 0%, transparent 35%, transparent 65%, ${secondary}08 100%)` }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          backgroundImage: `radial-gradient(${primary}0d 1px, transparent 1px)`,
+          backgroundSize: "26px 26px",
+          maskImage: "radial-gradient(80% 70% at 50% 35%, black 20%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(80% 70% at 50% 35%, black 20%, transparent 100%)",
+        }}
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -487,7 +551,7 @@ export function EducationalStagesSection() {
 
         <div className="relative mt-8 sm:mt-10">
           {isLoading ? (
-            <StagesSkeleton />
+            <StagesSkeleton primary={primary} secondary={secondary} />
           ) : (
             <>
               {canPrev ? (
