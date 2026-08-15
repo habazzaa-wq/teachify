@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -30,6 +31,8 @@ import { formatNumber } from "@/lib/format";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
 const GAP_FALLBACK = 16;
+const SLIDE_WIDTH = "w-[78%] sm:w-[58%] md:w-[50%] lg:w-[44%] xl:w-[40%]";
+const ANIM_MS = 440;
 
 function clampNum(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -65,16 +68,38 @@ function mixHex(a: string, b: string, amount: number): string {
   return `#${ch(pa.r, pb.r)}${ch(pa.g, pb.g)}${ch(pa.b, pb.b)}`.toUpperCase();
 }
 
-/* ────────────── stage cover (frosted tile on glass card) ────────────── */
+/* ────────────── stage band (alternating brand gradient + image) ────────────── */
 
-function StageCover({ stage, priority, sizes }: { stage: StageItem; priority?: boolean; sizes: string }) {
+function StageBand({
+  stage,
+  brand,
+  other,
+  brandText,
+  priority,
+  popular,
+  sizes,
+}: {
+  stage: StageItem;
+  brand: string;
+  other: string;
+  brandText: string;
+  priority?: boolean;
+  popular?: boolean;
+  sizes: string;
+}) {
   const [failed, setFailed] = useState(false);
   const src = useMemo(() => toAbsoluteAssetUrl(stage.image), [stage.image]);
   const showImage = Boolean(src) && !failed;
 
   return (
-    <div className="relative mt-5 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm">
-      <div className="absolute inset-0 transition-transform duration-500 ease-out group-hover:scale-[1.035]">
+    <div
+      className="relative aspect-[16/9] w-full shrink-0 overflow-hidden"
+      style={{ background: `linear-gradient(150deg, ${brand} 0%, ${mixHex(brand, "#000000", 0.2)} 120%)` }}
+    >
+      <div aria-hidden="true" className="absolute -end-10 -top-12 h-36 w-36 rounded-full border-[14px]" style={{ borderColor: `${brandText}14` }} />
+      <div aria-hidden="true" className="absolute -bottom-16 -start-12 h-40 w-40 rounded-full" style={{ background: `${brandText}0d` }} />
+
+      <div className="absolute inset-0">
         {showImage ? (
           <Image
             src={src as string}
@@ -83,46 +108,61 @@ function StageCover({ stage, priority, sizes }: { stage: StageItem; priority?: b
             sizes={sizes}
             priority={priority}
             loading={priority ? undefined : "lazy"}
-            className="object-contain p-2.5"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             onError={() => setFailed(true)}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white">
-              <GraduationCap aria-hidden="true" className="h-7 w-7" />
+            <span
+              className="flex h-16 w-16 items-center justify-center rounded-2xl border backdrop-blur-sm"
+              style={{ borderColor: `${brandText}33`, background: `${brandText}14`, color: brandText }}
+            >
+              <GraduationCap aria-hidden="true" className="h-8 w-8" />
             </span>
           </div>
         )}
       </div>
+
+      <div className="absolute inset-x-3 top-3 z-10 flex items-center justify-between gap-2">
+        <span
+          className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-extrabold backdrop-blur-sm"
+          style={{ borderColor: `${brandText}33`, background: `${brandText}14`, color: brandText }}
+        >
+          {stageTag(stage.name)}
+        </span>
+        {popular ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm"
+            style={{ background: other, color: brandContrast(other) }}
+          >
+            <Star aria-hidden="true" className="h-3 w-3 fill-current" />
+            شائع
+          </span>
+        ) : null}
+      </div>
+
+      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-card to-transparent" />
     </div>
   );
 }
 
-function StageTagChip({ tag }: { tag: string }) {
+/* ────────────── stats row ────────────── */
+
+function StatChip({ icon: Icon, value, label, brand }: { icon: LucideIcon; value: string; label: string; brand: string }) {
   return (
-    <span className="pointer-events-none inline-flex items-center rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-extrabold text-white backdrop-blur-sm">
-      {tag}
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold tabular-nums text-muted-foreground">
+      <Icon aria-hidden="true" className="h-3.5 w-3.5" style={{ color: brand }} />
+      {value} <span className="text-foreground/70">{label}</span>
     </span>
   );
 }
 
-/* ────────────── stats row (glass chips) ────────────── */
-
-function StatChip({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold tabular-nums text-white backdrop-blur-sm">
-      <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-      {value} <span className="text-white/70">{label}</span>
-    </span>
-  );
-}
-
-function StageStatsRow({ stats, loading }: { stats?: StageStats; loading: boolean }) {
+function StageStatsRow({ stats, loading, brand }: { stats?: StageStats; loading: boolean; brand: string }) {
   if (loading) {
     return (
       <div className="flex items-center gap-2.5" aria-hidden="true">
-        <span className="h-7 w-20 animate-pulse rounded-full bg-white/15" />
-        <span className="h-7 w-20 animate-pulse rounded-full bg-white/15" />
+        <span className="h-7 w-20 animate-pulse rounded-full bg-muted" />
+        <span className="h-7 w-20 animate-pulse rounded-full bg-muted" />
       </div>
     );
   }
@@ -133,36 +173,30 @@ function StageStatsRow({ stats, loading }: { stats?: StageStats; loading: boolea
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <StatChip icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" />
-      <StatChip icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" />
+      <StatChip icon={BookOpen} value={formatNumber(stats.coursesCount)} label="دورة" brand={brand} />
+      <StatChip icon={Users} value={formatNumber(stats.teachersCount)} label="مدرّس" brand={brand} />
     </div>
   );
 }
 
 /* ────────────── explore CTA ────────────── */
 
-function ExploreCta({ primary }: { primary: string }) {
-  const text = mixHex(primary, "#000000", 0.2);
+function ExploreCta() {
   return (
-    <span
-      className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[11px] font-extrabold transition-transform duration-300 group-hover:scale-[1.04]"
-      style={{ background: "#ffffff", color: text }}
-    >
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-primary transition-colors duration-300">
       استكشف المرحلة
-      <span
-        className="flex h-5 w-5 items-center justify-center rounded-full transition-transform duration-300 group-hover:-translate-x-0.5"
-        style={{ background: `${text}14`, color: text }}
-      >
-        <ArrowLeft aria-hidden="true" className="h-3 w-3" />
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[var(--brand-primary-contrast)] shadow-sm transition-transform duration-300 group-hover:scale-110">
+        <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-0.5" />
       </span>
     </span>
   );
 }
 
-/* ────────────── stage card (glass — full brightness = inside inner rectangle) ────────────── */
+/* ────────────── stage card ────────────── */
 
 function StageCard({
   stage,
+  index,
   primary,
   secondary,
   priority,
@@ -171,6 +205,7 @@ function StageCard({
   popular,
 }: {
   stage: StageItem;
+  index: number;
   primary: string;
   secondary: string;
   priority?: boolean;
@@ -178,45 +213,42 @@ function StageCard({
   loading: boolean;
   popular?: boolean;
 }) {
+  const useSecondary = index % 2 === 1;
+  const brand = useSecondary ? secondary : primary;
+  const other = useSecondary ? primary : secondary;
+  const brandText = brandContrast(brand);
+
   return (
     <Link
       href={`/stages/${stage.id}`}
       aria-label={`${stage.name} — استكشف المرحلة`}
-      className="group relative block h-full rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent will-change-transform"
+      className="group relative block h-full rounded-[1.75rem] outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <div className="relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/15 bg-white/[0.07] shadow-[0_14px_34px_-22px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-        <div aria-hidden="true" className="pointer-events-none absolute -end-16 -top-16 h-40 w-40 rounded-full border-[16px] border-white/5" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -start-20 h-44 w-44 rounded-full bg-white/5 blur-2xl" />
+      <div className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[0_12px_30px_-20px_rgba(15,23,42,0.18)] transition-transform duration-300 ease-out group-hover:-translate-y-1.5">
+        <StageBand
+          stage={stage}
+          brand={brand}
+          other={other}
+          brandText={brandText}
+          priority={priority}
+          popular={popular}
+          sizes="(max-width: 639px) 78vw, (max-width: 1023px) 58vw, (max-width: 1279px) 44vw, 40vw"
+        />
 
-        <div className="relative z-10 flex h-full flex-col p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-2">
-            <StageTagChip tag={stageTag(stage.name)} />
-            {popular ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-sm"
-                style={{ background: secondary, color: brandContrast(secondary) }}
-              >
-                <Star aria-hidden="true" className="h-3 w-3 fill-current" />
-                شائع
-              </span>
-            ) : null}
-          </div>
-
-          <StageCover stage={stage} priority={priority} sizes="(max-width: 639px) 74vw, (max-width: 1023px) 58vw, (max-width: 1279px) 44vw, 40vw" />
-
-          <h3 className="mt-4 line-clamp-1 text-[15px] font-extrabold leading-snug text-white sm:text-lg">{stage.name}</h3>
+        <div className="flex flex-1 flex-col p-4 sm:p-5">
+          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug text-card-foreground sm:text-lg">{stage.name}</h3>
 
           {stage.description ? (
-            <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-white/70 sm:text-xs">{stage.description}</p>
+            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground sm:text-xs">{stage.description}</p>
           ) : null}
 
           <div className="mt-auto pt-4">
-            <StageStatsRow stats={stats} loading={loading} />
+            <StageStatsRow stats={stats} loading={loading} brand={brand} />
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
-            <ExploreCta primary={primary} />
-            <span className="text-[10px] font-bold tabular-nums text-white/70">
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+            <ExploreCta />
+            <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
               {formatNumber(stats?.coursesCount ?? 0)} دورة
             </span>
           </div>
@@ -226,27 +258,20 @@ function StageCard({
   );
 }
 
-/* ────────────── skeleton (mirrors glass cards) ────────────── */
-
-const SLIDE_WIDTH = "w-[74%] sm:w-[58%] md:w-[50%] lg:w-[44%] xl:w-[40%]";
+/* ────────────── skeleton ────────────── */
 
 function StagesSkeleton() {
   return (
-    <div className="flex gap-4 overflow-hidden pb-3" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
+    <div className="flex gap-4 pb-2" aria-busy="true" aria-label="جارٍ تحميل المراحل الدراسية">
       {[0, 1, 2].map((i) => (
         <div key={i} className={`${SLIDE_WIDTH} shrink-0`}>
-          <div className="animate-pulse overflow-hidden rounded-3xl border border-white/15 bg-white/[0.07] backdrop-blur-xl">
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <span className="h-5 w-14 rounded-full bg-white/15" />
-                <span className="h-5 w-12 rounded-full bg-white/15" />
-              </div>
-              <div className="mt-5 aspect-[4/3] w-full rounded-2xl bg-white/[0.06]" />
-              <div className="mt-5 h-4 w-2/3 rounded-full bg-white/15" />
-              <div className="mt-3 space-y-2">
-                <div className="h-3 w-full rounded-full bg-white/10" />
-                <div className="h-3 w-3/4 rounded-full bg-white/10" />
-              </div>
+          <div className="animate-pulse overflow-hidden rounded-[1.75rem] border border-border bg-card">
+            <div className="aspect-[16/9] w-full bg-muted" />
+            <div className="space-y-2.5 p-4 sm:p-5">
+              <div className="h-4 w-2/3 rounded-full bg-muted" />
+              <div className="h-3 w-full rounded-full bg-muted" />
+              <div className="h-3 w-3/4 rounded-full bg-muted" />
+              <div className="h-7 w-24 rounded-full bg-muted" />
             </div>
           </div>
         </div>
@@ -266,7 +291,7 @@ function NavButton({ dir, disabled, onClick }: { dir: "prev" | "next"; disabled:
       disabled={disabled}
       aria-label={isNext ? "التالي" : "السابق"}
       aria-controls="educational-stages-viewport"
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all duration-200 hover:border-white/40 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-30"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
     >
       {isNext ? <ChevronLeft aria-hidden="true" className="h-5 w-5" /> : <ChevronRight aria-hidden="true" className="h-5 w-5" />}
     </button>
@@ -283,7 +308,7 @@ function ProgressSegments({ pages, current, onSelect }: { pages: number; current
           onClick={() => onSelect(i)}
           aria-label={`الانتقال إلى الصفحة ${i + 1}`}
           aria-current={i === current ? "step" : undefined}
-          className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${i === current ? "w-6 bg-white" : "w-3 bg-white/30 hover:bg-white/50"}`}
+          className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${i === current ? "w-6 bg-primary" : "w-3 bg-primary/25 hover:bg-primary/45"}`}
         />
       ))}
     </div>
@@ -297,14 +322,18 @@ export function EducationalStagesSection() {
   const { ref: sectionRef, inView } = useInViewOnce({ rootMargin: "-80px 0px" });
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
-  const stepRef = useRef(0);
-  const maxIndexRef = useRef(0);
-  const initializedRef = useRef(false);
-  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false, suppressClick: false });
 
-  const [maxIndex, setMaxIndex] = useState(0);
-  const [index, setIndex] = useState(0);
+  const geomRef = useRef({ viewport: 0, card: 0, gap: GAP_FALLBACK, step: 0, maxPage: 0 });
+  const txRef = useRef(0);
+  const pageRef = useRef(0);
+  const animRef = useRef<number | null>(null);
+  const initializedRef = useRef(false);
+  const dragRef = useRef({ down: false, startX: 0, startTx: 0, moved: false, suppressClick: false });
+
+  const [page, setPage] = useState(0);
+  const [maxPage, setMaxPage] = useState(0);
 
   const { data, isLoading } = usePublicStages();
   const all = useMemo(() => data?.items ?? [], [data]);
@@ -325,153 +354,196 @@ export function EducationalStagesSection() {
 
   const count = all.length;
   const pages = Math.max(1, count);
-  const canPrev = index > 0;
-  const canNext = index < maxIndex;
+  const canPrev = page > 0;
+  const canNext = page < maxPage;
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   const innerGrad = useMemo(
     () =>
-      `radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px) 0 0/22px 22px, linear-gradient(168deg, ${primary} 0%, ${mixHex(primary, "#000000", 0.42)} 125%)`,
-    [primary],
+      `radial-gradient(${primary}10 1px, transparent 1px) 0 0/24px 24px, linear-gradient(165deg, ${primary}1c 0%, ${primary}0f 55%, ${secondary}0a 120%)`,
+    [primary, secondary],
   );
   const outerGrad = useMemo(
-    () =>
-      [
-        `radial-gradient(85% 65% at 50% -8%, ${mixHex(secondary, "#FFFFFF", 0.14)} 0%, transparent 60%)`,
-        `radial-gradient(130% 130% at 50% 118%, ${mixHex(secondary, "#000000", 0.48)} 0%, transparent 60%)`,
-        `linear-gradient(180deg, ${mixHex(secondary, "#000000", 0.2)} 0%, ${mixHex(secondary, "#000000", 0.34)} 100%)`,
-      ].join(", "),
+    () => `linear-gradient(180deg, ${secondary}12 0%, transparent 22%, transparent 78%, ${secondary}12 100%)`,
     [secondary],
   );
-  const outerEdge = useMemo(() => mixHex(secondary, "#000000", 0.3), [secondary]);
+
+  /* ── transform helpers ── */
+
+  const offsetFor = useCallback((p: number) => {
+    const g = geomRef.current;
+    return g.viewport / 2 - p * g.step - g.card / 2;
+  }, []);
+
+  const pageFromTx = useCallback((tx: number) => {
+    const g = geomRef.current;
+    if (g.step <= 0) return 0;
+    return clampNum(Math.round((g.viewport / 2 - g.card / 2 - tx) / g.step), 0, g.maxPage);
+  }, []);
+
+  const applyTx = useCallback((tx: number) => {
+    txRef.current = tx;
+    const track = trackRef.current;
+    if (track) track.style.transform = `translate3d(${tx}px, 0, 0)`;
+  }, []);
 
   const applyFocus = useCallback(() => {
-    const vp = viewportRef.current;
+    const track = trackRef.current;
     const inner = innerRef.current;
-    if (!vp || !inner) return;
+    if (!track || !inner) return;
     const ir = inner.getBoundingClientRect();
-    const zoneL = ir.left + ir.width * 0.06;
-    const zoneR = ir.right - ir.width * 0.06;
-    const slides = vp.querySelectorAll<HTMLElement>("[data-stage-slide]");
-    slides.forEach((slide) => {
+    const zoneL = ir.left + ir.width * 0.07;
+    const zoneR = ir.right - ir.width * 0.07;
+    track.querySelectorAll<HTMLElement>("[data-stage-slide]").forEach((slide) => {
       const card = slide.firstElementChild as HTMLElement | null;
       if (!card) return;
       const r = slide.getBoundingClientRect();
       const overlap = Math.max(0, Math.min(r.right, zoneR) - Math.max(r.left, zoneL));
       const raw = overlap / Math.max(1, r.width);
       const f = raw * raw * (3 - 2 * raw);
-      card.style.opacity = `${0.38 + 0.62 * f}`;
-      card.style.transform = `scale(${0.9 + 0.1 * f})`;
-      card.style.filter = `saturate(${0.6 + 0.4 * f}) brightness(${0.7 + 0.3 * f})`;
+      card.style.opacity = `${0.45 + 0.55 * f}`;
+      card.style.filter = `grayscale(${(1 - f) * 0.6})`;
       card.style.zIndex = f > 0.5 ? "2" : "1";
-      if (f > 0.55) {
-        card.style.boxShadow = "0 30px 70px -24px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.25)";
-      } else {
-        card.style.boxShadow = "0 14px 34px -22px rgba(0,0,0,0.55)";
-      }
+      card.style.boxShadow =
+        f > 0.55
+          ? `0 26px 60px -22px ${primary}4d, 0 0 0 2px ${primary}4d`
+          : "0 10px 26px -20px rgba(15,23,42,0.22)";
     });
-  }, []);
+  }, [primary]);
+
+  const animateTo = useCallback(
+    (toTx: number) => {
+      const from = txRef.current;
+      if (Math.abs(toTx - from) < 0.5) {
+        applyTx(toTx);
+        applyFocus();
+        return;
+      }
+      if (!motionAllowed()) {
+        applyTx(toTx);
+        applyFocus();
+        return;
+      }
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      const start = performance.now();
+      const dur = ANIM_MS;
+      const loop = (now: number) => {
+        const t = clampNum((now - start) / dur, 0, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        applyTx(from + (toTx - from) * eased);
+        applyFocus();
+        if (t < 1) {
+          animRef.current = requestAnimationFrame(loop);
+        } else {
+          animRef.current = null;
+        }
+      };
+      animRef.current = requestAnimationFrame(loop);
+    },
+    [applyTx, applyFocus],
+  );
+
+  const goTo = useCallback(
+    (p: number, animate = true) => {
+      const g = geomRef.current;
+      const target = clampNum(p, 0, g.maxPage);
+      setPage(target);
+      pageRef.current = target;
+      if (animate) animateTo(offsetFor(target));
+      else {
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+        applyTx(offsetFor(target));
+        applyFocus();
+      }
+    },
+    [animateTo, applyTx, applyFocus, offsetFor],
+  );
 
   const measure = useCallback(() => {
     const vp = viewportRef.current;
-    if (!vp) return;
-    const slide = vp.querySelector<HTMLElement>("[data-stage-slide]");
-    if (!slide) return;
+    const track = trackRef.current;
+    const slide = track?.firstElementChild as HTMLElement | null;
+    if (!vp || !track || !slide) return;
+    const card = slide.offsetWidth;
     const next = slide.nextElementSibling as HTMLElement | null;
-    const gap = next ? Math.abs(next.offsetLeft - slide.offsetLeft - slide.offsetWidth) : GAP_FALLBACK;
-    stepRef.current = slide.offsetWidth + gap;
-    maxIndexRef.current = Math.max(0, count - 1);
-    setMaxIndex(Math.max(0, count - 1));
-    setIndex((prev) => clampNum(prev, 0, Math.max(0, count - 1)));
-    applyFocus();
-  }, [count, applyFocus]);
+    const gap = next ? Math.abs(next.offsetLeft - slide.offsetLeft - card) : GAP_FALLBACK;
+    geomRef.current = {
+      viewport: vp.clientWidth,
+      card,
+      gap,
+      step: card + gap,
+      maxPage: Math.max(0, count - 1),
+    };
+    setMaxPage(Math.max(0, count - 1));
+    setPage((prev) => clampNum(prev, 0, Math.max(0, count - 1)));
+    pageRef.current = clampNum(pageRef.current, 0, Math.max(0, count - 1));
+  }, [count]);
 
-  useEffect(() => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    measure();
-    const ro = new ResizeObserver(() => {
-      measure();
-      applyFocus();
-    });
-    ro.observe(vp);
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        if (stepRef.current <= 0) return;
-        const cur = clampNum(Math.round(-vp.scrollLeft / stepRef.current), 0, maxIndexRef.current);
-        setIndex((prev) => (prev === cur ? prev : cur));
-        applyFocus();
-      });
-    };
-    vp.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      ro.disconnect();
-      vp.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, [measure, applyFocus, count]);
+  /* ── init: measure + center first slide ── */
 
   useEffect(() => {
     if (count === 0) return;
-    const vp = viewportRef.current;
-    const slide = vp?.querySelector<HTMLElement>("[data-stage-slide]");
-    if (!vp || !slide) return;
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      const sr = slide.getBoundingClientRect();
-      const vr = vp.getBoundingClientRect();
-      const delta = sr.left + sr.width / 2 - (vr.left + vp.clientWidth / 2);
-      vp.scrollLeft = vp.scrollLeft - delta;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    const raf = requestAnimationFrame(() => {
+      measure();
+      applyTx(offsetFor(0));
       applyFocus();
-    }
-  }, [count, applyFocus]);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [count, measure, offsetFor, applyTx, applyFocus]);
 
-  const centerPage = useCallback((page: number) => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const slides = vp.querySelectorAll<HTMLElement>("[data-stage-slide]");
-    const slide = slides[clampNum(page, 0, Math.max(0, slides.length - 1))];
-    if (!slide) return;
-    const sr = slide.getBoundingClientRect();
-    const vr = vp.getBoundingClientRect();
-    const delta = sr.left + sr.width / 2 - (vr.left + vp.clientWidth / 2);
-    vp.scrollTo({ left: vp.scrollLeft - delta, behavior: motionAllowed() ? "smooth" : "auto" });
+  /* ── resize ── */
+
+  useEffect(() => {
+    if (count === 0) return;
+    const onResize = () => {
+      measure();
+      applyTx(offsetFor(pageRef.current));
+      applyFocus();
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [count, measure, offsetFor, applyTx, applyFocus]);
+
+  useEffect(() => {
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
   }, []);
 
+  /* ── drag / swipe ── */
+
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === "touch") return;
     if (e.button !== 0) return;
-    const vp = viewportRef.current;
-    if (!vp) return;
-    dragRef.current = { down: true, startX: e.clientX, startScroll: vp.scrollLeft, moved: false, suppressClick: false };
-    vp.setPointerCapture(e.pointerId);
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    dragRef.current = { down: true, startX: e.clientX, startTx: txRef.current, moved: false, suppressClick: false };
+    viewportRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
     if (!d.down) return;
-    const vp = viewportRef.current;
-    if (!vp) return;
     const dx = e.clientX - d.startX;
     if (!d.moved && Math.abs(dx) < 6) return;
     d.moved = true;
-    vp.scrollLeft = d.startScroll + dx;
+    applyTx(d.startTx + dx);
+    applyFocus();
   };
 
   const endDrag = () => {
     const d = dragRef.current;
     if (!d.down) return;
     d.down = false;
-    const vp = viewportRef.current;
-    if (d.moved && vp && stepRef.current > 0) {
+    if (d.moved) {
       d.suppressClick = true;
       window.setTimeout(() => {
         dragRef.current.suppressClick = false;
       }, 120);
-      const nearest = clampNum(Math.round(-vp.scrollLeft / stepRef.current), 0, maxIndexRef.current);
-      centerPage(nearest);
+      goTo(pageFromTx(txRef.current));
     }
   };
 
@@ -479,6 +551,22 @@ export function EducationalStagesSection() {
     if (dragRef.current.suppressClick) {
       e.preventDefault();
       e.stopPropagation();
+    }
+  };
+
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goTo(page + 1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goTo(page - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      goTo(maxPage);
     }
   };
 
@@ -490,34 +578,36 @@ export function EducationalStagesSection() {
       id="educational-stages"
       dir="rtl"
       aria-labelledby="educational-stages-title"
-      className="relative w-full scroll-mt-24 overflow-hidden"
+      className="relative w-full scroll-mt-24 overflow-hidden bg-background"
       style={{ background: outerGrad }}
     >
-      {/* inner rectangle — the bright 70% zone, soft-blended edges */}
+      {/* inner rectangle — soft primary zone, blended edges */}
       <div
         ref={innerRef}
         aria-hidden="true"
         className="pointer-events-none absolute inset-y-0 left-1/2 w-[86%] -translate-x-1/2 sm:w-[76%] lg:w-[70%]"
         style={{
           background: innerGrad,
-          boxShadow: "inset 0 0 90px rgba(0,0,0,0.22)",
-          maskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
+          maskImage: "linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)",
         }}
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         {/* centered header */}
         <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-sm sm:text-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary sm:text-xs">
             <GraduationCap aria-hidden="true" className="h-3.5 w-3.5" />
             المسار التعليمي
           </span>
-          <h2 id="educational-stages-title" className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            المراحل الدراسية
+          <h2 id="educational-stages-title" className="mt-4 text-3xl font-extrabold tracking-tight text-card-foreground sm:text-4xl lg:text-5xl">
+            المراحل <span className="text-primary">الدراسية</span>
           </h2>
-          <div aria-hidden="true" className="mx-auto mt-5 h-1 w-24 rounded-full bg-gradient-to-r from-white/0 via-white/70 to-white/0" />
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
+          <div
+            aria-hidden="true"
+            className="mx-auto mt-5 h-1 w-24 rounded-full bg-gradient-to-r from-transparent via-primary to-secondary"
+          />
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             اختر المسار المناسب لمستواك وابدأ رحلة التعلم
           </p>
         </div>
@@ -525,20 +615,20 @@ export function EducationalStagesSection() {
         {/* top controls — side of the section */}
         {count > 1 ? (
           <div className="mt-10 flex flex-col items-center gap-4 sm:mt-12 sm:flex-row sm:justify-between">
-            <span className="hidden text-xs font-bold tabular-nums text-white/60 sm:inline-block">
+            <span className="hidden text-xs font-bold tabular-nums text-muted-foreground sm:inline-block">
               {formatNumber(count)} مراحل
             </span>
             <div className="flex items-center gap-3">
-              <NavButton dir="prev" disabled={!canPrev} onClick={() => centerPage(index - 1)} />
-              <div className="h-1 w-36 overflow-hidden rounded-full bg-white/20 sm:hidden">
+              <NavButton dir="prev" disabled={!canPrev} onClick={() => goTo(page - 1)} />
+              <div className="h-1 w-36 overflow-hidden rounded-full bg-primary/15 sm:hidden">
                 <div
-                  className="h-full rounded-full bg-white transition-[width] duration-300"
-                  style={{ width: `${pages > 1 ? (index / (pages - 1)) * 100 : 0}%` }}
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${pages > 1 ? (page / (pages - 1)) * 100 : 0}%` }}
                 />
               </div>
-              <NavButton dir="next" disabled={!canNext} onClick={() => centerPage(index + 1)} />
+              <NavButton dir="next" disabled={!canNext} onClick={() => goTo(page + 1)} />
               <div className="hidden sm:block">
-                <ProgressSegments pages={pages} current={index} onSelect={centerPage} />
+                <ProgressSegments pages={pages} current={page} onSelect={goTo} />
               </div>
             </div>
           </div>
@@ -553,21 +643,20 @@ export function EducationalStagesSection() {
               {canPrev ? (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 start-0 z-10 w-10 sm:w-16"
-                  style={{ background: `linear-gradient(to left, ${outerEdge}, transparent)` }}
+                  className="pointer-events-none absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-l from-background to-transparent sm:w-16"
                 />
               ) : null}
               {canNext ? (
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 end-0 z-10 w-10 sm:w-16"
-                  style={{ background: `linear-gradient(to right, ${outerEdge}, transparent)` }}
+                  className="pointer-events-none absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-r from-background to-transparent sm:w-16"
                 />
               ) : null}
 
               <div
                 id="educational-stages-viewport"
                 ref={viewportRef}
+                dir="ltr"
                 role="region"
                 aria-roledescription="carousel"
                 aria-label="المراحل الدراسية"
@@ -577,29 +666,33 @@ export function EducationalStagesSection() {
                 onPointerUp={endDrag}
                 onPointerCancel={endDrag}
                 onClickCapture={handleClickCapture}
+                onKeyDown={handleKeyDown}
                 onDragStart={(e) => e.preventDefault()}
-                className="flex cursor-grab touch-pan-y select-none gap-4 overflow-x-auto overscroll-x-contain py-2 outline-none snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-white/70"
+                className="relative cursor-grab touch-pan-y select-none overflow-hidden py-2 outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-primary/70"
               >
-                {all.map((stage, i) => {
-                  const stats = statsById.get(stage.id);
-                  return (
-                    <div key={stage.id} data-stage-slide className={`${SLIDE_WIDTH} shrink-0 snap-center`}>
-                      <StageCard
-                        stage={stage}
-                        primary={primary}
-                        secondary={secondary}
-                        priority={i < 2}
-                        stats={stats}
-                        loading={loadingIds.has(stage.id)}
-                        popular={stage.id === popularId}
-                      />
-                    </div>
-                  );
-                })}
+                <div ref={trackRef} dir="ltr" className="flex items-stretch gap-4 will-change-transform" style={{ transform: "translate3d(0, 0, 0)" }}>
+                  {all.map((stage, i) => {
+                    const stats = statsById.get(stage.id);
+                    return (
+                      <div key={stage.id} dir="rtl" data-stage-slide className={`${SLIDE_WIDTH} shrink-0`}>
+                        <StageCard
+                          stage={stage}
+                          index={i}
+                          primary={primary}
+                          secondary={secondary}
+                          priority={i < 2}
+                          stats={stats}
+                          loading={loadingIds.has(stage.id)}
+                          popular={stage.id === popularId}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-                الصفحة {index + 1} من {pages}
+                الصفحة {page + 1} من {pages}
               </span>
             </>
           )}
