@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { routes } from "@/constants/routes";
 import { useUploadManagerStore } from "../store";
 import { uploadEngine } from "../services";
 import { hashPool } from "../services/hashPool";
@@ -24,6 +26,11 @@ export function UploadManager() {
   const { enqueueFiles } = useUploadManager();
   const stats = useUploadManagerStats();
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+
+  const isMediaLibrary = pathname === routes.dashboardMedia;
+  const hasQueue = stats.total > 0;
+  const showLauncher = isMediaLibrary || hasQueue;
 
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
@@ -94,7 +101,7 @@ export function UploadManager() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {!isOpen && (
+          {showLauncher && !isOpen && (
             <motion.button
               key="launcher"
               type="button"
