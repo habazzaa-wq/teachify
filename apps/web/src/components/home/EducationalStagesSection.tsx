@@ -334,21 +334,29 @@ export function EducationalStagesSection() {
     [primary],
   );
   const outerGrad = useMemo(
-    () => `linear-gradient(180deg, ${mixHex(secondary, "#000000", 0.34)} 0%, ${mixHex(secondary, "#000000", 0.44)} 100%)`,
+    () =>
+      [
+        `radial-gradient(85% 65% at 50% -8%, ${mixHex(secondary, "#FFFFFF", 0.14)} 0%, transparent 60%)`,
+        `radial-gradient(130% 130% at 50% 118%, ${mixHex(secondary, "#000000", 0.48)} 0%, transparent 60%)`,
+        `linear-gradient(180deg, ${mixHex(secondary, "#000000", 0.2)} 0%, ${mixHex(secondary, "#000000", 0.34)} 100%)`,
+      ].join(", "),
     [secondary],
   );
+  const outerEdge = useMemo(() => mixHex(secondary, "#000000", 0.3), [secondary]);
 
   const applyFocus = useCallback(() => {
     const vp = viewportRef.current;
     const inner = innerRef.current;
     if (!vp || !inner) return;
     const ir = inner.getBoundingClientRect();
+    const zoneL = ir.left + ir.width * 0.06;
+    const zoneR = ir.right - ir.width * 0.06;
     const slides = vp.querySelectorAll<HTMLElement>("[data-stage-slide]");
     slides.forEach((slide) => {
       const card = slide.firstElementChild as HTMLElement | null;
       if (!card) return;
       const r = slide.getBoundingClientRect();
-      const overlap = Math.max(0, Math.min(r.right, ir.right) - Math.max(r.left, ir.left));
+      const overlap = Math.max(0, Math.min(r.right, zoneR) - Math.max(r.left, zoneL));
       const raw = overlap / Math.max(1, r.width);
       const f = raw * raw * (3 - 2 * raw);
       card.style.opacity = `${0.38 + 0.62 * f}`;
@@ -485,12 +493,17 @@ export function EducationalStagesSection() {
       className="relative w-full scroll-mt-24 overflow-hidden"
       style={{ background: outerGrad }}
     >
-      {/* inner rectangle — the bright 70% zone */}
+      {/* inner rectangle — the bright 70% zone, soft-blended edges */}
       <div
         ref={innerRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-1/2 w-[86%] -translate-x-1/2 border-x border-white/10 sm:w-[76%] lg:w-[70%]"
-        style={{ background: innerGrad, boxShadow: "inset 0 0 90px rgba(0,0,0,0.22)" }}
+        className="pointer-events-none absolute inset-y-0 left-1/2 w-[86%] -translate-x-1/2 sm:w-[76%] lg:w-[70%]"
+        style={{
+          background: innerGrad,
+          boxShadow: "inset 0 0 90px rgba(0,0,0,0.22)",
+          maskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%)",
+        }}
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
@@ -509,12 +522,49 @@ export function EducationalStagesSection() {
           </p>
         </div>
 
+        {/* top controls — side of the section */}
+        {count > 1 ? (
+          <div className="mt-10 flex flex-col items-center gap-4 sm:mt-12 sm:flex-row sm:justify-between">
+            <span className="hidden text-xs font-bold tabular-nums text-white/60 sm:inline-block">
+              {formatNumber(count)} مراحل
+            </span>
+            <div className="flex items-center gap-3">
+              <NavButton dir="prev" disabled={!canPrev} onClick={() => centerPage(index - 1)} />
+              <div className="h-1 w-36 overflow-hidden rounded-full bg-white/20 sm:hidden">
+                <div
+                  className="h-full rounded-full bg-white transition-[width] duration-300"
+                  style={{ width: `${pages > 1 ? (index / (pages - 1)) * 100 : 0}%` }}
+                />
+              </div>
+              <NavButton dir="next" disabled={!canNext} onClick={() => centerPage(index + 1)} />
+              <div className="hidden sm:block">
+                <ProgressSegments pages={pages} current={index} onSelect={centerPage} />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {/* carousel */}
-        <div className="relative mt-10 sm:mt-12">
+        <div className="relative mt-5 sm:mt-6">
           {isLoading ? (
             <StagesSkeleton />
           ) : (
             <>
+              {canPrev ? (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 start-0 z-10 w-10 sm:w-16"
+                  style={{ background: `linear-gradient(to left, ${outerEdge}, transparent)` }}
+                />
+              ) : null}
+              {canNext ? (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 end-0 z-10 w-10 sm:w-16"
+                  style={{ background: `linear-gradient(to right, ${outerEdge}, transparent)` }}
+                />
+              ) : null}
+
               <div
                 id="educational-stages-viewport"
                 ref={viewportRef}
@@ -529,10 +579,6 @@ export function EducationalStagesSection() {
                 onClickCapture={handleClickCapture}
                 onDragStart={(e) => e.preventDefault()}
                 className="flex cursor-grab touch-pan-y select-none gap-4 overflow-x-auto overscroll-x-contain py-2 outline-none snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-white/70"
-                style={{
-                  maskImage: "linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)",
-                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)",
-                }}
               >
                 {all.map((stage, i) => {
                   const stats = statsById.get(stage.id);
@@ -551,29 +597,6 @@ export function EducationalStagesSection() {
                   );
                 })}
               </div>
-
-              {count > 1 ? (
-                <div className="mt-6 flex items-center justify-center gap-4">
-                  <NavButton dir="prev" disabled={!canPrev} onClick={() => centerPage(index - 1)} />
-                  <div className="hidden sm:block">
-                    <ProgressSegments pages={pages} current={index} onSelect={centerPage} />
-                  </div>
-                  <NavButton dir="next" disabled={!canNext} onClick={() => centerPage(index + 1)} />
-                </div>
-              ) : null}
-
-              {count > 1 ? (
-                <div className="mt-6 flex items-center justify-center gap-3 sm:hidden">
-                  <NavButton dir="prev" disabled={!canPrev} onClick={() => centerPage(index - 1)} />
-                  <div className="h-1 w-36 overflow-hidden rounded-full bg-white/20">
-                    <div
-                      className="h-full rounded-full bg-white transition-[width] duration-300"
-                      style={{ width: `${pages > 1 ? (index / (pages - 1)) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <NavButton dir="next" disabled={!canNext} onClick={() => centerPage(index + 1)} />
-                </div>
-              ) : null}
 
               <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
                 الصفحة {index + 1} من {pages}
