@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, ArrowRight, Camera } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -84,7 +84,7 @@ export function EditQuestionDialog({
         id: questionId,
         payload: buildQuestionPayload(values),
       })) as Question;
-      if (values.questionFormat === "image" && !showScanEditor) {
+      if (values.questionFormat === "image") {
         setShowScanEditor(true);
       } else {
         onOpenChange(false);
@@ -95,17 +95,22 @@ export function EditQuestionDialog({
     }
   };
 
-  const isEditing = values?.questionFormat === "image" && showScanEditor && question;
+  const isEditingScan = values?.questionFormat === "image" && showScanEditor && question;
+  const isImageFormat = values?.questionFormat === "image";
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
       <AppDialogContent className="max-w-3xl">
         <AppDialogHeader>
           <AppDialogTitle>
-            {isEditing ? "تحرير صورة السؤال" : "تحرير السؤال"}
+            {isEditingScan
+              ? "صورة السؤال الممسوح"
+              : isImageFormat
+                ? "تحرير سؤال ممسوح"
+                : "تحرير السؤال"}
           </AppDialogTitle>
           <AppDialogDescription>
-            {isEditing
+            {isEditingScan
               ? "استبدل أو حدّث صورة السؤال الممسوحة."
               : "عدّل تفاصيل السؤال ومحتواه ثم احفظ التغييرات."}
           </AppDialogDescription>
@@ -118,25 +123,47 @@ export function EditQuestionDialog({
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : isEditing ? (
-            <ScannedQuestionEditor
-              questionId={question.id}
-              scanUrl={question.scanUrl}
-              onScanUploaded={() => {
-                onOpenChange(false);
-                onSaved?.(question);
-              }}
-              onScanRemoved={() => {
-                setShowScanEditor(false);
-              }}
-              disabled={false}
-            />
+          ) : isEditingScan ? (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setShowScanEditor(false)}
+                className="flex items-center gap-1.5 text-sm font-medium text-studio-fg-muted transition-colors hover:text-studio-fg"
+              >
+                <ArrowRight className="h-4 w-4" />
+                العودة لبيانات السؤال
+              </button>
+              <ScannedQuestionEditor
+                questionId={question.id}
+                scanUrl={question.scanUrl}
+                onScanUploaded={() => {
+                  onOpenChange(false);
+                  onSaved?.(question);
+                }}
+                onScanRemoved={() => {
+                  setShowScanEditor(false);
+                }}
+                disabled={false}
+              />
+            </div>
           ) : values ? (
-            <QuestionFormFields
-              values={values}
-              onChange={handlePatch}
-              disabled={updateMutation.isPending}
-            />
+            <>
+              {isImageFormat && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <Camera className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <p className="flex-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    هذا سؤال ممسوح. احفظ البيانات ثم حدّث الصورة إن لزم الأمر.
+                  </p>
+                </div>
+              )}
+              <QuestionFormFields
+                values={values}
+                onChange={handlePatch}
+                disabled={updateMutation.isPending}
+              />
+            </>
           ) : null}
 
           {error && <p role="alert" className="mt-3 text-sm text-studio-danger">{error}</p>}
@@ -145,12 +172,18 @@ export function EditQuestionDialog({
         <AppDialogFooter>
           <StudioButton
             variant="secondary"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              if (isEditingScan) {
+                setShowScanEditor(false);
+              } else {
+                onOpenChange(false);
+              }
+            }}
             disabled={updateMutation.isPending}
           >
-            {isEditing ? "إنهاء" : "إلغاء"}
+            {isEditingScan ? "رجوع" : "إلغاء"}
           </StudioButton>
-          {!isEditing && (
+          {!isEditingScan && (
             <StudioButton
               onClick={handleSubmit}
               loading={updateMutation.isPending}
@@ -158,7 +191,7 @@ export function EditQuestionDialog({
               disabled={!values}
             >
               {!updateMutation.isPending && <Pencil className="h-4 w-4" />}
-              حفظ التغييرات
+              {isImageFormat ? "حفظ والتصوير" : "حفظ التغييرات"}
             </StudioButton>
           )}
         </AppDialogFooter>

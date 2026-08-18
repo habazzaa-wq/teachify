@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, ScanLine, FileText } from "lucide-react";
+import { Plus, ScanLine, FileText, ArrowRight, Camera } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -19,7 +19,7 @@ import {
   AppSwitch,
   Label,
 } from "@/components/ui";
-import { StudioButton } from "@/components/studio";
+import { StudioButton, StudioChip } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import {
   QUESTION_TYPE_OPTIONS,
@@ -387,10 +387,9 @@ export function QuestionFormFields({
       <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
         <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
         {values.questionFormat === "image" ? (
-          <div className="space-y-3">
-            <p className="text-xs text-studio-fg-muted">
-              ارفع صورة السؤال. ستتم معالجتها تلقائياً إلى مسح وثائقي نظيف.
-            </p>
+          <div className="flex items-center gap-2 rounded-lg border border-dashed border-studio-border bg-background/50 p-3 text-xs text-studio-fg-muted">
+            <Camera className="h-4 w-4 shrink-0 text-emerald-500" />
+            <span>محتوى السؤال سيكون الصورة الممسوحة. ارفع الصورة من خلال المسار المخصص.</span>
           </div>
         ) : (
           <QuestionBuilderForm
@@ -415,6 +414,8 @@ interface CreateQuestionDialogProps {
   examId?: string | number;
 }
 
+type ScanPhase = "form" | "scan";
+
 export function CreateQuestionDialog({
   open,
   onOpenChange,
@@ -429,6 +430,7 @@ export function CreateQuestionDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [createdQuestion, setCreatedQuestion] = useState<Question | null>(null);
+  const [scanPhase, setScanPhase] = useState<ScanPhase>("form");
   const createMutation = useCreateQuestion();
   const addExamQuestion = useAddExamQuestion();
 
@@ -443,6 +445,7 @@ export function CreateQuestionDialog({
       );
       setError(null);
       setCreatedQuestion(null);
+      setScanPhase("form");
     }
   }, [open, defaultType, bankId, categoryId]);
 
@@ -454,11 +457,7 @@ export function CreateQuestionDialog({
       setError("الرجاء إدخال عنوان للسؤال.");
       return;
     }
-    if (values.questionFormat === "image" && !createdQuestion) {
-      setError(null);
-    } else {
-      setError(null);
-    }
+    setError(null);
     try {
       const created = (await createMutation.mutateAsync(
         buildQuestionPayload(values),
@@ -475,6 +474,7 @@ export function CreateQuestionDialog({
       }
       if (values.questionFormat === "image") {
         setCreatedQuestion(created);
+        setScanPhase("scan");
       } else {
         onOpenChange(false);
         onCreated?.(created);
@@ -491,31 +491,68 @@ export function CreateQuestionDialog({
     }
   };
 
-  const isScanning = values.questionFormat === "image" && createdQuestion;
+  const handleScanBack = () => {
+    setScanPhase("form");
+    setCreatedQuestion(null);
+  };
+
+  const isScanning = values.questionFormat === "image" && scanPhase === "scan" && createdQuestion;
+  const isImageFormat = values.questionFormat === "image";
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
       <AppDialogContent className="max-w-3xl">
         <AppDialogHeader>
           <AppDialogTitle>
-            {isScanning ? "رفع صورة السؤال" : "إنشاء سؤال جديد"}
+            {isScanning
+              ? "تصوير / رفع السؤال"
+              : isImageFormat
+                ? "إنشاء سؤال ممسوح"
+                : "إنشاء سؤال جديد"}
           </AppDialogTitle>
           <AppDialogDescription>
             {isScanning
               ? "التقط أو ارفع صورة السؤال لمعالجتها."
-              : "أضف تفاصيل السؤال ومحتواه حسب النوع المختار."}
+              : isImageFormat
+                ? "املأ البيانات الأساسية ثم التقط أو ارفع صورة السؤال."
+                : "أضف تفاصيل السؤال ومحتواه حسب النوع المختار."}
           </AppDialogDescription>
         </AppDialogHeader>
 
         <div className="max-h-[65vh] overflow-y-auto pe-1">
           {isScanning ? (
-            <ScannedQuestionEditor
-              questionId={createdQuestion.id}
-              onScanUploaded={handleScanUploaded}
-              disabled={false}
-            />
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={handleScanBack}
+                className="flex items-center gap-1.5 text-sm font-medium text-studio-fg-muted transition-colors hover:text-studio-fg"
+              >
+                <ArrowRight className="h-4 w-4" />
+                العودة لبيانات السؤال
+              </button>
+              <ScannedQuestionEditor
+                questionId={createdQuestion.id}
+                onScanUploaded={handleScanUploaded}
+                disabled={false}
+              />
+            </div>
           ) : (
             <>
+              {isImageFormat && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <Camera className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                      سؤال ممسوح
+                    </p>
+                    <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">
+                      بعد الحفظ، ستتمكن من تصوير أو رفع صورة السؤال ومعالجتها تلقائياً.
+                    </p>
+                  </div>
+                </div>
+              )}
               <QuestionFormFields
                 values={values}
                 onChange={handlePatch}
@@ -531,10 +568,16 @@ export function CreateQuestionDialog({
         <AppDialogFooter>
           <StudioButton
             variant="secondary"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              if (isScanning) {
+                handleScanBack();
+              } else {
+                onOpenChange(false);
+              }
+            }}
             disabled={createMutation.isPending}
           >
-            {isScanning ? "إنهاء" : "إلغاء"}
+            {isScanning ? "رجوع" : "إلغاء"}
           </StudioButton>
           {!isScanning && (
             <StudioButton
@@ -542,8 +585,10 @@ export function CreateQuestionDialog({
               loading={createMutation.isPending}
               className="gap-2"
             >
-              {!createMutation.isPending && <Plus className="h-4 w-4" />}
-              إنشاء السؤال
+              {!createMutation.isPending && (
+                isImageFormat ? <Camera className="h-4 w-4" /> : <Plus className="h-4 w-4" />
+              )}
+              {isImageFormat ? "حفظ والالتقاط" : "إنشاء السؤال"}
             </StudioButton>
           )}
         </AppDialogFooter>

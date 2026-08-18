@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Check, X, CheckCircle2, CircleX } from "lucide-react";
+import { Check, X, CheckCircle2, CircleX, ScanLine } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type {
   ExamSessionAnswer,
@@ -62,7 +62,8 @@ function ExamQuestionViewInner({
             {question.points} درجة
           </span>
           {question.questionFormat === "image" && (
-            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+              <ScanLine className="h-3 w-3" />
               سؤال ممسوح
             </span>
           )}
@@ -81,7 +82,7 @@ function ExamQuestionViewInner({
 
       {/* Scanned question image */}
       {question.questionFormat === "image" && question.scanUrl && (
-        <div className="overflow-hidden rounded-2xl border border-border/40 bg-background/50">
+        <div className="overflow-hidden rounded-2xl border border-border/40 bg-background/50 shadow-sm">
           <img
             src={question.scanUrl}
             alt={`صورة السؤال ${index + 1}`}

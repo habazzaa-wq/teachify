@@ -10,7 +10,10 @@ import {
   CheckCircle2,
   AlertCircle,
   ScanLine,
-  ImageIcon,
+  FileImage,
+  RotateCcw,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { StudioSurfaceCard, StudioButton } from "@/components/studio";
 import { cn } from "@/lib/cn";
@@ -27,13 +30,12 @@ interface ScannedQuestionEditorProps {
 }
 
 const PROCESSING_STEPS = [
-  "جارٍ الرفع...",
-  "جارٍ اكتشاف المستند...",
-  "جارٍ تصحيح المنظور...",
-  "جارٍ القص...",
-  "جارٍ تحسين الوضوح...",
-  "جارٍ الضغط...",
-  "جارٍ الحفظ...",
+  { label: "رفع الصورة", icon: Upload },
+  { label: "اكتشاف حدود المستند", icon: FileImage },
+  { label: "تصحيح المنظور والقص", icon: ScanLine },
+  { label: "تحسين الوضوح", icon: RefreshCw },
+  { label: "ضغط الصورة", icon: FileImage },
+  { label: "تجهيز السؤال", icon: CheckCircle2 },
 ];
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -50,6 +52,7 @@ export function ScannedQuestionEditor({
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialScanUrl ?? null);
   const [error, setError] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +74,7 @@ export function ScannedQuestionEditor({
   }, []);
 
   const processFile = useCallback(
-    async (file: File) => {
+    (file: File) => {
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
@@ -97,7 +100,7 @@ export function ScannedQuestionEditor({
     try {
       const stepInterval = setInterval(() => {
         setProcessingStep((prev) => Math.min(prev + 1, PROCESSING_STEPS.length - 1));
-      }, 1200);
+      }, 1500);
 
       const file = await fetch(previewUrl).then((r) => r.blob());
       const uploadFile = new File([file], "scan.jpg", { type: "image/jpeg" });
@@ -105,6 +108,7 @@ export function ScannedQuestionEditor({
       const result = await examBankService.uploadScan(questionId, uploadFile);
 
       clearInterval(stepInterval);
+      setProcessingStep(PROCESSING_STEPS.length - 1);
       setStatus("done");
 
       if (result.scanUrl) {
@@ -145,6 +149,7 @@ export function ScannedQuestionEditor({
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
+      setDragActive(false);
       if (disabled) return;
       const file = e.dataTransfer.files[0];
       if (file) processFile(file);
@@ -154,75 +159,138 @@ export function ScannedQuestionEditor({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    setDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  }, []);
+
+  const handleRetake = useCallback(() => {
+    setStatus("idle");
+    setPreviewUrl(null);
+    setError(null);
+    setProcessingStep(0);
+    setTimeout(() => cameraInputRef.current?.click(), 100);
+  }, []);
+
+  const handleReplace = useCallback(() => {
+    setStatus("idle");
+    setPreviewUrl(null);
+    setError(null);
+    setProcessingStep(0);
+    setTimeout(() => fileInputRef.current?.click(), 100);
   }, []);
 
   if (status === "done" && previewUrl) {
     return (
       <div className="space-y-3">
-        <div className="relative overflow-hidden rounded-xl border border-studio-border bg-studio-soft">
+        <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30">
           <img
             src={previewUrl}
             alt="السؤال الممسوح"
             className="max-h-[400px] w-full object-contain"
           />
           {!disabled && (
-            <div className="absolute top-2 left-2 flex gap-1.5">
+            <div className="absolute top-3 left-3 flex gap-1.5">
               <button
                 type="button"
-                onClick={() => {
-                  setStatus("idle");
-                  setPreviewUrl(null);
-                  cameraInputRef.current?.click();
-                }}
+                onClick={handleRetake}
                 className="flex h-8 items-center gap-1.5 rounded-lg bg-background/90 px-2.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+                aria-label="إعادة التصوير"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                إعادة التصوير
+              </button>
+              <button
+                type="button"
+                onClick={handleReplace}
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-background/90 px-2.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+                aria-label="تغيير الصورة"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                استبدال
+                تغيير الصورة
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
                 className="flex h-8 items-center gap-1.5 rounded-lg bg-red-500/90 px-2.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-red-600"
+                aria-label="حذف الصورة"
               >
-                <X className="h-3.5 w-3.5" />
-                إزالة
+                <Trash2 className="h-3.5 w-3.5" />
+                حذف
               </button>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-emerald-600">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          <span className="font-medium">تم المسح والمعالجة بنجاح</span>
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span className="font-medium">تم تجهيز السؤال بنجاح</span>
         </div>
       </div>
     );
   }
 
   if (status === "uploading" || status === "processing") {
+    const currentStep = Math.min(processingStep, PROCESSING_STEPS.length - 1);
     return (
       <div className="space-y-4">
         {previewUrl && (
-          <div className="relative overflow-hidden rounded-xl border border-studio-border bg-studio-soft opacity-60">
+          <div className="relative overflow-hidden rounded-xl border border-studio-border bg-studio-soft">
             <img
               src={previewUrl}
               alt="جارٍ المعالجة"
-              className="max-h-[300px] w-full object-contain"
+              className="max-h-[280px] w-full object-contain opacity-50"
             />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-[2px]">
+              <Loader2 className="h-8 w-8 animate-spin text-studio-accent" />
+            </div>
           </div>
         )}
         <StudioSurfaceCard variant="ghost" padding="md" className="border border-studio-border">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-studio-accent" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-studio-fg">
-                {PROCESSING_STEPS[processingStep]}
-              </p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-studio-soft">
-                <div
-                  className="h-full rounded-full bg-studio-accent transition-all duration-700"
-                  style={{ width: `${((processingStep + 1) / PROCESSING_STEPS.length) * 100}%` }}
-                />
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-studio-accent" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-studio-fg">
+                  جارٍ تجهيز السؤال...
+                </p>
               </div>
+            </div>
+            <div className="space-y-2">
+              {PROCESSING_STEPS.map((step, idx) => {
+                const StepIcon = step.icon;
+                const isCompleted = idx < currentStep;
+                const isCurrent = idx === currentStep;
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                      isCompleted && "text-emerald-600 dark:text-emerald-400",
+                      isCurrent && "bg-studio-accent/5 text-studio-accent font-medium",
+                      !isCompleted && !isCurrent && "text-studio-fg-muted opacity-50",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                        isCompleted && "border-emerald-500 bg-emerald-500 text-white",
+                        isCurrent && "border-studio-accent bg-studio-accent/10",
+                        !isCompleted && !isCurrent && "border-studio-border",
+                      )}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <StepIcon className="h-3 w-3" />
+                      )}
+                    </div>
+                    <span>{step.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </StudioSurfaceCard>
@@ -243,7 +311,8 @@ export function ScannedQuestionEditor({
             <button
               type="button"
               onClick={reset}
-              className="absolute top-2 left-2 flex h-8 items-center gap-1.5 rounded-lg bg-background/90 px-2.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+              className="absolute top-3 left-3 flex h-8 items-center gap-1.5 rounded-lg bg-background/90 px-2.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+              aria-label="إلغاء"
             >
               <X className="h-3.5 w-3.5" />
               إلغاء
@@ -276,52 +345,87 @@ export function ScannedQuestionEditor({
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         className={cn(
-          "flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-studio-border bg-studio-soft/50 p-8 text-center transition-colors",
-          !disabled && "hover:border-studio-accent hover:bg-studio-accent/5",
-          disabled && "opacity-50",
+          "relative flex flex-col items-center justify-center gap-5 rounded-xl border-2 border-dashed p-10 text-center transition-all duration-200",
+          dragActive
+            ? "border-studio-accent bg-studio-accent/5 scale-[1.01]"
+            : "border-studio-border bg-studio-soft/50 hover:border-studio-accent-border hover:bg-studio-accent/5",
+          disabled && "pointer-events-none opacity-50",
         )}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10">
-          <ScanLine className="h-7 w-7 text-emerald-500" />
+        <div
+          className={cn(
+            "flex h-16 w-16 items-center justify-center rounded-2xl transition-colors duration-200",
+            dragActive ? "bg-studio-accent/15" : "bg-emerald-500/10",
+          )}
+        >
+          <ScanLine
+            className={cn(
+              "h-8 w-8 transition-colors duration-200",
+              dragActive ? "text-studio-accent" : "text-emerald-500",
+            )}
+          />
         </div>
         <div>
-          <p className="text-sm font-semibold text-studio-fg">
-            التقط أو ارفع صورة السؤال
+          <p className="text-base font-semibold text-studio-fg">
+            أضف صورة السؤال
           </p>
-          <p className="mt-1 text-xs text-studio-fg-muted">
-            مفيد للرياضيات والفيزياء والكيمياء والمعادلات والرسومات والكتابة اليدوية
+          <p className="mt-1.5 text-sm text-studio-fg-muted">
+            صوّر المسألة بالكاميرا أو ارفع صورة واضحة للورقة
+            <br />
+            وسيتم تنظيفها تلقائياً
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2 sm:flex-row">
           <StudioButton
             variant="soft"
             onClick={() => cameraInputRef.current?.click()}
             disabled={disabled}
             className="gap-2"
+            aria-label="تصوير السؤال بالكاميرا"
           >
             <Camera className="h-4 w-4" />
-            الكاميرا
+            تصوير السؤال
           </StudioButton>
           <StudioButton
             variant="soft"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
             className="gap-2"
+            aria-label="رفع صورة من الجهاز"
           >
             <Upload className="h-4 w-4" />
-            رفع ملف
+            رفع صورة
           </StudioButton>
         </div>
         <p className="text-[11px] text-studio-fg-subtle">
           JPEG, PNG, WebP — حد أقصى 10 ميجابايت
         </p>
+        {dragActive && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-studio-accent/5 backdrop-blur-[1px]">
+            <p className="text-sm font-semibold text-studio-accent">
+              أفلت الصورة هنا
+            </p>
+          </div>
+        )}
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-400">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-xs font-medium">{error}</p>
+        <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/50">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+          <div className="flex-1">
+            <p className="text-xs font-medium text-red-700 dark:text-red-400">
+              {error}
+            </p>
+            <button
+              type="button"
+              onClick={reset}
+              className="mt-1.5 text-xs font-semibold text-red-600 hover:underline dark:text-red-400"
+            >
+              حاول مرة أخرى
+            </button>
+          </div>
         </div>
       )}
 
@@ -331,6 +435,7 @@ export function ScannedQuestionEditor({
         accept="image/jpeg,image/png,image/webp"
         capture="environment"
         className="hidden"
+        aria-label="تصوير السؤال بالكاميرا"
         onChange={handleFileChange}
       />
       <input
@@ -338,6 +443,7 @@ export function ScannedQuestionEditor({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
+        aria-label="اختيار صورة من الجهاز"
         onChange={handleFileChange}
       />
     </div>

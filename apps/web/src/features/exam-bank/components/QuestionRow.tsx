@@ -222,7 +222,7 @@ function QuestionRowBase({
               {question.questionFormat === "image" && (
                 <StudioChip variant="success" size="sm" className="gap-1">
                   <ScanLine className="h-3 w-3" />
-                  مسح
+                  سؤال ممسوح
                 </StudioChip>
               )}
               <StudioChip
