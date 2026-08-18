@@ -10,6 +10,7 @@ import {
   Target,
   Plus,
   Repeat,
+  FilePlus2,
 } from "lucide-react";
 import {
   StudioSurfaceCard,
@@ -29,6 +30,7 @@ interface ExamStudioBuilderProps {
   questions: ExamQuestion[];
   onOpenSettings: () => void;
   onAddQuestion: () => void;
+  onCreateQuestion: () => void;
   onUpdateQuestion?: (id: string, payload: Record<string, unknown>) => void;
 }
 
@@ -57,11 +59,13 @@ function ExamOverview({
   questions,
   onOpenSettings,
   onAddQuestion,
+  onCreateQuestion,
 }: {
   exam: Exam;
   questions: ExamQuestion[];
   onOpenSettings: () => void;
   onAddQuestion: () => void;
+  onCreateQuestion: () => void;
 }) {
   const firstQuestionId = questions[0]?.questionId;
   return (
@@ -111,6 +115,13 @@ function ExamOverview({
           >
             {firstQuestionId ? "إدارة الأسئلة" : "إضافة سؤال"}
           </StudioButton>
+          <StudioButton
+            variant="secondary"
+            icon={<FilePlus2 className="h-4 w-4" />}
+            onClick={onCreateQuestion}
+          >
+            سؤال جديد
+          </StudioButton>
           <StudioButton variant="secondary" icon={<Settings2 className="h-4 w-4" />} onClick={onOpenSettings}>
             فتح الإعدادات
           </StudioButton>
@@ -125,6 +136,7 @@ export function ExamStudioBuilder({
   questions,
   onOpenSettings,
   onAddQuestion,
+  onCreateQuestion,
   onUpdateQuestion,
 }: ExamStudioBuilderProps) {
   const { view, selectedQuestionId } = useExamStudioStore();
@@ -188,6 +200,7 @@ export function ExamStudioBuilder({
                 questions={questions}
                 onOpenSettings={onOpenSettings}
                 onAddQuestion={onAddQuestion}
+                onCreateQuestion={onCreateQuestion}
               />
             ) : (
               <StudioEmptyState title="لا يوجد اختبار" />
