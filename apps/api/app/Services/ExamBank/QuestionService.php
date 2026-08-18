@@ -14,14 +14,17 @@ class QuestionService
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Question {
+            $isImage = ($data['question_format'] ?? 'text') === 'image';
+            $title = $data['title'] ?? ($isImage ? 'سؤال ممسوح' : null);
+
             $question = Question::create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
                 'uuid' => \Illuminate\Support\Str::uuid(),
                 'category_id' => $data['category_id'] ?? null,
                 'bank_id' => $data['bank_id'] ?? null,
-                'title' => $data['title'],
-                'slug' => $this->uniqueSlug($data['slug'] ?? $data['title']),
+                'title' => $title,
+                'slug' => $this->uniqueSlug($data['slug'] ?? $title ?? 'untitled'),
                 'description' => $data['description'] ?? null,
                 'type' => $data['type'],
                 'difficulty' => $data['difficulty'] ?? 'medium',

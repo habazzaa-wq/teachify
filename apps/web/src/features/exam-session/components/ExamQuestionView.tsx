@@ -64,33 +64,35 @@ function ExamQuestionViewInner({
           {question.questionFormat === "image" && (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
               <ScanLine className="h-3 w-3" />
-              سؤال ممسوح
+              سؤال مصوّر
             </span>
           )}
         </div>
 
-        <h2 className="mt-4 text-lg font-extrabold leading-relaxed text-foreground">
-          {question.title}
-        </h2>
-
-        {question.description && (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {question.description}
-          </p>
+        {question.questionFormat === "image" && question.scanUrl ? (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border/40 bg-background/50 shadow-sm">
+            <img
+              src={question.scanUrl}
+              alt={`صورة السؤال ${index + 1}`}
+              className="max-h-[500px] w-full object-contain"
+              loading="eager"
+            />
+          </div>
+        ) : (
+          <>
+            {question.title && (
+              <h2 className="mt-4 text-lg font-extrabold leading-relaxed text-foreground">
+                {question.title}
+              </h2>
+            )}
+            {question.description && (
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {question.description}
+              </p>
+            )}
+          </>
         )}
       </div>
-
-      {/* Scanned question image */}
-      {question.questionFormat === "image" && question.scanUrl && (
-        <div className="overflow-hidden rounded-2xl border border-border/40 bg-background/50 shadow-sm">
-          <img
-            src={question.scanUrl}
-            alt={`صورة السؤال ${index + 1}`}
-            className="max-h-[500px] w-full object-contain"
-            loading="eager"
-          />
-        </div>
-      )}
 
       {/* Choices */}
       {question.type === "true_false" ? (

@@ -92,6 +92,10 @@ class ExamResultService
                 'answered' => $answered,
                 'status' => $answered ? ($isCorrect ? 'correct' : 'wrong') : 'skipped',
                 'earnedPoints' => $isCorrect ? $points : 0,
+                'questionFormat' => $question->question_format ?? 'text',
+                'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
+                    ? ($question->scan?->cdn_url ?? null)
+                    : null,
             ];
         }
 

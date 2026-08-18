@@ -161,6 +161,8 @@ function formatReviewItem(raw: Raw): ResultReviewItem {
     answered: Boolean(raw.answered),
     status: (raw.status ?? "skipped") as ReviewStatus,
     earnedPoints: Number(raw.earnedPoints ?? 0),
+    questionFormat: (raw.questionFormat ?? "text") as "text" | "image",
+    scanUrl: raw.scanUrl ?? null,
   };
 }
 

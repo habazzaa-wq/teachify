@@ -36,7 +36,7 @@ export const QUESTION_FORMAT_CONFIG: Record<
   { label: string; description: string; icon: LucideIcon; color: string; bg: string }
 > = {
   text: { label: "سؤال نصي", description: "اكتب السؤال بشكل طبيعي.", icon: FileText, color: "text-studio-fg", bg: "bg-studio-soft" },
-  image: { label: "سؤال ممسوح", description: "التقط أو ارفع صورة للسؤال وحوّلها إلى مسح وثائقي نظيف.", icon: ScanLine, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  image: { label: "سؤال مصوّر", description: "التقط أو ارفع صورة السؤال.", icon: ScanLine, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 };
 
 export const QUESTION_FORMAT_OPTIONS = Object.entries(QUESTION_FORMAT_CONFIG).map(([value, cfg]) => ({

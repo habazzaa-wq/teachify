@@ -66,13 +66,15 @@ export function QuestionBuilder({
 
   const typeCfg = QUESTION_TYPE_CONFIG[question.type as QuestionType];
 
+  const isImageFormat = ((question.questionFormat as QuestionFormat) ?? "text") === "image";
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <StudioChip variant="accent" size="sm">
           {typeCfg.label}
         </StudioChip>
-        {((question.questionFormat as QuestionFormat) ?? "text") === "image" && (
+        {isImageFormat && (
           <StudioChip variant="success" size="sm">
             {QUESTION_FORMAT_CONFIG.image.label}
           </StudioChip>
@@ -82,31 +84,35 @@ export function QuestionBuilder({
         </span>
       </div>
 
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-studio-fg-muted">العنوان</p>
-        <AppInput
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            emit({ title: e.target.value });
-          }}
-          placeholder="عنوان السؤال"
-          className="bg-studio-soft"
-        />
-      </div>
+      {!isImageFormat && (
+        <>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-studio-fg-muted">العنوان</p>
+            <AppInput
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                emit({ title: e.target.value });
+              }}
+              placeholder="عنوان السؤال"
+              className="bg-studio-soft"
+            />
+          </div>
 
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-studio-fg-muted">الوصف (اختياري)</p>
-        <AppTextarea
-          value={description}
-          onChange={(e) => {
-            setDescription(e.target.value);
-            emit({ description: e.target.value || null });
-          }}
-          placeholder="وصف مختصر للسؤال..."
-          className="bg-studio-soft"
-        />
-      </div>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-studio-fg-muted">الوصف (اختياري)</p>
+            <AppTextarea
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                emit({ description: e.target.value || null });
+              }}
+              placeholder="وصف مختصر للسؤال..."
+              className="bg-studio-soft"
+            />
+          </div>
+        </>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
@@ -148,8 +154,10 @@ export function QuestionBuilder({
       </div>
 
       <StudioSurfaceCard variant="default" padding="md">
-        <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
-        {((question.questionFormat as QuestionFormat) ?? "text") === "image" ? (
+        <p className="mb-3 text-sm font-semibold text-studio-fg">
+          {isImageFormat ? "صورة السؤال" : "محتوى السؤال"}
+        </p>
+        {isImageFormat ? (
           <ScannedQuestionEditor
             questionId={question.id}
             scanUrl={question.scanUrl}

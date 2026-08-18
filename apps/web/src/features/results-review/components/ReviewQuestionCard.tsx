@@ -113,9 +113,19 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="border-t border-border/30 px-4 py-5 sm:px-5">
-              <h3 className="text-base font-extrabold leading-relaxed text-foreground">
-                {item.title}
-              </h3>
+              {item.questionFormat === "image" && item.scanUrl ? (
+                <div className="mb-4 overflow-hidden rounded-xl border border-border/40">
+                  <img
+                    src={item.scanUrl}
+                    alt={`صورة السؤال ${index + 1}`}
+                    className="max-h-[300px] w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <h3 className="text-base font-extrabold leading-relaxed text-foreground">
+                  {item.title}
+                </h3>
+              )}
 
               {item.description && (
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

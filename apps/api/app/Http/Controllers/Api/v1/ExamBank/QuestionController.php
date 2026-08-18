@@ -318,10 +318,16 @@ class QuestionController extends Controller
     private function validateQuestion(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
+        $questionFormat = $request->input('question_format', $partial ? null : 'text');
+
+        // For image questions, title is auto-generated; for text questions, it is required
+        $titleRule = ($questionFormat === 'image')
+            ? ['sometimes', 'nullable', 'string', 'max:500']
+            : [$required, 'string', 'max:500'];
 
         return $request->validate([
-            'title' => [$required, 'string', 'max:500'],
-            'slug' => ['sometimes', 'string', 'max:500', 'alpha_dash:ascii'],
+            'title' => $titleRule,
+            'slug' => ['sometimes', 'nullable', 'string', 'max:500', 'alpha_dash:ascii'],
             'description' => ['nullable', 'string'],
             'type' => [$required, Rule::in([
                 'single_choice', 'multiple_choice', 'true_false', 'short_answer',

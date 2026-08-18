@@ -35,6 +35,8 @@ export interface ResultReviewItem {
   answered: boolean;
   status: ReviewStatus;
   earnedPoints: number;
+  questionFormat?: "text" | "image";
+  scanUrl?: string | null;
 }
 
 export interface ResultAttemptMeta {

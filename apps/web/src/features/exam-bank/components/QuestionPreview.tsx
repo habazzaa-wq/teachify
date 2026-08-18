@@ -44,7 +44,7 @@ export function QuestionPreview({ question }: { question: Question }) {
         </StudioChip>
         {isScanned && (
           <StudioChip variant="success" size="sm">
-            سؤال ممسوح
+            سؤال مصوّر
           </StudioChip>
         )}
         {question.category?.name && (
@@ -55,21 +55,25 @@ export function QuestionPreview({ question }: { question: Question }) {
       </div>
 
       <div>
-        <h3 className="text-base font-semibold text-studio-fg">{question.title}</h3>
-        {question.description && (
-          <p className="mt-1 text-sm text-studio-fg-muted">{question.description}</p>
+        {isScanned && question.scanUrl ? (
+          <div className="space-y-2">
+            <div className="overflow-hidden rounded-xl border border-studio-border">
+              <img
+                src={question.scanUrl}
+                alt="السؤال المصوّر"
+                className="max-h-[300px] w-full object-contain"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-base font-semibold text-studio-fg">{question.title}</h3>
+            {question.description && (
+              <p className="mt-1 text-sm text-studio-fg-muted">{question.description}</p>
+            )}
+          </>
         )}
       </div>
-
-      {isScanned && (
-        <div className="overflow-hidden rounded-xl border border-studio-border">
-          <img
-            src={question.scanUrl!}
-            alt="السؤال الممسوح"
-            className="max-h-[300px] w-full object-contain"
-          />
-        </div>
-      )}
 
       <div className="border-t border-studio-border pt-4">
         <PreviewContent question={question} />
