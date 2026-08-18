@@ -637,6 +637,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
             Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
             Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
+            Route::post('/questions/{question}/scan', [QuestionController::class, 'uploadScan']);
+            Route::delete('/questions/{question}/scan', [QuestionController::class, 'removeScan']);
 
             Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
             Route::apiResource('categories', QuestionCategoryController::class);

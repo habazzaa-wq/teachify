@@ -29,6 +29,8 @@ export interface ExamSessionQuestion {
   answer: ExamSessionAnswer;
   answered: boolean;
   isCorrect: boolean | null;
+  questionFormat?: "text" | "image";
+  scanUrl?: string | null;
 }
 
 export interface ExamSessionExamMeta {

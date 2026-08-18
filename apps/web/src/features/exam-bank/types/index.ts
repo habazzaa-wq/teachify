@@ -11,6 +11,8 @@ export type QuestionType =
   | "file_upload"
   | "coding";
 
+export type QuestionFormat = "text" | "image";
+
 export type Difficulty = "easy" | "medium" | "hard";
 
 export type ExamStatus = "draft" | "published" | "archived";
@@ -103,6 +105,9 @@ export interface Question {
   hint?: string | null;
   content: QuestionContent;
   metadata: Record<string, unknown>;
+  questionFormat?: QuestionFormat;
+  scanUrl?: string | null;
+  scanAssetId?: string | null;
   category?: { id: string; name: string; slug: string } | null;
   creator?: { id: string; name: string | null } | null;
   createdAt?: string;

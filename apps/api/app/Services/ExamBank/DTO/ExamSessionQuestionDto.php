@@ -26,6 +26,8 @@ final readonly class ExamSessionQuestionDto
         public array|string|null $answer,
         public bool $answered,
         public ?bool $isCorrect,
+        public string $questionFormat = 'text',
+        public ?string $scanUrl = null,
     ) {}
 
     /**
@@ -46,6 +48,8 @@ final readonly class ExamSessionQuestionDto
             'answer' => $this->answer,
             'answered' => $this->answered,
             'isCorrect' => $this->isCorrect,
+            'questionFormat' => $this->questionFormat,
+            'scanUrl' => $this->scanUrl,
         ];
     }
 }

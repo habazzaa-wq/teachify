@@ -26,6 +26,7 @@ export function QuestionPreview({ question }: { question: Question }) {
   const typeCfg = QUESTION_TYPE_CONFIG[question.type];
   const TypeIcon = typeCfg.icon;
   const difficultyCfg = DIFFICULTY_CONFIG[question.difficulty];
+  const isScanned = question.questionFormat === "image" && question.scanUrl;
 
   return (
     <StudioSurfaceCard padding="lg" className="space-y-4">
@@ -41,6 +42,11 @@ export function QuestionPreview({ question }: { question: Question }) {
         <StudioChip variant="default" size="sm">
           {question.points} نقطة
         </StudioChip>
+        {isScanned && (
+          <StudioChip variant="success" size="sm">
+            سؤال ممسوح
+          </StudioChip>
+        )}
         {question.category?.name && (
           <StudioChip variant="default" size="sm">
             {question.category.name}
@@ -54,6 +60,16 @@ export function QuestionPreview({ question }: { question: Question }) {
           <p className="mt-1 text-sm text-studio-fg-muted">{question.description}</p>
         )}
       </div>
+
+      {isScanned && (
+        <div className="overflow-hidden rounded-xl border border-studio-border">
+          <img
+            src={question.scanUrl!}
+            alt="السؤال الممسوح"
+            className="max-h-[300px] w-full object-contain"
+          />
+        </div>
+      )}
 
       <div className="border-t border-studio-border pt-4">
         <PreviewContent question={question} />

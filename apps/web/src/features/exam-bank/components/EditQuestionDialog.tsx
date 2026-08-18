@@ -18,7 +18,8 @@ import {
   defaultQuestionForm,
   type QuestionFormValues,
 } from "./CreateQuestionDialog";
-import type { Question, QuestionContent } from "@/features/exam-bank/types";
+import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
+import type { Question, QuestionContent, QuestionFormat } from "@/features/exam-bank/types";
 import { Skeleton } from "@/components/ui";
 
 interface EditQuestionDialogProps {
@@ -37,11 +38,13 @@ export function EditQuestionDialog({
   const { data: question, isLoading } = useQuestion(open ? questionId : null);
   const [values, setValues] = useState<QuestionFormValues | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showScanEditor, setShowScanEditor] = useState(false);
   const updateMutation = useUpdateQuestion();
 
   useEffect(() => {
     if (!open || !question) {
       setValues(null);
+      setShowScanEditor(false);
       return;
     }
     const q = question as Question;
@@ -50,6 +53,7 @@ export function EditQuestionDialog({
       title: q.title,
       description: q.description ?? "",
       type: q.type,
+      questionFormat: (q.questionFormat as QuestionFormat) ?? "text",
       difficulty: q.difficulty,
       categoryId: q.categoryId ?? "",
       bankId: q.bankId ?? "",
@@ -62,6 +66,7 @@ export function EditQuestionDialog({
       content,
     });
     setError(null);
+    setShowScanEditor(false);
   }, [open, question]);
 
   const handlePatch = (patch: Partial<QuestionFormValues>) =>
@@ -79,20 +84,30 @@ export function EditQuestionDialog({
         id: questionId,
         payload: buildQuestionPayload(values),
       })) as Question;
-      onOpenChange(false);
-      onSaved?.(saved);
+      if (values.questionFormat === "image" && !showScanEditor) {
+        setShowScanEditor(true);
+      } else {
+        onOpenChange(false);
+        onSaved?.(saved);
+      }
     } catch {
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
     }
   };
 
+  const isEditing = values?.questionFormat === "image" && showScanEditor && question;
+
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
       <AppDialogContent className="max-w-3xl">
         <AppDialogHeader>
-          <AppDialogTitle>تحرير السؤال</AppDialogTitle>
+          <AppDialogTitle>
+            {isEditing ? "تحرير صورة السؤال" : "تحرير السؤال"}
+          </AppDialogTitle>
           <AppDialogDescription>
-            عدّل تفاصيل السؤال ومحتواه ثم احفظ التغييرات.
+            {isEditing
+              ? "استبدل أو حدّث صورة السؤال الممسوحة."
+              : "عدّل تفاصيل السؤال ومحتواه ثم احفظ التغييرات."}
           </AppDialogDescription>
         </AppDialogHeader>
 
@@ -103,6 +118,19 @@ export function EditQuestionDialog({
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
+          ) : isEditing ? (
+            <ScannedQuestionEditor
+              questionId={question.id}
+              scanUrl={question.scanUrl}
+              onScanUploaded={() => {
+                onOpenChange(false);
+                onSaved?.(question);
+              }}
+              onScanRemoved={() => {
+                setShowScanEditor(false);
+              }}
+              disabled={false}
+            />
           ) : values ? (
             <QuestionFormFields
               values={values}
@@ -120,17 +148,19 @@ export function EditQuestionDialog({
             onClick={() => onOpenChange(false)}
             disabled={updateMutation.isPending}
           >
-            إلغاء
+            {isEditing ? "إنهاء" : "إلغاء"}
           </StudioButton>
-          <StudioButton
-            onClick={handleSubmit}
-            loading={updateMutation.isPending}
-            className="gap-2"
-            disabled={!values}
-          >
-            {!updateMutation.isPending && <Pencil className="h-4 w-4" />}
-            حفظ التغييرات
-          </StudioButton>
+          {!isEditing && (
+            <StudioButton
+              onClick={handleSubmit}
+              loading={updateMutation.isPending}
+              className="gap-2"
+              disabled={!values}
+            >
+              {!updateMutation.isPending && <Pencil className="h-4 w-4" />}
+              حفظ التغييرات
+            </StudioButton>
+          )}
         </AppDialogFooter>
       </AppDialogContent>
     </AppDialog>

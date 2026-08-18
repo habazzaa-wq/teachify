@@ -61,6 +61,11 @@ function ExamQuestionViewInner({
           <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold tabular-nums text-muted-foreground">
             {question.points} درجة
           </span>
+          {question.questionFormat === "image" && (
+            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+              سؤال ممسوح
+            </span>
+          )}
         </div>
 
         <h2 className="mt-4 text-lg font-extrabold leading-relaxed text-foreground">
@@ -73,6 +78,18 @@ function ExamQuestionViewInner({
           </p>
         )}
       </div>
+
+      {/* Scanned question image */}
+      {question.questionFormat === "image" && question.scanUrl && (
+        <div className="overflow-hidden rounded-2xl border border-border/40 bg-background/50">
+          <img
+            src={question.scanUrl}
+            alt={`صورة السؤال ${index + 1}`}
+            className="max-h-[500px] w-full object-contain"
+            loading="eager"
+          />
+        </div>
+      )}
 
       {/* Choices */}
       {question.type === "true_false" ? (

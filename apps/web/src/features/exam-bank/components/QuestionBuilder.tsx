@@ -11,14 +11,16 @@ import {
   AppSelectItem,
 } from "@/components/ui";
 import { StudioSurfaceCard, StudioChip } from "@/components/studio";
-import { DIFFICULTY_OPTIONS, QUESTION_TYPE_CONFIG } from "@/features/exam-bank/constants";
+import { DIFFICULTY_OPTIONS, QUESTION_TYPE_CONFIG, QUESTION_FORMAT_CONFIG } from "@/features/exam-bank/constants";
 import { QuestionBuilderForm } from "./QuestionBuilderForm";
+import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
 import type {
   Question,
   QuestionContent,
   ExamQuestion,
   Difficulty,
   QuestionType,
+  QuestionFormat,
 } from "@/features/exam-bank/types";
 
 interface QuestionBuilderProps {
@@ -70,6 +72,11 @@ export function QuestionBuilder({
         <StudioChip variant="accent" size="sm">
           {typeCfg.label}
         </StudioChip>
+        {((question.questionFormat as QuestionFormat) ?? "text") === "image" && (
+          <StudioChip variant="success" size="sm">
+            {QUESTION_FORMAT_CONFIG.image.label}
+          </StudioChip>
+        )}
         <span className="text-xs text-studio-fg-subtle">
           {points} نقطة
         </span>
@@ -142,14 +149,22 @@ export function QuestionBuilder({
 
       <StudioSurfaceCard variant="default" padding="md">
         <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
-        <QuestionBuilderForm
-          type={question.type}
-          value={content}
-          onChange={(next) => {
-            setContent(next);
-            emit({ content: next });
-          }}
-        />
+        {((question.questionFormat as QuestionFormat) ?? "text") === "image" ? (
+          <ScannedQuestionEditor
+            questionId={question.id}
+            scanUrl={question.scanUrl}
+            disabled={false}
+          />
+        ) : (
+          <QuestionBuilderForm
+            type={question.type}
+            value={content}
+            onChange={(next) => {
+              setContent(next);
+              emit({ content: next });
+            }}
+          />
+        )}
       </StudioSurfaceCard>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

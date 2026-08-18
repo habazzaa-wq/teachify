@@ -7,6 +7,7 @@ use App\Http\Resources\QuestionResource;
 use App\Models\Question;
 use App\Repositories\QuestionRepository;
 use App\Services\ExamBank\QuestionService;
+use App\Services\ExamBank\ScannedQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +18,7 @@ class QuestionController extends Controller
     public function __construct(
         private readonly QuestionRepository $repository,
         private readonly QuestionService $service,
+        private readonly ScannedQuestionService $scanService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -70,7 +72,7 @@ class QuestionController extends Controller
         Gate::authorize('view', $question);
 
         return response()->json([
-            'data' => new QuestionResource($question->load(['category', 'creator.user'])),
+            'data' => new QuestionResource($question->load(['category', 'creator.user', 'scan'])),
         ]);
     }
 
@@ -273,6 +275,46 @@ class QuestionController extends Controller
         return response()->json(['message' => "{$count} questions moved."]);
     }
 
+    public function uploadScan(Request $request, Question $question): JsonResponse
+    {
+        abort_if($question->tenant_id !== currentTenant()->id, 404);
+        Gate::authorize('update', $question);
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:10240', 'mimes:jpeg,png,webp'],
+        ]);
+
+        $errors = $this->scanService->validateUpload($request->file('file'));
+        if (! empty($errors)) {
+            return response()->json(['message' => 'Validation failed.', 'errors' => $errors], 422);
+        }
+
+        $asset = $this->scanService->processScan(
+            currentTenant(),
+            currentTenantUser(),
+            $question,
+            $request->file('file'),
+        );
+
+        return response()->json([
+            'message' => 'تم رفع ومعالجة الصورة بنجاح.',
+            'data' => new QuestionResource($question->refresh()->load(['scan'])),
+        ]);
+    }
+
+    public function removeScan(Question $question): JsonResponse
+    {
+        abort_if($question->tenant_id !== currentTenant()->id, 404);
+        Gate::authorize('update', $question);
+
+        $this->scanService->unlinkScan($question);
+
+        return response()->json([
+            'message' => 'تم إزالة الصورة المرفقة بنجاح.',
+            'data' => new QuestionResource($question->refresh()->load(['scan'])),
+        ]);
+    }
+
     private function validateQuestion(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
@@ -300,6 +342,8 @@ class QuestionController extends Controller
             'hint' => ['nullable', 'string'],
             'content' => ['nullable', 'array'],
             'metadata' => ['nullable', 'array'],
+            'question_format' => ['sometimes', 'string', Rule::in(['text', 'image'])],
+            'media_asset_id' => ['nullable', 'integer', 'exists:media_assets,id'],
         ]);
     }
 }

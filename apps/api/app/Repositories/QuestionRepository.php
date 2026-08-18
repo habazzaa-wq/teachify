@@ -11,7 +11,7 @@ class QuestionRepository
 {
     protected array $allowedSorts = [
         'title', 'type', 'difficulty', 'status', 'visibility',
-        'points', 'estimated_time', 'created_at', 'updated_at',
+        'points', 'estimated_time', 'created_at', 'updated_at', 'question_format',
     ];
 
     public function query(): Builder

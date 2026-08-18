@@ -219,6 +219,18 @@ export const examBankService = {
   async bulkMoveQuestions(ids: number[], categoryId: number, bankId?: number | null): Promise<void> {
     await api.post("/exam-bank/questions/bulk/move-category", { ids, category_id: categoryId, bank_id: bankId ?? null });
   },
+  async uploadScan(id: string | number, file: File): Promise<Question> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await api.post(`/exam-bank/questions/${id}/scan`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data.data as Question;
+  },
+  async removeScan(id: string | number): Promise<Question> {
+    const { data } = await api.delete(`/exam-bank/questions/${id}/scan`);
+    return data.data as Question;
+  },
   async questionMetrics(): Promise<{ total: number; published: number; draft: number; archived: number; byType: Record<string, number> }> {
     const { data } = await api.get("/exam-bank/questions/metrics");
     return (data.data ?? { byType: {} }) as { total: number; published: number; draft: number; archived: number; byType: Record<string, number> };

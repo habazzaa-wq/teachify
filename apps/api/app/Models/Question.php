@@ -34,6 +34,8 @@ class Question extends Model
         'hint',
         'content',
         'metadata',
+        'question_format',
+        'media_asset_id',
     ];
 
     protected $casts = [
@@ -46,6 +48,7 @@ class Question extends Model
         'deleted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'question_format' => 'string',
     ];
 
     public function tenant(): BelongsTo
@@ -66,6 +69,11 @@ class Question extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(QuestionBank::class, 'bank_id');
+    }
+
+    public function scan(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class, 'media_asset_id');
     }
 
     public function examQuestions(): \Illuminate\Database\Eloquent\Relations\HasMany

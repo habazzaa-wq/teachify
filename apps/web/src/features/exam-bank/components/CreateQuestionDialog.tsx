@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ScanLine, FileText } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -26,6 +26,7 @@ import {
   DIFFICULTY_OPTIONS,
   VISIBILITY_OPTIONS,
   POINT_PRESETS,
+  QUESTION_FORMAT_CONFIG,
 } from "@/features/exam-bank/constants";
 import {
   useCreateQuestion,
@@ -34,9 +35,11 @@ import {
   useBanks,
 } from "@/features/exam-bank/hooks";
 import { QuestionBuilderForm } from "./QuestionBuilderForm";
+import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
 import type {
   Question,
   QuestionType,
+  QuestionFormat,
   Difficulty,
   QuestionVisibility,
   QuestionContent,
@@ -46,6 +49,7 @@ export interface QuestionFormValues {
   title: string;
   description: string;
   type: QuestionType;
+  questionFormat: QuestionFormat;
   difficulty: Difficulty;
   categoryId: string;
   bankId: string;
@@ -67,6 +71,7 @@ export function defaultQuestionForm(
     title: "",
     description: "",
     type,
+    questionFormat: "text",
     difficulty: "medium",
     categoryId,
     bankId,
@@ -85,6 +90,7 @@ export function buildQuestionPayload(values: QuestionFormValues): Record<string,
     title: values.title,
     description: values.description || null,
     type: values.type,
+    question_format: values.questionFormat,
     difficulty: values.difficulty,
     categoryId: values.categoryId ? Number(values.categoryId) : null,
     bankId: values.bankId ? Number(values.bankId) : null,
@@ -144,6 +150,48 @@ export function QuestionFormFields({
           placeholder="وصف مختصر للسؤال..."
           className="bg-studio-soft"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="block text-xs font-medium text-studio-fg-muted">شكل السؤال</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["text", "image"] as const).map((fmt) => {
+            const cfg = QUESTION_FORMAT_CONFIG[fmt];
+            const Icon = cfg.icon;
+            const active = values.questionFormat === fmt;
+            return (
+              <button
+                key={fmt}
+                type="button"
+                disabled={disabled}
+                onClick={() => onChange({ questionFormat: fmt })}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border-2 p-3 text-start transition-all",
+                  active
+                    ? "border-studio-accent bg-studio-accent/5"
+                    : "border-studio-border bg-studio-surface hover:border-studio-accent-border",
+                  disabled && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    cfg.bg,
+                    cfg.color,
+                  )}
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-studio-fg">{cfg.label}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-studio-fg-muted">
+                    {cfg.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -338,12 +386,20 @@ export function QuestionFormFields({
 
       <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
         <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
-        <QuestionBuilderForm
-          type={values.type}
-          value={values.content}
-          disabled={disabled}
-          onChange={(content) => onChange({ content })}
-        />
+        {values.questionFormat === "image" ? (
+          <div className="space-y-3">
+            <p className="text-xs text-studio-fg-muted">
+              ارفع صورة السؤال. ستتم معالجتها تلقائياً إلى مسح وثائقي نظيف.
+            </p>
+          </div>
+        ) : (
+          <QuestionBuilderForm
+            type={values.type}
+            value={values.content}
+            disabled={disabled}
+            onChange={(content) => onChange({ content })}
+          />
+        )}
       </div>
     </div>
   );
@@ -372,6 +428,7 @@ export function CreateQuestionDialog({
     defaultQuestionForm(defaultType, categoryId ? String(categoryId) : "", bankId ? String(bankId) : ""),
   );
   const [error, setError] = useState<string | null>(null);
+  const [createdQuestion, setCreatedQuestion] = useState<Question | null>(null);
   const createMutation = useCreateQuestion();
   const addExamQuestion = useAddExamQuestion();
 
@@ -385,6 +442,7 @@ export function CreateQuestionDialog({
         ),
       );
       setError(null);
+      setCreatedQuestion(null);
     }
   }, [open, defaultType, bankId, categoryId]);
 
@@ -396,7 +454,11 @@ export function CreateQuestionDialog({
       setError("الرجاء إدخال عنوان للسؤال.");
       return;
     }
-    setError(null);
+    if (values.questionFormat === "image" && !createdQuestion) {
+      setError(null);
+    } else {
+      setError(null);
+    }
     try {
       const created = (await createMutation.mutateAsync(
         buildQuestionPayload(values),
@@ -411,31 +473,58 @@ export function CreateQuestionDialog({
           /* linking failure should not block creation */
         }
       }
-      onOpenChange(false);
-      onCreated?.(created);
+      if (values.questionFormat === "image") {
+        setCreatedQuestion(created);
+      } else {
+        onOpenChange(false);
+        onCreated?.(created);
+      }
     } catch {
       setError("تعذر إنشاء السؤال، حاول مرة أخرى.");
     }
   };
 
+  const handleScanUploaded = () => {
+    if (createdQuestion) {
+      onOpenChange(false);
+      onCreated?.(createdQuestion);
+    }
+  };
+
+  const isScanning = values.questionFormat === "image" && createdQuestion;
+
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
       <AppDialogContent className="max-w-3xl">
         <AppDialogHeader>
-          <AppDialogTitle>إنشاء سؤال جديد</AppDialogTitle>
+          <AppDialogTitle>
+            {isScanning ? "رفع صورة السؤال" : "إنشاء سؤال جديد"}
+          </AppDialogTitle>
           <AppDialogDescription>
-            أضف تفاصيل السؤال ومحتواه حسب النوع المختار.
+            {isScanning
+              ? "التقط أو ارفع صورة السؤال لمعالجتها."
+              : "أضف تفاصيل السؤال ومحتواه حسب النوع المختار."}
           </AppDialogDescription>
         </AppDialogHeader>
 
         <div className="max-h-[65vh] overflow-y-auto pe-1">
-          <QuestionFormFields
-            values={values}
-            onChange={handlePatch}
-            disabled={createMutation.isPending}
-          />
-          {error && (
-            <p role="alert" className="mt-3 text-sm text-studio-danger">{error}</p>
+          {isScanning ? (
+            <ScannedQuestionEditor
+              questionId={createdQuestion.id}
+              onScanUploaded={handleScanUploaded}
+              disabled={false}
+            />
+          ) : (
+            <>
+              <QuestionFormFields
+                values={values}
+                onChange={handlePatch}
+                disabled={createMutation.isPending}
+              />
+              {error && (
+                <p role="alert" className="mt-3 text-sm text-studio-danger">{error}</p>
+              )}
+            </>
           )}
         </div>
 
@@ -445,16 +534,18 @@ export function CreateQuestionDialog({
             onClick={() => onOpenChange(false)}
             disabled={createMutation.isPending}
           >
-            إلغاء
+            {isScanning ? "إنهاء" : "إلغاء"}
           </StudioButton>
-          <StudioButton
-            onClick={handleSubmit}
-            loading={createMutation.isPending}
-            className="gap-2"
-          >
-            {!createMutation.isPending && <Plus className="h-4 w-4" />}
-            إنشاء السؤال
-          </StudioButton>
+          {!isScanning && (
+            <StudioButton
+              onClick={handleSubmit}
+              loading={createMutation.isPending}
+              className="gap-2"
+            >
+              {!createMutation.isPending && <Plus className="h-4 w-4" />}
+              إنشاء السؤال
+            </StudioButton>
+          )}
         </AppDialogFooter>
       </AppDialogContent>
     </AppDialog>

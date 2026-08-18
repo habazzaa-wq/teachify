@@ -36,6 +36,8 @@ class QuestionService
                 'hint' => $data['hint'] ?? null,
                 'content' => $data['content'] ?? null,
                 'metadata' => $data['metadata'] ?? null,
+                'question_format' => $data['question_format'] ?? 'text',
+                'media_asset_id' => $data['media_asset_id'] ?? null,
             ]);
 
             return $question->refresh();
@@ -61,6 +63,7 @@ class QuestionService
                 'category_id', 'bank_id', 'title', 'slug', 'description', 'type',
                 'difficulty', 'tags', 'points', 'estimated_time', 'language',
                 'visibility', 'shuffle_options', 'explanation', 'hint', 'content', 'metadata',
+                'question_format', 'media_asset_id',
             ])->all())->save();
 
             return $question->refresh();
