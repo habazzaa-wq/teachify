@@ -38,12 +38,14 @@ export function EditQuestionDialog({
   const [values, setValues] = useState<QuestionFormValues | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editScanUrl, setEditScanUrl] = useState<string | null>(null);
+  const [editScanMediaAssetId, setEditScanMediaAssetId] = useState<string | null>(null);
   const updateMutation = useUpdateQuestion();
 
   useEffect(() => {
     if (!open || !question) {
       setValues(null);
       setEditScanUrl(null);
+      setEditScanMediaAssetId(null);
       return;
     }
     const q = question as Question;
@@ -66,6 +68,7 @@ export function EditQuestionDialog({
     });
     setError(null);
     setEditScanUrl(q.scanUrl ?? null);
+    setEditScanMediaAssetId(q.scanAssetId ?? null);
   }, [open, question]);
 
   const handlePatch = (patch: Partial<QuestionFormValues>) =>
@@ -73,7 +76,15 @@ export function EditQuestionDialog({
 
   const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
     setEditScanUrl(payload.scanUrl);
+    setEditScanMediaAssetId(payload.scanAssetId);
   }, []);
+
+  const handleScanRemoved = useCallback(() => {
+    setEditScanUrl(null);
+    setEditScanMediaAssetId(null);
+  }, []);
+
+  const isImageFormat = values?.questionFormat === "image";
 
   const handleSubmit = async () => {
     if (!values || !questionId) return;
@@ -85,7 +96,7 @@ export function EditQuestionDialog({
     try {
       const saved = (await updateMutation.mutateAsync({
         id: questionId,
-        payload: buildQuestionPayload(values),
+        payload: buildQuestionPayload(values, { mediaAssetId: isImageFormat ? editScanMediaAssetId : undefined }),
       })) as Question;
       onOpenChange(false);
       onSaved?.(saved);
@@ -93,8 +104,6 @@ export function EditQuestionDialog({
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
     }
   };
-
-  const isImageFormat = values?.questionFormat === "image";
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
@@ -127,6 +136,7 @@ export function EditQuestionDialog({
                       questionId={question!.id}
                       scanUrl={editScanUrl}
                       onScanUploaded={handleScanUploaded}
+                      onScanRemoved={handleScanRemoved}
                       disabled={updateMutation.isPending}
                     />
                   </div>

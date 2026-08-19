@@ -11,7 +11,6 @@ import {
   AlertCircle,
   ScanLine,
   FileImage,
-  RotateCcw,
   Trash2,
   Check,
 } from "lucide-react";
@@ -114,15 +113,20 @@ export function ScannedQuestionEditor({
 
       clearInterval(stepInterval);
       setProcessingStep(PROCESSING_STEPS.length - 1);
-      setStatus("done");
 
-      if (result.scanUrl) {
-        setPreviewUrl(result.scanUrl);
-        onScanUploaded?.({
-          scanUrl: result.scanUrl,
-          scanAssetId: result.scanAssetId ?? "",
-        });
+      if (!result.scanAssetId) {
+        setStatus("error");
+        setError("لم يتم حفظ السؤال المصوّر بشكل صحيح، حاول مرة أخرى.");
+        return;
       }
+
+      setStatus("done");
+      const finalScanUrl = result.scanUrl || previewUrl;
+      setPreviewUrl(finalScanUrl);
+      onScanUploaded?.({
+        scanUrl: finalScanUrl,
+        scanAssetId: result.scanAssetId,
+      });
     } catch (err: unknown) {
       setStatus("error");
       const message =
@@ -176,20 +180,16 @@ export function ScannedQuestionEditor({
   }, []);
 
   const handleRetake = useCallback(() => {
-    setStatus("idle");
-    setPreviewUrl(null);
-    setError(null);
-    setProcessingStep(0);
+    reset();
+    onScanRemoved?.();
     setTimeout(() => cameraInputRef.current?.click(), 100);
-  }, []);
+  }, [reset, onScanRemoved]);
 
   const handleReplace = useCallback(() => {
-    setStatus("idle");
-    setPreviewUrl(null);
-    setError(null);
-    setProcessingStep(0);
+    reset();
+    onScanRemoved?.();
     setTimeout(() => fileInputRef.current?.click(), 100);
-  }, []);
+  }, [reset, onScanRemoved]);
 
   if (status === "done" && previewUrl) {
     return (

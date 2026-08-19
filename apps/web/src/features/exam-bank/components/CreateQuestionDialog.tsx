@@ -430,13 +430,13 @@ const IMAGE_PHASE_STEPS: { key: ImageCreatePhase; label: string; num: number }[]
 
 const PHASE_ORDER: Record<ImageCreatePhase, number> = { format: 0, scan: 1, metadata: 2 };
 
-function StepIndicator({ currentPhase }: { currentPhase: ImageCreatePhase }) {
+function StepIndicator({ currentPhase, scanReady }: { currentPhase: ImageCreatePhase; scanReady?: boolean }) {
   const currentIdx = PHASE_ORDER[currentPhase];
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 text-xs" dir="rtl">
       {IMAGE_PHASE_STEPS.map((step, idx) => {
-        const isCompleted = idx < currentIdx;
-        const isActive = idx === currentIdx;
+        const isCompleted = idx < currentIdx || (currentPhase === "scan" && scanReady && idx === 1);
+        const isActive = idx === currentIdx && !(currentPhase === "scan" && scanReady && idx === 1);
         return (
           <div key={step.key} className="flex items-center gap-1.5 sm:gap-2">
             <div
@@ -498,7 +498,6 @@ export function CreateQuestionDialog({
   const [error, setError] = useState<string | null>(null);
   const [createdQuestion, setCreatedQuestion] = useState<Question | null>(null);
   const [imagePhase, setImagePhase] = useState<ImageCreatePhase>("format");
-  const [scanComplete, setScanComplete] = useState(false);
   const [completedScanUrl, setCompletedScanUrl] = useState<string | null>(null);
   const [scanMediaAssetId, setScanMediaAssetId] = useState<string | null>(null);
   const createMutation = useCreateQuestion();
@@ -506,6 +505,7 @@ export function CreateQuestionDialog({
   const addExamQuestion = useAddExamQuestion();
 
   const isImageFormat = values.questionFormat === "image";
+  const canContinueScan = Boolean(scanMediaAssetId);
 
   useEffect(() => {
     if (open) {
@@ -519,7 +519,6 @@ export function CreateQuestionDialog({
       setError(null);
       setCreatedQuestion(null);
       setImagePhase("format");
-      setScanComplete(false);
       setCompletedScanUrl(null);
       setScanMediaAssetId(null);
     }
@@ -534,7 +533,6 @@ export function CreateQuestionDialog({
       if (patch.questionFormat && patch.questionFormat !== "image") {
         setImagePhase("format");
         setCreatedQuestion(null);
-      setScanComplete(false);
       setCompletedScanUrl(null);
       setScanMediaAssetId(null);
       }
@@ -560,7 +558,6 @@ export function CreateQuestionDialog({
       }
       setCreatedQuestion(created);
       setImagePhase("scan");
-      setScanComplete(false);
       setCompletedScanUrl(null);
       setScanMediaAssetId(null);
     } catch {
@@ -569,7 +566,6 @@ export function CreateQuestionDialog({
   }, [values, createMutation, addExamQuestion, examId]);
 
   const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
-    setScanComplete(true);
     setCompletedScanUrl(payload.scanUrl);
     setScanMediaAssetId(payload.scanAssetId);
   }, []);
@@ -577,7 +573,6 @@ export function CreateQuestionDialog({
   const handleScanBack = useCallback(() => {
     setImagePhase("format");
     setCreatedQuestion(null);
-    setScanComplete(false);
     setCompletedScanUrl(null);
     setScanMediaAssetId(null);
   }, []);
@@ -588,6 +583,11 @@ export function CreateQuestionDialog({
 
   const handleMetadataBack = useCallback(() => {
     setImagePhase("scan");
+  }, []);
+
+  const handleScanRemoved = useCallback(() => {
+    setCompletedScanUrl(null);
+    setScanMediaAssetId(null);
   }, []);
 
   const handleSubmitMetadata = useCallback(async () => {
@@ -604,10 +604,6 @@ export function CreateQuestionDialog({
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
     }
   }, [createdQuestion, values, scanMediaAssetId, updateMutation, onOpenChange, onCreated]);
-
-  const handleSkipScan = useCallback(() => {
-    setImagePhase("metadata");
-  }, []);
 
   const handleFinalTextSubmit = useCallback(async () => {
     if (!values.title.trim()) {
@@ -664,7 +660,7 @@ export function CreateQuestionDialog({
           <AppDialogDescription>{dialogDescription}</AppDialogDescription>
           {isImageFormat && (
             <div className="pt-1">
-              <StepIndicator currentPhase={imagePhase} />
+              <StepIndicator currentPhase={imagePhase} scanReady={canContinueScan} />
             </div>
           )}
         </AppDialogHeader>
@@ -684,6 +680,7 @@ export function CreateQuestionDialog({
                 questionId={createdQuestion?.id ?? ""}
                 scanUrl={completedScanUrl}
                 onScanUploaded={handleScanUploaded}
+                onScanRemoved={handleScanRemoved}
                 disabled={false}
               />
             </div>
@@ -763,22 +760,13 @@ export function CreateQuestionDialog({
 
           {isImageFormat && imagePhase === "scan" && (
             <>
-              {scanComplete && (
-                <StudioButton
-                  onClick={handleContinueToMetadata}
-                  className="gap-2"
-                >
-                  متابعة
-                </StudioButton>
-              )}
-              {!scanComplete && (
-                <StudioButton
-                  onClick={handleSkipScan}
-                  variant="secondary"
-                >
-                  تخطي
-                </StudioButton>
-              )}
+              <StudioButton
+                onClick={handleContinueToMetadata}
+                disabled={!canContinueScan}
+                className="gap-2"
+              >
+                متابعة
+              </StudioButton>
             </>
           )}
 
