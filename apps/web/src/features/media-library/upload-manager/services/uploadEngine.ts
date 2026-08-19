@@ -400,6 +400,7 @@ class UploadEngine {
           folder_id: runtime.session.folderId ?? undefined,
           upload_id: runtime.session.uploadId,
           total_chunks: runtime.session.totalChunks,
+          service: runtime.session.category === "video" ? "stream" : "storage",
         });
       }
 
@@ -437,7 +438,8 @@ class UploadEngine {
           runtime.finalizeAbort = null;
         }
       } else {
-        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File);
+        const uploadService = runtime.session.category === "video" ? "stream" : "storage";
+        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File, undefined, uploadService);
         this.completeItem(id, runtime, res.asset?.id ?? null, res.cdnUrl ?? res.asset?.cdnUrl ?? null);
       }
     } catch (err) {

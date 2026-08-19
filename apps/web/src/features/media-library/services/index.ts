@@ -390,10 +390,12 @@ export const mediaLibraryService = {
   async uploadFileDirect(
     file: File,
     visibility?: string,
+    service?: string,
   ): Promise<{ asset: MediaAsset | null; cdnUrl: string | null }> {
     const form = new FormData();
     form.append("file", file);
     if (visibility) form.append("visibility", visibility);
+    if (service) form.append("service", service);
 
     // Build the same auth/tenant context the axios interceptor would, but use
     // the native fetch API so the browser sets the multipart boundary and the
