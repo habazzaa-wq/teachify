@@ -15,6 +15,15 @@ interface CourseVideoPlayerProps {
   onClose: () => void;
 }
 
+function isHlsUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return path.endsWith(".m3u8") || path.includes(".m3u8?");
+  } catch {
+    return url.toLowerCase().includes(".m3u8");
+  }
+}
+
 function HlsVideo({
   src,
   poster,
@@ -24,30 +33,37 @@ function HlsVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const attachHls = useCallback(() => {
+  const attachSource = useCallback(() => {
     const el = videoRef.current;
     if (!el || !src) return;
 
-    if (Hls.isSupported()) {
+    if (isHlsUrl(src) && Hls.isSupported()) {
       const hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(el);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         el.play().catch(() => {});
       });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) {
+          hls.destroy();
+          el.src = src;
+          el.play().catch(() => {});
+        }
+      });
       return () => {
         hls.destroy();
       };
     }
 
-    // Native HLS (Safari)
+    // Native playback (Safari HLS, or direct .mp4/.webm files)
     el.src = src;
     el.play().catch(() => {});
   }, [src]);
 
   useEffect(() => {
-    return attachHls();
-  }, [attachHls]);
+    return attachSource();
+  }, [attachSource]);
 
   return (
     <video
