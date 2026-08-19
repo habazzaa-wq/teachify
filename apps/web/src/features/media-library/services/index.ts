@@ -361,7 +361,7 @@ export const mediaLibraryService = {
     const { data } = await api.post(`/media-library/upload/resumable/${sessionId}/finalize`, {
       size_bytes: payload?.size_bytes,
       file_hash: payload?.file_hash,
-    }, { signal: options?.signal });
+    }, { signal: options?.signal, timeout: 600_000 });
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
     };

@@ -156,6 +156,8 @@ class MediaLibraryUploadController extends Controller
     {
         Gate::authorize('upload', MediaAsset::class);
 
+        set_time_limit(600);
+
         $result = $this->resumable->finalize($request, $session);
 
         return response()->json([

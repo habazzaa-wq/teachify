@@ -641,6 +641,7 @@ class UploadEngine {
         })();
 
         xhr.open(session.uploadMethod || "PUT", url, true);
+        xhr.timeout = 120_000; // 2 minutes per chunk
         xhr.withCredentials = true;
         if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         if (tenantId) xhr.setRequestHeader("X-Tenant-ID", tenantId);
