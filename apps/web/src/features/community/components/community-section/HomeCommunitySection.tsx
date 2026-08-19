@@ -167,7 +167,7 @@ export function HomeCommunitySection() {
                 className="mt-5 text-3xl font-black leading-tight tracking-tight sm:text-4xl lg:text-[2.6rem]"
                 style={{ textShadow: "0 2px 24px rgba(0,0,0,0.12)" }}
               >
-                <span className="block mb-2" style={{ color: PRIMARY }}>مكان يجتمع فيه الطلاب</span>
+                <span className="block mb-5" style={{ color: PRIMARY }}>مكان يجتمع فيه الطلاب</span>
                 <span className="block" style={{ color: SECONDARY }}>للمناقشة وتبادل المعرفة</span>
               </h2>
 
