@@ -74,7 +74,7 @@ function ExamQuestionViewInner({
             <img
               src={question.scanUrl}
               alt={`صورة السؤال ${index + 1}`}
-              className="max-h-[500px] w-full object-contain"
+              className="mx-auto max-h-[500px] w-full max-w-[720px] object-contain"
               loading="eager"
             />
           </div>

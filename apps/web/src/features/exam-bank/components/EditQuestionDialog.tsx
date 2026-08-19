@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pencil, ArrowRight, Camera } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Pencil } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -15,7 +15,6 @@ import { useQuestion, useUpdateQuestion } from "@/features/exam-bank/hooks";
 import {
   QuestionFormFields,
   buildQuestionPayload,
-  defaultQuestionForm,
   type QuestionFormValues,
 } from "./CreateQuestionDialog";
 import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
@@ -38,13 +37,13 @@ export function EditQuestionDialog({
   const { data: question, isLoading } = useQuestion(open ? questionId : null);
   const [values, setValues] = useState<QuestionFormValues | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showScanEditor, setShowScanEditor] = useState(false);
+  const [editScanUrl, setEditScanUrl] = useState<string | null>(null);
   const updateMutation = useUpdateQuestion();
 
   useEffect(() => {
     if (!open || !question) {
       setValues(null);
-      setShowScanEditor(false);
+      setEditScanUrl(null);
       return;
     }
     const q = question as Question;
@@ -66,11 +65,15 @@ export function EditQuestionDialog({
       content,
     });
     setError(null);
-    setShowScanEditor(false);
+    setEditScanUrl(q.scanUrl ?? null);
   }, [open, question]);
 
   const handlePatch = (patch: Partial<QuestionFormValues>) =>
     setValues((prev) => (prev ? { ...prev, ...patch } : prev));
+
+  const handleScanUploaded = useCallback((scanUrl: string) => {
+    setEditScanUrl(scanUrl);
+  }, []);
 
   const handleSubmit = async () => {
     if (!values || !questionId) return;
@@ -122,7 +125,8 @@ export function EditQuestionDialog({
                     <p className="mb-3 text-sm font-semibold text-studio-fg">السؤال المصوّر</p>
                     <ScannedQuestionEditor
                       questionId={question!.id}
-                      scanUrl={question!.scanUrl}
+                      scanUrl={editScanUrl}
+                      onScanUploaded={handleScanUploaded}
                       disabled={updateMutation.isPending}
                     />
                   </div>
@@ -134,6 +138,7 @@ export function EditQuestionDialog({
                 onChange={handlePatch}
                 disabled={updateMutation.isPending}
                 hideTitle={isImageFormat}
+                hideFormat={isImageFormat}
               />
             </>
           ) : null}

@@ -175,6 +175,20 @@ export function QuestionBuilder({
         )}
       </StudioSurfaceCard>
 
+      {isImageFormat && (
+        <StudioSurfaceCard variant="default" padding="md">
+          <p className="mb-3 text-sm font-semibold text-studio-fg">خيارات الإجابة</p>
+          <QuestionBuilderForm
+            type={question.type}
+            value={content}
+            onChange={(next) => {
+              setContent(next);
+              emit({ content: next });
+            }}
+          />
+        </StudioSurfaceCard>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-studio-fg-muted">الشرح (اختياري)</p>

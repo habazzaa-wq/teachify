@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, ArrowRight, Camera } from "lucide-react";
+import { Plus, ArrowRight, Camera, Check } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -19,7 +19,7 @@ import {
   AppSwitch,
   Label,
 } from "@/components/ui";
-import { StudioButton, StudioChip } from "@/components/studio";
+import { StudioButton } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import {
   QUESTION_TYPE_OPTIONS,
@@ -30,6 +30,7 @@ import {
 } from "@/features/exam-bank/constants";
 import {
   useCreateQuestion,
+  useUpdateQuestion,
   useAddExamQuestion,
   useCategoryTree,
   useBanks,
@@ -93,17 +94,17 @@ export function buildQuestionPayload(values: QuestionFormValues): Record<string,
     type: values.type,
     question_format: values.questionFormat,
     difficulty: values.difficulty,
-    categoryId: values.categoryId ? Number(values.categoryId) : null,
-    bankId: values.bankId ? Number(values.bankId) : null,
+    category_id: values.categoryId ? Number(values.categoryId) : null,
+    bank_id: values.bankId ? Number(values.bankId) : null,
     tags: values.tags
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean),
     points: Number(values.points) || 0,
-    estimatedTime: values.estimatedTime ? Number(values.estimatedTime) : null,
+    estimated_time: values.estimatedTime ? Number(values.estimatedTime) : null,
     language: values.language,
     visibility: values.visibility,
-    shuffleOptions: values.shuffleOptions,
+    shuffle_options: values.shuffleOptions,
     content: values.content,
   };
 }
@@ -113,6 +114,7 @@ interface QuestionFormFieldsProps {
   onChange: (patch: Partial<QuestionFormValues>) => void;
   disabled?: boolean;
   hideTitle?: boolean;
+  hideFormat?: boolean;
 }
 
 export function QuestionFormFields({
@@ -120,6 +122,7 @@ export function QuestionFormFields({
   onChange,
   disabled,
   hideTitle = false,
+  hideFormat = false,
 }: QuestionFormFieldsProps) {
   const { data: categories = [] } = useCategoryTree();
   const { data: banksData } = useBanks();
@@ -159,47 +162,49 @@ export function QuestionFormFields({
         </>
       )}
 
-      <div className="space-y-2">
-        <Label className="block text-xs font-medium text-studio-fg-muted">شكل السؤال</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {(["text", "image"] as const).map((fmt) => {
-            const cfg = QUESTION_FORMAT_CONFIG[fmt];
-            const Icon = cfg.icon;
-            const active = values.questionFormat === fmt;
-            return (
-              <button
-                key={fmt}
-                type="button"
-                disabled={disabled}
-                onClick={() => onChange({ questionFormat: fmt })}
-                className={cn(
-                  "flex items-start gap-3 rounded-xl border-2 p-3 text-start transition-all",
-                  active
-                    ? "border-studio-accent bg-studio-accent/5"
-                    : "border-studio-border bg-studio-surface hover:border-studio-accent-border",
-                  disabled && "cursor-not-allowed opacity-50",
-                )}
-              >
-                <div
+      {!hideFormat && (
+        <div className="space-y-2">
+          <Label className="block text-xs font-medium text-studio-fg-muted">شكل السؤال</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {(["text", "image"] as const).map((fmt) => {
+              const cfg = QUESTION_FORMAT_CONFIG[fmt];
+              const Icon = cfg.icon;
+              const active = values.questionFormat === fmt;
+              return (
+                <button
+                  key={fmt}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange({ questionFormat: fmt })}
                   className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                    cfg.bg,
-                    cfg.color,
+                    "flex items-start gap-3 rounded-xl border-2 p-3 text-start transition-all",
+                    active
+                      ? "border-studio-accent bg-studio-accent/5"
+                      : "border-studio-border bg-studio-surface hover:border-studio-accent-border",
+                    disabled && "cursor-not-allowed opacity-50",
                   )}
                 >
-                  <Icon className="h-4.5 w-4.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-studio-fg">{cfg.label}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-studio-fg-muted">
-                    {cfg.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
+                  <div
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                      cfg.bg,
+                      cfg.color,
+                    )}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-studio-fg">{cfg.label}</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-studio-fg-muted">
+                      {cfg.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
@@ -391,17 +396,70 @@ export function QuestionFormFields({
         </div>
       </div>
 
-      {values.questionFormat === "text" && (
-        <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
-          <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
-          <QuestionBuilderForm
-            type={values.type}
-            value={values.content}
-            disabled={disabled}
-            onChange={(content) => onChange({ content })}
-          />
-        </div>
-      )}
+      <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
+        <p className="mb-3 text-sm font-semibold text-studio-fg">
+          {values.questionFormat === "image" ? "خيارات الإجابة" : "محتوى السؤال"}
+        </p>
+        <QuestionBuilderForm
+          type={values.type}
+          value={values.content}
+          disabled={disabled}
+          onChange={(content) => onChange({ content })}
+        />
+      </div>
+    </div>
+  );
+}
+
+type ImageCreatePhase = "format" | "scan" | "metadata";
+
+const IMAGE_PHASE_STEPS: { key: ImageCreatePhase; label: string; num: number }[] = [
+  { key: "format", label: "نوع السؤال", num: 1 },
+  { key: "scan", label: "تصوير السؤال", num: 2 },
+  { key: "metadata", label: "الإجابات والإعدادات", num: 3 },
+];
+
+const PHASE_ORDER: Record<ImageCreatePhase, number> = { format: 0, scan: 1, metadata: 2 };
+
+function StepIndicator({ currentPhase }: { currentPhase: ImageCreatePhase }) {
+  const currentIdx = PHASE_ORDER[currentPhase];
+  return (
+    <div className="flex items-center gap-1.5 sm:gap-2 text-xs" dir="rtl">
+      {IMAGE_PHASE_STEPS.map((step, idx) => {
+        const isCompleted = idx < currentIdx;
+        const isActive = idx === currentIdx;
+        return (
+          <div key={step.key} className="flex items-center gap-1.5 sm:gap-2">
+            <div
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold transition-colors shrink-0",
+                isCompleted && "bg-emerald-500 text-white",
+                isActive && "bg-studio-accent text-white",
+                !isCompleted && !isActive && "bg-studio-border text-studio-fg-muted",
+              )}
+            >
+              {isCompleted ? <Check className="h-3 w-3" /> : step.num}
+            </div>
+            <span
+              className={cn(
+                "font-medium whitespace-nowrap",
+                isActive && "text-studio-fg",
+                !isActive && "text-studio-fg-muted",
+              )}
+            >
+              {step.label}
+            </span>
+            {idx < IMAGE_PHASE_STEPS.length - 1 && (
+              <div
+                className={cn(
+                  "h-px w-3 sm:w-5 shrink-0",
+                  idx < currentIdx ? "bg-emerald-500" : "bg-studio-border",
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -415,8 +473,6 @@ interface CreateQuestionDialogProps {
   categoryId?: number;
   examId?: string | number;
 }
-
-type ImageCreatePhase = "format" | "scan" | "metadata";
 
 export function CreateQuestionDialog({
   open,
@@ -433,7 +489,10 @@ export function CreateQuestionDialog({
   const [error, setError] = useState<string | null>(null);
   const [createdQuestion, setCreatedQuestion] = useState<Question | null>(null);
   const [imagePhase, setImagePhase] = useState<ImageCreatePhase>("format");
+  const [scanComplete, setScanComplete] = useState(false);
+  const [completedScanUrl, setCompletedScanUrl] = useState<string | null>(null);
   const createMutation = useCreateQuestion();
+  const updateMutation = useUpdateQuestion();
   const addExamQuestion = useAddExamQuestion();
 
   const isImageFormat = values.questionFormat === "image";
@@ -450,6 +509,8 @@ export function CreateQuestionDialog({
       setError(null);
       setCreatedQuestion(null);
       setImagePhase("format");
+      setScanComplete(false);
+      setCompletedScanUrl(null);
     }
   }, [open, defaultType, bankId, categoryId]);
 
@@ -459,10 +520,11 @@ export function CreateQuestionDialog({
   const handleFormatChange = useCallback((patch: Partial<QuestionFormValues>) => {
     setValues((prev) => {
       const next = { ...prev, ...patch };
-      // When switching away from image, reset phase
       if (patch.questionFormat && patch.questionFormat !== "image") {
         setImagePhase("format");
         setCreatedQuestion(null);
+        setScanComplete(false);
+        setCompletedScanUrl(null);
       }
       return next;
     });
@@ -486,18 +548,27 @@ export function CreateQuestionDialog({
       }
       setCreatedQuestion(created);
       setImagePhase("scan");
+      setScanComplete(false);
+      setCompletedScanUrl(null);
     } catch {
       setError("تعذر إنشاء السؤال، حاول مرة أخرى.");
     }
   }, [values, createMutation, addExamQuestion, examId]);
 
-  const handleScanUploaded = useCallback(() => {
-    setImagePhase("metadata");
+  const handleScanUploaded = useCallback((scanUrl: string) => {
+    setScanComplete(true);
+    setCompletedScanUrl(scanUrl);
   }, []);
 
   const handleScanBack = useCallback(() => {
     setImagePhase("format");
     setCreatedQuestion(null);
+    setScanComplete(false);
+    setCompletedScanUrl(null);
+  }, []);
+
+  const handleContinueToMetadata = useCallback(() => {
+    setImagePhase("metadata");
   }, []);
 
   const handleMetadataBack = useCallback(() => {
@@ -508,16 +579,16 @@ export function CreateQuestionDialog({
     if (!createdQuestion) return;
     setError(null);
     try {
-      const saved = (await createMutation.mutateAsync({
-        ...buildQuestionPayload(values),
-        title: values.title.trim() || null,
+      const saved = (await updateMutation.mutateAsync({
+        id: createdQuestion.id,
+        payload: buildQuestionPayload(values),
       })) as Question;
       onOpenChange(false);
       onCreated?.(saved);
     } catch {
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
     }
-  }, [createdQuestion, values, createMutation, onOpenChange, onCreated]);
+  }, [createdQuestion, values, updateMutation, onOpenChange, onCreated]);
 
   const handleSkipScan = useCallback(() => {
     setImagePhase("metadata");
@@ -550,10 +621,12 @@ export function CreateQuestionDialog({
     }
   }, [values, createMutation, addExamQuestion, examId, onOpenChange, onCreated]);
 
+  const isMutating = createMutation.isPending || updateMutation.isPending;
+
   const dialogTitle = (() => {
     if (isImageFormat) {
       if (imagePhase === "scan") return "تصوير / رفع السؤال";
-      if (imagePhase === "metadata") return "تفاصيل السؤال المصوّر";
+      if (imagePhase === "metadata") return "إعداد السؤال المصوّر";
       return "إنشاء سؤال مصوّر";
     }
     return "إنشاء سؤال جديد";
@@ -574,6 +647,11 @@ export function CreateQuestionDialog({
         <AppDialogHeader>
           <AppDialogTitle>{dialogTitle}</AppDialogTitle>
           <AppDialogDescription>{dialogDescription}</AppDialogDescription>
+          {isImageFormat && (
+            <div className="pt-1">
+              <StepIndicator currentPhase={imagePhase} />
+            </div>
+          )}
         </AppDialogHeader>
 
         <div className="max-h-[65vh] overflow-y-auto pe-1">
@@ -589,16 +667,10 @@ export function CreateQuestionDialog({
               </button>
               <ScannedQuestionEditor
                 questionId={createdQuestion?.id ?? ""}
+                scanUrl={completedScanUrl}
                 onScanUploaded={handleScanUploaded}
                 disabled={false}
               />
-              <button
-                type="button"
-                onClick={handleSkipScan}
-                className="text-xs font-medium text-studio-fg-muted transition-colors hover:text-studio-fg"
-              >
-                تخطي وإعداد السؤال لاحقاً
-              </button>
             </div>
           )}
 
@@ -612,11 +684,11 @@ export function CreateQuestionDialog({
                 <ArrowRight className="h-4 w-4" />
                 العودة للتصوير
               </button>
-              {createdQuestion?.scanUrl && (
-                <div className="overflow-hidden rounded-xl border border-studio-border bg-studio-soft">
+              {completedScanUrl && (
+                <div className="overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30">
                   <img
-                    src={createdQuestion.scanUrl}
-                    alt="السؤال الممسوح"
+                    src={completedScanUrl}
+                    alt="السؤال المصوّر"
                     className="max-h-[250px] w-full object-contain"
                   />
                 </div>
@@ -624,8 +696,9 @@ export function CreateQuestionDialog({
               <QuestionFormFields
                 values={values}
                 onChange={handlePatch}
-                disabled={createMutation.isPending}
+                disabled={isMutating}
                 hideTitle
+                hideFormat
               />
             </div>
           )}
@@ -657,7 +730,7 @@ export function CreateQuestionDialog({
                 onOpenChange(false);
               }
             }}
-            disabled={createMutation.isPending}
+            disabled={isMutating}
           >
             {isImageFormat && imagePhase !== "format" ? "رجوع" : "إلغاء"}
           </StudioButton>
@@ -674,21 +747,33 @@ export function CreateQuestionDialog({
           )}
 
           {isImageFormat && imagePhase === "scan" && (
-            <StudioButton
-              onClick={handleSkipScan}
-              variant="secondary"
-            >
-              تخطي
-            </StudioButton>
+            <>
+              {scanComplete && (
+                <StudioButton
+                  onClick={handleContinueToMetadata}
+                  className="gap-2"
+                >
+                  متابعة
+                </StudioButton>
+              )}
+              {!scanComplete && (
+                <StudioButton
+                  onClick={handleSkipScan}
+                  variant="secondary"
+                >
+                  تخطي
+                </StudioButton>
+              )}
+            </>
           )}
 
           {isImageFormat && imagePhase === "metadata" && (
             <StudioButton
               onClick={handleSubmitMetadata}
-              loading={createMutation.isPending}
+              loading={updateMutation.isPending}
               className="gap-2"
             >
-              {!createMutation.isPending && <Plus className="h-4 w-4" />}
+              {!updateMutation.isPending && <Plus className="h-4 w-4" />}
               إنشاء السؤال
             </StudioButton>
           )}
