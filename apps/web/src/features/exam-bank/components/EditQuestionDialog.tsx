@@ -71,8 +71,8 @@ export function EditQuestionDialog({
   const handlePatch = (patch: Partial<QuestionFormValues>) =>
     setValues((prev) => (prev ? { ...prev, ...patch } : prev));
 
-  const handleScanUploaded = useCallback((scanUrl: string) => {
-    setEditScanUrl(scanUrl);
+  const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
+    setEditScanUrl(payload.scanUrl);
   }, []);
 
   const handleSubmit = async () => {

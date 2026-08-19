@@ -21,10 +21,15 @@ import { examBankService } from "../services";
 
 type ScanStatus = "idle" | "preview" | "uploading" | "processing" | "done" | "error";
 
+interface ScanUploadedPayload {
+  scanUrl: string;
+  scanAssetId: string;
+}
+
 interface ScannedQuestionEditorProps {
   questionId: string;
   scanUrl?: string | null;
-  onScanUploaded?: (scanUrl: string) => void;
+  onScanUploaded?: (payload: ScanUploadedPayload) => void;
   onScanRemoved?: () => void;
   disabled?: boolean;
 }
@@ -113,7 +118,10 @@ export function ScannedQuestionEditor({
 
       if (result.scanUrl) {
         setPreviewUrl(result.scanUrl);
-        onScanUploaded?.(result.scanUrl);
+        onScanUploaded?.({
+          scanUrl: result.scanUrl,
+          scanAssetId: result.scanAssetId ?? "",
+        });
       }
     } catch (err: unknown) {
       setStatus("error");

@@ -86,9 +86,12 @@ export function defaultQuestionForm(
   };
 }
 
-export function buildQuestionPayload(values: QuestionFormValues): Record<string, unknown> {
+export function buildQuestionPayload(
+  values: QuestionFormValues,
+  extra?: { mediaAssetId?: string | null },
+): Record<string, unknown> {
   const isImage = values.questionFormat === "image";
-  return {
+  const payload: Record<string, unknown> = {
     title: isImage ? (values.title.trim() || null) : values.title,
     description: values.description || null,
     type: values.type,
@@ -107,6 +110,12 @@ export function buildQuestionPayload(values: QuestionFormValues): Record<string,
     shuffle_options: values.shuffleOptions,
     content: values.content,
   };
+
+  if (extra?.mediaAssetId) {
+    payload.media_asset_id = Number(extra.mediaAssetId);
+  }
+
+  return payload;
 }
 
 interface QuestionFormFieldsProps {
@@ -491,6 +500,7 @@ export function CreateQuestionDialog({
   const [imagePhase, setImagePhase] = useState<ImageCreatePhase>("format");
   const [scanComplete, setScanComplete] = useState(false);
   const [completedScanUrl, setCompletedScanUrl] = useState<string | null>(null);
+  const [scanMediaAssetId, setScanMediaAssetId] = useState<string | null>(null);
   const createMutation = useCreateQuestion();
   const updateMutation = useUpdateQuestion();
   const addExamQuestion = useAddExamQuestion();
@@ -511,6 +521,7 @@ export function CreateQuestionDialog({
       setImagePhase("format");
       setScanComplete(false);
       setCompletedScanUrl(null);
+      setScanMediaAssetId(null);
     }
   }, [open, defaultType, bankId, categoryId]);
 
@@ -523,8 +534,9 @@ export function CreateQuestionDialog({
       if (patch.questionFormat && patch.questionFormat !== "image") {
         setImagePhase("format");
         setCreatedQuestion(null);
-        setScanComplete(false);
-        setCompletedScanUrl(null);
+      setScanComplete(false);
+      setCompletedScanUrl(null);
+      setScanMediaAssetId(null);
       }
       return next;
     });
@@ -550,14 +562,16 @@ export function CreateQuestionDialog({
       setImagePhase("scan");
       setScanComplete(false);
       setCompletedScanUrl(null);
+      setScanMediaAssetId(null);
     } catch {
       setError("تعذر إنشاء السؤال، حاول مرة أخرى.");
     }
   }, [values, createMutation, addExamQuestion, examId]);
 
-  const handleScanUploaded = useCallback((scanUrl: string) => {
+  const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
     setScanComplete(true);
-    setCompletedScanUrl(scanUrl);
+    setCompletedScanUrl(payload.scanUrl);
+    setScanMediaAssetId(payload.scanAssetId);
   }, []);
 
   const handleScanBack = useCallback(() => {
@@ -565,6 +579,7 @@ export function CreateQuestionDialog({
     setCreatedQuestion(null);
     setScanComplete(false);
     setCompletedScanUrl(null);
+    setScanMediaAssetId(null);
   }, []);
 
   const handleContinueToMetadata = useCallback(() => {
@@ -581,14 +596,14 @@ export function CreateQuestionDialog({
     try {
       const saved = (await updateMutation.mutateAsync({
         id: createdQuestion.id,
-        payload: buildQuestionPayload(values),
+        payload: buildQuestionPayload(values, { mediaAssetId: scanMediaAssetId }),
       })) as Question;
       onOpenChange(false);
       onCreated?.(saved);
     } catch {
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
     }
-  }, [createdQuestion, values, updateMutation, onOpenChange, onCreated]);
+  }, [createdQuestion, values, scanMediaAssetId, updateMutation, onOpenChange, onCreated]);
 
   const handleSkipScan = useCallback(() => {
     setImagePhase("metadata");
