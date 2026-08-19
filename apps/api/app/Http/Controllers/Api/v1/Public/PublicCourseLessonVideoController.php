@@ -78,7 +78,8 @@ class PublicCourseLessonVideoController extends Controller
             : [];
 
         $videoId = $asset->bunny_video_id ?: $asset->external_id;
-        $libraryId = $asset->bunny_library_id;
+        $libraryId = $asset->bunny_library_id
+            ?? ($playback['library_id'] ?? null);
 
         $embedUrl = null;
         if ($isStream && $libraryId && $videoId) {

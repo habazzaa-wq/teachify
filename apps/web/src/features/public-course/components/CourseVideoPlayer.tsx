@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { X, Clock, MonitorPlay, VideoOff, Loader2 } from "lucide-react";
+import Hls from "hls.js";
 import { useLessonVideo } from "../hooks";
 import { formatDuration } from "../utils";
 import { ACCENT } from "../brand";
@@ -12,6 +13,52 @@ interface CourseVideoPlayerProps {
   slug: string;
   lesson: PublicCourseLesson;
   onClose: () => void;
+}
+
+function HlsVideo({
+  src,
+  poster,
+}: {
+  src: string;
+  poster?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const attachHls = useCallback(() => {
+    const el = videoRef.current;
+    if (!el || !src) return;
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(el);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        el.play().catch(() => {});
+      });
+      return () => {
+        hls.destroy();
+      };
+    }
+
+    // Native HLS (Safari)
+    el.src = src;
+    el.play().catch(() => {});
+  }, [src]);
+
+  useEffect(() => {
+    return attachHls();
+  }, [attachHls]);
+
+  return (
+    <video
+      ref={videoRef}
+      poster={poster}
+      controls
+      autoPlay
+      playsInline
+      className="h-full w-full"
+    />
+  );
 }
 
 function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProps) {
@@ -119,17 +166,12 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
                   allowFullScreen
                   className="h-full w-full border-0"
                 />
-              ) : (
-                <video
-                  key={playbackUrl ?? ""}
-                  src={playbackUrl ?? ""}
+              ) : playbackUrl ? (
+                <HlsVideo
+                  src={playbackUrl}
                   poster={thumbnailUrl ?? undefined}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="h-full w-full"
                 />
-              )}
+              ) : null}
             </motion.div>
           ) : (
             <motion.div

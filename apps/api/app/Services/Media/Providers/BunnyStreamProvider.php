@@ -147,6 +147,7 @@ class BunnyStreamProvider implements MediaProvider
             'provider' => 'bunny',
             'provider_service' => 'stream',
             'video_id' => $videoId,
+            'library_id' => $config['library_id'] ?? null,
             'playback_url' => $playbackUrl,
             'thumbnail_url' => $status['thumbnail_url'] ?? ($asset->metadata['thumbnail_url'] ?? null),
             'duration_seconds' => $status['duration'] ?? ($asset->metadata['duration_seconds'] ?? null),
