@@ -301,6 +301,7 @@ class ExamResultService
                 'tolerance' => (int) ($content['tolerance'] ?? 0),
                 'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
             ], fn (mixed $value): bool => $value !== null),
+            'essay', 'short_answer' => [],
             default => [],
         };
     }
@@ -321,6 +322,7 @@ class ExamResultService
                 ->all(),
             'true_false' => isset($content['correct']) ? (string) $content['correct'] : null,
             'numeric' => $this->numericCorrectValue($content),
+            'essay', 'short_answer' => null,
             default => null,
         };
     }

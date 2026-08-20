@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  */
 class ExamSessionService
 {
-    private const SUPPORTED_QUESTION_TYPES = ['single_choice', 'multiple_choice', 'true_false', 'numeric'];
+    private const SUPPORTED_QUESTION_TYPES = ['single_choice', 'multiple_choice', 'true_false', 'numeric', 'essay', 'short_answer'];
 
     public function __construct(
         private readonly AccessEvaluationService $access,
@@ -513,6 +513,7 @@ class ExamSessionService
                 'tolerance' => (int) ($content['tolerance'] ?? 0),
                 'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
             ], fn (mixed $value): bool => $value !== null),
+            'essay', 'short_answer' => [],
             default => [],
         };
     }

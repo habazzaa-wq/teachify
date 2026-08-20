@@ -22,6 +22,7 @@ class ExamAnswerValidator
             'multiple_choice' => $this->validateChoice($question, $answer, exactlyOne: false),
             'true_false' => $this->validateTrueFalse($answer),
             'numeric' => $this->validateNumeric($answer),
+            'essay', 'short_answer' => $this->validateTextAnswer($answer),
             default => throw ValidationException::withMessages([
                 'answer' => ['This question type is not supported in the exam session yet.'],
             ]),
@@ -87,6 +88,17 @@ class ExamAnswerValidator
         if (! is_string($answer) || ! is_numeric(trim($answer))) {
             throw ValidationException::withMessages([
                 'answer' => ['Numeric questions require a numeric answer.'],
+            ]);
+        }
+
+        return trim($answer);
+    }
+
+    private function validateTextAnswer(mixed $answer): string
+    {
+        if (! is_string($answer) || trim($answer) === '') {
+            throw ValidationException::withMessages([
+                'answer' => ['This question requires a text answer.'],
             ]);
         }
 

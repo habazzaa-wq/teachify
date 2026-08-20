@@ -17,6 +17,7 @@ class ExamAnswerGrader
             'single_choice', 'multiple_choice' => $this->gradeChoice($question, $answer),
             'true_false' => $this->gradeTrueFalse($question, $answer),
             'numeric' => $this->gradeNumeric($question, $answer),
+            'essay', 'short_answer' => false,
             default => throw new RuntimeException("Unsupported question type [{$question->type}] for auto-grading."),
         };
     }

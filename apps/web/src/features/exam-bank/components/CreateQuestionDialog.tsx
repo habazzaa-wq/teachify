@@ -92,7 +92,7 @@ export function buildQuestionPayload(
 ): Record<string, unknown> {
   const isImage = values.questionFormat === "image";
   const payload: Record<string, unknown> = {
-    title: isImage ? (values.title.trim() || null) : values.title,
+    title: isImage ? (values.title.trim() || undefined) : values.title,
     description: values.description || null,
     type: values.type,
     question_format: values.questionFormat,

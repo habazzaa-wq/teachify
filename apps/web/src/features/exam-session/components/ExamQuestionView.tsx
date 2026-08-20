@@ -185,6 +185,31 @@ function ExamQuestionViewInner({
               </p>
             )}
         </div>
+      ) : question.type === "essay" || question.type === "short_answer" ? (
+        <div className="space-y-3">
+          <textarea
+            disabled={!selectable}
+            value={typeof answer === "string" ? answer : ""}
+            onChange={(event) => selectable && onAnswerChange!(event.target.value)}
+            placeholder={question.type === "essay" ? "اكتب إجابتك المقالية هنا..." : "اكتب إجابتك هنا..."}
+            rows={6}
+            className={cn(
+              "w-full rounded-2xl border-2 px-4 py-3 text-sm font-semibold leading-relaxed text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/50 resize-y",
+              selectable && "cursor-text hover:border-[var(--brand-primary)] focus:border-[var(--brand-primary)] focus:shadow-lg focus:shadow-[rgba(0,0,0,0.1)]",
+              readOnly &&
+                question.isCorrect !== null &&
+                (question.isCorrect
+                  ? "border-emerald-500 bg-emerald-500/10"
+                  : "border-red-500 bg-red-500/10"),
+              !selectable && "opacity-80",
+            )}
+          />
+          {readOnly && question.type === "essay" && (
+            <p className="text-[11px] font-medium text-muted-foreground/70">
+              هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="space-y-2.5">
           {options.map((option) => {

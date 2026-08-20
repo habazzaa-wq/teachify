@@ -194,6 +194,12 @@ class QuestionService
             $copy->uuid = (string) \Illuminate\Support\Str::uuid();
             $copy->slug = $this->uniqueSlug($question->title . '-copy');
             $copy->status = 'draft';
+
+            // Don't share the scan MediaAsset between original and duplicate.
+            if ($copy->question_format === 'image') {
+                $copy->media_asset_id = null;
+            }
+
             $copy->save();
 
             return $copy->refresh();

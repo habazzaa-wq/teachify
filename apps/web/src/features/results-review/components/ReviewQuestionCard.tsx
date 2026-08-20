@@ -261,6 +261,24 @@ function QuestionOptions({
     );
   }
 
+  if (type === "essay" || type === "short_answer") {
+    const student = typeof studentAnswer === "string" ? studentAnswer : "";
+
+    return (
+      <div className="space-y-3">
+        <div className="rounded-2xl border-2 border-border/60 bg-background/50 p-4">
+          <p className="text-xs font-bold text-muted-foreground">إجابتك</p>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-foreground whitespace-pre-wrap">
+            {student || "—"}
+          </p>
+        </div>
+        <p className="text-[11px] font-medium text-muted-foreground/70">
+          هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
+        </p>
+      </div>
+    );
+  }
+
   const options = content.options ?? [];
   const selectedIds = Array.isArray(studentAnswer) ? studentAnswer : [];
 
