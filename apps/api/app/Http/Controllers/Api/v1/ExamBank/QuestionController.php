@@ -86,7 +86,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question updated successfully.',
-            'data' => new QuestionResource($question),
+            'data' => new QuestionResource($question->load('scan')),
         ]);
     }
 
@@ -118,7 +118,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question status updated.',
-            'data' => new QuestionResource($question),
+            'data' => new QuestionResource($question->load('scan')),
         ]);
     }
 
@@ -131,7 +131,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question published successfully.',
-            'data' => new QuestionResource($question),
+            'data' => new QuestionResource($question->load('scan')),
         ]);
     }
 
@@ -144,7 +144,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question archived successfully.',
-            'data' => new QuestionResource($question),
+            'data' => new QuestionResource($question->load('scan')),
         ]);
     }
 
@@ -157,7 +157,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question restored successfully.',
-            'data' => new QuestionResource($question),
+            'data' => new QuestionResource($question->load('scan')),
         ]);
     }
 
@@ -170,7 +170,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question duplicated successfully.',
-            'data' => new QuestionResource($copy),
+            'data' => new QuestionResource($copy->load('scan')),
         ], 201);
     }
 
@@ -225,7 +225,7 @@ class QuestionController extends Controller
 
         $copies = [];
         foreach ($this->repository->findByIds($validated['ids']) as $question) {
-            $copies[] = new QuestionResource($this->service->duplicate($question, currentTenantUser()));
+            $copies[] = new QuestionResource($this->service->duplicate($question, currentTenantUser())->load('scan'));
         }
 
         return response()->json([

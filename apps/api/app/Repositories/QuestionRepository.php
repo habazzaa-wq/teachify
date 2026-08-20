@@ -35,7 +35,7 @@ class QuestionRepository
         $query = $this->applyFavoritesFilter($query, $params['favorites'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->with('scan')->paginate((int) ($params['per_page'] ?? 25));
     }
 
     public function listAll(array $params = []): Collection
@@ -61,7 +61,7 @@ class QuestionRepository
 
     public function findByIds(array $ids): Collection
     {
-        return $this->query()->whereIn('id', $ids)->get();
+        return $this->query()->with('scan')->whereIn('id', $ids)->get();
     }
 
     public function create(array $data): Question
