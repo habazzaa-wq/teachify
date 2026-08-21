@@ -713,7 +713,18 @@ interface Rect {
   h: number;
 }
 
-type DragMode = "move" | "nw" | "ne" | "sw" | "se" | null;
+type CropDragMode = "draw" | "move" | "nw" | "ne" | "sw" | "se";
+
+interface CropDrag {
+  mode: CropDragMode;
+  sx: number;
+  sy: number;
+  ox: number;
+  oy: number;
+  kx: number;
+  ky: number;
+  startRect: Rect | null;
+}
 
 function ScanCropEditor({
   src,
@@ -727,13 +738,7 @@ function ScanCropEditor({
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [displaySize, setDisplaySize] = useState<{ w: number; h: number } | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
-  const [drag, setDrag] = useState<{
-    mode: Exclude<DragMode, null>;
-    px: number;
-    py: number;
-    startRect: Rect;
-    scale: number;
-  } | null>(null);
+  const [drag, setDrag] = useState<CropDrag | null>(null);
 
   useEffect(() => {
     const img = new window.Image();
@@ -741,9 +746,6 @@ function ScanCropEditor({
       setImage(img);
       const scale = Math.min(1, 640 / img.naturalWidth);
       setDisplaySize({ w: Math.round(img.naturalWidth * scale), h: Math.round(img.naturalHeight * scale) });
-      const insetX = img.naturalWidth * 0.03;
-      const insetY = img.naturalHeight * 0.03;
-      setRect({ x: insetX, y: insetY, w: img.naturalWidth - 2 * insetX, h: img.naturalHeight - 2 * insetY });
     };
     img.src = src;
     return () => {
@@ -751,63 +753,104 @@ function ScanCropEditor({
     };
   }, [src]);
 
+  const dragging = drag !== null;
+  useEffect(() => {
+    if (!dragging) return;
+    const end = () => {
+      if (drag?.mode === "draw") {
+        setRect((r) => {
+          if (!r || !image) return null;
+          const minTiny = Math.max(10, Math.min(image.naturalWidth, image.naturalHeight) * 0.02);
+          return r.w >= minTiny && r.h >= minTiny ? r : null;
+        });
+      }
+      setDrag(null);
+    };
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging]);
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!rect || !image || !displaySize || drag) return;
-    const mode = (e.target as HTMLElement).closest<HTMLElement>("[data-crop-mode]")?.dataset.cropMode as
-      | Exclude<DragMode, null>
-      | undefined;
-    if (!mode) return;
+    if (!image || !displaySize || drag) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    if (box.width < 2 || box.height < 2) return;
+    const kx = image.naturalWidth / box.width;
+    const ky = image.naturalHeight / box.height;
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-crop-mode]");
+    const mode = (el?.dataset.cropMode ?? "draw") as CropDragMode;
+    const sx = Math.max(0, Math.min(image.naturalWidth, (e.clientX - box.left) * kx));
+    const sy = Math.max(0, Math.min(image.naturalHeight, (e.clientY - box.top) * ky));
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // pointer may already be released; window listeners still end the drag
+    }
+    if (mode === "draw") {
+      setRect({ x: sx, y: sy, w: 0, h: 0 });
+    }
     setDrag({
       mode,
-      px: e.clientX,
-      py: e.clientY,
-      startRect: { ...rect },
-      scale: image.naturalWidth / displaySize.w,
+      sx,
+      sy,
+      ox: box.left,
+      oy: box.top,
+      kx,
+      ky,
+      startRect: rect ? { ...rect } : null,
     });
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!drag || !image) return;
-    const dx = (e.clientX - drag.px) * drag.scale;
-    const dy = (e.clientY - drag.py) * drag.scale;
     const natW = image.naturalWidth;
     const natH = image.naturalHeight;
-    const minSize = Math.min(natW, natH) * 0.12;
+    const nx = Math.max(0, Math.min(natW, (e.clientX - drag.ox) * drag.kx));
+    const ny = Math.max(0, Math.min(natH, (e.clientY - drag.oy) * drag.ky));
+
+    if (drag.mode === "draw") {
+      setRect({
+        x: Math.min(drag.sx, nx),
+        y: Math.min(drag.sy, ny),
+        w: Math.abs(nx - drag.sx),
+        h: Math.abs(ny - drag.sy),
+      });
+      return;
+    }
+
     const s = drag.startRect;
+    if (!s) return;
 
     if (drag.mode === "move") {
       setRect({
-        x: Math.max(0, Math.min(natW - s.w, s.x + dx)),
-        y: Math.max(0, Math.min(natH - s.h, s.y + dy)),
+        x: Math.max(0, Math.min(natW - s.w, s.x + (nx - drag.sx))),
+        y: Math.max(0, Math.min(natH - s.h, s.y + (ny - drag.sy))),
         w: s.w,
         h: s.h,
       });
       return;
     }
 
-    let { x, y, w, h } = s;
-    if (drag.mode.includes("n")) {
-      y = Math.min(s.y + dy, s.y + s.h - minSize);
-      y = Math.max(0, y);
-      h = s.h + (s.y - y);
-    }
-    if (drag.mode.includes("s")) {
-      h = Math.max(minSize, Math.min(natH - s.y, s.h + dy));
-    }
-    if (drag.mode.includes("w")) {
-      x = Math.max(0, Math.min(s.x + dx, s.x + s.w - minSize));
-      w = s.w + (s.x - x);
-    }
-    if (drag.mode.includes("e")) {
-      w = Math.max(minSize, Math.min(natW - s.x, s.w + dx));
-    }
-    setRect({ x, y, w, h });
+    const minSize = Math.min(natW, natH) * 0.05;
+    let x1 = s.x;
+    let y1 = s.y;
+    let x2 = s.x + s.w;
+    let y2 = s.y + s.h;
+    if (drag.mode.includes("w")) x1 = Math.max(0, Math.min(nx, x2 - minSize));
+    if (drag.mode.includes("e")) x2 = Math.max(x1 + minSize, Math.min(natW, nx));
+    if (drag.mode.includes("n")) y1 = Math.max(0, Math.min(ny, y2 - minSize));
+    if (drag.mode.includes("s")) y2 = Math.max(y1 + minSize, Math.min(natH, ny));
+    setRect({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
   };
 
-  const onPointerUp = () => {
+  const handleReset = () => {
     setDrag(null);
+    setRect(null);
   };
 
   const handleConfirm = () => {
@@ -829,7 +872,7 @@ function ScanCropEditor({
     );
   };
 
-  if (!displaySize || !rect) {
+  if (!displaySize || !image) {
     return (
       <div className="flex items-center justify-center rounded-xl border border-studio-border bg-studio-soft p-10">
         <Loader2 className="h-8 w-8 animate-spin text-studio-accent" />
@@ -838,29 +881,27 @@ function ScanCropEditor({
   }
 
   const pct = (v: number, total: number) => `${(v / total) * 100}%`;
-  const handles: { id: Exclude<DragMode, null>; pos: string; cursor: string }[] = [
-    { id: "nw", pos: "-top-1.5 -left-1.5", cursor: "cursor-nwse-resize" },
-    { id: "ne", pos: "-top-1.5 -right-1.5", cursor: "cursor-nesw-resize" },
-    { id: "sw", pos: "-bottom-1.5 -left-1.5", cursor: "cursor-nesw-resize" },
-    { id: "se", pos: "-bottom-1.5 -right-1.5", cursor: "cursor-nwse-resize" },
+  const handles: { id: Exclude<CropDragMode, "draw" | "move">; pos: string; cursor: string }[] = [
+    { id: "nw", pos: "-top-2 -left-2", cursor: "cursor-nwse-resize" },
+    { id: "ne", pos: "-top-2 -right-2", cursor: "cursor-nesw-resize" },
+    { id: "sw", pos: "-bottom-2 -left-2", cursor: "cursor-nesw-resize" },
+    { id: "se", pos: "-bottom-2 -right-2", cursor: "cursor-nwse-resize" },
   ];
 
   return (
     <div className="space-y-3">
       <StudioSurfaceCard variant="ghost" padding="md" className="border border-studio-border">
-        <p className="mb-1 text-sm font-bold text-studio-fg">اقتصاص المحتوى</p>
+        <p className="mb-1 text-sm font-bold text-studio-fg">تحديد الجزء المطلوب</p>
         <p className="text-xs text-studio-fg-muted">
-          اسحب الإطار لتحديد الجزء المطلوب — سيتم استخراجه ومعالجته كمستند ممسوح احترافي
+          اضغط واسحب على الصورة لرسم تحديد جديد مثل لقطة الشاشة — يمكنك سحب التحديد لنقله أو مقابضه لتعديله، والسحب في أي مكان آخر يبدأ تحديدًا جديدًا
         </p>
       </StudioSurfaceCard>
 
       <div
-        className="relative mx-auto select-none"
+        className="relative mx-auto cursor-crosshair select-none"
         style={{ width: displaySize.w, touchAction: "none" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
       >
         <img
           src={src}
@@ -869,50 +910,66 @@ function ScanCropEditor({
           className="block w-full rounded-lg"
           style={{ height: displaySize.h }}
         />
-        <div
-          className="pointer-events-none absolute inset-0 bg-black/55"
-          style={{
-            clipPath: `polygon(
-              0 0, 100% 0, 100% 100%, 0 100%,
-              0 ${pct(rect.y, displaySize.h)}, ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)},
-              ${pct(rect.x, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
-              ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
-              ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y, displaySize.h)},
-              ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)}
-            )`,
-          }}
-        />
-        <div
-          role="presentation"
-          data-crop-mode="move"
-          className="absolute cursor-move border-2 border-emerald-400"
-          style={{
-            left: pct(rect.x, displaySize.w),
-            top: pct(rect.y, displaySize.h),
-            width: pct(rect.w, displaySize.w),
-            height: pct(rect.h, displaySize.h),
-          }}
-        >
-          {handles.map((h) => (
-            <span
-              key={h.id}
-              role="presentation"
-              data-crop-mode={h.id}
-              className={cn(
-                "absolute h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow",
-                h.pos,
-                h.cursor,
-              )}
+        {rect && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 bg-black/55"
+              style={{
+                clipPath: `polygon(
+                  0 0, 100% 0, 100% 100%, 0 100%,
+                  0 ${pct(rect.y, displaySize.h)}, ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)},
+                  ${pct(rect.x, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
+                  ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
+                  ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y, displaySize.h)},
+                  ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)}
+                )`,
+              }}
             />
-          ))}
-        </div>
+            <div
+              role="presentation"
+              data-crop-mode="move"
+              className="absolute cursor-move border-2 border-emerald-400"
+              style={{
+                left: pct(rect.x, displaySize.w),
+                top: pct(rect.y, displaySize.h),
+                width: pct(rect.w, displaySize.w),
+                height: pct(rect.h, displaySize.h),
+              }}
+            >
+              {handles.map((h) => (
+                <span
+                  key={h.id}
+                  role="presentation"
+                  data-crop-mode={h.id}
+                  className={cn(
+                    "absolute h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-md",
+                    h.pos,
+                    h.cursor,
+                  )}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {!rect && !drag && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rounded-full bg-black/70 px-4 py-2 text-xs font-bold text-white">
+              اضغط واسحب لتحديد الجزء المطلوب
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <StudioButton onClick={handleConfirm} className="gap-2">
+        <StudioButton onClick={handleConfirm} disabled={!rect || rect.w < 10 || rect.h < 10} className="gap-2">
           <Check className="h-4 w-4" />
           تأكيد القصّ والمتابعة
         </StudioButton>
+        {rect && (
+          <StudioButton variant="secondary" onClick={handleReset} className="gap-2">
+            إعادة التحديد
+          </StudioButton>
+        )}
         <StudioButton variant="secondary" onClick={onSkip} className="gap-2">
           <SkipForward className="h-4 w-4" />
           رفع الصورة كاملة بدون قصّ
