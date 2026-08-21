@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -18,21 +17,18 @@ return new class extends Migration
             }
         });
 
-        $compositeIndexExists = DB::select(
-            'SHOW INDEX FROM questions WHERE Key_name = ?',
-            ['questions_tenant_id_question_format_index']
-        );
-        if (empty($compositeIndexExists)) {
+        $compositeIndexExists = collect(Schema::getIndexes('questions'))
+            ->contains(fn (array $index) => $index['name'] === 'questions_tenant_id_question_format_index');
+        if (! $compositeIndexExists) {
             Schema::table('questions', function (Blueprint $table) {
                 $table->index(['tenant_id', 'question_format']);
             });
         }
 
-        $fkExists = DB::select(
-            'SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ?',
-            ['questions', 'media_asset_id', 'media_assets']
-        );
-        if (empty($fkExists)) {
+        $fkExists = collect(Schema::getForeignKeys('questions'))
+            ->contains(fn (array $foreignKey) => in_array('media_asset_id', $foreignKey['columns'], true)
+                && ($foreignKey['references_table'] ?? $foreignKey['on'] ?? null) === 'media_assets');
+        if (! $fkExists) {
             Schema::table('questions', function (Blueprint $table) {
                 $table->foreign('media_asset_id')->references('id')->on('media_assets')->nullOnDelete();
             });

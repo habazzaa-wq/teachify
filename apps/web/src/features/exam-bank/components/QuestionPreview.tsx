@@ -7,6 +7,7 @@ import {
   DIFFICULTY_CONFIG,
 } from "@/features/exam-bank/constants";
 import type { Question, QuestionStatus } from "@/features/exam-bank/types";
+import { ScanImageViewer } from "./ScanImageViewer";
 
 type StudioStatus = "active" | "pending" | "archived";
 
@@ -57,13 +58,12 @@ export function QuestionPreview({ question }: { question: Question }) {
       <div>
         {isScanned && question.scanUrl ? (
           <div className="space-y-2">
-            <div className="overflow-hidden rounded-xl border border-studio-border">
-              <img
-                src={question.scanUrl}
-                alt="السؤال المصوّر"
-                className="max-h-[300px] w-full object-contain"
-              />
-            </div>
+            <ScanImageViewer
+              src={question.scanUrl}
+              alt="السؤال المصوّر"
+              maxHeight={300}
+              showControls={true}
+            />
           </div>
         ) : (
           <>

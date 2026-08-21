@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { DIFFICULTY_LABELS, REVIEW_STATUS_LABELS } from "../constants";
 import type { ResultReviewItem } from "../types";
 import type { ExamSessionQuestionType } from "@/features/exam-session/types";
+import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
 
 interface ReviewQuestionCardProps {
   item: ResultReviewItem;
@@ -114,11 +115,12 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
           >
             <div className="border-t border-border/30 px-4 py-5 sm:px-5">
               {item.questionFormat === "image" && item.scanUrl ? (
-                <div className="mb-4 overflow-hidden rounded-xl border border-border/40">
-                  <img
+                <div className="mb-4">
+                  <ScanImageViewer
                     src={item.scanUrl}
                     alt={`صورة السؤال ${index + 1}`}
-                    className="max-h-[300px] w-full object-contain"
+                    maxHeight={300}
+                    showControls={true}
                   />
                 </div>
               ) : (

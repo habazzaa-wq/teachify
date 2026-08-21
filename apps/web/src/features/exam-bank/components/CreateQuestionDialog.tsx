@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, ArrowRight, Camera, Check } from "lucide-react";
+import { Plus, ArrowRight, Camera, Check, CheckCircle2 } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -37,6 +37,7 @@ import {
 } from "@/features/exam-bank/hooks";
 import { QuestionBuilderForm } from "./QuestionBuilderForm";
 import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
+import { ScanImageViewer } from "./ScanImageViewer";
 import type {
   Question,
   QuestionType,
@@ -500,6 +501,7 @@ export function CreateQuestionDialog({
   const [imagePhase, setImagePhase] = useState<ImageCreatePhase>("format");
   const [completedScanUrl, setCompletedScanUrl] = useState<string | null>(null);
   const [scanMediaAssetId, setScanMediaAssetId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const createMutation = useCreateQuestion();
   const updateMutation = useUpdateQuestion();
   const addExamQuestion = useAddExamQuestion();
@@ -541,7 +543,9 @@ export function CreateQuestionDialog({
   }, []);
 
   const handleCreateForScan = useCallback(async () => {
+    if (isSubmitting) return;
     setError(null);
+    setIsSubmitting(true);
     try {
       const created = (await createMutation.mutateAsync(
         buildQuestionPayload(values),
@@ -562,8 +566,10 @@ export function CreateQuestionDialog({
       setScanMediaAssetId(null);
     } catch {
       setError("تعذر إنشاء السؤال، حاول مرة أخرى.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [values, createMutation, addExamQuestion, examId]);
+  }, [values, createMutation, addExamQuestion, examId, isSubmitting]);
 
   const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
     setCompletedScanUrl(payload.scanUrl);
@@ -591,8 +597,9 @@ export function CreateQuestionDialog({
   }, []);
 
   const handleSubmitMetadata = useCallback(async () => {
-    if (!createdQuestion) return;
+    if (!createdQuestion || isSubmitting) return;
     setError(null);
+    setIsSubmitting(true);
     try {
       const saved = (await updateMutation.mutateAsync({
         id: createdQuestion.id,
@@ -602,15 +609,19 @@ export function CreateQuestionDialog({
       onCreated?.(saved);
     } catch {
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [createdQuestion, values, scanMediaAssetId, updateMutation, onOpenChange, onCreated]);
+  }, [createdQuestion, values, scanMediaAssetId, updateMutation, onOpenChange, onCreated, isSubmitting]);
 
   const handleFinalTextSubmit = useCallback(async () => {
     if (!values.title.trim()) {
       setError("الرجاء إدخال عنوان للسؤال.");
       return;
     }
+    if (isSubmitting) return;
     setError(null);
+    setIsSubmitting(true);
     try {
       const created = (await createMutation.mutateAsync(
         buildQuestionPayload(values),
@@ -629,10 +640,12 @@ export function CreateQuestionDialog({
       onCreated?.(created);
     } catch {
       setError("تعذر إنشاء السؤال، حاول مرة أخرى.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [values, createMutation, addExamQuestion, examId, onOpenChange, onCreated]);
+  }, [values, createMutation, addExamQuestion, examId, onOpenChange, onCreated, isSubmitting]);
 
-  const isMutating = createMutation.isPending || updateMutation.isPending;
+  const isMutating = createMutation.isPending || updateMutation.isPending || isSubmitting;
 
   const dialogTitle = (() => {
     if (isImageFormat) {
@@ -697,13 +710,12 @@ export function CreateQuestionDialog({
                 العودة للتصوير
               </button>
               {completedScanUrl && (
-                <div className="overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30">
-                  <img
-                    src={completedScanUrl}
-                    alt="السؤال المصوّر"
-                    className="max-h-[250px] w-full object-contain"
-                  />
-                </div>
+                <ScanImageViewer
+                  src={completedScanUrl}
+                  alt="السؤال المصوّر"
+                  maxHeight={250}
+                  showControls={true}
+                />
               )}
               <QuestionFormFields
                 values={values}
@@ -760,12 +772,19 @@ export function CreateQuestionDialog({
 
           {isImageFormat && imagePhase === "scan" && (
             <>
+              {scanMediaAssetId && (
+                <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  تم المسح بنجاح
+                </span>
+              )}
               <StudioButton
                 onClick={handleContinueToMetadata}
                 disabled={!canContinueScan}
+                loading={createMutation.isPending}
                 className="gap-2"
               >
-                متابعة
+                متابعة إلى إعداد السؤال
               </StudioButton>
             </>
           )}

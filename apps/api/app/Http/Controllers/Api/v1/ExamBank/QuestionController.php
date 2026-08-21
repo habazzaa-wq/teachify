@@ -282,6 +282,7 @@ class QuestionController extends Controller
 
         $request->validate([
             'file' => ['required', 'file', 'max:10240', 'mimes:jpeg,png,webp'],
+            'mode' => ['sometimes', 'string', Rule::in(config('scanner.modes'))],
         ]);
 
         $errors = $this->scanService->validateUpload($request->file('file'));
@@ -294,6 +295,7 @@ class QuestionController extends Controller
             currentTenantUser(),
             $question,
             $request->file('file'),
+            $request->input('mode', 'auto'),
         );
 
         return response()->json([

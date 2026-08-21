@@ -219,9 +219,10 @@ export const examBankService = {
   async bulkMoveQuestions(ids: number[], categoryId: number, bankId?: number | null): Promise<void> {
     await api.post("/exam-bank/questions/bulk/move-category", { ids, category_id: categoryId, bank_id: bankId ?? null });
   },
-  async uploadScan(id: string | number, file: File): Promise<Question> {
+  async uploadScan(id: string | number, file: File, mode?: string): Promise<Question> {
     const formData = new FormData();
     formData.append("file", file);
+    if (mode) formData.append("mode", mode);
     const { data } = await api.post(`/exam-bank/questions/${id}/scan`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

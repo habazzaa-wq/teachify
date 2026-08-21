@@ -39,6 +39,7 @@ export function EditQuestionDialog({
   const [error, setError] = useState<string | null>(null);
   const [editScanUrl, setEditScanUrl] = useState<string | null>(null);
   const [editScanMediaAssetId, setEditScanMediaAssetId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const updateMutation = useUpdateQuestion();
 
   useEffect(() => {
@@ -87,12 +88,13 @@ export function EditQuestionDialog({
   const isImageFormat = values?.questionFormat === "image";
 
   const handleSubmit = async () => {
-    if (!values || !questionId) return;
+    if (!values || !questionId || isSubmitting) return;
     if (values.questionFormat !== "image" && !values.title.trim()) {
       setError("الرجاء إدخال عنوان للسؤال.");
       return;
     }
     setError(null);
+    setIsSubmitting(true);
     try {
       const saved = (await updateMutation.mutateAsync({
         id: questionId,
@@ -102,6 +104,8 @@ export function EditQuestionDialog({
       onSaved?.(saved);
     } catch {
       setError("تعذر حفظ التغييرات، حاول مرة أخرى.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

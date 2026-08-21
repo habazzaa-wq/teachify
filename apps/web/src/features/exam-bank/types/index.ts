@@ -13,6 +13,22 @@ export type QuestionType =
 
 export type QuestionFormat = "text" | "image";
 
+export type ScanMode = "auto" | "color_document" | "grayscale_document" | "original_preserve";
+
+export interface ScanProcessingStage {
+  key: string;
+  label: string;
+  status: "done" | "skipped";
+  detail?: string;
+}
+
+export interface ScanProcessingInfo {
+  mode: ScanMode;
+  fallbackUsed: boolean;
+  qualityLevel?: "excellent" | "good" | "original" | null;
+  stages: ScanProcessingStage[];
+}
+
 export type Difficulty = "easy" | "medium" | "hard";
 
 export type ExamStatus = "draft" | "published" | "archived";
@@ -108,6 +124,7 @@ export interface Question {
   questionFormat?: QuestionFormat;
   scanUrl?: string | null;
   scanAssetId?: string | null;
+  scanProcessing?: ScanProcessingInfo | null;
   category?: { id: string; name: string; slug: string } | null;
   creator?: { id: string; name: string | null } | null;
   createdAt?: string;

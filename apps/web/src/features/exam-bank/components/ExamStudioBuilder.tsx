@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -18,8 +19,10 @@ import {
   StudioEmptyState,
   StudioChip,
 } from "@/components/studio";
+import { useQueryClient } from "@tanstack/react-query";
 import { useExamStudioStore } from "@/features/exam-bank/store";
 import { useQuestion } from "@/features/exam-bank/hooks";
+import { EXAM_BANK_QUERY_KEY } from "@/features/exam-bank/constants";
 import type { Exam, ExamQuestion } from "@/features/exam-bank/types";
 import { formatNumber } from "@/lib/format";
 import QuestionBuilder from "./QuestionBuilder";
@@ -140,11 +143,23 @@ export function ExamStudioBuilder({
   onUpdateQuestion,
 }: ExamStudioBuilderProps) {
   const { view, selectedQuestionId } = useExamStudioStore();
+  const qc = useQueryClient();
   const { data: question, isLoading: questionLoading } = useQuestion(
     view === "question" ? selectedQuestionId : null,
   );
 
   const link = questions.find((q) => q.questionId === selectedQuestionId);
+
+  const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
+    if (!selectedQuestionId) return;
+    qc.setQueryData(
+      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
+      (old: unknown) => {
+        if (!old || typeof old !== "object") return old;
+        return { ...old, scanUrl: payload.scanUrl, scanAssetId: payload.scanAssetId };
+      },
+    );
+  }, [selectedQuestionId, qc]);
 
   return (
     <div className="h-full overflow-y-auto studio-scrollbar bg-studio-bg">
@@ -168,6 +183,7 @@ export function ExamStudioBuilder({
                   question={question}
                   examQuestionLink={link ?? null}
                   onChange={(payload: Record<string, unknown>) => onUpdateQuestion?.(question.id, payload)}
+                  onScanUploaded={handleScanUploaded}
                 />
                 <StudioSurfaceCard variant="outline" padding="md">
                   <h3 className="mb-3 text-sm font-semibold text-studio-fg">معاينة السؤال</h3>

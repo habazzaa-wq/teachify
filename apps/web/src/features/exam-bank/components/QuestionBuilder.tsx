@@ -27,11 +27,13 @@ interface QuestionBuilderProps {
   question: Question;
   examQuestionLink?: ExamQuestion | null;
   onChange?: (payload: Record<string, unknown>) => void;
+  onScanUploaded?: (payload: { scanUrl: string; scanAssetId: string }) => void;
 }
 
 export function QuestionBuilder({
   question,
   onChange,
+  onScanUploaded,
 }: QuestionBuilderProps) {
   const [title, setTitle] = useState(question.title);
   const [description, setDescription] = useState(question.description ?? "");
@@ -161,6 +163,7 @@ export function QuestionBuilder({
           <ScannedQuestionEditor
             questionId={question.id}
             scanUrl={question.scanUrl}
+            onScanUploaded={onScanUploaded}
             disabled={false}
           />
         ) : (

@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import { QUESTION_TYPE_LABELS } from "../constants";
 import { toggleMultiOption } from "../utils";
+import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
 
 interface ExamQuestionViewProps {
   question: ExamSessionQuestion;
@@ -70,12 +71,12 @@ function ExamQuestionViewInner({
         </div>
 
         {question.questionFormat === "image" && question.scanUrl ? (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border/40 bg-background/50 shadow-sm">
-            <img
+          <div className="mt-4">
+            <ScanImageViewer
               src={question.scanUrl}
               alt={`صورة السؤال ${index + 1}`}
-              className="mx-auto max-h-[500px] w-full max-w-[720px] object-contain"
-              loading="eager"
+              maxHeight={500}
+              showControls={true}
             />
           </div>
         ) : (
