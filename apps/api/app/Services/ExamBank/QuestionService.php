@@ -14,9 +14,17 @@ class QuestionService
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Question {
-            $isImage = ($data['question_format'] ?? 'text') === 'image';
-            $title = $data['title'] ?? ($isImage ? 'سؤال ممسوح' : null);
-
+            $title = trim((string) ($data['title'] ?? ''));
+            $isImageFormat = ($data['question_format'] ?? 'text') === 'image';
+            if ($title === '') {
+                $title = $isImageFormat ? 'سؤال مصوّر' : 'سؤال بدون عنوان';
+            }
+            $slugSource = trim((string) ($data['slug'] ?? ''));
+            if ($slugSource === '') {
+                $slugSource = $isImageFormat
+                    ? $title.'-'.strtolower(\Illuminate\Support\Str::random(6))
+                    : $title;
+            }
             $question = Question::create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
@@ -24,7 +32,7 @@ class QuestionService
                 'category_id' => $data['category_id'] ?? null,
                 'bank_id' => $data['bank_id'] ?? null,
                 'title' => $title,
-                'slug' => $this->uniqueSlug($data['slug'] ?? $title ?? 'untitled'),
+                'slug' => $this->uniqueSlug($slugSource),
                 'description' => $data['description'] ?? null,
                 'type' => $data['type'],
                 'difficulty' => $data['difficulty'] ?? 'medium',
@@ -39,8 +47,6 @@ class QuestionService
                 'hint' => $data['hint'] ?? null,
                 'content' => $data['content'] ?? null,
                 'metadata' => $data['metadata'] ?? null,
-                'question_format' => $data['question_format'] ?? 'text',
-                'media_asset_id' => $data['media_asset_id'] ?? null,
             ]);
 
             return $question->refresh();
@@ -66,7 +72,6 @@ class QuestionService
                 'category_id', 'bank_id', 'title', 'slug', 'description', 'type',
                 'difficulty', 'tags', 'points', 'estimated_time', 'language',
                 'visibility', 'shuffle_options', 'explanation', 'hint', 'content', 'metadata',
-                'question_format', 'media_asset_id',
             ])->all())->save();
 
             return $question->refresh();
@@ -194,12 +199,6 @@ class QuestionService
             $copy->uuid = (string) \Illuminate\Support\Str::uuid();
             $copy->slug = $this->uniqueSlug($question->title . '-copy');
             $copy->status = 'draft';
-
-            // Don't share the scan MediaAsset between original and duplicate.
-            if ($copy->question_format === 'image') {
-                $copy->media_asset_id = null;
-            }
-
             $copy->save();
 
             return $copy->refresh();

@@ -156,6 +156,58 @@ class DocumentScanProcessorTest extends TestCase
         imagedestroy($processed);
     }
 
+    public function test_bw_mode_produces_near_binary_scanner_output(): void
+    {
+        $bytes = $this->renderDamagedPage(1174, 1600);
+
+        $result = (new DocumentScanProcessor())->process($bytes, 'bw_document');
+
+        $processed = imagecreatefromstring($result->bytes);
+        $this->assertNotFalse($processed);
+        $this->assertFalse($result->fallbackUsed);
+        $this->assertTrue($result->enhanced);
+        $this->assertSame('excellent', $result->quality['level']);
+
+        $w = imagesx($processed);
+        $h = imagesy($processed);
+        $step = max(1, (int) floor(min($w, $h) / 200));
+        $extremes = 0;
+        $total = 0;
+        for ($y = 0; $y < $h; $y += $step) {
+            for ($x = 0; $x < $w; $x += $step) {
+                $lum = $this->pixelLum($processed, $x, $y);
+                if ($lum <= 30 || $lum >= 225) {
+                    $extremes++;
+                }
+                $total++;
+            }
+        }
+        $this->assertGreaterThan(0.85, $extremes / max(1, $total));
+
+        imagedestroy($processed);
+    }
+
+    public function test_page_on_dark_background_is_extracted_by_content(): void
+    {
+        $bytes = $this->renderPageOnDarkBackground(1400, 1750);
+
+        $original = imagecreatefromstring($bytes);
+        $origPixels = imagesx($original) * imagesy($original);
+        imagedestroy($original);
+
+        $result = (new DocumentScanProcessor())->process($bytes, 'bw_document');
+
+        $this->assertFalse($result->fallbackUsed);
+
+        $outPixels = $result->width * $result->height;
+        $this->assertLessThan($origPixels * 0.92, $outPixels, 'background should be cropped away');
+        $this->assertGreaterThan($origPixels * 0.25, $outPixels, 'page content must be kept');
+
+        $processed = imagecreatefromstring($result->bytes);
+        $this->assertNotFalse($processed);
+        imagedestroy($processed);
+    }
+
     // ── helpers ──────────────────────────────────────────────
 
     private function renderTextbookPage(int $w, int $h, float $brightness = 1.0, bool $warmCast = false): string
@@ -201,6 +253,30 @@ class DocumentScanProcessorTest extends TestCase
         imagejpeg($page, null, 85);
         $bytes = ob_get_clean();
         imagedestroy($page);
+
+        return $bytes;
+    }
+
+    private function renderPageOnDarkBackground(int $w, int $h): string
+    {
+        $frame = imagecreatetruecolor($w, $h);
+        $desk = imagecolorallocate($frame, 62, 58, 52);
+        imagefill($frame, 0, 0, $desk);
+
+        $pageW = (int) ($w * 0.68);
+        $pageH = (int) ($h * 0.74);
+        $pageX = (int) ($w * 0.17);
+        $pageY = (int) ($h * 0.13);
+
+        $pageBytes = $this->renderTextbookPage($pageW, $pageH, brightness: 0.85);
+        $page = imagecreatefromstring($pageBytes);
+        imagecopy($frame, $page, $pageX, $pageY, 0, 0, $pageW, $pageH);
+        imagedestroy($page);
+
+        ob_start();
+        imagejpeg($frame, null, 88);
+        $bytes = ob_get_clean();
+        imagedestroy($frame);
 
         return $bytes;
     }

@@ -7,6 +7,7 @@ use InvalidArgumentException;
 final class DocumentScanProcessor
 {
     private const MODE_AUTO = 'auto';
+    private const MODE_BW = 'bw_document';
     private const MODE_COLOR = 'color_document';
     private const MODE_GRAY = 'grayscale_document';
     private const MODE_PRESERVE = 'original_preserve';
@@ -62,7 +63,7 @@ final class DocumentScanProcessor
     public function process(string $bytes, string $mode = self::MODE_AUTO, ?int $exifOrientation = null): ScanResult
     {
         $this->stages = [];
-        $mode = in_array($mode, [self::MODE_AUTO, self::MODE_COLOR, self::MODE_GRAY, self::MODE_PRESERVE], true)
+        $mode = in_array($mode, [self::MODE_BW, self::MODE_AUTO, self::MODE_COLOR, self::MODE_GRAY, self::MODE_PRESERVE], true)
             ? $mode
             : self::MODE_AUTO;
 
@@ -94,6 +95,7 @@ final class DocumentScanProcessor
         $warped = false;
         $deskewed = false;
         $detected = false;
+        $cropped = false;
 
         if ($mode !== self::MODE_PRESERVE) {
             $quad = $this->detectDocumentQuad($work);
@@ -138,7 +140,22 @@ final class DocumentScanProcessor
                     $quad === null ? 'لم تُكتشف حدود موثوقة' : sprintf('ثقة منخفضة (%d%%)', (int) round(($quad['confidence'] ?? 0) * 100)),
                 );
 
-                if ($quad === null) {
+                $region = $this->detectPageRegion($work);
+                if ($region !== null && $region['confidence'] >= 0.62 && $region['removedPct'] >= 0.05) {
+                    $cropResult = $this->cropToRegion($work, $region);
+                    if ($cropResult !== null) {
+                        $work = $cropResult;
+                        $cropped = true;
+                        $this->record(
+                            'crop',
+                            'اقتصاص خلفية الصفحة',
+                            'done',
+                            sprintf('استخراج المحتوى وإزالة %d%% من الخلفية', (int) round($region['removedPct'] * 100)),
+                        );
+                    }
+                }
+
+                if (! $cropped && $quad === null) {
                     $angle = $this->estimateSkewByProjection($work);
                     if ($angle !== null) {
                         $deskewResult = $this->rotateAndTrim($work, $angle);
@@ -157,9 +174,15 @@ final class DocumentScanProcessor
 
         $enhanced = false;
         $sharpened = false;
+        $binarized = false;
         $preToneImage = null;
 
-        if ($mode !== self::MODE_PRESERVE) {
+        if ($mode === self::MODE_BW) {
+            $binarized = true;
+            $enhanced = true;
+            $work = $this->binarizeAdaptive($work);
+            $this->record('enhance', 'تحويل إلى مستند ممسوح أبيض وأسود', 'done', 'عتبة تكيفية — نص أسود حاد على ورق أبيض');
+        } elseif ($mode !== self::MODE_PRESERVE) {
             $toneResult = $this->applyToneCorrection($work, $analysis, $mode);
             if ($toneResult !== null) {
                 $preToneImage = $work;
@@ -184,9 +207,11 @@ final class DocumentScanProcessor
         }
         $this->observe('after_tone_sharpen', $work, ['enhanced' => $enhanced, 'sharpened' => $sharpened]);
 
-        $validation = $this->validateCandidate($work, $snapshot, $warped || $deskewed, $enhanced);
+        $validation = $binarized
+            ? $this->validateCandidate($work, $snapshot, $warped || $deskewed || $cropped, false, true)
+            : $this->validateCandidate($work, $snapshot, $warped || $deskewed || $cropped, $enhanced);
 
-        if (! $validation['ok'] && $enhanced && ! $warped && ! $deskewed && $preToneImage !== null) {
+        if (! $validation['ok'] && ! $binarized && $enhanced && ! $warped && ! $deskewed && ! $cropped && $preToneImage !== null) {
             imagedestroy($work);
             $work = $this->applyGentleTone($preToneImage, $analysis);
             $preToneImage = null;
@@ -212,7 +237,7 @@ final class DocumentScanProcessor
         $this->observe('encoded', null, ['bytes' => strlen($encoded)]);
 
         $finalAnalysis = $this->analyzeFromBytes($encoded);
-        $qualityLevel = $this->qualityLevel($enhanced || $sharpened || $warped || $deskewed, $mode);
+        $qualityLevel = $binarized ? 'excellent' : $this->qualityLevel($enhanced || $sharpened || $warped || $deskewed || $cropped, $mode);
 
         $this->record('encode', 'ترميز الصورة النهائية', 'done', sprintf('JPEG q%d', $this->jpegQuality));
 
@@ -231,7 +256,7 @@ final class DocumentScanProcessor
             documentDetected: $detected,
             perspectiveCorrected: $warped,
             deskewed: $deskewed,
-            enhanced: $enhanced || $sharpened,
+            enhanced: $enhanced || $sharpened || $cropped,
         );
     }
 
@@ -1163,6 +1188,325 @@ final class DocumentScanProcessor
     //  Enhancement
     // ════════════════════════════════════════════════════════════
 
+    /**
+     * Bright-page segmentation: documents are large bright rectangles. Finds the
+     * dominant bright region containing the frame centre and returns its bounding
+     * box in original coordinates, or null when no meaningful background can be
+     * removed. Far more robust than edge hulls on cluttered real-world photos.
+     *
+     * @return array{ x: float, y: float, w: float, h: float, confidence: float, removedPct: float }|null
+     */
+    private function detectPageRegion(\GdImage $image): ?array
+    {
+        $w = imagesx($image);
+        $h = imagesy($image);
+        if ($w < 120 || $h < 120) {
+            return null;
+        }
+
+        $scale = min(1.0, 176.0 / max($w, $h));
+        $sw = max(16, (int) round($w * $scale));
+        $sh = max(16, (int) round($h * $scale));
+
+        $small = imagecreatetruecolor($sw, $sh);
+        imagecopyresampled($small, $image, 0, 0, 0, 0, $sw, $sh, $w, $h);
+
+        $lum = [];
+        $hist = array_fill(0, 256, 0);
+        for ($y = 0; $y < $sh; $y++) {
+            for ($x = 0; $x < $sw; $x++) {
+                $rgb = imagecolorat($small, $x, $y);
+                $l = (int) (0.299 * (($rgb >> 16) & 0xFF) + 0.587 * (($rgb >> 8) & 0xFF) + 0.114 * ($rgb & 0xFF));
+                $lum[$y][$x] = $l;
+                $hist[$l]++;
+            }
+        }
+        imagedestroy($small);
+
+        $total = $sw * $sh;
+        $acc = 0;
+        $paper = 255;
+        for ($i = 255; $i >= 0; $i--) {
+            $acc += $hist[$i];
+            if ($acc >= max(1, (int) ($total * 0.08))) {
+                $paper = $i;
+                break;
+            }
+        }
+        if ($paper < 110) {
+            return null;
+        }
+
+        $threshold = max(90, $paper - 52);
+
+        $mask = [];
+        for ($y = 0; $y < $sh; $y++) {
+            for ($x = 0; $x < $sw; $x++) {
+                $mask[$y][$x] = $lum[$y][$x] >= $threshold ? 1 : 0;
+            }
+        }
+
+        for ($pass = 0; $pass < 2; $pass++) {
+            $next = $mask;
+            for ($y = 1; $y < $sh - 1; $y++) {
+                for ($x = 1; $x < $sw - 1; $x++) {
+                    $sum = $mask[$y - 1][$x - 1] + $mask[$y - 1][$x] + $mask[$y - 1][$x + 1]
+                        + $mask[$y][$x - 1] + $mask[$y][$x] + $mask[$y][$x + 1]
+                        + $mask[$y + 1][$x - 1] + $mask[$y + 1][$x] + $mask[$y + 1][$x + 1];
+                    $next[$y][$x] = $sum >= 5 ? 1 : 0;
+                }
+            }
+            $mask = $next;
+        }
+
+        $labels = [];
+        foreach ($mask as $y => $row) {
+            $labels[$y] = array_fill(0, $sw, 0);
+        }
+        $best = null;
+        $label = 0;
+        $centerX = (int) floor($sw / 2);
+        $centerY = (int) floor($sh / 2);
+        $stack = [];
+
+        for ($y = 0; $y < $sh; $y++) {
+            for ($x = 0; $x < $sw; $x++) {
+                if ($mask[$y][$x] === 0 || $labels[$y][$x] !== 0) {
+                    continue;
+                }
+                $label++;
+                $area = 0;
+                $minX = $sw;
+                $maxX = -1;
+                $minY = $sh;
+                $maxY = -1;
+                $touchesCenter = false;
+                $stack = [[$x, $y]];
+                $labels[$y][$x] = $label;
+
+                while ($stack !== []) {
+                    [$cx, $cy] = array_pop($stack);
+                    $area++;
+                    if ($cx < $minX) { $minX = $cx; }
+                    if ($cx > $maxX) { $maxX = $cx; }
+                    if ($cy < $minY) { $minY = $cy; }
+                    if ($cy > $maxY) { $maxY = $cy; }
+                    if ($cx === $centerX && $cy === $centerY) {
+                        $touchesCenter = true;
+                    }
+
+                    foreach ([[1, 0], [-1, 0], [0, 1], [0, -1]] as [$dx, $dy]) {
+                        $nx = $cx + $dx;
+                        $ny = $cy + $dy;
+                        if ($nx < 0 || $ny < 0 || $nx >= $sw || $ny >= $sh || $mask[$ny][$nx] === 0 || $labels[$ny][$nx] !== 0) {
+                            continue;
+                        }
+                        $labels[$ny][$nx] = $label;
+                        $stack[] = [$nx, $ny];
+                    }
+                }
+
+                $isCenter = $labels[$centerY][$centerX] === $label;
+                $rank = ($isCenter || $best === null ? 100000 : 0) + $area;
+                if ($best === null || $rank > $best['rank']) {
+                    $best = ['rank' => $rank, 'area' => $area, 'minX' => $minX, 'maxX' => $maxX, 'minY' => $minY, 'maxY' => $maxY];
+                }
+            }
+        }
+
+        if ($best === null || $best['maxX'] < $best['minX']) {
+            return null;
+        }
+
+        $bw = $best['maxX'] - $best['minX'] + 1;
+        $bh = $best['maxY'] - $best['minY'] + 1;
+        $bboxArea = $bw * $bh;
+        $solidity = $best['area'] / $bboxArea;
+        $fill = $bboxArea / $total;
+
+        if ($solidity < 0.72 || $fill < 0.20 || $fill > 0.995) {
+            return null;
+        }
+
+        $mx = (int) round($sw * 0.04);
+        $my = (int) round($sh * 0.04);
+        $rx0 = max(0, $best['minX'] - $mx);
+        $ry0 = max(0, $best['minY'] - $my);
+        $rx1 = min($sw - 1, $best['maxX'] + $mx);
+        $ry1 = min($sh - 1, $best['maxY'] + $my);
+        $ringArea = $total - ($rx1 - $rx0 + 1) * ($ry1 - $ry0 + 1);
+
+        $ringMean = null;
+        if ($ringArea > $total * 0.02) {
+            $ringSum = 0;
+            $ringCount = 0;
+            for ($y = 0; $y < $sh; $y += 2) {
+                for ($x = 0; $x < $sw; $x += 2) {
+                    if ($x >= $rx0 && $x <= $rx1 && $y >= $ry0 && $y <= $ry1) {
+                        continue;
+                    }
+                    $ringSum += $lum[$y][$x];
+                    $ringCount++;
+                }
+            }
+            $ringMean = $ringCount > 0 ? $ringSum / $ringCount : null;
+        }
+
+        $contrastScore = $ringMean === null ? 0.7 : max(0.0, min(1.0, ($paper - $ringMean) / 55.0));
+        $confidence = 0.45 * $solidity + 0.25 * min(1.0, $fill / 0.85) + 0.30 * $contrastScore;
+
+        $invScale = 1.0 / $scale;
+        $ox = $best['minX'] * $invScale;
+        $oy = $best['minY'] * $invScale;
+        $ow = ($best['maxX'] + 1) * $invScale - $ox;
+        $oh = ($best['maxY'] + 1) * $invScale - $oy;
+
+        $keptPct = ($ow * $oh) / ((float) $w * (float) $h);
+        $removedPct = 1.0 - min(1.0, $keptPct);
+
+        if ($removedPct < 0.03) {
+            return null;
+        }
+
+        return [
+            'x' => $ox,
+            'y' => $oy,
+            'w' => $ow,
+            'h' => $oh,
+            'confidence' => $confidence,
+            'removedPct' => $removedPct,
+        ];
+    }
+
+    /**
+     * Axis-aligned crop of a detected page region with a small safety margin.
+     * Never amputates diagonally: worst case keeps some background.
+     */
+    private function cropToRegion(\GdImage $image, array $region): ?\GdImage
+    {
+        $w = imagesx($image);
+        $h = imagesy($image);
+
+        $marginX = (int) round($w * 0.012);
+        $marginY = (int) round($h * 0.012);
+
+        $x = max(0, min((int) round($region['x']) - $marginX, $w - 1));
+        $y = max(0, min((int) round($region['y']) - $marginY, $h - 1));
+        $cw = min($w - $x, (int) ceil($region['w'] + 2 * $marginX));
+        $ch = min($h - $y, (int) ceil($region['h'] + 2 * $marginY));
+
+        if ($cw < $this->minOutputDimension || $ch < $this->minOutputDimension) {
+            return null;
+        }
+        if (($cw * $ch) < ($w * $h) * 0.22) {
+            return null;
+        }
+
+        $out = imagecreatetruecolor($cw, $ch);
+        imagecopy($out, $image, 0, 0, $x, $y, $cw, $ch);
+        imagedestroy($image);
+
+        return $out;
+    }
+
+    /**
+     * Bradley/Wellner adaptive thresholding via sliding-window column sums:
+     * O(w×h) time, minimal extra memory even at full 3200px resolution.
+     * Produces the classic professional scan look — pure black text on pure white.
+     */
+    private function binarizeAdaptive(\GdImage $image): \GdImage
+    {
+        $w = imagesx($image);
+        $h = imagesy($image);
+
+        $r = max(10, (int) round(max($w, $h) / 36));
+        $factor = 0.82;
+
+        $gs = str_repeat("\0", $w * $h);
+        $rowSum = [];
+        for ($y = 0; $y < $h; $y++) {
+            $base = $y * $w;
+            $s = 0;
+            for ($x = 0; $x < $w; $x++) {
+                $rgb = imagecolorat($image, $x, $y);
+                $g = (int) (0.299 * (($rgb >> 16) & 0xFF) + 0.587 * (($rgb >> 8) & 0xFF) + 0.114 * ($rgb & 0xFF));
+                $gs[$base + $x] = chr($g);
+                $s += $g;
+            }
+            $rowSum[$y] = $s;
+        }
+
+        $colSum = [];
+        $initRows = min($r, $h - 1);
+        for ($y = 0; $y <= $initRows; $y++) {
+            $base = $y * $w;
+            for ($x = 0; $x < $w; $x++) {
+                $colSum[$x] = ($colSum[$x] ?? 0) + ord($gs[$base + $x]);
+            }
+        }
+
+        $out = imagecreatetruecolor($w, $h);
+        $white = imagecolorallocate($out, 255, 255, 255);
+        $black = imagecolorallocate($out, 0, 0, 0);
+        imagefill($out, 0, 0, $white);
+
+        for ($y = 0; $y < $h; $y++) {
+            if ($y > 0) {
+                $addRow = $y + $r;
+                if ($addRow < $h) {
+                    $base = $addRow * $w;
+                    for ($x = 0; $x < $w; $x++) {
+                        $colSum[$x] += ord($gs[$base + $x]);
+                    }
+                }
+                $remRow = $y - $r - 1;
+                if ($remRow >= 0) {
+                    $base = $remRow * $w;
+                    for ($x = 0; $x < $w; $x++) {
+                        $colSum[$x] -= ord($gs[$base + $x]);
+                    }
+                }
+            }
+
+            $prefix = [0];
+            $p = 0;
+            for ($x = 0; $x < $w; $x++) {
+                $p += $colSum[$x];
+                $prefix[$x + 1] = $p;
+            }
+
+            $y0 = max(0, $y - $r);
+            $y1 = min($h - 1, $y + $r);
+            $rowCount = $y1 - $y0 + 1;
+            $base = $y * $w;
+
+            $runStart = -1;
+            for ($x = 0; $x < $w; $x++) {
+                $x0 = $x - $r;
+                if ($x0 < 0) { $x0 = 0; }
+                $x1 = $x + $r;
+                if ($x1 >= $w) { $x1 = $w - 1; }
+                $count = ($x1 - $x0 + 1) * $rowCount;
+                $mean = ($prefix[$x1 + 1] - $prefix[$x0]) / $count;
+                $isBlack = ord($gs[$base + $x]) < $mean * $factor;
+
+                if ($isBlack && $runStart === -1) {
+                    $runStart = $x;
+                } elseif (! $isBlack && $runStart !== -1) {
+                    imagefilledrectangle($out, $runStart, $y, $x - 1, $y, $black);
+                    $runStart = -1;
+                }
+            }
+            if ($runStart !== -1) {
+                imagefilledrectangle($out, $runStart, $y, $w - 1, $y, $black);
+            }
+        }
+
+        imagedestroy($image);
+
+        return $out;
+    }
+
     private function applyToneCorrection(\GdImage $image, ScanAnalysis $analysis, string $mode): ?\GdImage
     {
         if ($mode === self::MODE_GRAY) {
@@ -1319,7 +1663,7 @@ final class DocumentScanProcessor
     }
 
     /** @return array{ok: bool, reason: string|null} */
-    private function validateCandidate(\GdImage $candidate, array $snapshot, bool $geometryChanged, bool $toneChanged = false): array
+    private function validateCandidate(\GdImage $candidate, array $snapshot, bool $geometryChanged, bool $toneChanged = false, bool $binary = false): array
     {
         $w = imagesx($candidate);
         $h = imagesy($candidate);
@@ -1331,6 +1675,10 @@ final class DocumentScanProcessor
         $aspect = max($w, $h) / max(1, min($w, $h));
         if ($aspect > 3.4) {
             return ['ok' => false, 'reason' => 'نسبة أبعاد غير منطقية'];
+        }
+
+        if ($binary) {
+            return ['ok' => true, 'reason' => null];
         }
 
         $srcMetrics = $snapshot['metrics'];

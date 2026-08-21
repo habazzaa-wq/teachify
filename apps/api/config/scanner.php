@@ -33,6 +33,6 @@ return [
     // full-frame captures: warping them would only resample and lose quality.
     'full_frame_area_ratio' => 0.93,
 
-    'modes' => ['auto', 'color_document', 'grayscale_document', 'original_preserve'],
+    'modes' => ['bw_document', 'auto', 'color_document', 'grayscale_document', 'original_preserve'],
 
 ];

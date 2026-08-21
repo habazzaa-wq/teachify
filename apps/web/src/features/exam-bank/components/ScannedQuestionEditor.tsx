@@ -23,6 +23,7 @@ import { ScanImageViewer, ScanComparison } from "./ScanImageViewer";
 
 type ScanPhase =
   | "idle"
+  | "crop"
   | "preview"
   | "uploading"
   | "compare"
@@ -43,7 +44,8 @@ interface ScannedQuestionEditorProps {
 }
 
 const SCAN_MODES: { value: ScanMode; label: string; hint: string }[] = [
-  { value: "auto", label: "تلقائي", hint: "الوضع الآمن — يعالج فقط عند الحاجة" },
+  { value: "bw_document", label: "أبيض وأسود", hint: "مسح احترافي — نص أسود حاد على ورق أبيض مع استخراج المحتوى" },
+  { value: "auto", label: "تلقائي ملوّن", hint: "يحسّن الإضاءة والتباين مع الحفاظ على الألوان" },
   { value: "color_document", label: "مستند ملوّن", hint: "يحافظ على الألوان مع تحسين خفيف" },
   { value: "grayscale_document", label: "تدرج رمادي", hint: "للمستندات المكتوبة بالأبيض والأسود" },
   { value: "original_preserve", label: "بدون معالجة", hint: "حفظ الصورة الأصلية كما هي" },
@@ -71,7 +73,7 @@ export function ScannedQuestionEditor({
   const [processingStages, setProcessingStages] = useState<ScanProcessingStage[]>([]);
   const [qualityLevel, setQualityLevel] = useState<string | null>(null);
   const [fallbackUsed, setFallbackUsed] = useState(false);
-  const [mode, setMode] = useState<ScanMode>("auto");
+  const [mode, setMode] = useState<ScanMode>("bw_document");
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -122,13 +124,25 @@ export function ScannedQuestionEditor({
       setOriginalFileUrl(localUrl);
       setLocalPreview(localUrl);
       setServerScanUrl(null);
-      setPhase("preview");
+      setPhase(disabled || mode === "original_preserve" ? "preview" : "crop");
       setError(null);
       setProcessingStages([]);
       setQualityLevel(null);
       setFallbackUsed(false);
     },
-    [validateFile, isUploading],
+    [validateFile, isUploading, disabled, mode],
+  );
+
+  const handleCropConfirm = useCallback(
+    (file: File) => {
+      if (originalFileRef.current) URL.revokeObjectURL(originalFileRef.current);
+      const croppedUrl = URL.createObjectURL(file);
+      originalFileRef.current = croppedUrl;
+      setOriginalFileUrl(croppedUrl);
+      setLocalPreview(croppedUrl);
+      setPhase("preview");
+    },
+    [],
   );
 
   const handleUpload = useCallback(async () => {
@@ -455,6 +469,18 @@ export function ScannedQuestionEditor({
     );
   }
 
+  if (phase === "crop" && localPreview) {
+    return (
+      <div className="space-y-3">
+        <ScanCropEditor
+          src={localPreview}
+          onConfirm={handleCropConfirm}
+          onSkip={() => setPhase("preview")}
+        />
+      </div>
+    );
+  }
+
   if (phase === "preview" && localPreview) {
     return (
       <div className="space-y-3">
@@ -675,3 +701,223 @@ export function ScannedQuestionEditor({
 }
 
 export default ScannedQuestionEditor;
+
+// ════════════════════════════════════════════════════════════
+//  Manual Crop Editor
+// ════════════════════════════════════════════════════════════
+
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+type DragMode = "move" | "nw" | "ne" | "sw" | "se" | null;
+
+function ScanCropEditor({
+  src,
+  onConfirm,
+  onSkip,
+}: {
+  src: string;
+  onConfirm: (file: File) => void;
+  onSkip: () => void;
+}) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [displaySize, setDisplaySize] = useState<{ w: number; h: number } | null>(null);
+  const [rect, setRect] = useState<Rect | null>(null);
+  const [drag, setDrag] = useState<{
+    mode: Exclude<DragMode, null>;
+    px: number;
+    py: number;
+    startRect: Rect;
+    scale: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => {
+      setImage(img);
+      const scale = Math.min(1, 640 / img.naturalWidth);
+      setDisplaySize({ w: Math.round(img.naturalWidth * scale), h: Math.round(img.naturalHeight * scale) });
+      const insetX = img.naturalWidth * 0.03;
+      const insetY = img.naturalHeight * 0.03;
+      setRect({ x: insetX, y: insetY, w: img.naturalWidth - 2 * insetX, h: img.naturalHeight - 2 * insetY });
+    };
+    img.src = src;
+    return () => {
+      img.onload = null;
+    };
+  }, [src]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!rect || !image || !displaySize || drag) return;
+    const mode = (e.target as HTMLElement).closest<HTMLElement>("[data-crop-mode]")?.dataset.cropMode as
+      | Exclude<DragMode, null>
+      | undefined;
+    if (!mode) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDrag({
+      mode,
+      px: e.clientX,
+      py: e.clientY,
+      startRect: { ...rect },
+      scale: image.naturalWidth / displaySize.w,
+    });
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag || !image) return;
+    const dx = (e.clientX - drag.px) * drag.scale;
+    const dy = (e.clientY - drag.py) * drag.scale;
+    const natW = image.naturalWidth;
+    const natH = image.naturalHeight;
+    const minSize = Math.min(natW, natH) * 0.12;
+    const s = drag.startRect;
+
+    if (drag.mode === "move") {
+      setRect({
+        x: Math.max(0, Math.min(natW - s.w, s.x + dx)),
+        y: Math.max(0, Math.min(natH - s.h, s.y + dy)),
+        w: s.w,
+        h: s.h,
+      });
+      return;
+    }
+
+    let { x, y, w, h } = s;
+    if (drag.mode.includes("n")) {
+      y = Math.min(s.y + dy, s.y + s.h - minSize);
+      y = Math.max(0, y);
+      h = s.h + (s.y - y);
+    }
+    if (drag.mode.includes("s")) {
+      h = Math.max(minSize, Math.min(natH - s.y, s.h + dy));
+    }
+    if (drag.mode.includes("w")) {
+      x = Math.max(0, Math.min(s.x + dx, s.x + s.w - minSize));
+      w = s.w + (s.x - x);
+    }
+    if (drag.mode.includes("e")) {
+      w = Math.max(minSize, Math.min(natW - s.x, s.w + dx));
+    }
+    setRect({ x, y, w, h });
+  };
+
+  const onPointerUp = () => {
+    setDrag(null);
+  };
+
+  const handleConfirm = () => {
+    const img = image;
+    if (!img || !rect || rect.w < 10 || rect.h < 10) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(rect.w);
+    canvas.height = Math.round(rect.h);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(img, Math.round(rect.x), Math.round(rect.y), Math.round(rect.w), Math.round(rect.h), 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        onConfirm(new File([blob], "scan.jpg", { type: "image/jpeg" }));
+      },
+      "image/jpeg",
+      0.95,
+    );
+  };
+
+  if (!displaySize || !rect) {
+    return (
+      <div className="flex items-center justify-center rounded-xl border border-studio-border bg-studio-soft p-10">
+        <Loader2 className="h-8 w-8 animate-spin text-studio-accent" />
+      </div>
+    );
+  }
+
+  const pct = (v: number, total: number) => `${(v / total) * 100}%`;
+  const handles: { id: Exclude<DragMode, null>; pos: string; cursor: string }[] = [
+    { id: "nw", pos: "-top-1.5 -left-1.5", cursor: "cursor-nwse-resize" },
+    { id: "ne", pos: "-top-1.5 -right-1.5", cursor: "cursor-nesw-resize" },
+    { id: "sw", pos: "-bottom-1.5 -left-1.5", cursor: "cursor-nesw-resize" },
+    { id: "se", pos: "-bottom-1.5 -right-1.5", cursor: "cursor-nwse-resize" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <StudioSurfaceCard variant="ghost" padding="md" className="border border-studio-border">
+        <p className="mb-1 text-sm font-bold text-studio-fg">اقتصاص المحتوى</p>
+        <p className="text-xs text-studio-fg-muted">
+          اسحب الإطار لتحديد الجزء المطلوب — سيتم استخراجه ومعالجته كمستند ممسوح احترافي
+        </p>
+      </StudioSurfaceCard>
+
+      <div
+        className="relative mx-auto select-none"
+        style={{ width: displaySize.w, touchAction: "none" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <img
+          src={src}
+          alt="اقتصاص الصورة"
+          draggable={false}
+          className="block w-full rounded-lg"
+          style={{ height: displaySize.h }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-black/55"
+          style={{
+            clipPath: `polygon(
+              0 0, 100% 0, 100% 100%, 0 100%,
+              0 ${pct(rect.y, displaySize.h)}, ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)},
+              ${pct(rect.x, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
+              ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y + rect.h, displaySize.h)},
+              ${pct(rect.x + rect.w, displaySize.w)} ${pct(rect.y, displaySize.h)},
+              ${pct(rect.x, displaySize.w)} ${pct(rect.y, displaySize.h)}
+            )`,
+          }}
+        />
+        <div
+          role="presentation"
+          data-crop-mode="move"
+          className="absolute cursor-move border-2 border-emerald-400"
+          style={{
+            left: pct(rect.x, displaySize.w),
+            top: pct(rect.y, displaySize.h),
+            width: pct(rect.w, displaySize.w),
+            height: pct(rect.h, displaySize.h),
+          }}
+        >
+          {handles.map((h) => (
+            <span
+              key={h.id}
+              role="presentation"
+              data-crop-mode={h.id}
+              className={cn(
+                "absolute h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow",
+                h.pos,
+                h.cursor,
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <StudioButton onClick={handleConfirm} className="gap-2">
+          <Check className="h-4 w-4" />
+          تأكيد القصّ والمتابعة
+        </StudioButton>
+        <StudioButton variant="secondary" onClick={onSkip} className="gap-2">
+          <SkipForward className="h-4 w-4" />
+          رفع الصورة كاملة بدون قصّ
+        </StudioButton>
+      </div>
+    </div>
+  );
+}

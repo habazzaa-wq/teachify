@@ -13,7 +13,7 @@ export type QuestionType =
 
 export type QuestionFormat = "text" | "image";
 
-export type ScanMode = "auto" | "color_document" | "grayscale_document" | "original_preserve";
+export type ScanMode = "bw_document" | "auto" | "color_document" | "grayscale_document" | "original_preserve";
 
 export interface ScanProcessingStage {
   key: string;
