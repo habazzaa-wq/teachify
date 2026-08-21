@@ -713,7 +713,7 @@ interface Rect {
   h: number;
 }
 
-type CropDragMode = "draw" | "move" | "nw" | "ne" | "sw" | "se";
+type CropDragMode = "draw" | "move" | "n" | "s" | "e" | "w" | "nw" | "ne" | "sw" | "se";
 
 interface CropDrag {
   mode: CropDragMode;
@@ -724,6 +724,8 @@ interface CropDrag {
   kx: number;
   ky: number;
   startRect: Rect | null;
+  prevRect: Rect | null;
+  began: boolean;
 }
 
 function ScanCropEditor({
@@ -746,6 +748,7 @@ function ScanCropEditor({
       setImage(img);
       const scale = Math.min(1, 640 / img.naturalWidth);
       setDisplaySize({ w: Math.round(img.naturalWidth * scale), h: Math.round(img.naturalHeight * scale) });
+      setRect({ x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight });
     };
     img.src = src;
     return () => {
@@ -759,9 +762,9 @@ function ScanCropEditor({
     const end = () => {
       if (drag?.mode === "draw") {
         setRect((r) => {
-          if (!r || !image) return null;
+          if (!r || !image) return drag.prevRect;
           const minTiny = Math.max(10, Math.min(image.naturalWidth, image.naturalHeight) * 0.02);
-          return r.w >= minTiny && r.h >= minTiny ? r : null;
+          return r.w >= minTiny && r.h >= minTiny ? r : drag.prevRect;
         });
       }
       setDrag(null);
@@ -781,18 +784,21 @@ function ScanCropEditor({
     if (box.width < 2 || box.height < 2) return;
     const kx = image.naturalWidth / box.width;
     const ky = image.naturalHeight / box.height;
-    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-crop-mode]");
-    const mode = (el?.dataset.cropMode ?? "draw") as CropDragMode;
     const sx = Math.max(0, Math.min(image.naturalWidth, (e.clientX - box.left) * kx));
     const sy = Math.max(0, Math.min(image.naturalHeight, (e.clientY - box.top) * ky));
+    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-crop-mode]");
+    let mode = (el?.dataset.cropMode ?? "") as CropDragMode;
+    if (!mode) {
+      const insideRect = rect
+        && sx >= rect.x && sx <= rect.x + rect.w
+        && sy >= rect.y && sy <= rect.y + rect.h;
+      mode = insideRect ? "move" : "draw";
+    }
     e.preventDefault();
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
       // pointer may already be released; window listeners still end the drag
-    }
-    if (mode === "draw") {
-      setRect({ x: sx, y: sy, w: 0, h: 0 });
     }
     setDrag({
       mode,
@@ -803,6 +809,8 @@ function ScanCropEditor({
       kx,
       ky,
       startRect: rect ? { ...rect } : null,
+      prevRect: rect ? { ...rect } : null,
+      began: mode !== "draw",
     });
   };
 
@@ -814,6 +822,10 @@ function ScanCropEditor({
     const ny = Math.max(0, Math.min(natH, (e.clientY - drag.oy) * drag.ky));
 
     if (drag.mode === "draw") {
+      if (!drag.began) {
+        if (Math.abs(nx - drag.sx) + Math.abs(ny - drag.sy) < Math.min(natW, natH) * 0.01) return;
+        setDrag({ ...drag, began: true });
+      }
       setRect({
         x: Math.min(drag.sx, nx),
         y: Math.min(drag.sy, ny),
@@ -848,11 +860,6 @@ function ScanCropEditor({
     setRect({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
   };
 
-  const handleReset = () => {
-    setDrag(null);
-    setRect(null);
-  };
-
   const handleConfirm = () => {
     const img = image;
     if (!img || !rect || rect.w < 10 || rect.h < 10) return;
@@ -881,11 +888,16 @@ function ScanCropEditor({
   }
 
   const pct = (v: number, total: number) => `${(v / total) * 100}%`;
-  const handles: { id: Exclude<CropDragMode, "draw" | "move">; pos: string; cursor: string }[] = [
-    { id: "nw", pos: "-top-2 -left-2", cursor: "cursor-nwse-resize" },
-    { id: "ne", pos: "-top-2 -right-2", cursor: "cursor-nesw-resize" },
-    { id: "sw", pos: "-bottom-2 -left-2", cursor: "cursor-nesw-resize" },
-    { id: "se", pos: "-bottom-2 -right-2", cursor: "cursor-nwse-resize" },
+  const fullFrame = (): Rect => ({ x: 0, y: 0, w: image.naturalWidth, h: image.naturalHeight });
+  const handles: { id: Exclude<CropDragMode, "draw" | "move">; pos: string; cursor: string; shape: string }[] = [
+    { id: "nw", pos: "-top-2.5 -left-2.5", cursor: "cursor-nwse-resize", shape: "h-5 w-5 rounded-full" },
+    { id: "n", pos: "-top-2.5 left-1/2 -translate-x-1/2", cursor: "cursor-ns-resize", shape: "h-5 w-10 rounded-full" },
+    { id: "ne", pos: "-top-2.5 -right-2.5", cursor: "cursor-nesw-resize", shape: "h-5 w-5 rounded-full" },
+    { id: "e", pos: "top-1/2 -right-2.5 -translate-y-1/2", cursor: "cursor-ew-resize", shape: "h-10 w-5 rounded-full" },
+    { id: "se", pos: "-bottom-2.5 -right-2.5", cursor: "cursor-nwse-resize", shape: "h-5 w-5 rounded-full" },
+    { id: "s", pos: "-bottom-2.5 left-1/2 -translate-x-1/2", cursor: "cursor-ns-resize", shape: "h-5 w-10 rounded-full" },
+    { id: "sw", pos: "-bottom-2.5 -left-2.5", cursor: "cursor-nesw-resize", shape: "h-5 w-5 rounded-full" },
+    { id: "w", pos: "top-1/2 -left-2.5 -translate-y-1/2", cursor: "cursor-ew-resize", shape: "h-10 w-5 rounded-full" },
   ];
 
   return (
@@ -893,7 +905,7 @@ function ScanCropEditor({
       <StudioSurfaceCard variant="ghost" padding="md" className="border border-studio-border">
         <p className="mb-1 text-sm font-bold text-studio-fg">تحديد الجزء المطلوب</p>
         <p className="text-xs text-studio-fg-muted">
-          اضغط واسحب على الصورة لرسم تحديد جديد مثل لقطة الشاشة — يمكنك سحب التحديد لنقله أو مقابضه لتعديله، والسحب في أي مكان آخر يبدأ تحديدًا جديدًا
+          التحديد يبدأ على الصورة كاملة — اسحب الحدود أو المقابض لتصغيره أو تكبيره، واسحب من داخله لنقله، أو ارسم تحديدًا جديدًا في المنطقة المعتمة
         </p>
       </StudioSurfaceCard>
 
@@ -942,7 +954,8 @@ function ScanCropEditor({
                   role="presentation"
                   data-crop-mode={h.id}
                   className={cn(
-                    "absolute h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-md",
+                    "absolute border-2 border-white bg-emerald-500 shadow-md",
+                    h.shape,
                     h.pos,
                     h.cursor,
                   )}
@@ -965,9 +978,12 @@ function ScanCropEditor({
           <Check className="h-4 w-4" />
           تأكيد القصّ والمتابعة
         </StudioButton>
-        {rect && (
-          <StudioButton variant="secondary" onClick={handleReset} className="gap-2">
-            إعادة التحديد
+        {rect && !(
+          rect.x === 0 && rect.y === 0
+          && Math.abs(rect.w - image.naturalWidth) < 2
+          && Math.abs(rect.h - image.naturalHeight) < 2) && (
+          <StudioButton variant="secondary" onClick={() => setRect(fullFrame())} className="gap-2">
+            إعادة التحديد للصورة كاملة
           </StudioButton>
         )}
         <StudioButton variant="secondary" onClick={onSkip} className="gap-2">
