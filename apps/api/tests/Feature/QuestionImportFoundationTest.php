@@ -134,9 +134,10 @@ class QuestionImportFoundationTest extends TestCase
         Queue::assertPushed(ProcessQuestionImportJob::class);
 
         $uuid = $response->json('data.id');
-        $this->assertNotNull(QuestionImport::query()->where('uuid', $uuid)->first());
+        $import = QuestionImport::query()->where('uuid', $uuid)->first();
+        $this->assertNotNull($import);
         $this->assertTrue(
-            Storage::disk(ImportFileStorage::DISK)->exists("question-imports/{$tenant->id}/{$uuid}.bin"),
+            app(ImportFileStorage::class)->exists($import),
         );
     }
 
@@ -378,7 +379,7 @@ class QuestionImportFoundationTest extends TestCase
             ],
         ]);
 
-        app(ImportFileStorage::class)->store($tenant->id, $import->uuid, $bytes);
+        app(ImportFileStorage::class)->store($import, $bytes);
 
         return $import;
     }

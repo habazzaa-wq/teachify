@@ -65,7 +65,7 @@ class QuestionImportService
                 ],
             ]);
 
-            $this->fileStorage->store($tenant->id, $uuid, $binary);
+            $this->fileStorage->store($import, $binary);
 
             return $import;
         });

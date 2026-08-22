@@ -3,55 +3,69 @@
 namespace App\Services\ExamBank\Import;
 
 use App\Models\QuestionImport;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Lifecycle of the temporary source image of a question import.
  *
- * Files live on the local disk under question-imports/{tenantId}/{uuid}.bin
- * and are deleted as soon as the extracted document is finalized into a
- * question (or when the cleanup command reaps abandoned imports).
+ * The raw image bytes are persisted on the import row itself (base64-encoded)
+ * instead of on the local filesystem. This keeps the source co-located with
+ * the import across web/worker boundaries: the queued extraction job always
+ * reads the bytes from the database, so a missing or unreadable scratch file
+ * (e.g. when the queue worker runs in a separate process/filesystem than the
+ * upload request) can never abort extraction with "file missing or empty".
  */
 class ImportFileStorage
 {
     public const DISK = 'local';
 
-    public function store(int $tenantId, string $uuid, string $binary): void
+    public function store(QuestionImport $import, string $binary): void
     {
-        Storage::disk(self::DISK)->put($this->relativePath($tenantId, $uuid), $binary);
+        $import->forceFill(['source_bytes' => base64_encode($binary)])->save();
     }
 
     public function exists(QuestionImport $import): bool
     {
-        return Storage::disk(self::DISK)->exists($this->relativePath($import->tenant_id, $import->uuid));
+        return ! empty($import->source_bytes);
     }
 
     public function read(QuestionImport $import): ?string
     {
-        $bytes = Storage::disk(self::DISK)->get($this->relativePath($import->tenant_id, $import->uuid));
+        if (empty($import->source_bytes)) {
+            return null;
+        }
 
-        return is_string($bytes) ? $bytes : null;
+        $decoded = base64_decode($import->source_bytes, true);
+
+        return is_string($decoded) ? $decoded : null;
     }
 
     public function absolutePath(QuestionImport $import): ?string
     {
-        $relative = $this->relativePath($import->tenant_id, $import->uuid);
-        $disk = Storage::disk(self::DISK);
-
-        if (! $disk->exists($relative)) {
+        $bytes = $this->read($import);
+        if ($bytes === null) {
             return null;
         }
 
-        return $disk->path($relative);
+        $ext = 'bin';
+        $head = substr($bytes, 0, 8);
+        if (str_starts_with($head, "\xFF\xD8\xFF")) {
+            $ext = 'jpg';
+        } elseif (str_starts_with($head, "\x89PNG\r\n\x1A\n")) {
+            $ext = 'png';
+        } elseif (substr($bytes, 0, 4) === 'RIFF' && substr($bytes, 8, 4) === 'WEBP') {
+            $ext = 'webp';
+        }
+
+        $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.'qi_'.$import->uuid.'.'.$ext;
+        file_put_contents($path, $bytes);
+
+        return $path;
     }
 
     public function delete(QuestionImport $import): void
     {
-        Storage::disk(self::DISK)->delete($this->relativePath($import->tenant_id, $import->uuid));
-    }
-
-    private function relativePath(int $tenantId, string $uuid): string
-    {
-        return 'question-imports/'.$tenantId.'/'.$uuid.'.bin';
+        if (! empty($import->source_bytes)) {
+            $import->forceFill(['source_bytes' => null])->save();
+        }
     }
 }

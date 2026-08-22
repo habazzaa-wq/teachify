@@ -28,6 +28,7 @@ class QuestionImport extends Model
         'fallback_reason',
         'strategy',
         'source',
+        'source_bytes',
         'stages',
         'document',
         'error',
