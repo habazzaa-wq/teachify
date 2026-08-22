@@ -153,10 +153,22 @@ if [ "$DO_BUILD" = "1" ]; then
   fi
 
   if [ -n "$WEB_CHANGED" ]; then
-    echo "==> Frontend changed -> install + build"
+    echo "==> Frontend changed -> install + build (zero-downtime atomic swap)"
     cd "$REMOTE_DIR/apps/web"
+    # Recover from any previously interrupted build first.
+    if [ -e .next-live ]; then
+      echo "==> recovering interrupted previous build"
+      rm -rf .next
+      mv .next-live .next
+    fi
+    # Park the currently-serving build aside so the live instance keeps serving
+    # it during the build, and the new build writes to a fresh .next (no corruption).
+    if [ -d .next ]; then mv .next .next-live; fi
     npm install
     npm run build
+    # Activate the new build and discard the old one.
+    pm2 restart teachify-frontend >/dev/null 2>&1 || true
+    rm -rf .next-live
   else
     echo "==> Frontend unchanged -> skipping npm install/build"
   fi
@@ -165,10 +177,6 @@ else
 fi
 
 if [ "$DO_RESTART" = "1" ]; then
-  if [ -n "$WEB_CHANGED" ]; then
-    echo "==> Restarting frontend (PM2)"
-    pm2 restart teachify-frontend
-  fi
   if [ -n "$API_CHANGED" ]; then
     echo "==> Restarting Laravel workers (PM2)"
     pm2 restart teachify-queue teachify-reverb teachify-scheduler
