@@ -65,7 +65,12 @@ if (-not $LocalDirty) {
     Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/deploy currently is."
 }
 
-$localSha = (& git -C $repo rev-parse $Branch).Trim()
+# The deploy is performed from origin/$Branch on the server, so the expected
+# SHA must come from the LOCAL origin/$Branch ref (after a fetch), not the
+# possibly-stale local $Branch checkout. This avoids false mismatches when
+# finish-task has pushed but the local branch ref wasn't advanced.
+& git -C $repo fetch origin $Branch | Out-Null
+$localSha = (& git -C $repo rev-parse "origin/$Branch").Trim()
 $doBuild    = if ($NoBuild)    { 0 } else { 1 }
 $doMigrate  = if ($NoMigrate)  { 0 } else { 1 }
 $doRestart  = if ($NoRestart)  { 0 } else { 1 }

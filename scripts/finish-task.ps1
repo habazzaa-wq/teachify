@@ -119,6 +119,11 @@ try {
             exit 1
         }
         Write-Ok "Pushed deploy to origin"
+        # Keep the local 'deploy' branch ref in sync so subsequent deploy-server
+        # runs see a matching SHA (the push updated origin/deploy, not this ref).
+        & git -C $repo fetch origin deploy | Out-Null
+        & git -C $repo branch -f deploy "origin/deploy" | Out-Null
+        Write-Ok "Synced local 'deploy' ref to origin/deploy"
     } else {
         Write-Warn2 "-NoPush given: changes were merged but NOT pushed."
     }
