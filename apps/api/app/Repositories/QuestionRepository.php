@@ -11,7 +11,7 @@ class QuestionRepository
 {
     protected array $allowedSorts = [
         'title', 'type', 'difficulty', 'status', 'visibility',
-        'points', 'estimated_time', 'created_at', 'updated_at', 'question_format',
+        'points', 'estimated_time', 'created_at', 'updated_at',
     ];
 
     public function query(): Builder
@@ -35,7 +35,7 @@ class QuestionRepository
         $query = $this->applyFavoritesFilter($query, $params['favorites'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->with('scan')->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate((int) ($params['per_page'] ?? 25));
     }
 
     public function listAll(array $params = []): Collection
@@ -61,7 +61,7 @@ class QuestionRepository
 
     public function findByIds(array $ids): Collection
     {
-        return $this->query()->with('scan')->whereIn('id', $ids)->get();
+        return $this->query()->whereIn('id', $ids)->get();
     }
 
     public function create(array $data): Question
@@ -93,8 +93,6 @@ class QuestionRepository
 
         if ($question) {
             $question->restore();
-            $question->forceFill(['status' => 'published'])->save();
-
             return $question->refresh();
         }
 

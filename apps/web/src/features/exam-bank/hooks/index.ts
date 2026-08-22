@@ -507,3 +507,23 @@ export type {
   QuestionBank,
   QuestionCategory,
 };
+
+// ---- Structured question imports ----
+
+export function useCreateQuestionImport() {
+  return useMutation({
+    mutationFn: (file: File) => examBankService.createQuestionImport(file),
+  });
+}
+
+export function useRetryQuestionImport() {
+  return useMutation({
+    mutationFn: (uuid: string) => examBankService.retryQuestionImport(uuid),
+  });
+}
+
+export function useDeleteQuestionImport() {
+  return useMutation({
+    mutationFn: (uuid: string) => examBankService.deleteQuestionImport(uuid),
+  });
+}

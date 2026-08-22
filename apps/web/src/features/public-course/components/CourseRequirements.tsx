@@ -37,12 +37,12 @@ function CourseRequirementsInner({ requirements }: CourseRequirementsProps) {
             transition={{ duration: 0.35, delay: (index % 8) * 0.04, ease: "easeOut" }}
             className={cn(
               "flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.02]",
-              "transition-colors duration-200 hover:border-[var(--brand-secondary)]",
+              "transition-colors duration-200 hover:border-[#FFB50E]/40 hover:bg-[#FFB50E]/[0.04]",
             )}
           >
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white shadow-sm"
-              style={{ background: "var(--brand-primary)" }}
+              style={{ background: "linear-gradient(135deg, #BF6D58, #a85a47)" }}
             >
               {index + 1}
             </span>

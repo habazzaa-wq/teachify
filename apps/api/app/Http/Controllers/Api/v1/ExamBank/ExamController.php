@@ -167,7 +167,7 @@ class ExamController extends Controller
 
     public function restore(int $exam): JsonResponse
     {
-        Gate::authorize('restore', Exam::class);
+        Gate::authorize('update', Exam::class);
 
         $exam = $this->repository->restore($exam);
         abort_if($exam === null, 404);

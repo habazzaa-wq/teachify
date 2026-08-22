@@ -100,7 +100,7 @@ class QuestionBankController extends Controller
 
     public function restore(int $bank): JsonResponse
     {
-        Gate::authorize('restore', QuestionBank::class);
+        Gate::authorize('update', QuestionBank::class);
 
         $bank = $this->repository->restore($bank);
         abort_if($bank === null, 404);

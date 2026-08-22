@@ -400,7 +400,6 @@ class UploadEngine {
           folder_id: runtime.session.folderId ?? undefined,
           upload_id: runtime.session.uploadId,
           total_chunks: runtime.session.totalChunks,
-          service: runtime.session.category === "video" ? "stream" : "storage",
         });
       }
 
@@ -438,8 +437,7 @@ class UploadEngine {
           runtime.finalizeAbort = null;
         }
       } else {
-        const uploadService = runtime.session.category === "video" ? "stream" : "storage";
-        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File, undefined, uploadService);
+        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File);
         this.completeItem(id, runtime, res.asset?.id ?? null, res.cdnUrl ?? res.asset?.cdnUrl ?? null);
       }
     } catch (err) {
@@ -643,7 +641,6 @@ class UploadEngine {
         })();
 
         xhr.open(session.uploadMethod || "PUT", url, true);
-        xhr.timeout = 120_000; // 2 minutes per chunk
         xhr.withCredentials = true;
         if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         if (tenantId) xhr.setRequestHeader("X-Tenant-ID", tenantId);

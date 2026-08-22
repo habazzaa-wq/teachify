@@ -15,13 +15,11 @@ import {
   ArrowUp,
   ArrowDown,
   RefreshCw,
-  Check,
 } from "lucide-react";
 import {
   StudioContextMenu,
 } from "@/components/studio";
 import type { StudioContextMenuItem } from "@/components/studio";
-import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
 import {
   TYPE_OPTIONS,
@@ -42,14 +40,12 @@ const viewModeIcons: Record<AssetViewMode, React.ComponentType<{ className?: str
 
 interface WorkspaceToolbarProps {
   totalAssets: number;
-  selectedCount: number;
-  onSelectAllToggle: (checked: boolean) => void;
   onUpload: () => void;
   onCreateFolder: () => void;
   onRefresh: () => void;
 }
 
-function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpload, onCreateFolder, onRefresh }: WorkspaceToolbarProps) {
+function WorkspaceToolbar({ totalAssets, onUpload, onCreateFolder, onRefresh }: WorkspaceToolbarProps) {
   const {
     viewMode, setViewMode,
     groupBy, setGroupBy,
@@ -218,36 +214,6 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
         <span className="text-xs text-muted-foreground">
           {totalAssets} {totalAssets === 1 ? "ملف" : "ملف"}
         </span>
-
-        {totalAssets > 0 && (
-          <button
-            onClick={() => onSelectAllToggle(!(selectedCount > 0 && selectedCount >= totalAssets))}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition-colors",
-              "hover:bg-accent",
-              selectedCount > 0 && "border-accent text-accent",
-            )}
-            title={selectedCount > 0 && selectedCount >= totalAssets ? "إلغاء تحديد الكل" : "تحديد الكل"}
-          >
-            <span
-              className={cn(
-                "flex h-3.5 w-3.5 items-center justify-center rounded border",
-                selectedCount > 0 && selectedCount >= totalAssets
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : selectedCount > 0
-                    ? "border-accent"
-                    : "border-border bg-background",
-              )}
-            >
-              {selectedCount > 0 && selectedCount >= totalAssets && <Check className="h-2.5 w-2.5" />}
-              {selectedCount > 0 && selectedCount < totalAssets && <span className="h-1.5 w-1.5 rounded-sm bg-accent" />}
-            </span>
-            <span>تحديد الكل</span>
-            {selectedCount > 0 && (
-              <span className="text-muted-foreground/70">{selectedCount} / {totalAssets}</span>
-            )}
-          </button>
-        )}
 
         {activeFilterCount > 0 && (
           <>

@@ -9,7 +9,6 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
   BookOpen,
   Plus,
@@ -39,7 +38,6 @@ import {
   useCreateCourse,
   useUpdateCourse,
   useDeleteCourse,
-  usePublishCourse,
   useArchiveCourse,
   useRestoreCourse,
   useDuplicateCourse,
@@ -220,7 +218,6 @@ function CoursesHomeContent() {
   const createCourse = useCreateCourse();
   const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
-  const publishCourse = usePublishCourse();
   const archiveCourse = useArchiveCourse();
   const restoreCourse = useRestoreCourse();
   const duplicateCourse = useDuplicateCourse();
@@ -314,20 +311,6 @@ function CoursesHomeContent() {
   const handleDuplicate = useCallback(
     (course: Course) => duplicateCourse.mutate(course.id),
     [duplicateCourse],
-  );
-
-  const handlePublish = useCallback(
-    (course: Course) => {
-      publishCourse.mutate(course.id, {
-        onSuccess: () => {
-          toast.success(`تم نشر "${course.title}" بنجاح`);
-        },
-        onError: () => {
-          toast.error(`فشل نشر "${course.title}"`);
-        },
-      });
-    },
-    [publishCourse],
   );
 
   const handleArchive = useCallback(
@@ -1044,7 +1027,6 @@ function CoursesHomeContent() {
                         index={i}
                         isPinned
                         onEdit={handleOpenEdit}
-                        onPublish={handlePublish}
                         onDuplicate={handleDuplicate}
                         onArchive={handleArchive}
                         onRestore={handleRestore}
@@ -1086,7 +1068,6 @@ function CoursesHomeContent() {
                       index={i}
                       isPinned={pinnedCourseIds.includes(course.id)}
                       onEdit={handleOpenEdit}
-                      onPublish={handlePublish}
                       onDuplicate={handleDuplicate}
                       onArchive={handleArchive}
                       onRestore={handleRestore}

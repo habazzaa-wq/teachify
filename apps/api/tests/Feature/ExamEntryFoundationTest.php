@@ -164,10 +164,6 @@ class ExamEntryFoundationTest extends TestCase
         ]);
         $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
 
-        Sanctum::actingAs($admin->user);
-        $this->patchJson("/api/v1/exam-bank/exams/{$exam}/status", ['status' => 'draft'], $this->tenantHeader($tenant))
-            ->assertOk();
-
         Sanctum::actingAs($student->user);
         $this->getJson("/api/v1/lessons/{$lesson}/exam-entry", $this->tenantHeader($tenant))
             ->assertOk()

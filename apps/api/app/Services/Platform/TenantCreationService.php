@@ -13,7 +13,6 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Security\AuditLogger;
 use App\Services\Support\EmailNormalizer;
-use App\Support\DefaultRolePermissions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -22,13 +21,56 @@ class TenantCreationService
     /**
      * @var array<string, list<string>>
      */
-    private array $rolePermissions;
+    private array $rolePermissions = [
+        'tenant_owner' => [
+            'tenant.manage',
+            'users.view',
+            'users.invite',
+            'users.manage',
+            'roles.view',
+            'roles.assign',
+            'courses.view',
+            'courses.create',
+            'courses.update',
+            'courses.publish',
+            'courses.archive',
+            'courses.assign_instructors',
+            'courses.manage_settings',
+            'enrollments.view',
+            'enrollments.manage',
+        ],
+        'admin' => [
+            'users.view',
+            'users.invite',
+            'users.manage',
+            'roles.view',
+            'roles.assign',
+            'courses.view',
+            'courses.create',
+            'courses.update',
+            'courses.publish',
+            'courses.archive',
+            'courses.assign_instructors',
+            'courses.manage_settings',
+            'enrollments.view',
+            'enrollments.manage',
+        ],
+        'instructor' => [
+            'courses.view',
+            'courses.create',
+            'courses.update',
+            'enrollments.view',
+        ],
+        'student' => [
+            'courses.view',
+            'enrollments.view',
+        ],
+    ];
 
     public function __construct(
         private readonly EmailNormalizer $emails,
         private readonly AuditLogger $audit,
     ) {
-        $this->rolePermissions = DefaultRolePermissions::catalog();
     }
 
     /**
@@ -261,8 +303,8 @@ class TenantCreationService
             'branding' => [
                 'logo_path' => null,
                 'favicon_path' => null,
-                'primary_color' => '#D87B63',
-                'secondary_color' => '#FFB50E',
+                'primary_color' => '#2563eb',
+                'secondary_color' => '#111827',
                 'theme' => 'system',
             ],
             'locale' => [

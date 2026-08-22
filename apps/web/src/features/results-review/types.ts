@@ -13,7 +13,6 @@ export interface ResultReviewOption {
 export interface ResultReviewContent {
   options?: ResultReviewOption[];
   correct?: string;
-  tolerance?: number;
 }
 
 export interface ResultReviewItem {
@@ -28,6 +27,9 @@ export interface ResultReviewItem {
   difficulty: string;
   tags: string[];
   content: ResultReviewContent;
+  questionFormat?: "text" | "image" | "structured";
+  scanUrl?: string | null;
+  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
   studentAnswer: string[] | string | null;
   correctAnswer: string[] | string | null;
   explanation: string | null;
@@ -35,8 +37,6 @@ export interface ResultReviewItem {
   answered: boolean;
   status: ReviewStatus;
   earnedPoints: number;
-  questionFormat?: "text" | "image";
-  scanUrl?: string | null;
 }
 
 export interface ResultAttemptMeta {

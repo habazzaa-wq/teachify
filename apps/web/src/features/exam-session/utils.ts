@@ -30,7 +30,7 @@ export function getTimerTone(totalSeconds: number): keyof typeof TIMER_TONES {
 
 /** Whether the stored answer for a question is effectively empty. */
 export function isAnswerEmpty(answer: ExamSessionAnswer, type: ExamSessionQuestionType): boolean {
-  if (type === "true_false" || type === "numeric") return typeof answer !== "string" || answer.length === 0;
+  if (type === "true_false") return typeof answer !== "string" || answer.length === 0;
   return !Array.isArray(answer) || answer.length === 0;
 }
 

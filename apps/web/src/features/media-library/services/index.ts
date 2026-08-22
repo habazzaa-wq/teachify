@@ -145,19 +145,6 @@ export const mediaLibraryService = {
     };
   },
 
-  async listAllAssetIds(params?: MediaFilterParams): Promise<number[]> {
-    const ids: number[] = [];
-    let page = 1;
-    let lastPage = 1;
-    do {
-      const { data, meta } = await this.listAssets({ ...params, page, per_page: 100 });
-      ids.push(...data.map((a) => a.id));
-      lastPage = Number(meta.last_page ?? page);
-      page += 1;
-    } while (page <= lastPage);
-    return ids;
-  },
-
   async getAsset(id: number): Promise<MediaAsset | null> {
     const { data } = await api.get(`/media-library/assets/${id}`);
     return data.data ? formatAsset(data.data) : null;
@@ -361,7 +348,7 @@ export const mediaLibraryService = {
     const { data } = await api.post(`/media-library/upload/resumable/${sessionId}/finalize`, {
       size_bytes: payload?.size_bytes,
       file_hash: payload?.file_hash,
-    }, { signal: options?.signal, timeout: 600_000 });
+    }, { signal: options?.signal });
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
     };
@@ -390,12 +377,10 @@ export const mediaLibraryService = {
   async uploadFileDirect(
     file: File,
     visibility?: string,
-    service?: string,
   ): Promise<{ asset: MediaAsset | null; cdnUrl: string | null }> {
     const form = new FormData();
     form.append("file", file);
     if (visibility) form.append("visibility", visibility);
-    if (service) form.append("service", service);
 
     // Build the same auth/tenant context the axios interceptor would, but use
     // the native fetch API so the browser sets the multipart boundary and the

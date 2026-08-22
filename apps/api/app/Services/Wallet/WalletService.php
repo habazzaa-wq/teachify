@@ -101,18 +101,9 @@ class WalletService
 
     /**
      * Get or lazily create a wallet for the given student membership.
-     *
-     * Non-student memberships (teacher/owner/admin) are rejected so a wallet
-     * can never be created for them, regardless of the entry point.
      */
     public function getOrCreateWallet(Tenant $tenant, TenantUser $student): Wallet
     {
-        abort_unless(
-            $student->roles()->where('slug', 'student')->exists(),
-            403,
-            'هذه الميزة متاحة للطلاب فقط.',
-        );
-
         return Wallet::query()
             ->firstOrCreate(
                 ['tenant_id' => $tenant->id, 'tenant_user_id' => $student->id],

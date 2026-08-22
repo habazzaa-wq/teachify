@@ -65,12 +65,6 @@ class BunnyStreamService
 
             $intent = $this->manager->providerFor('bunny', 'stream')->createUploadIntent($session);
 
-            // Persist the resolved library_id on the asset so the public
-            // playback endpoint can construct the Bunny iframe embed URL.
-            if (empty($asset->bunny_library_id) && ! empty($intent['library_id'])) {
-                $asset->forceFill(['bunny_library_id' => $intent['library_id']])->save();
-            }
-
             return [
                 'asset' => $asset->refresh(),
                 'session' => $session->refresh(),
@@ -99,15 +93,6 @@ class BunnyStreamService
         $asset = $this->syncAssetMetadata($session->asset, array_merge($payload, [
             'encoding_status' => $providerResult['encoding_status'] ?? $payload['encoding_status'] ?? 'Uploaded',
         ]));
-
-        // Backfill library_id when the asset was created before it was
-        // stored on the record (pre-fix uploads).
-        if (empty($asset->bunny_library_id)) {
-            $playback = $this->manager->providerFor('bunny', 'stream')->getPlaybackData($asset);
-            if (! empty($playback['library_id'])) {
-                $asset->forceFill(['bunny_library_id' => $playback['library_id']])->save();
-            }
-        }
 
         $session->forceFill(['status' => 'completed'])->save();
 

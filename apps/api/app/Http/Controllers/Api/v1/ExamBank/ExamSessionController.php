@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\v1\ExamBank;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExamBank\SaveExamAnswerRequest;
 use App\Http\Requests\ExamBank\SaveExamProgressRequest;
-use App\Http\Resources\ExamActiveAttemptResource;
 use App\Http\Resources\ExamSessionResource;
 use App\Models\CourseLesson;
 use App\Models\ExamAttempt;
@@ -49,21 +48,6 @@ class ExamSessionController extends Controller
 
         return response()->json([
             'data' => new ExamSessionResource($session),
-        ]);
-    }
-
-    public function activeAttempt(ExamSessionService $service): JsonResponse
-    {
-        $attempt = $service->activeAttempt(request()->user());
-
-        if ($attempt === null) {
-            return response()->json(['data' => null]);
-        }
-
-        $attempt->load('exam');
-
-        return response()->json([
-            'data' => new ExamActiveAttemptResource($attempt),
         ]);
     }
 

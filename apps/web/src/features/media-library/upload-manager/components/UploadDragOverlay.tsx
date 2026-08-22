@@ -24,7 +24,7 @@ export function UploadDragOverlay() {
             animate={{ scale: 1 }}
             exit={{ scale: 0.96 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-studio-accent bg-studio-surface px-12 py-14 text-center shadow-[0_16px_48px_-12px_hsl(var(--studio-fg)/0.25)]"
+            className="studio-glass-floating flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-studio-accent px-12 py-14 text-center"
           >
             <motion.div
               animate={{ y: [0, -8, 0] }}

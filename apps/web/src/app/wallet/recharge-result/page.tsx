@@ -16,8 +16,8 @@ import { walletService } from "@/features/wallet/services";
 import { formatCurrency } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
 
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 type ResultStatus = "loading" | "success" | "failed" | "pending" | "error";
 
@@ -151,7 +151,7 @@ export default function WalletRechargeResultPage() {
             exit={{ opacity: 0, y: -12, scale: 0.97 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/10 p-6 sm:p-8 text-center"
-            style={{ boxShadow: `0 25px 60px -12px rgba(0,0,0,0.145)` }}
+            style={{ boxShadow: `0 25px 60px -12px ${primary}25` }}
           >
             {/* Loading */}
             {status === "loading" && (
@@ -166,6 +166,7 @@ export default function WalletRechargeResultPage() {
               <div className="flex flex-col items-center py-6">
                 <div
                   className="mb-5 flex h-20 w-20 items-center justify-center rounded-full"
+                  style={{ background: `linear-gradient(135deg, ${secondary}25, ${primary}18)` }}
                 >
                   <AlertTriangle className="h-10 w-10" style={{ color: secondary }} />
                 </div>
@@ -178,8 +179,8 @@ export default function WalletRechargeResultPage() {
                   onClick={goHome}
                   className="mt-6 h-11 px-6 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                   style={{
-                    background: `var(--brand-primary)`,
-                    boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                    background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                    boxShadow: `0 4px 16px ${primary}40`,
                   }}
                 >
                   العودة للصفحة الرئيسية
@@ -195,6 +196,7 @@ export default function WalletRechargeResultPage() {
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
                   className="mb-5 flex h-20 w-20 items-center justify-center rounded-full"
+                  style={{ background: `linear-gradient(135deg, ${secondary}25, #22c55e18)` }}
                 >
                   <CheckCircle className="h-10 w-10 text-green-500" />
                 </motion.div>
@@ -225,8 +227,8 @@ export default function WalletRechargeResultPage() {
                   onClick={goHome}
                   className="mt-6 flex h-11 items-center gap-2 px-6 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                   style={{
-                    background: `var(--brand-primary)`,
-                    boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                    background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                    boxShadow: `0 4px 16px ${primary}40`,
                   }}
                 >
                   <ArrowRight className="h-4 w-4" /> العودة
@@ -262,8 +264,8 @@ export default function WalletRechargeResultPage() {
                     onClick={goBack}
                     className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                     style={{
-                      background: `var(--brand-primary)`,
-                      boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                      background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                      boxShadow: `0 4px 16px ${primary}40`,
                     }}
                   >
                     <Wallet className="h-4 w-4" /> إعادة المحاولة
@@ -297,8 +299,8 @@ export default function WalletRechargeResultPage() {
                   onClick={goHome}
                   className="mt-6 h-11 px-6 rounded-xl text-sm font-semibold text-white transition-all duration-300"
                   style={{
-                    background: `var(--brand-primary)`,
-                    boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                    background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                    boxShadow: `0 4px 16px ${primary}40`,
                   }}
                 >
                   العودة للصفحة الرئيسية

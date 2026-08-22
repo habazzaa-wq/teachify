@@ -1,5 +1,4 @@
-export { default as api, ensureCsrfCookie } from "./axios";
-export { AUTH_EVENTS } from "@/constants/auth-events";
+export { default as api, AUTH_EVENTS, ensureCsrfCookie } from "./axios";
 export { normalizeApiError } from "./errors";
 export { authService } from "./auth.service";
 export { tenantService } from "./tenant.service";

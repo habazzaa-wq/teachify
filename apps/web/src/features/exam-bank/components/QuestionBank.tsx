@@ -28,6 +28,7 @@ import { QuestionRow } from "./QuestionRow";
 import { QuestionToolbar } from "./QuestionToolbar";
 import { QuestionBulkBar } from "./QuestionBulkBar";
 import { CreateQuestionDialog } from "./CreateQuestionDialog";
+import { QuestionImportDialog } from "./import/QuestionImportDialog";
 import { EditQuestionDialog } from "./EditQuestionDialog";
 import { QuestionLoadingGrid } from "./QuestionLoadingState";
 
@@ -42,6 +43,7 @@ export function QuestionBank() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const lastIndexRef = useRef<number | null>(null);
@@ -196,6 +198,7 @@ export function QuestionBank() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onCreate={() => setCreateOpen(true)}
+        onImport={() => setImportOpen(true)}
         totalCount={total}
       />
 
@@ -214,9 +217,14 @@ export function QuestionBank() {
               title="لا توجد أسئلة"
               description="ابدأ بإنشاء سؤال جديد أو عدّل عوامل التصفية."
               action={
-                <StudioButton onClick={() => setCreateOpen(true)} className="gap-2">
-                  إنشاء سؤال
-                </StudioButton>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <StudioButton onClick={() => setCreateOpen(true)} className="gap-2">
+                    إنشاء سؤال
+                  </StudioButton>
+                  <StudioButton variant="secondary" onClick={() => setImportOpen(true)} className="gap-2">
+                    استيراد من صورة
+                  </StudioButton>
+                </div>
               }
             />
           </motion.div>
@@ -282,6 +290,11 @@ export function QuestionBank() {
         onCreated={() => {
           setCreateOpen(false);
         }}
+      />
+
+      <QuestionImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
       />
 
       <EditQuestionDialog

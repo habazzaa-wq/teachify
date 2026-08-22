@@ -7,15 +7,6 @@ export interface Wallet {
   updated_at: string | null;
 }
 
-export type WalletTransactionMethod = "recharge_code" | "online" | "wallet_use";
-
-export interface WalletPaymentBrief {
-  reference: string | null;
-  provider: string | null;
-  status: string | null;
-  paid_at: string | null;
-}
-
 export interface WalletTransaction {
   id: number;
   tenant_id: number;
@@ -27,12 +18,6 @@ export interface WalletTransaction {
   balance_after: string;
   description: string | null;
   created_at: string;
-  /** How this transaction happened (enriched by the API). */
-  method?: WalletTransactionMethod;
-  /** The redeemed recharge code when `method === "recharge_code"`. */
-  recharge_code?: string | null;
-  /** The online payment when `method === "online"`. */
-  payment?: WalletPaymentBrief | null;
 }
 
 export interface RechargeCodeRecord {

@@ -8,7 +8,6 @@ import {
   Star,
   Layout,
   Palette,
-  Globe,
   PanelLeftClose,
   PanelLeftOpen,
   ClipboardList,
@@ -22,8 +21,6 @@ import {
   BookOpen,
   TicketCheck,
   CreditCard,
-  ImageIcon,
-  Search,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -210,11 +207,9 @@ export function WorkspaceLeftSidebar() {
                 onClick={() => router.push(routes.dashboardSubjects)}
               />
               <StudioSidebarItem
-                icon={<GraduationCap className="h-4 w-4" />}
+                icon={<Layout className="h-4 w-4" />}
                 label="الطلاب"
-                active={pathname.startsWith("/teacher/students")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardStudents)}
               />
               <StudioSidebarItem
                 icon={<TicketCheck className="h-4 w-4" />}
@@ -245,27 +240,6 @@ export function WorkspaceLeftSidebar() {
 
             {/* Settings */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "الإعدادات"} collapsed={leftSidebarCollapsed}>
-              <StudioSidebarItem
-                icon={<Search className="h-4 w-4" />}
-                label="إعدادات SEO"
-                active={pathname.startsWith(routes.seoSettings)}
-                collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.seoSettings)}
-              />
-              <StudioSidebarItem
-                icon={<Globe className="h-4 w-4" />}
-                label="إعدادات الموقع"
-                active={pathname.startsWith(routes.dashboardSiteSettings)}
-                collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardSiteSettings)}
-              />
-              <StudioSidebarItem
-                icon={<ImageIcon className="h-4 w-4" />}
-                label="الشعار واسم المنصة"
-                active={pathname.startsWith(routes.dashboardBranding)}
-                collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardBranding)}
-              />
               <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}
                 label="مظهر لوحة التحكم"

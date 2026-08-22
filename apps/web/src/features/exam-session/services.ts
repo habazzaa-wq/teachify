@@ -3,7 +3,6 @@ import { resolveApiBaseUrl } from "@/config/env";
 import { useTenantStore } from "@/stores/tenant.store";
 import { useAuthStore } from "@/stores/auth.store";
 import type {
-  ActiveExamAttempt,
   AntiCheatEvent,
   ExamSession,
   SaveProgressPayload,
@@ -94,8 +93,9 @@ function formatQuestion(raw: Raw): ExamSession["questions"][number] {
     answered: Boolean(raw.answered),
     isCorrect:
       raw.isCorrect === null || raw.isCorrect === undefined ? null : Boolean(raw.isCorrect),
-    questionFormat: (raw.questionFormat ?? "text") as "text" | "image",
-    scanUrl: raw.scanUrl ?? null,
+    questionFormat: raw.questionFormat ?? "text",
+    scanUrl: typeof raw.scanUrl === "string" ? raw.scanUrl : null,
+    contentDocument: raw.contentDocument ?? null,
   };
 }
 
@@ -109,39 +109,6 @@ export const examSessionService = {
   async start(lessonId: string): Promise<ExamSession> {
     const { data } = await api.post(`/lessons/${lessonId}/exam-sessions/start`);
     return formatSession(data.data);
-  },
-
-  /**
-   * Lightweight "is there an unfinished exam running right now?" check.
-   * Returns null when the student has no live attempt (or it expired / was
-   * submitted / its exam was closed by the teacher).
-   */
-  async activeAttempt(): Promise<ActiveExamAttempt | null> {
-    const { data } = await api.get("/exams/active-attempt");
-    const raw = data?.data;
-    if (!raw) return null;
-    return {
-      id: String(raw.id),
-      examId: String(raw.examId),
-      status: raw.status,
-      isOfficial: Boolean(raw.isOfficial),
-      isPractice: Boolean(raw.isPractice),
-      currentQuestionIndex:
-        raw.currentQuestionIndex === null || raw.currentQuestionIndex === undefined
-          ? null
-          : Number(raw.currentQuestionIndex),
-      timerEndsAt: raw.timerEndsAt ?? null,
-      remainingSeconds:
-        raw.remainingSeconds === null || raw.remainingSeconds === undefined
-          ? null
-          : Number(raw.remainingSeconds),
-      exam: raw.exam
-        ? {
-            id: String(raw.exam.id),
-            title: String(raw.exam.title ?? ""),
-          }
-        : null,
-    };
   },
 
   async get(attemptId: string): Promise<ExamSession> {

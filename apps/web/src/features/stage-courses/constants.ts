@@ -3,8 +3,8 @@ export const STAGE_QUERY_KEY = "stage";
 
 export const STAGE_PAGE_SIZE = 12;
 
-export const PRIMARY = "var(--brand-primary)";
-export const ACCENT = "var(--brand-secondary)";
+export const PRIMARY = "#BF6D58";
+export const ACCENT = "#FFB50E";
 
 export const DIFFICULTY_LABELS: Record<string, string> = {
   beginner: "مبتدئ",

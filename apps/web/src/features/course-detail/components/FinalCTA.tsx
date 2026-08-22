@@ -24,7 +24,7 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
             </p>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand-primary)] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-xl hover:shadow-[rgba(0,0,0,0.3)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-[#BF6D58] to-[#a85a47] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[#BF6D58]/25 transition-all duration-300 hover:from-[#a85a47] hover:to-[#BF6D58] hover:shadow-xl hover:shadow-[#BF6D58]/30 hover:-translate-y-0.5"
             >
               اشتراك الآن
               <Lock className="h-4 w-4" />
@@ -48,26 +48,26 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
 
               {/* Floating icons */}
               <div
-                className="absolute -top-2 -end-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute -top-2 -end-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#D87B63]/20 bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite" }}
               >
                 <span className="text-sm font-bold course-accent-text">&lt;/&gt;</span>
               </div>
 
               <div
-                className="absolute top-8 -start-6 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute top-8 -start-6 flex h-10 w-10 items-center justify-center rounded-xl border border-[#D87B63]/20 bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite 0.5s" }}
               >
                 <span className="text-sm font-bold course-accent-text">{"{}"}</span>
               </div>
 
               <div
-                className="absolute -top-4 start-12 flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-lg"
+                className="absolute -top-4 start-12 flex h-11 w-11 items-center justify-center rounded-xl border border-[#D87B63]/20 bg-[var(--course-card-bg)] shadow-lg"
                 style={{ animation: "float-soft 3s ease-in-out infinite 1s" }}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="var(--brand-primary)">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#D87B63">
                   <circle cx="12" cy="12" r="2" />
-                  <g stroke="var(--brand-primary)" fill="none" strokeWidth="1">
+                  <g stroke="#D87B63" fill="none" strokeWidth="1">
                     <ellipse cx="12" cy="12" rx="10" ry="4" />
                     <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)" />
                     <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)" />
@@ -76,7 +76,7 @@ export function FinalCTA({ studentsCount }: FinalCTAProps) {
               </div>
 
               <div
-                className="absolute bottom-16 -end-8 flex h-10 w-14 items-center justify-center rounded-lg border border-[var(--brand-primary)] bg-[var(--course-card-bg)] shadow-md"
+                className="absolute bottom-16 -end-8 flex h-10 w-14 items-center justify-center rounded-lg border border-[#D87B63]/15 bg-[var(--course-card-bg)] shadow-md"
                 style={{ animation: "float-soft 3s ease-in-out infinite 1.5s" }}
               >
                 <span className="text-[10px] font-bold course-accent-text">JS</span>

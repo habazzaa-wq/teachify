@@ -3,7 +3,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Megaphone, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useBrandColors } from "@/hooks/useBrandColors";
 import { usePublicNews } from "@/features/homepage/news/hooks";
 import { resolveTicker, contrastText, darkenHex } from "@/features/homepage/news/utils";
 import type { NewsItem } from "@/features/homepage/news/types";
@@ -69,7 +68,8 @@ export function NewsTicker({
   const { config } = resolved;
   const items = useMemo(() => data?.items ?? [], [data]);
 
-  const { primary, secondary } = useBrandColors();
+  const primary = "#D87B63";
+  const secondary = "#FFB50E";
   const bg = config.bgColor || primary;
   const accent = config.accentColor || secondary;
   const text = config.textColor || contrastText(bg);
@@ -273,7 +273,7 @@ export function NewsTicker({
             type="button"
             onClick={() => persistCollapsed(true)}
             aria-label="إخفاء شريط الأخبار"
-            className="glass-touch-solid absolute end-3 top-1/2 z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/20 text-white/90 backdrop-blur transition-colors hover:bg-black/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="absolute end-3 top-1/2 z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/20 text-white/90 backdrop-blur transition-colors hover:bg-black/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             <ChevronUp className="h-4 w-4" />
           </button>
@@ -291,7 +291,7 @@ export function NewsTicker({
           onPointerCancel={onHandlePointerUp}
           aria-label="إظهار شريط الأخبار"
           className={cn(
-            "glass-touch-solid fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            "fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
             pulling && "translate-y-1",
           )}
           style={{

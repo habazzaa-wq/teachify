@@ -6,6 +6,7 @@ export const routes = {
   home: "/",
   publicCourse: "/courses",
   // Auth
+  login: "/login",
   tenantLogin: "/tenant-login",
   // Teacher control panel (tenant dashboard) — all under /teacher/
   dashboard: "/teacher/dashboard",
@@ -15,14 +16,6 @@ export const routes = {
   dashboardLessons: "/teacher/lessons",
   dashboardStudents: "/teacher/students",
   dashboardContent: "/teacher/content",
-  // Teacher SEO & Content Studio — under /teacher/seo/
-  seoStudio: "/teacher/seo",
-  seoContent: "/teacher/seo/content",
-  seoContentNew: "/teacher/seo/content/new",
-  seoContentEdit: "/teacher/seo/content/[id]/edit",
-  seoKeywords: "/teacher/seo/keywords",
-  seoFaqs: "/teacher/seo/faqs",
-  seoSettings: "/teacher/seo/settings",
   dashboardMedia: "/teacher/media",
   dashboardExams: "/teacher/exams",
   dashboardSubjects: "/teacher/subjects",
@@ -37,13 +30,8 @@ export const routes = {
   dashboardProfile: "/teacher/profile",
   dashboardHelp: "/teacher/help",
   dashboardSettings: "/teacher/settings",
-  dashboardSiteSettings: "/teacher/settings/site",
-  dashboardBranding: "/teacher/settings/branding",
   // Student control panel (learner dashboard) — under /student/
   studentDashboard: "/student/dashboard",
-  // Student community — under /community
-  community: "/community",
-  communityThread: "/community/threads",
   homepageNews: "/teacher/homepage/news",
   homepageHero: "/teacher/homepage/hero",
   homepageWhyChooseUs: "/teacher/homepage/why-choose-us",

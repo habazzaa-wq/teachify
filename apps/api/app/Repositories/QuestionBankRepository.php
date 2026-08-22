@@ -74,8 +74,6 @@ class QuestionBankRepository
 
         if ($bank) {
             $bank->restore();
-            $bank->forceFill(['status' => 'published'])->save();
-
             return $bank->refresh();
         }
 

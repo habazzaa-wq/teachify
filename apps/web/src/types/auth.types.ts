@@ -36,12 +36,6 @@ export interface AuthBranding {
   font: string | null;
   dark_logo: string | null;
   light_logo: string | null;
-  /** "icon" | "image" | null — how the navbar logo should be rendered. */
-  logo_type?: string | null;
-  /** Icon key from the built-in icon library when logo_type === "icon". */
-  logo_icon?: string | null;
-  /** Media-library image URL when logo_type === "image". */
-  logo_image?: string | null;
   domain?: string;
 }
 

@@ -7,29 +7,15 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { rechargeCodesService, walletService } from "./services";
-import { resolveStudentAccessToken } from "@/services/api/tenant-student-fetch";
 import type {
   RechargeCodeGenerateInput,
   RechargeCodeInput,
 } from "./types";
 
-/**
- * Wallet queries are cached per identity so a student balance fetched on the
- * home page never leaks into a teacher dashboard (and vice versa) when both
- * sessions coexist in the same browser. The access-token id is stable for the
- * lifetime of a token; refreshes mint a new id and simply refetch.
- */
-function walletSessionTag(): string {
-  const token = resolveStudentAccessToken();
-  if (!token) return "anon";
-  const id = token.split("|")[0];
-  return id ? `user:${id}` : "anon";
-}
-
 export const walletKeys = {
   all: ["wallet"] as const,
-  wallet: () => [...walletKeys.all, "wallet", walletSessionTag()] as const,
-  transactions: () => [...walletKeys.all, "transactions", walletSessionTag()] as const,
+  wallet: () => [...walletKeys.all, "wallet"] as const,
+  transactions: () => [...walletKeys.all, "transactions"] as const,
 };
 
 export const rechargeCodesKeys = {
@@ -51,10 +37,10 @@ export function useWallet(enabled = true) {
   });
 }
 
-export function useWalletTransactions(enabled = true, perPage = 15) {
+export function useWalletTransactions(enabled = true) {
   return useQuery({
-    queryKey: [...walletKeys.transactions(), perPage] as const,
-    queryFn: () => walletService.getTransactions({ per_page: perPage }),
+    queryKey: walletKeys.transactions(),
+    queryFn: () => walletService.getTransactions({ per_page: 15 }),
     enabled,
     staleTime: 30_000,
   });

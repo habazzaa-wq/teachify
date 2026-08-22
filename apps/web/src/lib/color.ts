@@ -48,66 +48,6 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   return { h: Math.round(h * 360), s: Math.round(Math.min(s * 100, 100)), l: Math.round(Math.min(l * 100, 100)) };
 }
 
-/** "r g b" triplet for CSS `rgb(var(--x) / a)` usage. */
-export function hexToRgbTriplet(hex: string): string {
-  const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
-  return `${r} ${g} ${b}`;
-}
-
-/** Mix a hex color toward black. `amount` in 0..1 (1 = pure black). */
-export function mixWithBlack(hex: string, amount: number): string {
-  const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
-  const toHex = (c: number) => Math.round(c * (1 - amount)).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-/** Mix a hex color toward white. `amount` in 0..1 (1 = pure white). */
-export function mixWithWhite(hex: string, amount: number): string {
-  const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
-  const toHex = (c: number) => Math.round(c + (255 - c) * amount).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-/**
- * Community / public-site palette derived from the tenant's two brand colors.
- * Returns the HSL tokens overridden on `.community-theme` (and dark variant)
- * so every shadcn `primary`/`secondary`/`accent`/`ring` usage follows the
- * configured site colors instead of the static defaults in globals.css.
- */
-export function generateCommunityThemeColors(primaryHex: string, secondaryHex: string, isDark = false) {
-  const p = hexToHsl(primaryHex);
-  const s = hexToHsl(secondaryHex);
-
-  const pSat = clamp(p.s, 35, 90);
-  const sSat = clamp(s.s, 45, 100);
-
-  if (isDark) {
-    const pL = clamp(p.l > 45 ? p.l + 8 : p.l + 18, 55, 80);
-    const sL = clamp(s.l > 45 ? s.l + 2 : s.l + 12, 50, 75);
-    const accentL = clamp(p.l - 28, 18, 30);
-    return {
-      "--primary": `${p.h} ${pSat}% ${pL}%`,
-      "--primary-foreground": "0 0% 100%",
-      "--secondary": `${s.h} ${sSat}% ${sL}%`,
-      "--secondary-foreground": "0 0% 10%",
-      "--accent": `${p.h} ${clamp(pSat - 5, 40, 80)}% ${accentL}%`,
-      "--accent-foreground": `${p.h} 65% 92%`,
-      "--ring": `${p.h} ${pSat}% ${pL}%`,
-    };
-  }
-
-  const accentL = clamp(p.l + 34, 88, 97);
-  return {
-    "--primary": `${p.h} ${pSat}% ${clamp(p.l, 42, 65)}%`,
-    "--primary-foreground": p.l > 60 ? "0 0% 12%" : "0 0% 100%",
-    "--secondary": `${s.h} ${sSat}% ${clamp(s.l, 45, 62)}%`,
-    "--secondary-foreground": "30 80% 12%",
-    "--accent": `${p.h} ${clamp(pSat - 5, 40, 80)}% ${accentL}%`,
-    "--accent-foreground": `${p.h} ${clamp(pSat - 10, 40, 70)}% 25%`,
-    "--ring": `${p.h} ${pSat}% ${clamp(p.l, 42, 65)}%`,
-  };
-}
-
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }

@@ -64,7 +64,7 @@ function ResultPageInner({ attemptId }: ResultPageProps) {
 
         {course && (
           <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3.5 py-1.5 text-xs font-bold text-muted-foreground">
-            <BookOpen className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
+            <BookOpen className="h-3.5 w-3.5 text-[#BF6D58]" />
             {course.title}
           </span>
         )}

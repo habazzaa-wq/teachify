@@ -1,33 +1,40 @@
 "use client";
 
-import { type CSSProperties, type FC, type ReactNode } from "react";
-import { ArrowLeft, Bell, Check, ClipboardCheck, Play, RefreshCw } from "lucide-react";
+import { type FC } from "react";
 import { useUiStore } from "@/stores/ui.store";
 import { usePublicWhyChooseUs } from "@/features/homepage/why-choose-us/hooks";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
-import {
-  DEFAULT_WHY_CHOOSE_US,
-  type WhyChooseUsIll,
-  type WhyChooseUsSettings,
-} from "@/features/homepage/why-choose-us/types";
+import { DEFAULT_WHY_CHOOSE_US, type WhyChooseUsIll, type WhyChooseUsSettings } from "@/features/homepage/why-choose-us/types";
 
 /* ───────────────────────────────────────
-   Brand palette — CSS variables so every
-   tenant resolves its own primary/secondary.
+   Brand palette
    ─────────────────────────────────────── */
-const PRIMARY = "var(--brand-primary)";
-const SECONDARY = "var(--brand-secondary)";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
-const MOD_STATUS = ["متصل", "مفعّل", "نشط", "محدّث", "جاهز", "منظّم"];
-
-const pad = (n: number) => String(n).padStart(2, "0");
-
+/* ───────────────────────────────────────
+   Fixed professional layout positions (index-based).
+   Content (title/desc/ill) is fully dynamic; positions stay fixed.
+   ─────────────────────────────────────── */
 interface DisplayFeature {
   num: string;
   title: string;
   desc: string;
   ill: WhyChooseUsIll;
+  x: number;
+  y: number;
 }
+
+const POSITIONS: { x: number; y: number }[] = [
+  { x: 25, y: 42 },
+  { x: 50, y: 42 },
+  { x: 75, y: 42 },
+  { x: 25, y: 74 },
+  { x: 75, y: 74 },
+  { x: 50, y: 86 },
+];
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 function buildFeatures(settings: WhyChooseUsSettings): DisplayFeature[] {
   const src = settings.features?.length ? settings.features : DEFAULT_WHY_CHOOSE_US.features;
@@ -36,486 +43,300 @@ function buildFeatures(settings: WhyChooseUsSettings): DisplayFeature[] {
     title: f.title,
     desc: f.desc,
     ill: f.ill,
+    ...(POSITIONS[i] ?? { x: 50, y: 90 }),
   }));
 }
 
 /* ───────────────────────────────────────
-   Feature illustrations — flat brand fills,
-   resolved through CSS variables so every
-   tenant sees its own colors.
+   Shared illustration gradient defs
    ─────────────────────────────────────── */
-function IllCap() {
+function IllDefs() {
   return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <path d="M32 14 L54 22 L32 30 L10 22 Z" fill={PRIMARY} stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M10 22 L10 27 L54 27 L54 22" fill={PRIMARY} opacity="0.85" />
-      <circle cx="32" cy="14" r="2.4" fill="#fff" />
-      <path d="M32 14 L32 34" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M32 34 C38 40, 46 40, 50 34" stroke={SECONDARY} strokeWidth="1.6" strokeLinecap="round" fill="none" />
-      <path d="M50 34 l3 3 l-3 3 l-3 -3 z" fill={SECONDARY} />
-      <path d="M46 9 l1.4 3 l3 1.4 l-3 1.4 l-1.4 3 l-1.4 -3 l-3 -1.4 l3 -1.4 z" fill={SECONDARY} opacity="0.9" />
+    <svg width="0" height="0" className="absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="oG1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={primary} />
+          <stop offset="100%" stopColor={secondary} />
+        </linearGradient>
+        <linearGradient id="oG2" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={secondary} />
+          <stop offset="100%" stopColor={primary} />
+        </linearGradient>
+      </defs>
     </svg>
   );
+}
+
+function IllCap() {
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <path d="M32 14 L54 22 L32 30 L10 22 Z" fill="url(#oG1)" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M10 22 L10 27 L54 27 L54 22" fill="url(#oG1)" opacity="0.85" />
+    <circle cx="32" cy="14" r="2.4" fill="#fff" />
+    <path d="M32 14 L32 34" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M32 34 C38 40, 46 40, 50 34" stroke="url(#oG2)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+    <path d="M50 34 l3 3 l-3 3 l-3 -3 z" fill="url(#oG2)" />
+    <path d="M46 9 l1.4 3 l3 1.4 l-3 1.4 l-1.4 3 l-1.4 -3 l-3 -1.4 l3 -1.4 z" fill={secondary} opacity="0.9" />
+  </svg>);
 }
 function IllVideo() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <rect x="9" y="14" width="46" height="36" rx="7" fill={PRIMARY} stroke="#fff" strokeWidth="1.4" />
-      <rect x="13" y="18" width="38" height="28" rx="4" fill="#fff" opacity="0.18" />
-      <circle cx="32" cy="32" r="10" fill="#fff" opacity="0.92" />
-      <path d="M28 27 L39 32 L28 37 Z" fill={SECONDARY} />
-      <circle cx="50" cy="13" r="2.2" fill={SECONDARY} />
-    </svg>
-  );
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <rect x="9" y="14" width="46" height="36" rx="7" fill="url(#oG1)" stroke="#fff" strokeWidth="1.4" />
+    <rect x="13" y="18" width="38" height="28" rx="4" fill="#fff" opacity="0.18" />
+    <circle cx="32" cy="32" r="10" fill="#fff" opacity="0.92" />
+    <path d="M28 27 L39 32 L28 37 Z" fill="url(#oG2)" />
+    <circle cx="50" cy="13" r="2.2" fill={secondary} />
+  </svg>);
 }
 function IllTarget() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <circle cx="32" cy="32" r="20" stroke={PRIMARY} strokeWidth="3" />
-      <circle cx="32" cy="32" r="12.5" stroke={SECONDARY} strokeWidth="3" opacity="0.85" />
-      <circle cx="32" cy="32" r="5.5" fill={PRIMARY} />
-      <path d="M25 32 l4.6 4.6 L40 26" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M50 12 l1 2.2 l2.2 1 l-2.2 1 l-1 2.2 l-1 -2.2 l-2.2 -1 l2.2 -1 z" fill={SECONDARY} opacity="0.9" />
-    </svg>
-  );
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <circle cx="32" cy="32" r="20" stroke="url(#oG1)" strokeWidth="3" />
+    <circle cx="32" cy="32" r="12.5" stroke="url(#oG2)" strokeWidth="3" opacity="0.85" />
+    <circle cx="32" cy="32" r="5.5" fill="url(#oG1)" />
+    <path d="M25 32 l4.6 4.6 L40 26" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M50 12 l1 2.2 l2.2 1 l-2.2 1 l-1 2.2 l-1 -2.2 l-2.2 -1 l2.2 -1 z" fill={secondary} opacity="0.9" />
+  </svg>);
 }
 function IllChat() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <path d="M12 14 h33 a6 6 0 0 1 6 6 v19 a6 6 0 0 1 -6 6 H26 l-9 8 V45 a6 6 0 0 1 -5 -6 V20 a6 6 0 0 1 6 -6 z" fill={PRIMARY} stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M21 24 c0 -3 4 -4 7 -2 c3 2 7 1 7 4 c0 4 -4 5 -7 3 c-3 -2 -7 -1 -7 -5 z" fill="#fff" opacity="0.95" />
-      <path d="M30 30 c-1.6 -1.4 -1.2 -3.6 0.6 -4.4 c1.8 -0.8 3.8 0.4 4 2 c0.2 1.4 -0.8 2.6 -2 2.4" stroke={SECONDARY} strokeWidth="2" strokeLinecap="round" fill="none" />
-    </svg>
-  );
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <path d="M12 14 h33 a6 6 0 0 1 6 6 v19 a6 6 0 0 1 -6 6 H26 l-9 8 V45 a6 6 0 0 1 -5 -6 V20 a6 6 0 0 1 6 -6 z" fill="url(#oG1)" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M21 24 c0 -3 4 -4 7 -2 c3 2 7 1 7 4 c0 4 -4 5 -7 3 c-3 -2 -7 -1 -7 -5 z" fill="#fff" opacity="0.95" />
+    <path d="M30 30 c-1.6 -1.4 -1.2 -3.6 0.6 -4.4 c1.8 -0.8 3.8 0.4 4 2 c0.2 1.4 -0.8 2.6 -2 2.4" stroke={secondary} strokeWidth="2" strokeLinecap="round" fill="none" />
+  </svg>);
 }
 function IllTrend() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <path d="M12 46 L24 38 L33 43 L52 22" stroke={PRIMARY} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M52 22 L43 22 L52 31 Z" fill={SECONDARY} />
-      <rect x="11" y="48" width="6" height="4" rx="1.5" fill={PRIMARY} opacity="0.7" />
-      <rect x="22" y="42" width="6" height="10" rx="1.5" fill={PRIMARY} opacity="0.55" />
-      <rect x="31" y="46" width="6" height="6" rx="1.5" fill={PRIMARY} opacity="0.7" />
-    </svg>
-  );
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <path d="M12 46 L24 38 L33 43 L52 22" stroke="url(#oG1)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <path d="M52 22 L43 22 L52 31 Z" fill="url(#oG2)" />
+    <rect x="11" y="48" width="6" height="4" rx="1.5" fill={primary} opacity="0.7" />
+    <rect x="22" y="42" width="6" height="10" rx="1.5" fill={primary} opacity="0.55" />
+    <rect x="31" y="46" width="6" height="6" rx="1.5" fill={primary} opacity="0.7" />
+  </svg>);
 }
 function IllWallet() {
+  return (<svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
+    <rect x="9" y="22" width="46" height="30" rx="8" fill="url(#oG1)" stroke="#fff" strokeWidth="1.4" />
+    <path d="M9 30 a8 8 0 0 1 8 -8 h29 v28 H17 a8 8 0 0 1 -8 -8 z" fill="#fff" opacity="0.16" />
+    <circle cx="44" cy="37" r="7" fill="#fff" />
+    <text x="44" y="41" textAnchor="middle" fontSize="9" fontWeight="700" fill="url(#oG2)">$</text>
+  </svg>);
+}
+const illMap: Record<string, FC> = { cap: IllCap, video: IllVideo, target: IllTarget, chat: IllChat, trend: IllTrend, wallet: IllWallet };
+
+/* ───────────────────────────────────────
+   Connector SVG (hub → node).
+   Fully static. The only motion is a one-shot
+   draw-in that runs once when the section enters view.
+   ─────────────────────────────────────── */
+function Connectors({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
+  const hub = { x: 500, y: 96 };
   return (
-    <svg viewBox="0 0 64 64" className="h-full w-full" fill="none">
-      <rect x="9" y="22" width="46" height="30" rx="8" fill={PRIMARY} stroke="#fff" strokeWidth="1.4" />
-      <path d="M9 30 a8 8 0 0 1 8 -8 h29 v28 H17 a8 8 0 0 1 -8 -8 z" fill="#fff" opacity="0.16" />
-      <circle cx="44" cy="37" r="7" fill="#fff" />
-      <text x="44" y="41" textAnchor="middle" fontSize="9" fontWeight="700" fill={SECONDARY}>$</text>
+    <svg viewBox="0 0 1000 700" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+      <defs>
+        <radialGradient id="oHub" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={secondary} />
+          <stop offset="60%" stopColor={primary} />
+          <stop offset="100%" stopColor={primary} stopOpacity="0.2" />
+        </radialGradient>
+        <linearGradient id="oLine" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={primary} stopOpacity="0.7" />
+          <stop offset="100%" stopColor={secondary} stopOpacity="0.15" />
+        </linearGradient>
+      </defs>
+
+      {/* static dashed ring around hub */}
+      <circle
+        cx="500" cy="96" r="74"
+        fill="none"
+        stroke={isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"}
+        strokeWidth="1.4"
+        strokeDasharray="3 12"
+      />
+
+      {/* connectors (draw in once) */}
+      {features.map((f: DisplayFeature, i) => {
+        const ex = (f.x / 100) * 1000;
+        const ey = (f.y / 100) * 700;
+        const sx = hub.x;
+        const sy = hub.y + 46;
+        const cx = sx + (ex - sx) * 0.5;
+        const cy = sy + (ey - sy) * 0.5;
+        const d = `M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`;
+        return (
+          <path
+            key={`c-${i}`}
+            d={d}
+            className="wc-line"
+            fill="none"
+            stroke="url(#oLine)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{ "--wc-delay": `${0.5 + i * 0.12}s` } as React.CSSProperties}
+          />
+        );
+      })}
+
+      {/* hub core (static) */}
+      <circle cx="500" cy="96" r="56" fill="url(#oHub)" />
+      <circle
+        cx="500" cy="96" r="56"
+        fill="none"
+        stroke={isDark ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.5)"}
+        strokeWidth="1.5"
+      />
+      <text x="500" y="92" textAnchor="middle" fontSize="15" fontWeight="800" fill="#fff">منظومة</text>
+      <text x="500" y="110" textAnchor="middle" fontSize="11" fontWeight="600" fill="#fff" opacity="0.85">المعرفة</text>
     </svg>
   );
 }
 
-const illMap: Record<WhyChooseUsIll, FC> = {
-  cap: IllCap,
-  video: IllVideo,
-  target: IllTarget,
-  chat: IllChat,
-  trend: IllTrend,
-  wallet: IllWallet,
-};
-
-function FeatureIll({ ill }: { ill: WhyChooseUsIll }) {
-  const Ill = illMap[ill];
-  return Ill ? <Ill /> : null;
-}
-
 /* ───────────────────────────────────────
-   Mastery ring — the section's focal seal.
-   A gauge of ticks, two brand arcs and a
-   graduation-cap core. Purely iconographic:
-   no numbers, no factual claims.
+   Node + card (static; one-shot reveal on view)
    ─────────────────────────────────────── */
-function MasteryRing({ delay = "0.25s" }: { delay?: string }) {
-  const ticks = Array.from({ length: 48 });
-  return (
-    <div className="wcu-pop relative aspect-square w-full select-none" style={{ ["--wcu-d" as string]: delay }} aria-hidden="true">
-      <svg viewBox="0 0 200 200" className="h-full w-full" style={{ color: "var(--wcu-muted)" }}>
-        {ticks.map((_, i) => {
-          const major = i % 6 === 0;
-          return (
-            <line
-              key={i}
-              x1="100"
-              y1="9"
-              x2="100"
-              y2={major ? "17" : "13.5"}
-              stroke="currentColor"
-              strokeWidth={major ? "1.4" : "1"}
-              opacity={major ? "0.5" : "0.28"}
-              transform={`rotate(${(i * 360) / ticks.length} 100 100)`}
-            />
-          );
-        })}
-        <circle cx="100" cy="100" r="87" fill="none" stroke="currentColor" strokeOpacity="0.14" strokeWidth="1.5" />
-        <circle cx="100" cy="100" r="68" fill="none" stroke="currentColor" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="1 3" />
-        <circle
-          className="wcu-arc"
-          cx="100"
-          cy="100"
-          r="86"
-          fill="none"
-          stroke={PRIMARY}
-          strokeWidth="7"
-          strokeLinecap="round"
-          pathLength="100"
-          strokeDasharray="100"
-          style={{ ["--wcu-to" as string]: 38, ["--wcu-d" as string]: "0.4s" }}
-          transform="rotate(-90 100 100)"
-        />
-        <circle
-          className="wcu-arc"
-          cx="100"
-          cy="100"
-          r="68"
-          fill="none"
-          stroke={SECONDARY}
-          strokeWidth="4.5"
-          strokeLinecap="round"
-          pathLength="100"
-          strokeDasharray="100"
-          style={{ ["--wcu-to" as string]: 78, ["--wcu-d" as string]: "0.55s" }}
-          transform="rotate(-38 100 100)"
-        />
-        <circle
-          className="wcu-anim-fade"
-          cx="100"
-          cy="14"
-          r="4.5"
-          fill={PRIMARY}
-          style={{ ["--wcu-d" as string]: "0.8s" }}
-          transform="rotate(-90 100 100)"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span
-          className="flex h-10 w-10 items-center justify-center rounded-2xl"
-          style={{ background: PRIMARY, boxShadow: "0 8px 18px rgba(0,0,0,0.18)" }}
-        >
-          <span className="h-6 w-6">
-            <IllCap />
-          </span>
-        </span>
-        <span className="mt-2 text-sm font-extrabold" style={{ color: "var(--wcu-ink)" }}>
-          إتقان
-        </span>
-        <span className="text-[10px] font-semibold" style={{ color: "var(--wcu-muted)" }}>
-          مسار الطالب
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ───────────────────────────────────────
-   Core-panel fragments — small product-UI
-   snippets around the ring (decorative).
-   ─────────────────────────────────────── */
-function Frag({
-  className,
-  delay,
-  children,
-}: {
-  className: string;
-  delay: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`wcu-anim-fade absolute ${className}`} style={{ ["--wcu-d" as string]: delay }}>
-      {children}
-    </div>
-  );
-}
-
-function fragShell(isDark: boolean): CSSProperties {
-  return {
-    borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(90,60,30,0.12)",
-    background: isDark ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.72)",
-    boxShadow: isDark
-      ? "0 10px 26px rgba(0,0,0,0.28)"
-      : "0 10px 26px rgba(120,90,60,0.10)",
-  };
-}
-
-function FragVideo({ isDark, ink, muted }: { isDark: boolean; ink: string; muted: string }) {
-  return (
-    <Frag className="end-[4%] top-[16%]" delay="0.42s">
-      <div className="wcu-frag-card flex items-center gap-2.5 rounded-2xl border px-3 py-2.5" style={fragShell(isDark)}>
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: PRIMARY, boxShadow: "0 6px 14px rgba(0,0,0,0.16)" }}
-        >
-          <Play className="h-4 w-4" style={{ color: "var(--brand-primary-contrast)" }} aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <div className="text-[9px] font-bold tracking-[0.14em]" style={{ color: muted }}>
-            شرح مرئي
-          </div>
-          <div className="whitespace-nowrap text-xs font-extrabold" style={{ color: ink }}>
-            شروحات الفيديو
-          </div>
-        </div>
-        <span
-          className="rounded-full px-2 py-0.5 text-[8px] font-extrabold"
-          style={{ background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", color: PRIMARY }}
-        >
-          جودة عالية
-        </span>
-      </div>
-    </Frag>
-  );
-}
-
-function FragParents({ isDark, ink, muted }: { isDark: boolean; ink: string; muted: string }) {
-  return (
-    <Frag className="start-[4%] top-[19%]" delay="0.5s">
-      <div className="wcu-frag-card flex items-center gap-2.5 rounded-2xl border px-3 py-2.5" style={fragShell(isDark)}>
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: SECONDARY, boxShadow: "0 6px 14px rgba(0,0,0,0.14)" }}
-        >
-          <Bell className="h-4 w-4" style={{ color: "var(--brand-secondary-contrast)" }} aria-hidden="true" />
-        </span>
-        <div>
-          <div className="text-[9px] font-bold tracking-[0.14em]" style={{ color: muted }}>
-            متابعة دائمة
-          </div>
-          <div className="whitespace-nowrap text-xs font-extrabold" style={{ color: ink }}>
-            أولياء الأمور
-          </div>
-        </div>
-        <span className="relative ms-1 flex h-2.5 w-2.5 items-center justify-center">
-          <span className="absolute h-2.5 w-2.5 rounded-full border" style={{ borderColor: SECONDARY, opacity: 0.5 }} />
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: PRIMARY }} />
-        </span>
-      </div>
-    </Frag>
-  );
-}
-
-function FragPractice({ isDark, ink, muted }: { isDark: boolean; ink: string; muted: string }) {
-  const items = [
-    { label: "تمارين تدريجية", done: true },
-    { label: "اختبار قصير", done: true },
-    { label: "مراجعة نهائية", done: false },
-  ];
-  return (
-    <Frag className="bottom-[13%] end-[6%]" delay="0.58s">
-      <div className="wcu-frag-card w-48 rounded-2xl border px-3 py-2.5" style={fragShell(isDark)}>
-        <div className="flex items-center gap-2">
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: SECONDARY, boxShadow: "0 5px 12px rgba(0,0,0,0.14)" }}
-          >
-            <ClipboardCheck className="h-3.5 w-3.5" style={{ color: "var(--brand-secondary-contrast)" }} aria-hidden="true" />
-          </span>
-          <span className="text-[10px] font-extrabold" style={{ color: ink }}>
-            تمارين وتدريب
-          </span>
-        </div>
-        <ul className="mt-2 space-y-1.5">
-          {items.map((it) => (
-            <li key={it.label} className="flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: muted }}>
-              <span
-                className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[5px] border"
-                style={
-                  it.done
-                    ? { background: PRIMARY, borderColor: PRIMARY }
-                    : { borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)" }
-                }
-              >
-                {it.done ? (
-                  <Check className="h-2.5 w-2.5" style={{ color: "var(--brand-primary-contrast)" }} aria-hidden="true" />
-                ) : null}
-              </span>
-              {it.label}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Frag>
-  );
-}
-
-function FragUpdate({ isDark, ink, muted }: { isDark: boolean; ink: string; muted: string }) {
-  return (
-    <Frag className="bottom-[17%] start-[6%]" delay="0.66s">
-      <div className="wcu-frag-card flex items-center gap-2.5 rounded-2xl border px-3 py-2.5" style={fragShell(isDark)}>
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: PRIMARY, boxShadow: "0 6px 14px rgba(0,0,0,0.16)" }}
-        >
-          <RefreshCw className="h-4 w-4" style={{ color: "var(--brand-primary-contrast)" }} aria-hidden="true" />
-        </span>
-        <div>
-          <div className="text-[9px] font-bold tracking-[0.14em]" style={{ color: muted }}>
-            محتوى متجدد
-          </div>
-          <div className="whitespace-nowrap text-xs font-extrabold" style={{ color: ink }}>
-            تحديث المناهج
-          </div>
-        </div>
-        <span className="flex gap-0.5" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="h-1 w-1 rounded-full" style={{ background: SECONDARY }} />
-          ))}
-        </span>
-      </div>
-    </Frag>
-  );
-}
-
-/* ───────────────────────────────────────
-   The core ecosystem panel (desktop).
-   Decorative — real content lives in the
-   features rail, so the panel is aria-hidden.
-   ─────────────────────────────────────── */
-function CorePanel({ isDark, ink, muted }: { isDark: boolean; ink: string; muted: string }) {
+function Node({ f, index, isDark }: { f: DisplayFeature; index: number; isDark: boolean }) {
+  const Ill = illMap[f.ill]!;
+  const accent = index % 2 === 0 ? primary : secondary;
   return (
     <div
-      className="wcu-anim-fade relative aspect-[16/11] w-full overflow-hidden rounded-[1.75rem] border"
-      style={{
-        borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(90,60,30,0.12)",
-        background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)",
-        boxShadow: isDark
-          ? "0 28px 70px rgba(0,0,0,0.28)"
-          : "0 28px 70px rgba(120,90,60,0.09)",
-        ["--wcu-d" as string]: "0.18s",
-      }}
-      aria-hidden="true"
+      className="wc-reveal absolute z-20"
+      style={{ left: `${f.x}%`, top: `${f.y}%`, ["--wc-delay" as string]: `${0.8 + index * 0.12}s` }}
     >
-      {/* inner dot texture */}
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 0.5px, transparent 0.5px)`,
-          backgroundSize: "22px 22px",
-          opacity: isDark ? 0.045 : 0.05,
-        }}
-      />
+        className="relative"
+        style={{ transform: "translate(-50%,-50%)" }}
+      >
+        <div>
+          {/* glow */}
+          <div className="pointer-events-none absolute -inset-4 rounded-full" style={{ background: `${accent}1f` }} />
+          {/* badge */}
+          <div
+            className="relative flex h-14 w-14 items-center justify-center rounded-full sm:h-16 sm:w-16"
+            style={{
+              background: isDark ? "rgba(255,255,255,0.05)" : "#fff",
+              border: `2px solid ${accent}`,
+              boxShadow: `0 12px 30px ${accent}28`,
+            }}
+          >
+            <div className="h-8 w-8 text-primary sm:h-9 sm:w-9"><Ill /></div>
+          </div>
+        </div>
 
-      {/* top micro header */}
-      <div className="absolute start-[7%] top-[7%] flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full" style={{ background: PRIMARY }} />
-        <span className="text-[10px] font-extrabold tracking-[0.18em]" style={{ color: ink }}>
-          المنظومة
-        </span>
-        <span
-          className="rounded-full px-2 py-0.5 text-[8px] font-extrabold"
-          style={{ background: SECONDARY, color: "var(--brand-secondary-contrast)" }}
-        >
-          متصلة
-        </span>
+        {/* centered label below */}
+        <div className="absolute left-1/2 top-[calc(100%+16px)] w-[clamp(150px,17vw,220px)] -translate-x-1/2 px-1 text-center">
+          <div className="mb-1 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
+          <h3 className="text-[12px] font-bold leading-snug sm:text-[13px] lg:text-sm" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
+          <p className="mx-auto mt-1 max-w-[190px] text-[10.5px] leading-relaxed sm:text-[11px] lg:text-xs" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────
+    Responsive cards (phones → tablets, < lg)
+    ─────────────────────────────────────── */
+function CardsGrid({ isDark, features }: { isDark: boolean; features: DisplayFeature[] }) {
+  return (
+    <div className="mx-auto max-w-6xl px-4 lg:hidden">
+      {/* hub */}
+      <div className="relative mb-7 flex h-24 items-center justify-center sm:mb-9 sm:h-28">
+        <svg viewBox="0 0 200 110" className="h-full w-36 sm:w-40" fill="none">
+          <defs>
+            <radialGradient id="mHub" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={secondary} />
+              <stop offset="100%" stopColor={primary} />
+            </radialGradient>
+          </defs>
+          <circle cx="100" cy="55" r="34" fill="url(#mHub)" />
+          <text x="100" y="52" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff">منظومة</text>
+          <text x="100" y="66" textAnchor="middle" fontSize="8" fontWeight="600" fill="#fff" opacity="0.85">المعرفة</text>
+          {[
+            [50, 30], [100, 22], [150, 30], [50, 84], [150, 84],
+          ].map(([x, y], i) => (
+            <line key={i} x1="100" y1="55" x2={x} y2={y} stroke={primary} strokeWidth="1" strokeOpacity="0.4" strokeDasharray="3 4" />
+          ))}
+        </svg>
       </div>
 
-      {/* connectors */}
-      <svg
-        className="absolute inset-0 h-full w-full"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        style={{ color: PRIMARY }}
-      >
-        <path d="M67 40 Q 75 27 83 16" stroke="currentColor" strokeWidth="1" strokeDasharray="1.7 2.1" fill="none" vectorEffect="non-scaling-stroke" opacity="0.32" />
-        <path d="M33 41 Q 25 28 17 17" stroke="currentColor" strokeWidth="1" strokeDasharray="1.7 2.1" fill="none" vectorEffect="non-scaling-stroke" opacity="0.32" />
-        <path d="M67 60 Q 75 74 82 86" stroke="currentColor" strokeWidth="1" strokeDasharray="1.7 2.1" fill="none" vectorEffect="non-scaling-stroke" opacity="0.32" />
-        <path d="M33 59 Q 25 73 18 86" stroke="currentColor" strokeWidth="1" strokeDasharray="1.7 2.1" fill="none" vectorEffect="non-scaling-stroke" opacity="0.32" />
-        <circle cx="83" cy="16" r="1.1" fill="currentColor" opacity="0.6" />
-        <circle cx="17" cy="17" r="1.1" fill="currentColor" opacity="0.6" />
-        <circle cx="82" cy="86" r="1.1" fill="currentColor" opacity="0.6" />
-        <circle cx="18" cy="86" r="1.1" fill="currentColor" opacity="0.6" />
+      {/* responsive grid: 1 col on phones, 2 cols on small tablets/tablets */}
+      <div className="relative z-10 grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
+        {features.map((f: DisplayFeature, i) => {
+          const Ill = illMap[f.ill]!;
+          const accent = i % 2 === 0 ? primary : secondary;
+          return (
+            <div
+              key={f.num}
+              className="wc-reveal flex items-start gap-3 rounded-2xl border p-3.5 sm:gap-3.5 sm:p-4"
+              style={{
+                background: isDark ? "rgba(18,18,26,0.82)" : "rgba(255,255,255,0.88)",
+                borderColor: `${accent}1a`,
+                boxShadow: `0 6px 18px rgba(0,0,0,${isDark ? "0.3" : "0.05"})`,
+                ["--wc-delay" as string]: `${0.3 + i * 0.1}s`,
+              }}
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "#fff", border: `2px solid ${accent}` }}>
+                <div className="h-6 w-6 text-primary sm:h-7 sm:w-7"><Ill /></div>
+              </div>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="mb-0.5 text-[11px] font-extrabold" style={{ color: accent }}>{f.num}</div>
+                <h3 className="text-sm font-bold leading-snug sm:text-[15px]" style={{ color: isDark ? "#F5F1EC" : "#1a1a1a" }}>{f.title}</h3>
+                <p className="mt-0.5 text-xs leading-relaxed sm:text-[13px]" style={{ color: isDark ? "#9C948A" : "#666" }}>{f.desc}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────
+   Background decoration (edges / fill) — fully static
+   ─────────────────────────────────────── */
+function Plus({ color }: { color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M7 1 V13 M1 7 H13" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BackgroundDecor({ isDark }: { isDark: boolean }) {
+  const dot = isDark ? "rgba(255,255,255,0.05)" : "rgba(120,90,60,0.06)";
+  const ring = isDark ? "rgba(255,255,255,0.07)" : "rgba(120,90,60,0.06)";
+  const plus = isDark ? "rgba(255,255,255,0.14)" : "rgba(120,90,60,0.12)";
+  const plusPos = [
+    [11, 16], [87, 11], [5, 58], [93, 66], [16, 90], [82, 92], [50, 6], [50, 95],
+  ];
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+      {/* dot grid */}
+      <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="oDots" width="34" height="34" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.2" fill={dot} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#oDots)" />
       </svg>
 
-      {/* ring core */}
-      <div className="absolute left-1/2 top-1/2 w-[44%] -translate-x-1/2 -translate-y-1/2">
-        <MasteryRing delay="0.28s" />
-      </div>
+      {/* faint large rings at edges */}
+      <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full border" style={{ borderColor: ring }} />
+      <div className="absolute -right-28 -bottom-28 h-96 w-96 rounded-full border" style={{ borderColor: ring }} />
+      <div className="absolute -right-16 top-1/3 h-44 w-44 rounded-full border" style={{ borderColor: ring }} />
+      <div className="absolute -left-20 bottom-1/4 h-52 w-52 rounded-full border" style={{ borderColor: ring }} />
 
-      {/* fragments */}
-      <FragVideo isDark={isDark} ink={ink} muted={muted} />
-      <FragParents isDark={isDark} ink={ink} muted={muted} />
-      <FragPractice isDark={isDark} ink={ink} muted={muted} />
-      <FragUpdate isDark={isDark} ink={ink} muted={muted} />
-    </div>
-  );
-}
-
-/* ───────────────────────────────────────
-   Journey ribbon — the student's path,
-   anchored under the composition.
-   ─────────────────────────────────────── */
-const JOURNEY = [
-  { n: "01", label: "تعلّم", sub: "شاهد وافهم" },
-  { n: "02", label: "تدرّب", sub: "طبّق وتمرّن" },
-  { n: "03", label: "تقدّم", sub: "قِس تحسّنك" },
-  { n: "04", label: "إنجاز", sub: "احتفل بنجاحك" },
-  { n: "05", label: "مجتمع", sub: "شارك وتواصل" },
-];
-
-function JourneyRibbon({ isDark, ink, muted, hairline }: { isDark: boolean; ink: string; muted: string; hairline: string }) {
-  return (
-    <div className="relative mt-12 sm:mt-16 lg:mt-20">
-      <div className="wcu-scroll -mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-        <ol className="relative flex min-w-max items-center sm:min-w-0">
-          <span
-            className="wcu-ribbon-line absolute inset-x-0 top-[13px] h-px"
-            style={{ background: hairline, ["--wcu-d" as string]: "0.3s" }}
-            aria-hidden="true"
-          />
-          {JOURNEY.map((s, i) => (
-            <li
-              key={s.n}
-              className="wcu-anim-fade relative flex min-w-[104px] flex-1 flex-col items-center"
-              style={{ ["--wcu-d" as string]: `${0.38 + i * 0.07}s` }}
-            >
-              <span
-                className="relative z-10 flex h-[27px] w-[27px] items-center justify-center rounded-full border-2"
-                style={
-                  i === 2
-                    ? { borderColor: SECONDARY, background: SECONDARY, boxShadow: "0 6px 14px rgba(0,0,0,0.18)" }
-                    : { borderColor: hairline, background: isDark ? "#16121c" : "#f7f1e7" }
-                }
-              >
-                {i === 2 ? (
-                  <Check className="h-3.5 w-3.5" style={{ color: "var(--brand-secondary-contrast)" }} aria-hidden="true" />
-                ) : (
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: i % 2 === 0 ? PRIMARY : SECONDARY }} />
-                )}
-              </span>
-              <span className="mt-2 text-[10px] font-extrabold tabular-nums" style={{ color: muted }}>
-                {s.n}
-              </span>
-              <span className="mt-0.5 text-sm font-extrabold" style={{ color: ink }}>
-                {s.label}
-              </span>
-              <span className="mt-0.5 text-[10px] font-semibold" style={{ color: muted }}>
-                {s.sub}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="mt-2 flex items-center justify-center gap-3">
-        <span className="h-px w-8" style={{ background: hairline }} aria-hidden="true" />
-        <span className="text-[10px] font-extrabold tracking-[0.22em]" style={{ color: muted }}>
-          رحلة الطالب
+      {/* plus marks */}
+      {plusPos.map(([x, y], i) => (
+        <span key={i} className="absolute" style={{ left: `${x}%`, top: `${y}%`, color: plus }}>
+          <Plus color={plus} />
         </span>
-        <span className="h-px w-8" style={{ background: hairline }} aria-hidden="true" />
-      </div>
+      ))}
     </div>
   );
 }
 
 /* ───────────────────────────────────────
-   Main — an editorial "learning ecosystem"
-   spread: reading side + journey rail on the
-   start column, mastery-ring core panel on
-   the end column, student-path ribbon below.
+   Main
    ─────────────────────────────────────── */
 export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings }) {
   const theme = useUiStore((s) => s.theme);
@@ -526,236 +347,49 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
   const src = settings ?? data ?? DEFAULT_WHY_CHOOSE_US;
 
   const title = src.title?.trim() || "لماذا تختارنا؟";
-  const subtitle = src.subtitle?.trim() || DEFAULT_WHY_CHOOSE_US.subtitle;
+  const subtitle =
+    src.subtitle?.trim() ||
+    "من قلب المنظومة تشعّ كل ميزة — نظام متصل يحيط طالبك بكل ما يحتاجه للنجاح";
   const features = buildFeatures(src);
 
   if (src.isActive === false) return null;
 
-  const ink = isDark ? "#F2EDE6" : "#211B14";
-  const muted = isDark ? "#A79E92" : "#6E665C";
-  const hairline = isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)";
-
   return (
-    <section
-      ref={ref}
-      dir="rtl"
-      aria-labelledby="wcu-title"
-      className={`section-lazy wcu-scene relative w-full overflow-hidden py-14 sm:py-20 lg:py-24${inView ? " wcu-in-view" : ""}`}
-      style={{
-        background: isDark
-          ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
-          : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
-        ["--wcu-ink" as string]: ink,
-        ["--wcu-muted" as string]: muted,
-        ["--wcu-hairline" as string]: hairline,
-        ["--wcu-chip-bg" as string]: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)",
-        ["--wcu-mod-hover" as string]: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.4)",
-      }}
-    >
-      {/* ruled-paper + dot-grid texture */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage: isDark
-            ? `repeating-linear-gradient(to bottom, rgba(255,255,255,0.022) 0, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(255,255,255,0.035) 0.6px, transparent 0.6px)`
-            : `repeating-linear-gradient(to bottom, rgba(120,80,40,0.03) 0, rgba(120,80,40,0.03) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(120,80,40,0.05) 0.6px, transparent 0.6px)`,
-          backgroundSize: "100% 100%, 26px 26px",
-        }}
-      />
+    <section ref={ref} dir="rtl" className={`section-lazy relative w-full overflow-hidden py-12 sm:py-16 lg:py-24${inView ? " wc-in-view" : ""}`}>
+      <IllDefs />
+      <div className="absolute inset-0" style={{ background: isDark ? "radial-gradient(ellipse at 50% 40%, #15131C 0%, #100E16 45%, #0C0A12 100%)" : "radial-gradient(ellipse at 50% 40%, #FBF6F0 0%, #F6EFE6 45%, #F0E8DC 100%)" }} />
+      <div className="pointer-events-none absolute -start-10 top-10 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${primary}0c, transparent 70%)` }} />
+      <div className="pointer-events-none absolute -end-10 bottom-0 h-72 w-72 rounded-full blur-3xl" style={{ background: `radial-gradient(circle, ${secondary}0a, transparent 70%)` }} />
 
-      {/* marginal annotations (desktop only) */}
-      <span
-        aria-hidden="true"
-        className="wcu-anim-fade absolute start-[1.5%] top-[34%] hidden items-center gap-2 lg:flex"
-        style={{ writingMode: "vertical-rl", color: muted, ["--wcu-d" as string]: "0.5s" }}
-      >
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: SECONDARY }} />
-        <span className="text-[9px] font-extrabold tracking-[0.3em]">منظومة الطالب الكاملة</span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="wcu-anim-fade absolute bottom-[16%] end-[1.5%] hidden items-center gap-2 lg:flex"
-        style={{ writingMode: "vertical-rl", color: muted, ["--wcu-d" as string]: "0.55s" }}
-      >
-        <span className="text-[9px] font-extrabold tracking-[0.3em]">تعلّم · تدرّب · تقدّم</span>
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: PRIMARY }} />
-      </span>
+      {/* background decoration */}
+      <BackgroundDecor isDark={isDark} />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* ── Editorial header spread ── */}
-        <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12">
-          {/* Reading side */}
-          <div className="max-w-2xl">
-            <div className="wcu-anim-rise flex items-center gap-2.5" style={{ ["--wcu-d" as string]: "0s" }}>
-              <span className="h-[3px] w-7 rounded-full" style={{ background: SECONDARY }} />
-              <span className="text-xs font-bold tracking-[0.18em]" style={{ color: PRIMARY }}>
-                المنظومة المتكاملة
-              </span>
-              {/* mobile counter chip */}
-              <span
-                className="ms-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold tabular-nums lg:hidden"
-                style={{ color: PRIMARY, borderColor: hairline, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)" }}
-              >
-                {pad(features.length)}
-                <span className="font-bold" style={{ color: muted }}>
-                  أسباب متكاملة
-                </span>
-              </span>
-            </div>
-
-            <h2
-              id="wcu-title"
-              className="wcu-anim-rise mt-4 text-3xl font-extrabold leading-[1.3] text-balance sm:text-4xl lg:text-[2.75rem]"
-              style={{ color: ink, ["--wcu-d" as string]: "0.06s" }}
-            >
-              {title}
-            </h2>
-
-            <p
-              className="wcu-anim-rise mt-6 border-s-2 ps-5 text-sm leading-loose sm:text-base lg:text-lg"
-              style={{ color: muted, borderColor: PRIMARY, ["--wcu-d" as string]: "0.12s" }}
-            >
-              {subtitle}
-            </p>
-
-            <div className="wcu-anim-rise mt-8" style={{ ["--wcu-d" as string]: "0.18s" }}>
-              <a
-                href="#educational-stages"
-                className="group inline-flex items-center gap-2.5 rounded-full py-1.5 pe-1.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2"
-                style={{ color: PRIMARY }}
-              >
-                استكشف المراحل
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--brand-primary-contrast)] transition-transform duration-300 group-hover:scale-110"
-                  style={{ background: PRIMARY, boxShadow: "0 6px 16px rgba(0,0,0,0.16)" }}
-                >
-                  <ArrowLeft
-                    aria-hidden="true"
-                    className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5"
-                  />
-                </span>
-              </a>
-            </div>
-          </div>
-
-          {/* Counter anchor — real feature count, editorial ledger styling */}
-          <div className="wcu-anim-rise hidden lg:block" style={{ ["--wcu-d" as string]: "0.1s" }}>
-            <div className="border-s-2 ps-5" style={{ borderColor: PRIMARY }}>
-              <span className="block text-5xl font-extrabold leading-none tabular-nums" style={{ color: PRIMARY }}>
-                {pad(features.length)}
-              </span>
-              <span className="mt-2 block text-xs font-bold" style={{ color: ink }}>
-                أسباب تختارنا
-              </span>
-              <span className="mt-1 block max-w-[190px] text-[11px] leading-relaxed" style={{ color: muted }}>
-                منظومة واحدة متكاملة تغطي رحلة الطالب كاملة
-              </span>
-            </div>
-          </div>
+      {/* title */}
+      <div className="relative z-30 mx-auto mb-6 max-w-2xl px-4 text-center sm:mb-8">
+        <div className="wc-reveal" style={{ ["--wc-delay" as string]: "0s" }}>
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold sm:text-sm" style={{ background: isDark ? `linear-gradient(135deg, ${primary}18, ${secondary}10)` : `linear-gradient(135deg, ${primary}12, ${secondary}08)`, color: primary, border: `1px solid ${primary}22` }}>{title}</span>
         </div>
-
-        {/* ── Mobile / tablet ring motif ── */}
-        <div
-          className="wcu-anim-fade mx-auto mt-10 flex w-fit flex-col items-center gap-3 lg:hidden"
-          style={{ ["--wcu-d" as string]: "0.15s" }}
-        >
-          <div className="w-44 sm:w-52">
-            <MasteryRing delay="0.2s" />
-          </div>
-          <p className="text-[11px] font-bold tracking-wide" style={{ color: muted }}>
-            كل ميزة مرتبطة بمسار نجاح الطالب
-          </p>
-        </div>
-
-        {/* ── Main composition: journey rail + ecosystem panel ── */}
-        <div className="mt-10 grid items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:gap-12">
-          {/* The reasons as an editorial numbered index */}
-          {features.length > 0 ? (
-            <div className="wcu-rail relative mx-auto w-full max-w-2xl lg:mx-0 lg:max-w-none">
-              <span
-                aria-hidden="true"
-                className="wcu-spine absolute bottom-0 top-0 start-[6px] w-px sm:start-[7px]"
-                style={{
-                  background:
-                    "linear-gradient(to bottom, color-mix(in srgb, var(--brand-secondary) 45%, transparent), color-mix(in srgb, var(--brand-primary) 45%, transparent))",
-                  ["--wcu-d" as string]: "0.15s",
-                }}
-              />
-              <ol className="relative">
-                {features.map((f, i) => (
-                  <li
-                    key={`${f.num}-${i}`}
-                    className="wcu-mod wcu-anim-rise relative flex items-start gap-3 py-4 ps-6 sm:gap-4 sm:py-5 sm:ps-8"
-                    style={{ ["--wcu-d" as string]: `${0.14 + i * 0.06}s` }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute start-0 top-[30px] h-px w-5 sm:w-7"
-                      style={{ background: hairline }}
-                    />
-                    <span
-                      className="wcu-mod-num mt-0.5 w-7 shrink-0 text-sm font-extrabold tabular-nums sm:text-base"
-                      style={{ color: muted }}
-                    >
-                      {f.num}
-                    </span>
-
-                    <span
-                      className="wcu-mod-ill flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border sm:h-11 sm:w-11"
-                      style={{ borderColor: hairline, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.55)" }}
-                    >
-                      <span className="h-5 w-5 opacity-90 sm:h-6 sm:w-6">
-                        <FeatureIll ill={f.ill} />
-                      </span>
-                    </span>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="wcu-mod-title text-[15px] font-extrabold leading-snug sm:text-base" style={{ color: ink }}>
-                          {f.title}
-                        </h3>
-                        <span
-                          className="mt-0.5 hidden shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9px] font-extrabold sm:inline-flex"
-                          style={{ color: ink, borderColor: hairline, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.5)" }}
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: i % 2 === 0 ? PRIMARY : SECONDARY }} />
-                          {MOD_STATUS[i % MOD_STATUS.length]}
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed sm:text-sm" style={{ color: muted }}>
-                        {f.desc}
-                      </p>
-                      <div className="mt-2.5 flex items-center gap-1" aria-hidden="true">
-                        {Array.from({ length: 5 }).map((_, s) => (
-                          <span
-                            key={s}
-                            className="wcu-seg h-[3px] w-6 rounded-full sm:w-8"
-                            style={{
-                              background: s === 4
-                                ? "color-mix(in srgb, var(--brand-secondary) 62%, transparent)"
-                                : "color-mix(in srgb, var(--brand-primary) 62%, transparent)",
-                              ["--wcu-d" as string]: `${(0.2 + i * 0.06 + s * 0.05).toFixed(2)}s`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          ) : null}
-
-          {/* The ecosystem panel (desktop) */}
-          <div className="hidden lg:block">
-            <CorePanel isDark={isDark} ink={ink} muted={muted} />
-          </div>
-        </div>
-
-        {/* ── Journey ribbon ── */}
-        <JourneyRibbon isDark={isDark} ink={ink} muted={muted} hairline={hairline} />
+        <p className="wc-reveal mx-auto mt-4 max-w-lg text-sm leading-relaxed sm:text-base" style={{ color: isDark ? "#9C948A" : "#666", ["--wc-delay" as string]: "0.16s" }}>
+          {subtitle}
+        </p>
       </div>
+
+      {/* desktop orbit */}
+      <div className="relative z-10 mx-auto hidden max-w-6xl px-4 lg:block">
+        <div className="relative mx-auto aspect-[10/7] w-full">
+          <div className="relative h-full w-full">
+            <Connectors isDark={isDark} features={features} />
+            {features.map((f, i) => (
+              <Node key={f.num} f={f} index={i} isDark={isDark} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* phones & tablets (< lg) */}
+      <CardsGrid isDark={isDark} features={features} />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28" style={{ background: isDark ? "linear-gradient(to top, #0C0A12, transparent)" : "linear-gradient(to top, #F0E8DC, transparent)" }} />
     </section>
   );
 }

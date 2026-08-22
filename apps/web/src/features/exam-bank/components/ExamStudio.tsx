@@ -13,7 +13,6 @@ import {
   Settings,
   Star,
   Trash2,
-  FilePlus2,
 } from "lucide-react";
 import { ChevronStartIcon } from "@/components/ui/icons";
 import { PermissionGuard } from "@/components/ui";
@@ -355,14 +354,6 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
                 <Trash2 className="h-4 w-4" />
               </StudioButton>
             </PermissionGuard>
-            <StudioButton
-              variant="ghost"
-              size="sm"
-              icon={<FilePlus2 className="h-4 w-4" />}
-              onClick={() => store.openCreateQuestion()}
-            >
-              سؤال جديد
-            </StudioButton>
             <StudioButton
               variant="primary"
               size="sm"

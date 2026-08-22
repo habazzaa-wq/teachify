@@ -1,6 +1,5 @@
 import { api } from "@/services/api";
-import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
-import type { PublicCourse, PublicCourseModule, PublicCourseSection, PublicCourseLesson, PublicCourseLessonVideo, PublicCourseLessonFiles, EnrollmentCheck, RelatedCourse } from "./types";
+import type { PublicCourse, PublicCourseModule, PublicCourseSection, PublicCourseLesson, EnrollmentCheck, RelatedCourse } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Raw API responses have untyped shapes
 type Raw = Record<string, any>;
@@ -130,7 +129,6 @@ function formatLesson(raw: Raw): PublicCourseLesson {
     downloadable: raw.downloadable ?? false,
     featured: raw.featured ?? false,
     examId: raw.examId ?? raw.exam_id ?? null,
-    filesCount: raw.filesCount ?? raw.files_count ?? 0,
     publishedAt: raw.publishedAt ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
@@ -184,38 +182,13 @@ export const publicCourseService = {
 
   async checkEnrollment(slug: string): Promise<EnrollmentCheck> {
     try {
-      const json = await tenantStudentFetch<{
-        enrolled?: boolean;
-        enrollment?: EnrollmentCheck["enrollment"];
-      }>(`/public/courses/${slug}/enrollment`);
+      const { data } = await api.get(`/public/courses/${slug}/enrollment`);
       return {
-        enrolled: json.enrolled ?? false,
-        enrollment: json.enrollment ?? null,
+        enrolled: data.enrolled ?? false,
+        enrollment: data.enrollment ?? null,
       };
     } catch {
       return { enrolled: false, enrollment: null };
-    }
-  },
-
-  async getLessonVideo(slug: string, lessonId: string): Promise<PublicCourseLessonVideo | null> {
-    try {
-      const json = await tenantStudentFetch<{ data?: PublicCourseLessonVideo }>(
-        `/public/courses/${slug}/lessons/${lessonId}/video`,
-      );
-      return json.data ?? null;
-    } catch {
-      return null;
-    }
-  },
-
-  async getLessonFiles(slug: string, lessonId: string): Promise<PublicCourseLessonFiles | null> {
-    try {
-      const json = await tenantStudentFetch<{ data?: PublicCourseLessonFiles }>(
-        `/public/courses/${slug}/lessons/${lessonId}/files`,
-      );
-      return json.data ?? null;
-    } catch {
-      return null;
     }
   },
 
@@ -226,19 +199,13 @@ export const publicCourseService = {
     balance: number;
     enrollment: { id: string; status: string } | null;
   }> {
-    const json = await tenantStudentFetch<{
-      message: string;
-      enrolled?: boolean;
-      amount?: number;
-      balance?: number;
-      enrollment?: { id: string; status: string } | null;
-    }>(`/public/courses/${slug}/enroll`, { method: "POST" });
+    const { data } = await api.post(`/public/courses/${slug}/enroll`);
     return {
-      message: json.message,
-      enrolled: json.enrolled ?? true,
-      amount: json.amount ?? 0,
-      balance: json.balance ?? 0,
-      enrollment: json.enrollment ?? null,
+      message: data.message,
+      enrolled: data.enrolled ?? true,
+      amount: data.amount ?? 0,
+      balance: data.balance ?? 0,
+      enrollment: data.enrollment ?? null,
     };
   },
 };

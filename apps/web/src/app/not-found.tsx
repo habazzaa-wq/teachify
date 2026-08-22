@@ -1,12 +1,6 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { AppButton } from "@/components/ui/AppButton";
 import { routes } from "@/constants/routes";
-
-export const metadata: Metadata = {
-  title: "الصفحة غير موجودة",
-  robots: { index: false, follow: false },
-};
 
 export default function NotFound() {
   return (
@@ -20,7 +14,7 @@ export default function NotFound() {
         الصفحة التي تبحث عنها غير متوفرة أو تم نقلها.
       </p>
       <AppButton asChild>
-        <Link href={routes.home}>العودة للرئيسية</Link>
+        <Link href={routes.dashboard}>العودة للرئيسية</Link>
       </AppButton>
     </div>
   );

@@ -1,16 +1,12 @@
 "use client";
 
 import { memo } from "react";
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Moon, Shield, Sun } from "lucide-react";
 import { useTenantStore } from "@/stores/tenant.store";
 import { useUiStore } from "@/stores/ui.store";
 import { env } from "@/config/env";
-
-const LoginForm = dynamic(
-  () => import("./login-form").then((m) => m.LoginForm),
-);
+import { LoginForm } from "./login-form";
 
 const cardVariants = {
   hidden: { opacity: 0, x: 40 },

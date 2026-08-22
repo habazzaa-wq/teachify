@@ -132,7 +132,7 @@ class PublicStudentRegisterController extends Controller
                 'slug' => $permission->slug,
             ])->values(),
             'abilities' => [
-                'can_access_dashboard' => false,
+                'can_access_dashboard' => true,
                 'can_manage_courses' => false,
                 'can_manage_users' => false,
                 'can_manage_settings' => false,

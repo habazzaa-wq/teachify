@@ -75,6 +75,7 @@ export function CreateExamDialog({ open, onOpenChange, onCreated }: CreateExamDi
         duration: duration ? Number(duration) : null,
         passing_score: passingScore ? Number(passingScore) : 60,
         language,
+        status: "draft",
       });
       onOpenChange(false);
       onCreated?.(created);

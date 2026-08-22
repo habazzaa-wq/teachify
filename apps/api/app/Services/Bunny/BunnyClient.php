@@ -49,7 +49,8 @@ class BunnyClient implements BunnyClientInterface
     public function __construct(
         private readonly BunnyExceptionHandler $exceptionHandler,
         private readonly BunnyRetryService $retryService,
-    ) {}
+    ) {
+    }
 
     public function storageRequest(string $method, string $path, array $options = []): array
     {
@@ -70,7 +71,6 @@ class BunnyClient implements BunnyClientInterface
                 'AccessKey' => $settings->storage_zone_password,
             ], $options['headers'] ?? []),
             'body' => $options['body'] ?? null,
-            'json' => $options['json'] ?? null,
             'timeout' => $options['timeout'] ?? self::REQUEST_TIMEOUT,
             'connect_timeout' => $options['connect_timeout'] ?? self::CONNECT_TIMEOUT,
             'service' => 'storage',
@@ -99,7 +99,6 @@ class BunnyClient implements BunnyClientInterface
                 'AccessKey' => $settings->stream_api_key,
             ], $options['headers'] ?? []),
             'body' => $options['body'] ?? null,
-            'json' => $options['json'] ?? null,
             'timeout' => $options['timeout'] ?? self::REQUEST_TIMEOUT,
             'connect_timeout' => $options['connect_timeout'] ?? self::CONNECT_TIMEOUT,
             'service' => 'stream',
@@ -138,7 +137,7 @@ class BunnyClient implements BunnyClientInterface
     }
 
     /**
-     * @param  array<string, mixed>  $options
+     * @param array<string, mixed> $options
      * @return array<string, mixed>
      */
     private function executeRequest(string $method, string $url, array $options): array
@@ -174,24 +173,6 @@ class BunnyClient implements BunnyClientInterface
                 return $this->executeRequest($method, $url, array_merge($options, [
                     'attempt' => $attempt + 1,
                 ]));
-            }
-
-            // Deleting an object that no longer exists is an idempotent success.
-            // Expired Bunny subscriptions often leave a library/storage zone that
-            // returns 404 for every delete, so treat it as already-deleted.
-            if ($response->status() === 404 && ($options['ignore_not_found'] ?? false)) {
-                Log::channel('bunny')->info('Bunny API resource already gone, treated as success', [
-                    'service' => $service,
-                    'operation' => $operation,
-                    'status' => $response->status(),
-                ]);
-
-                return [
-                    'success' => true,
-                    'deleted' => false,
-                    'not_found' => true,
-                    'status' => $response->status(),
-                ];
             }
 
             $this->exceptionHandler->handle($response, $service, $operation);
@@ -245,7 +226,7 @@ class BunnyClient implements BunnyClientInterface
     }
 
     /**
-     * @param  array<string, mixed>  $options
+     * @param array<string, mixed> $options
      */
     private function buildRequest(array $options): PendingRequest
     {
@@ -262,10 +243,7 @@ class BunnyClient implements BunnyClientInterface
         if (isset($options['body']) && is_string($options['body'])) {
             $request = $request->withBody($options['body'], 'application/octet-stream');
         } elseif (isset($options['json'])) {
-            $request = $request->withBody(
-                json_encode($options['json']),
-                'application/json',
-            );
+            $request = $request->json($options['json']);
         }
 
         return $request;

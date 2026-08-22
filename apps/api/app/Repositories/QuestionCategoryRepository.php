@@ -82,8 +82,6 @@ class QuestionCategoryRepository
 
         if ($category) {
             $category->restore();
-            $category->forceFill(['status' => 'published'])->save();
-
             return $category->refresh();
         }
 

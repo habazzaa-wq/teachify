@@ -1,19 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import dynamic from "next/dynamic";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "./ThemeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
 import { TenantProvider } from "./TenantProvider";
-import { TenantFontProvider } from "@/components/layout/TenantFontProvider";
-import { BrandThemeProvider } from "@/components/layout/BrandThemeProvider";
-import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
-
-const Toaster = dynamic(
-  () => import("@/components/system/Toaster").then((m) => m.Toaster),
-  { ssr: false },
-);
 
 function PauseAnimationsWhileScrolling() {
   useEffect(() => {
@@ -60,11 +52,13 @@ export function AppProviders({
         >
           <TenantProvider>
             <PauseAnimationsWhileScrolling />
-            <TenantFontProvider />
-            <BrandThemeProvider />
             {children}
-            <ActiveExamProvider />
-            <Toaster />
+            <Toaster
+              position="top-center"
+              dir="rtl"
+              richColors
+              closeButton
+            />
           </TenantProvider>
         </TenantBootstrapProvider>
       </QueryProvider>

@@ -14,8 +14,8 @@ import { useCreateOnlinePayment, useWallet } from "../hooks";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
 const MIN_AMOUNT = 1;
@@ -115,14 +115,14 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
             className="fixed z-[100] inset-x-0 inset-y-0 m-auto w-[calc(100vw-2rem)] max-w-lg h-fit max-h-[90vh] rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/10 flex flex-col overflow-hidden"
-            style={{ boxShadow: `0 25px 60px -12px rgba(0,0,0,0.145), 0 0 0 1px rgba(0,0,0,0.063)` }}
+            style={{ boxShadow: `0 25px 60px -12px ${primary}25, 0 0 0 1px ${primary}10` }}
             role="dialog"
             aria-modal="true"
             aria-label="شحن المحفظة أونلاين"
           >
             <div
               className="absolute inset-x-0 top-0 h-1 rounded-t-3xl"
-              style={{ background: `var(--brand-primary)` }}
+              style={{ background: `linear-gradient(90deg, ${primary}, ${secondary}, ${primary})` }}
             />
 
             <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1 overflow-y-auto">
@@ -130,8 +130,8 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                 <div
                   className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl"
                   style={{
-                    background: `var(--brand-primary)`,
-                    boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                    background: `linear-gradient(135deg, ${primary}, ${primary}cc)`,
+                    boxShadow: `0 4px 16px ${primary}40`,
                   }}
                 >
                   <CreditCard className="h-6 w-6 text-white" />
@@ -146,7 +146,8 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
               <div
                 className="mb-5 flex items-center justify-between rounded-2xl px-4 py-3"
                 style={{
-                  border: `1px solid var(--brand-secondary)`,
+                  background: `linear-gradient(135deg, ${secondary}18, ${primary}12)`,
+                  border: `1px solid ${secondary}40`,
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -182,8 +183,8 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                           style={
                             selected
                               ? {
-                                  background: `var(--brand-primary)`,
-                                  boxShadow: `0 4px 14px rgba(0,0,0,0.251)`,
+                                  background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                                  boxShadow: `0 4px 14px ${primary}40`,
                                 }
                               : undefined
                           }
@@ -256,8 +257,8 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                     disabled={busy}
                     className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                     style={{
-                      background: `var(--brand-primary)`,
-                      boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                      background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                      boxShadow: `0 4px 16px ${primary}40`,
                     }}
                   >
                     <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />

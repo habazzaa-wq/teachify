@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Course;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
+use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamQuestion;
 use App\Models\Permission;
@@ -235,90 +236,6 @@ class ExamResultReviewTest extends TestCase
         $this->getJson("/api/v1/exam-attempts/{$data['attempt']['id']}/result", $this->tenantHeader($tenant))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['attempt']);
-    }
-
-    public function test_result_reveals_numeric_correct_answers_in_review(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $admin = $this->memberWithRole($tenant, 'admin');
-        $student = $this->memberWithRole($tenant, 'student');
-        [$course, $section, $lesson] = $this->publishedLessonStack($tenant, $admin, 'Session');
-        $this->setCourseAccess($tenant, $admin, $course, 'enrolled_only');
-        $this->enrollStudent($tenant, $admin, $course, $student);
-        $exam = $this->createPublishedExam($tenant, $admin);
-
-        $numeric = $this->createQuestion($tenant, $admin, 'numeric', ['correct' => 9, 'tolerance' => 2]);
-        $this->attachQuestionToExam($tenant, $admin, $exam, $numeric);
-        $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
-
-        Sanctum::actingAs($student->user);
-        $data = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
-            ->assertCreated()
-            ->json('data');
-
-        $this->putJson(
-            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$data['questions'][0]['examQuestionId']}",
-            ['answer' => '10'],
-            $this->tenantHeader($tenant),
-        )->assertOk();
-
-        $this->postJson("/api/v1/exam-sessions/{$data['attempt']['id']}/submit", [], $this->tenantHeader($tenant))->assertOk();
-
-        $result = $this->getJson("/api/v1/exam-attempts/{$data['attempt']['id']}/result", $this->tenantHeader($tenant))
-            ->assertOk()
-            ->json('data');
-
-        $numericItem = collect($result['review'])->firstWhere('type', 'numeric');
-
-        $this->assertSame('10', $numericItem['studentAnswer']);
-        $this->assertSame('9', $numericItem['correctAnswer']);
-        $this->assertSame('correct', $numericItem['status']);
-        $this->assertSame(2, $numericItem['content']['tolerance']);
-        $this->assertSame('9', $numericItem['content']['correct']);
-    }
-
-    public function test_result_reveals_numeric_answer_key_schema_in_review(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $admin = $this->memberWithRole($tenant, 'admin');
-        $student = $this->memberWithRole($tenant, 'student');
-        [$course, $section, $lesson] = $this->publishedLessonStack($tenant, $admin, 'Session');
-        $this->setCourseAccess($tenant, $admin, $course, 'enrolled_only');
-        $this->enrollStudent($tenant, $admin, $course, $student);
-        $exam = $this->createPublishedExam($tenant, $admin);
-
-        $numeric = $this->createQuestion($tenant, $admin, 'numeric', [
-            'answer' => 9,
-            'unit' => 'cm',
-            'tolerance' => 2,
-        ]);
-        $this->attachQuestionToExam($tenant, $admin, $exam, $numeric);
-        $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
-
-        Sanctum::actingAs($student->user);
-        $data = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
-            ->assertCreated()
-            ->json('data');
-
-        $this->putJson(
-            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$data['questions'][0]['examQuestionId']}",
-            ['answer' => '10'],
-            $this->tenantHeader($tenant),
-        )->assertOk();
-
-        $this->postJson("/api/v1/exam-sessions/{$data['attempt']['id']}/submit", [], $this->tenantHeader($tenant))->assertOk();
-
-        $result = $this->getJson("/api/v1/exam-attempts/{$data['attempt']['id']}/result", $this->tenantHeader($tenant))
-            ->assertOk()
-            ->json('data');
-
-        $numericItem = collect($result['review'])->firstWhere('type', 'numeric');
-
-        $this->assertSame('10', $numericItem['studentAnswer']);
-        $this->assertSame('9', $numericItem['correctAnswer']);
-        $this->assertSame('correct', $numericItem['status']);
-        $this->assertSame(2, $numericItem['content']['tolerance']);
-        $this->assertSame('9', $numericItem['content']['correct']);
     }
 
     /**

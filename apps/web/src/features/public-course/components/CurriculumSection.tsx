@@ -7,13 +7,12 @@ import { cn } from "@/lib/cn";
 import { CurriculumModule } from "./CurriculumModule";
 import { SectionHeader } from "./primitives";
 import { getCourseStats, formatDuration } from "../utils";
-import type { PublicCourseLesson, PublicCourseModule } from "../types";
+import type { PublicCourseModule } from "../types";
 
 interface CurriculumSectionProps {
   modules: PublicCourseModule[];
   isEnrolled: boolean;
   onLockedClick: () => void;
-  onPlay: (lesson: PublicCourseLesson) => void;
 }
 
 function filterModules(
@@ -51,7 +50,6 @@ function CurriculumSectionInner({
   modules,
   isEnrolled,
   onLockedClick,
-  onPlay,
 }: CurriculumSectionProps) {
   const prefersReducedMotion = useReducedMotion();
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,18 +138,18 @@ function CurriculumSectionInner({
       {/* Stats chips */}
       <motion.div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-          <Layers className="h-4 w-4 text-[var(--brand-primary)]" />
+          <Layers className="h-4 w-4 text-[#BF6D58]" />
           <b className="tabular-nums text-foreground">{stats.sections}</b>
           {stats.sections === 1 ? "قسم" : "أقسام"}
         </span>
         <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-          <GraduationCap className="h-4 w-4 text-[var(--brand-primary)]" />
+          <GraduationCap className="h-4 w-4 text-[#BF6D58]" />
           <b className="tabular-nums text-foreground">{stats.lessons}</b>
           {stats.lessons === 1 ? "درس" : "درسًا"}
         </span>
         {stats.duration > 0 && (
           <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/80">
-            <Clock className="h-4 w-4 text-[var(--brand-primary)]" />
+            <Clock className="h-4 w-4 text-[#BF6D58]" />
             <b className="tabular-nums text-foreground">{formatDuration(stats.duration)}</b>
             مدة التعلم
           </span>
@@ -172,8 +170,8 @@ function CurriculumSectionInner({
             className={cn(
               "flex h-10 w-full rounded-xl border bg-card/60 px-4 py-2 pe-10 ps-3 text-sm text-foreground",
               "border-border/50 placeholder:text-muted-foreground/40",
-              "transition-all duration-200 focus-visible:border-[var(--brand-primary)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
+              "transition-all duration-200 focus-visible:border-[#BF6D58]/40",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
             )}
           />
         </div>
@@ -184,8 +182,8 @@ function CurriculumSectionInner({
           aria-label={allExpanded ? "طي الكل" : "توسيع الكل"}
           className={cn(
             "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all duration-200",
-            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
+            "border-border/50 bg-card/60 text-muted-foreground/80 hover:border-[#BF6D58]/30 hover:text-[#BF6D58]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/25",
           )}
         >
           {allExpanded ? (
@@ -211,7 +209,6 @@ function CurriculumSectionInner({
               module={mod}
               isEnrolled={isEnrolled}
               onLockedClick={onLockedClick}
-              onPlay={onPlay}
               isExpanded={searchActive || expandedModules.has(mod.id)}
               onToggle={() => toggleModule(mod.id)}
               expandedSections={expandedSections}
