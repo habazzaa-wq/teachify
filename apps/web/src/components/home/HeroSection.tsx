@@ -316,7 +316,7 @@ export function HeroSection() {
       <HeroBackground isDark={isDark} />
 
       {/* ── Content ── */}
-      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-12 pb-8 sm:pt-16 sm:pb-12 lg:pt-20">
+      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-4 pb-8 sm:pt-8 sm:pb-12 lg:pt-10">
 
         {/* ── Floating badge pills ── */}
         {hero?.badge2Text && (
@@ -408,19 +408,9 @@ export function HeroSection() {
           })()}
         </h1>
 
-        {/* ── Accent divider ── */}
-        <div
-          className="home-enter-up mx-auto mb-5 h-1 w-16 rounded-full sm:mb-6 sm:w-20"
-          style={{
-            background: "linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))",
-            animationDelay: "0.1s",
-          }}
-          aria-hidden="true"
-        />
-
         {hero?.subtitle && (
           <p
-            className="home-enter-up mb-9 max-w-xl text-center text-base font-medium leading-7 text-muted-foreground sm:text-lg sm:leading-8 sm:mb-10 lg:text-xl lg:leading-9"
+            className="home-enter-up mb-6 max-w-2xl text-center text-3xl font-bold leading-snug tracking-tight text-[var(--brand-secondary)] sm:mb-8 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
             style={{ fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
           >
             {hero.subtitle}
@@ -428,7 +418,7 @@ export function HeroSection() {
         )}
 
         {/* ── Profile circle wrapper: 340×340 ── */}
-        <div className="home-enter-pop-soft relative mx-auto h-[340px] w-[340px]" style={{ animationDelay: "0.25s" }}>
+        <div className="home-enter-pop-soft relative mx-auto -mt-2 h-[340px] w-[340px] sm:-mt-4" style={{ animationDelay: "0.25s" }}>
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
             {heroImage ? (
