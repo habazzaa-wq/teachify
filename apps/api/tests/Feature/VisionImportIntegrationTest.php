@@ -537,7 +537,7 @@ class VisionImportIntegrationTest extends TestCase
         Storage::fake(ImportFileStorage::DISK);
         [$tenant, $admin] = $this->tenantWithAdmin();
         $import = $this->makeImport($tenant, $admin, $this->pngBytes(), 'auto', QuestionImport::STATUS_FAILED);
-        Storage::disk(ImportFileStorage::DISK)->delete("question-imports/{$tenant->id}/{$import->uuid}.bin");
+        app(ImportFileStorage::class)->delete($import);
         Sanctum::actingAs($admin->user);
         $this->postJson("/api/v1/exam-bank/question-imports/{$import->uuid}/retry", [], $this->tenantHeader($tenant))->assertStatus(422);
     }
@@ -590,7 +590,7 @@ class VisionImportIntegrationTest extends TestCase
             'requested_mode' => $mode,
             'source' => ['original_name' => 'page.png', 'mime' => 'image/png', 'size' => strlen($bytes)],
         ]);
-        app(ImportFileStorage::class)->store($tenant->id, $imp->uuid, $bytes);
+        app(ImportFileStorage::class)->store($imp, $bytes);
         return $imp;
     }
 
