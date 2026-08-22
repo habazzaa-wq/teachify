@@ -256,7 +256,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
                   </motion.div>
                   <h3 className="text-lg font-bold text-foreground">تم تسجيل الدخول بنجاح!</h3>
                   <p className="mt-2 text-sm text-muted-foreground/60 text-center">
-                    جارٍ تحويلك للصفحة الرئيسية...
+                    جارٍ تحويلك إلى لوحة تحكم الطالب...
                   </p>
                 </motion.div>
               ) : (
