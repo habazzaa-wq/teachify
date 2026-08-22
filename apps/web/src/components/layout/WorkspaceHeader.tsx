@@ -137,6 +137,8 @@ export function WorkspaceHeader() {
               router.push("/teacher/profile");
             } else if (item.value === "settings") {
               router.push("/teacher/settings");
+            } else if (item.value === "dashboard") {
+              router.push("/student/dashboard");
             } else if (item.value === "logout") {
               logout.mutate();
             }
@@ -144,6 +146,8 @@ export function WorkspaceHeader() {
           items={[
             { value: "profile", label: "الملف الشخصي", icon: <Search className="h-4 w-4" /> },
             { value: "settings", label: "الإعدادات", icon: <Search className="h-4 w-4" /> },
+            { separator: true },
+            { value: "dashboard", label: "لوحة التحكم", icon: <GraduationCap className="h-4 w-4" /> },
             { separator: true },
             { value: "logout", label: "تسجيل الخروج", danger: true, icon: <Search className="h-4 w-4" /> },
           ]}
