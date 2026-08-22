@@ -595,13 +595,13 @@ export function PublicNavbar() {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                title="بحث عن كورس (Ctrl+K)"
-                aria-label="بحث عن كورس"
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
-              >
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  title="بحث عن كورس (Ctrl+K)"
+                  aria-label="بحث عن كورس"
+                  className="relative hidden h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group sm:flex"
+                >
                 <span
                   className="absolute inset-0 rounded-xl"
                   style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
@@ -836,7 +836,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-xs font-semibold transition-all duration-300"
+                        className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-2xl px-2.5 py-2 text-xs font-semibold transition-all duration-300 sm:px-3.5 sm:py-2 sm:text-sm"
                         style={{
                           color: "hsl(var(--foreground))",
                           border: `1px solid hsl(var(--border))`,
@@ -852,8 +852,8 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
-                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors max-sm:hidden">تسجيل الدخول</span>
+                        <LogIn className="h-4 w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
+                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
 
@@ -861,7 +861,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300"
+                        className="group relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-2xl px-3 py-2 text-xs font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:px-4 sm:py-2 sm:text-sm"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.271)`,
@@ -872,9 +872,8 @@ export function PublicNavbar() {
                           style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
-                        <span className="relative z-10 max-sm:hidden">إنشاء حساب</span>
-                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
+                        <Sparkles className="h-4 w-4 relative z-10" />
+                        <span className="relative z-10">إنشاء حساب</span>
                       </button>
                     </div>
                   </>
