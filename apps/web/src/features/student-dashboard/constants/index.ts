@@ -14,6 +14,12 @@ import type {
   CalendarItemType,
   StudentDashboardStats,
 } from "../types";
+import { BRAND_PRIMARY_DEFAULT, BRAND_SECONDARY_DEFAULT, brandContrast } from "@/lib/brand";
+
+export const BRAND_PRIMARY = BRAND_PRIMARY_DEFAULT;
+export const BRAND_SECONDARY = BRAND_SECONDARY_DEFAULT;
+export const BRAND_TEXT_ON_PRIMARY = brandContrast(BRAND_PRIMARY);
+export const BRAND_TEXT_ON_SECONDARY = brandContrast(BRAND_SECONDARY);
 
 export const TIMELINE_EVENT_LABELS: Record<TimelineEventType, string> = {
   course_enrolled: "التحق بدورة",

@@ -99,3 +99,16 @@ export interface SaveProgressPayload {
   current_question_index: number;
   events?: AntiCheatEvent[];
 }
+
+export interface ActiveExamAttempt {
+  id: string;
+  status: ExamSessionStatus;
+  isOfficial: boolean;
+  timerEndsAt: string | null;
+  remainingSeconds: number | null;
+  exam?: {
+    id: string;
+    title: string;
+    duration?: number | null;
+  } | null;
+}

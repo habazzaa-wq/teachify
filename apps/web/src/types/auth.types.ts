@@ -36,6 +36,9 @@ export interface AuthBranding {
   font: string | null;
   dark_logo: string | null;
   light_logo: string | null;
+  logo_type?: string | null;
+  logo_icon?: string | null;
+  logo_image?: string | null;
   domain?: string;
 }
 

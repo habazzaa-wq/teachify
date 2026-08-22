@@ -97,6 +97,34 @@ class ExamSessionController extends Controller
         ]);
     }
 
+    public function activeAttempt(ExamSessionService $service): JsonResponse
+    {
+        $attempt = $service->activeAttempt(request()->user());
+
+        if ($attempt === null) {
+            return response()->json(['data' => null]);
+        }
+
+        $exam = $attempt->exam;
+
+        return response()->json([
+            'data' => [
+                'id' => (string) $attempt->id,
+                'status' => $attempt->status,
+                'isOfficial' => (bool) $attempt->is_official,
+                'timerEndsAt' => $attempt->timer_ends_at?->toIso8601String(),
+                'remainingSeconds' => $attempt->timer_ends_at !== null
+                    ? max(0, $attempt->timer_ends_at->getTimestamp() - now()->getTimestamp())
+                    : null,
+                'exam' => [
+                    'id' => (string) $exam->id,
+                    'title' => $exam->title,
+                    'duration' => $exam->duration,
+                ],
+            ],
+        ]);
+    }
+
     public function submit(ExamAttempt $attempt, ExamSessionService $service): JsonResponse
     {
         abort_unless(Gate::allows('submit', $attempt), 404);

@@ -48,11 +48,29 @@ class WalletController extends Controller
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
         $items = $wallet->transactions()
+            ->with(['rechargeCode', 'walletPayment'])
             ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 20));
 
         return response()->json([
-            'data' => $items->items(),
+            'data' => collect($items->items())->map(function (WalletTransaction $tx): array {
+                $method = null;
+                if ($tx->wallet_payment_id !== null) {
+                    $method = 'online';
+                } elseif ($tx->recharge_code_id !== null) {
+                    $method = 'recharge_code';
+                }
+
+                return array_merge($tx->toArray(), [
+                    'method' => $method,
+                    'recharge_code' => $tx->rechargeCode?->code,
+                    'payment' => $tx->walletPayment !== null ? [
+                        'reference' => $tx->walletPayment->reference,
+                        'provider' => $tx->walletPayment->provider,
+                        'status' => $tx->walletPayment->status,
+                    ] : null,
+                ]);
+            })->all(),
             'total' => $items->total(),
             'per_page' => $items->perPage(),
             'current_page' => $items->currentPage(),

@@ -3,6 +3,7 @@ import { resolveApiBaseUrl } from "@/config/env";
 import { useTenantStore } from "@/stores/tenant.store";
 import { useAuthStore } from "@/stores/auth.store";
 import type {
+  ActiveExamAttempt,
   AntiCheatEvent,
   ExamSession,
   SaveProgressPayload,
@@ -106,6 +107,11 @@ function formatAnswer(raw: unknown): ExamSession["questions"][number]["answer"] 
 }
 
 export const examSessionService = {
+  async activeAttempt(): Promise<ActiveExamAttempt | null> {
+    const { data } = await api.get("/exams/active-attempt");
+    return data.data ?? null;
+  },
+
   async start(lessonId: string): Promise<ExamSession> {
     const { data } = await api.post(`/lessons/${lessonId}/exam-sessions/start`);
     return formatSession(data.data);

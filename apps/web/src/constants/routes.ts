@@ -5,6 +5,7 @@ export const routes = {
   // Public
   home: "/",
   publicCourse: "/courses",
+  community: "/community",
   // Auth
   login: "/login",
   tenantLogin: "/tenant-login",
@@ -30,6 +31,9 @@ export const routes = {
   dashboardProfile: "/teacher/profile",
   dashboardHelp: "/teacher/help",
   dashboardSettings: "/teacher/settings",
+  seoContent: "/teacher/seo/content",
+  seoContentNew: "/teacher/seo/content/new",
+  seoContentEdit: "/teacher/seo/content/[id]/edit",
   // Student control panel (learner dashboard) — under /student/
   studentDashboard: "/student/dashboard",
   homepageNews: "/teacher/homepage/news",

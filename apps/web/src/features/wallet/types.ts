@@ -18,6 +18,13 @@ export interface WalletTransaction {
   balance_after: string;
   description: string | null;
   created_at: string;
+  method?: "recharge_code" | "online" | null;
+  recharge_code?: string | null;
+  payment?: {
+    reference: string;
+    provider: string;
+    status?: string;
+  } | null;
 }
 
 export interface RechargeCodeRecord {

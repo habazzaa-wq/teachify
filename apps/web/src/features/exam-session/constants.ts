@@ -2,6 +2,10 @@ import type { ExamSessionQuestionType } from "./types";
 
 export const EXAM_SESSION_QUERY_KEY = "exam-session";
 
+export const ACTIVE_EXAM_QUERY_KEY = "active-exam-attempt";
+export const ACTIVE_EXAM_POLL_MS = 60_000;
+export const ACTIVE_EXAM_CHANNEL = "active-exam";
+
 export const PROGRESS_FLUSH_MS = 5_000;
 
 /** Timer warning thresholds in seconds (10 / 5 / 1 minute). */

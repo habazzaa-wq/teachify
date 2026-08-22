@@ -9,6 +9,24 @@ export interface TenantBranding {
   lightLogo: string | null;
 }
 
+export type TenantSeoRobotsPolicy = "index_follow" | "index" | "noindex" | "noindex_nofollow";
+
+export interface TenantSeoSettings {
+  titleTemplate?: string | null;
+  description?: string | null;
+  homepageTitle?: string | null;
+  homepageDescription?: string | null;
+  organizationName?: string | null;
+  organizationDescription?: string | null;
+  socialProfiles?: string[] | null;
+  robotsPolicy?: TenantSeoRobotsPolicy | null;
+  googleVerification?: string | null;
+  bingVerification?: string | null;
+  sitemapIncludeDefault?: boolean | null;
+  ogImage?: string | null;
+  twitterImage?: string | null;
+}
+
 export interface TenantByDomainResponse {
   id: number;
   name: string;
@@ -16,4 +34,5 @@ export interface TenantByDomainResponse {
   domain: string;
   status: string;
   branding: TenantBranding;
+  seo?: TenantSeoSettings | null;
 }

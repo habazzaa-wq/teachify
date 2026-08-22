@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useTenantStore } from "@/stores/tenant.store";
-import { generateCommunityThemeColors } from "@/lib/color";
+import { generateThemeColors } from "@/lib/color";
 import { resolveBrandHexColors, brandContrast } from "@/lib/brand";
 
 const STYLE_ID = "brand-theme-vars";
@@ -23,8 +23,8 @@ export function BrandThemeProvider() {
   const { primary, secondary } = resolveBrandHexColors(activeTenant, branding);
 
   const css = useMemo(() => {
-    const light = generateCommunityThemeColors(primary, secondary, false);
-    const dark = generateCommunityThemeColors(primary, secondary, true);
+    const light = generateThemeColors(primary, secondary, false);
+    const dark = generateThemeColors(primary, secondary, true);
     const lightVars = Object.entries(light)
       .map(([k, v]) => `${k}: ${v};`)
       .join("");

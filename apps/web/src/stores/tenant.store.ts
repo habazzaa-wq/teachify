@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   ActiveTenant,
   Membership,
@@ -50,6 +49,16 @@ interface TenantState {
     status: string;
     branding: TenantBranding;
     subdomain?: string | null;
+  }) => void;
+  setTenantSite: (site: {
+    name?: string | null;
+    favicon?: string | null;
+    font?: string | null;
+    logo_type?: string | null;
+    logo_icon?: string | null;
+    logo_image?: string | null;
+    primary_color?: string | null;
+    secondary_color?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
   setBootstrapError: (error: string | null) => void;
@@ -108,6 +117,21 @@ export const useTenantStore = create<TenantState>()(
         branding: data.branding,
         bootstrapStatus: "resolved",
         bootstrapError: null,
+      }),
+
+    setTenantSite: (site) =>
+      set((state) => {
+        if (!state.activeTenant) return state;
+        const { name, ...brandingPatch } = site;
+        const currentBranding = state.activeTenant.branding;
+        if (!currentBranding) return state;
+        return {
+          activeTenant: {
+            ...state.activeTenant,
+            name: name ?? state.activeTenant.name,
+            branding: { ...currentBranding, ...brandingPatch },
+          },
+        };
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
