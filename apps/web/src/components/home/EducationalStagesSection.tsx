@@ -42,8 +42,9 @@ function motionAllowed(): boolean {
   return typeof window === "undefined" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function stageTag(name: string): string {
-  const t = name.trim();
+function stageTag(name: string | null): string {
+  const t = (name ?? "").trim();
+  if (!t) return "";
   if (t.startsWith("المرحلة ")) return t.slice("المرحلة ".length).replace(/^ال/, "").trim();
   if (t.startsWith("الصف ")) return t.slice("الصف ".length).trim();
   if (t.startsWith("رياض الأطفال")) return "رياض الأطفال";

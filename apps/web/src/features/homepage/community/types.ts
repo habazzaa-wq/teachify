@@ -194,25 +194,100 @@ export const DEFAULT_COMMUNITY_SECTION: CommunitySectionSettings = {
   },
 };
 
-/** Deep-merge saved (partial) settings over defaults so new fields never break old data. */
+function asString(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asBool(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function asIconId(value: unknown, fallback: CommunityIconId): CommunityIconId {
+  return COMMUNITY_ICON_OPTIONS.some((o) => o.value === value)
+    ? (value as CommunityIconId)
+    : fallback;
+}
+
+/**
+ * Deep-merge saved (partial) settings over defaults so new fields never break
+ * old data. Every field is sanitized: values persisted as null (or with an
+ * unexpected type) fall back to their defaults instead of leaking into the
+ * render tree where `.trim()`-style access would crash the whole page.
+ */
 export function mergeCommunitySettings(
   saved?: Partial<CommunitySectionSettings> | null,
 ): CommunitySectionSettings {
   const base = structuredClone(DEFAULT_COMMUNITY_SECTION);
-  if (!saved) return base;
+  if (!saved || typeof saved !== "object") return base;
+
+  const design = COMMUNITY_DESIGNS.some((d) => d.id === saved.design)
+    ? saved.design!
+    : base.design;
+
+  const primaryCta: Partial<CommunityCtaConfig> = saved.primaryCta ?? {};
+  const secondaryCta: Partial<CommunityCtaConfig> = saved.secondaryCta ?? {};
+  const statLabels: Partial<CommunityStatLabels> = saved.statLabels ?? {};
+  const gradient: Partial<CommunitySectionSettings["gradient"]> = saved.gradient ?? {};
+  const spotlight: Partial<CommunitySectionSettings["spotlight"]> = saved.spotlight ?? {};
+  const bento: Partial<CommunitySectionSettings["bento"]> = saved.bento ?? {};
+  const minimal: Partial<CommunitySectionSettings["minimal"]> = saved.minimal ?? {};
+
+  const features = Array.isArray(saved.features)
+    ? saved.features.map((feature) => {
+        const fallbackFeature = createFeature();
+        if (!feature || typeof feature !== "object") return fallbackFeature;
+        return {
+          id: asString(feature.id, fallbackFeature.id),
+          icon: asIconId(feature.icon, fallbackFeature.icon),
+          title: asString(feature.title, fallbackFeature.title),
+          desc: asString(feature.desc, fallbackFeature.desc),
+        };
+      })
+    : base.features;
 
   return {
-    ...base,
-    ...saved,
-    primaryCta: { ...base.primaryCta, ...(saved.primaryCta ?? {}) },
-    secondaryCta: { ...base.secondaryCta, ...(saved.secondaryCta ?? {}) },
-    statLabels: { ...base.statLabels, ...(saved.statLabels ?? {}) },
-    features: Array.isArray(saved.features)
-      ? saved.features.map((f) => ({ ...createFeature(), ...f }))
-      : base.features,
-    gradient: { ...base.gradient, ...(saved.gradient ?? {}) },
-    spotlight: { ...base.spotlight, ...(saved.spotlight ?? {}) },
-    bento: { ...base.bento, ...(saved.bento ?? {}) },
-    minimal: { ...base.minimal, ...(saved.minimal ?? {}) },
+    isActive: asBool(saved.isActive, base.isActive),
+    design,
+    badgeText: asString(saved.badgeText, base.badgeText),
+    titleTop: asString(saved.titleTop, base.titleTop),
+    titleBottom: asString(saved.titleBottom, base.titleBottom),
+    description: asString(saved.description, base.description),
+    primaryCta: {
+      label: asString(primaryCta.label, base.primaryCta.label),
+      visible: asBool(primaryCta.visible, base.primaryCta.visible),
+    },
+    secondaryCta: {
+      label: asString(secondaryCta.label, base.secondaryCta.label),
+      visible: asBool(secondaryCta.visible, base.secondaryCta.visible),
+    },
+    note: asString(saved.note, base.note),
+    showStats: asBool(saved.showStats, base.showStats),
+    statLabels: {
+      members: asString(statLabels.members, base.statLabels.members),
+      online: asString(statLabels.online, base.statLabels.online),
+      today: asString(statLabels.today, base.statLabels.today),
+      threads: asString(statLabels.threads, base.statLabels.threads),
+    },
+    showActivity: asBool(saved.showActivity, base.showActivity),
+    activityLabel: asString(saved.activityLabel, base.activityLabel),
+    features,
+    gradient: {
+      highlightTitle: asString(gradient.highlightTitle, base.gradient.highlightTitle),
+      highlightText: asString(gradient.highlightText, base.gradient.highlightText),
+      showGlow: asBool(gradient.showGlow, base.gradient.showGlow),
+    },
+    spotlight: {
+      imageUrl: asString(spotlight.imageUrl, base.spotlight.imageUrl),
+      quote: asString(spotlight.quote, base.spotlight.quote),
+    },
+    bento: {
+      footerNote: asString(bento.footerNote, base.bento.footerNote),
+    },
+    minimal: {
+      showTicker: asBool(minimal.showTicker, base.minimal.showTicker),
+      tickerItems: Array.isArray(minimal.tickerItems)
+        ? minimal.tickerItems.map((item) => asString(item, "")).filter(Boolean)
+        : base.minimal.tickerItems,
+    },
   };
 }
