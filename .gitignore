@@ -74,3 +74,4 @@ tmp_cookies.txt
 # --- Deployment ---
 *.pem
 *.key
+.opencode/
