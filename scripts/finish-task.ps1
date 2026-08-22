@@ -103,14 +103,16 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+$mergeSucceeded = $false
 try {
     Write-Step "Merging '$Branch' into deploy"
     & git -C $tmp merge --no-ff $Branch -m "merge: $Branch into deploy" | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "Merge conflict while merging '$Branch'."
-        Write-Warn2 "Resolve manually in: $tmp  (then: git add -A ; git commit ; git push origin HEAD:deploy)"
+        Write-Warn2 "Resolve manually in: $tmp  (then: git add -A ; git commit ; git push origin HEAD:deploy ; git -C '$repo' worktree remove '$tmp')"
         exit 1
     }
+    $mergeSucceeded = $true
 
     if (-not $NoPush) {
         & git -C $tmp push origin "HEAD:deploy" | Out-Null
@@ -128,7 +130,13 @@ try {
         Write-Warn2 "-NoPush given: changes were merged but NOT pushed."
     }
 } finally {
-    & git -C $repo worktree remove "$tmp" --force | Out-Null
+    # On success the merge worktree is removed. On a merge CONFLICT we keep it so
+    # the user can resolve the conflict there instead of losing the work.
+    if ($mergeSucceeded) {
+        & git -C $repo worktree remove "$tmp" --force | Out-Null
+    } else {
+        Write-Warn2 "Merge worktree left at '$tmp' for you to resolve."
+    }
 }
 
 # ---- 3) Rebase remaining active tasks onto the updated deploy ----------------
