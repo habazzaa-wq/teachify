@@ -179,15 +179,49 @@ $payload = $payload -replace '__DO_MIGRATE__', $doMigrate
 $payload = $payload -replace '__DO_RESTART__', $doRestart
 $payload = $payload -replace "`r", ""
 
-$SshArgs = @('-i', $SshKey, '-o', 'StrictHostKeyChecking=no', "$SshUser@$SshHost")
+$SshArgs = @('-i', $SshKey, '-o', 'StrictHostKeyChecking=no', '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=40', "$SshUser@$SshHost")
+$remoteScript = '/tmp/deploy_teachify.sh'
+$remoteLog    = '/tmp/deploy_teachify.log'
 
-Write-Step "Deploying to $SshUser@$SshHost ..."
-$payload | & ssh @SshArgs "bash -s"
-if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Deployment failed on the server (see output above)."
-    exit 1
+# Upload the bash payload to the server, then run it DETACHED (setsid) so that a
+# local SSH disconnect or a flaky connection cannot kill the long `npm run build`
+# and leave the app stuck in maintenance mode. We then stream the log file.
+Write-Step "Uploading deploy script to server ..."
+$payload | & ssh @SshArgs "cat > $remoteScript"
+if ($LASTEXITCODE -ne 0) { Write-Fail "Could not upload deploy script."; exit 1 }
+
+Write-Step "Launching detached deployment on $SshUser@$SshHost ..."
+& ssh @SshArgs "setsid bash $remoteScript > $remoteLog 2>&1 < /dev/null & echo LAunched_PID=`$!"
+if ($LASTEXITCODE -ne 0) { Write-Fail "Could not launch the deployment."; exit 1 }
+
+Write-Step "Deployment running (detached). Streaming server log ..."
+$start = 1
+$result = $null
+for ($i = 0; $i -lt 180; $i++) {
+    Start-Sleep -Seconds 10
+    $raw = & ssh @SshArgs "tail -n +$start $remoteLog" 2>$null
+    if ($null -ne $raw -and $raw -ne '') {
+        $lines = $raw -split "`n" | Where-Object { $_ -ne '' }
+        $lines | ForEach-Object { Write-Host $_ }
+        $start += $lines.Count
+    }
+    $marker = (& ssh @SshArgs "grep -E 'DEPLOY_OK|DEPLOY_FAILED' $remoteLog | tail -1" 2>$null)
+    if ($marker -match 'DEPLOY_OK')      { $result = 'OK';     break }
+    if ($marker -match 'DEPLOY_FAILED')  { $result = 'FAILED'; break }
+    # Remote process exited without a result marker -> fail loudly so the user can recover.
+    $alive = (& ssh @SshArgs "pgrep -f '$remoteScript' >/dev/null && echo yes || echo no" 2>$null)
+    if ($alive -eq 'no' -and $i -gt 2) {
+        Write-Fail "Remote deployment process exited without a result marker (see $remoteLog)."
+        $result = 'FAILED'
+        break
+    }
 }
 
-Write-Host ''
-Write-Step "Deployment finished successfully."
-exit 0
+if ($result -eq 'OK') {
+    Write-Host ''
+    Write-Step "Deployment finished successfully."
+    exit 0
+} else {
+    Write-Fail "Deployment failed on the server (see log above). If the app is stuck in maintenance mode, run on the server: cd /var/www/teachify/apps/api && php artisan up"
+    exit 1
+}
