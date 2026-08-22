@@ -81,16 +81,16 @@ Write-Step "Deployment plan"
 Write-Host " Target   : $SshUser@$SshHost : $RemoteDir"
 Write-Host " Branch   : $Branch"
 Write-Host " Local SHA: $localSha"
-Write-Host " Steps    : git pull ->"
+Write-Host " Steps    : git ff ->"
 if ($doBuild -eq 1) {
-    Write-Host "            maintenance mode ON -> composer install ->"
-    if ($doMigrate -eq 1) { Write-Host "            db migrations -> laravel caches ->" }
-    else                  { Write-Host "            (migrations SKIPPED) -> laravel caches ->" }
-    Write-Host "            npm install + build frontend ->"
+    Write-Host "            ZERO DOWNTIME (no maintenance mode) ->"
+    if ($doMigrate -eq 1) { Write-Host "            conditional: composer/migrate/caches only if backend changed ->" }
+    else                  { Write-Host "            conditional: composer/caches only if backend changed (migrations SKIPPED) ->" }
+    Write-Host "            conditional: npm build only if frontend changed ->"
 } else {
     Write-Host "            (build SKIPPED: code only)"
 }
-if ($doRestart -eq 1) { Write-Host "            pm2 restart all -> health check" }
+if ($doRestart -eq 1) { Write-Host "            restart only changed PM2 processes -> health check" }
 else                  { Write-Host "            (pm2 restart SKIPPED)" }
 Write-Host ''
 
@@ -112,10 +112,6 @@ DO_RESTART=__DO_RESTART__
 
 export PATH="$HOME/.config/composer/vendor/bin:/usr/local/bin:/usr/local/node/bin:/usr/local/bin:/usr/bin:$PATH"
 
-MAINT_OK=0
-bring_up() { if [ "$MAINT_OK" = "1" ]; then echo "==> Bringing app back up"; cd "$REMOTE_DIR/apps/api" && php artisan up || true; fi }
-trap bring_up EXIT
-
 cd "$REMOTE_DIR"
 echo "==> Server: $(hostname) | dir $REMOTE_DIR"
 
@@ -127,44 +123,62 @@ if [ "$GOT" != "$EXPECTED" ]; then
   exit 1
 fi
 
+# Record the currently-deployed commit so we can skip steps that did not change.
+OLD_SHA=$(git rev-parse HEAD)
 echo "==> Fast-forward to origin/$BRANCH"
 git merge --ff-only "origin/$BRANCH"
 
+# ZERO DOWNTIME: never put the app in maintenance mode. The platform stays live
+# the whole deploy; the running frontend keeps serving the old build until we
+# restart it after the new build is ready.
+WEB_CHANGED=$(git diff --name-only "$OLD_SHA" "$GOT" -- apps/web                                    | head -n1)
+API_CHANGED=$(git diff --name-only "$OLD_SHA" "$GOT" -- apps/api composer.json composer.lock        | head -n1)
+
 if [ "$DO_BUILD" = "1" ]; then
-  cd "$REMOTE_DIR/apps/api"
-  echo "==> Maintenance mode ON"
-  php artisan down || true
-  MAINT_OK=1
-
-  echo "==> Composer install (api)"
-  cd "$REMOTE_DIR/apps/api"
-  composer install --no-dev --optimize-autoloader --no-interaction
-
-  if [ "$DO_MIGRATE" = "1" ]; then
-    echo "==> DB migrations"
-    php artisan migrate --force
+  if [ -n "$API_CHANGED" ]; then
+    echo "==> Backend changed -> composer + migrate + caches"
+    cd "$REMOTE_DIR/apps/api"
+    composer install --no-dev --optimize-autoloader --no-interaction
+    if [ "$DO_MIGRATE" = "1" ]; then
+      echo "==> DB migrations"
+      php artisan migrate --force
+    fi
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan event:cache
+    php artisan storage:link --force 2>/dev/null || true
+  else
+    echo "==> Backend unchanged -> skipping composer/migrate/caches"
   fi
-  php artisan config:cache
-  php artisan route:cache
-  php artisan view:cache
-  php artisan event:cache
-  php artisan storage:link --force 2>/dev/null || true
 
-  echo "==> Build frontend (web)"
-  cd "$REMOTE_DIR/apps/web"
-  npm install
-  npm run build
+  if [ -n "$WEB_CHANGED" ]; then
+    echo "==> Frontend changed -> install + build"
+    cd "$REMOTE_DIR/apps/web"
+    npm install
+    npm run build
+  else
+    echo "==> Frontend unchanged -> skipping npm install/build"
+  fi
+else
+  echo "==> Build SKIPPED (code only)"
 fi
 
 if [ "$DO_RESTART" = "1" ]; then
-  echo "==> Restarting PM2 processes"
-  pm2 restart all
+  if [ -n "$WEB_CHANGED" ]; then
+    echo "==> Restarting frontend (PM2)"
+    pm2 restart teachify-frontend
+  fi
+  if [ -n "$API_CHANGED" ]; then
+    echo "==> Restarting Laravel workers (PM2)"
+    pm2 restart teachify-queue teachify-reverb teachify-scheduler
+  fi
+  if [ -z "$WEB_CHANGED" ] && [ -z "$API_CHANGED" ]; then
+    echo "==> Nothing changed -> no restart needed"
+  fi
 fi
 
-# Bring the app out of maintenance BEFORE the health check so we probe a live site.
-bring_up
-
-# Next.js needs a few seconds to boot after pm2 restart, so retry the probe.
+# Health check: retry while Next.js boots after restart.
 HEALTH=000
 for h in $(seq 1 15); do
   CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
@@ -190,8 +204,8 @@ $remoteScript = '/tmp/deploy_teachify.sh'
 $remoteLog    = '/tmp/deploy_teachify.log'
 
 # Upload the bash payload to the server, then run it DETACHED (setsid) so that a
-# local SSH disconnect or a flaky connection cannot kill the long `npm run build`
-# and leave the app stuck in maintenance mode. We then stream the log file.
+# local SSH disconnect or a flaky connection cannot kill the long `npm run build`.
+# We then stream the log file.
 Write-Step "Uploading deploy script to server ..."
 $payload | & ssh @SshArgs "cat > $remoteScript"
 if ($LASTEXITCODE -ne 0) { Write-Fail "Could not upload deploy script."; exit 1 }
@@ -228,6 +242,6 @@ if ($result -eq 'OK') {
     Write-Step "Deployment finished successfully."
     exit 0
 } else {
-    Write-Fail "Deployment failed on the server (see log above). If the app is stuck in maintenance mode, run on the server: cd /var/www/teachify/apps/api && php artisan up"
+    Write-Fail "Deployment failed on the server (see log above). Inspect: ssh deplo@187.127.92.237 'tail -n 50 /tmp/deploy_teachify.log'. If a PM2 process is down, run: pm2 restart teachify-frontend (or the relevant worker)."
     exit 1
 }
