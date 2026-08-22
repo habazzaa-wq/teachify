@@ -85,15 +85,15 @@ if (-not $Yes) {
 }
 
 # ---- Build the remote bash payload -------------------------------------------
-$payload = @"
+$payload = @'
 #!/bin/bash
 set -euo pipefail
-REMOTE_DIR="$RemoteDir"
-BRANCH="$Branch"
-EXPECTED="$localSha"
-DO_BUILD=$doBuild
-DO_MIGRATE=$doMigrate
-DO_RESTART=$doRestart
+REMOTE_DIR="__REMOTE_DIR__"
+BRANCH="__BRANCH__"
+EXPECTED="__EXPECTED__"
+DO_BUILD=__DO_BUILD__
+DO_MIGRATE=__DO_MIGRATE__
+DO_RESTART=__DO_RESTART__
 
 export PATH="$HOME/.config/composer/vendor/bin:/usr/local/bin:/usr/local/node/bin:/usr/local/bin:/usr/bin:$PATH"
 
@@ -115,12 +115,10 @@ echo "==> Fast-forward to origin/$BRANCH"
 git merge --ff-only "origin/$BRANCH"
 
 if [ "$DO_BUILD" = "1" ]; then
-  if [ "$MAINT" = "1" ] || true; then
-    cd "$REMOTE_DIR/apps/api"
-    echo "==> Maintenance mode ON"
-    php artisan down || true
-    MAINT_OK=1
-  fi
+  cd "$REMOTE_DIR/apps/api"
+  echo "==> Maintenance mode ON"
+  php artisan down || true
+  MAINT_OK=1
 
   echo "==> Composer install (api)"
   cd "$REMOTE_DIR/apps/api"
@@ -150,15 +148,22 @@ fi
 CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
 echo "HEALTH=$CODE"
 echo "DEPLOY_OK sha=$GOT"
-"@
+'@
 
-# PowerShell strips CRLF so bash does not choke on stray carriage returns.
+# Substitute PowerShell values into the bash template, then strip CRLF
+# so bash does not choke on stray carriage returns.
+$payload = $payload -replace '__REMOTE_DIR__', $RemoteDir
+$payload = $payload -replace '__BRANCH__', $Branch
+$payload = $payload -replace '__EXPECTED__', $localSha
+$payload = $payload -replace '__DO_BUILD__', $doBuild
+$payload = $payload -replace '__DO_MIGRATE__', $doMigrate
+$payload = $payload -replace '__DO_RESTART__', $doRestart
 $payload = $payload -replace "`r", ""
 
 $SshArgs = @('-i', $SshKey, '-o', 'StrictHostKeyChecking=no', "$SshUser@$SshHost")
 
 Write-Step "Deploying to $SshUser@$SshHost ..."
-& ssh @SshArgs "bash -s" <<< $payload
+$payload | & ssh @SshArgs "bash -s"
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Deployment failed on the server (see output above)."
     exit 1
