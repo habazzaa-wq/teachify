@@ -212,6 +212,10 @@ const config: Config = {
           "25%": { transform: "rotate(-2deg)" },
           "75%": { transform: "rotate(2deg)" },
         },
+        "marquee-rtl": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -232,6 +236,7 @@ const config: Config = {
         "scale-up": "scale-up 0.3s ease-out",
         "expand-in": "expand-in 0.2s ease-out",
         "wiggle": "wiggle 0.3s ease-in-out",
+        "marquee-rtl": "marquee-rtl 32s linear infinite",
       },
     },
   },
