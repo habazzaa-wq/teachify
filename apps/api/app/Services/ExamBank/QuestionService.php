@@ -14,25 +14,14 @@ class QuestionService
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Question {
-            $contentDocument = isset($data['content_document']) && is_string($data['content_document']) && trim($data['content_document']) !== ''
-                ? json_decode($data['content_document'], true)
-                : ($data['content_document'] ?? null);
-
-            $format = $contentDocument !== null
-                ? 'structured'
-                : ($data['question_format'] ?? 'text');
-
             $title = trim((string) ($data['title'] ?? ''));
+            $isImageFormat = ($data['question_format'] ?? 'text') === 'image';
             if ($title === '') {
-                $title = match ($format) {
-                    'image' => 'سؤال مصوّر',
-                    'structured' => 'سؤال مستورد',
-                    default => 'سؤال بدون عنوان',
-                };
+                $title = $isImageFormat ? 'سؤال مصوّر' : 'سؤال بدون عنوان';
             }
             $slugSource = trim((string) ($data['slug'] ?? ''));
             if ($slugSource === '') {
-                $slugSource = in_array($format, ['image', 'structured'], true)
+                $slugSource = $isImageFormat
                     ? $title.'-'.strtolower(\Illuminate\Support\Str::random(6))
                     : $title;
             }
@@ -57,9 +46,7 @@ class QuestionService
                 'explanation' => $data['explanation'] ?? null,
                 'hint' => $data['hint'] ?? null,
                 'content' => $data['content'] ?? null,
-                'content_document' => $contentDocument,
                 'metadata' => $data['metadata'] ?? null,
-                'question_format' => $format,
             ]);
 
             return $question->refresh();
@@ -84,26 +71,8 @@ class QuestionService
             $question->fill(collect($data)->only([
                 'category_id', 'bank_id', 'title', 'slug', 'description', 'type',
                 'difficulty', 'tags', 'points', 'estimated_time', 'language',
-                'visibility', 'shuffle_options', 'explanation', 'hint', 'content',
-                'metadata', 'question_format',
-            ])->all());
-
-            if (array_key_exists('content_document', $data)) {
-                $document = $data['content_document'];
-
-                $question->content_document = is_string($document) && trim($document) !== ''
-                    ? json_decode($document, true)
-                    : (is_array($document) ? $document : null);
-
-                // Keep format consistent with the presence of a document.
-                if ($question->content_document !== null && ($question->question_format ?? 'text') === 'text') {
-                    $question->question_format = 'structured';
-                } elseif ($question->content_document === null && $question->question_format === 'structured') {
-                    $question->question_format = 'text';
-                }
-            }
-
-            $question->save();
+                'visibility', 'shuffle_options', 'explanation', 'hint', 'content', 'metadata',
+            ])->all())->save();
 
             return $question->refresh();
         });

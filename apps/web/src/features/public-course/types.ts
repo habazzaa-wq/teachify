@@ -66,6 +66,7 @@ export interface PublicCourseLesson {
   downloadable: boolean;
   featured: boolean;
   examId: string | null;
+  filesCount: number;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -79,6 +80,53 @@ export interface EnrollmentCheck {
     progress: number;
     completedAt: string | null;
   } | null;
+}
+
+export interface PublicCourseLessonVideo {
+  lesson: {
+    id: string;
+    title: string;
+    slug: string;
+    lessonType: string;
+    shortDescription: string | null;
+    durationSeconds: number | null;
+  };
+  video: {
+    provider: string;
+    provider_service: string;
+    video_id: string;
+    library_id: string | null;
+    embed_url: string | null;
+    playback_url: string | null;
+    thumbnail_url: string | null;
+    duration_seconds: number | null;
+    available_resolutions: string[];
+    status: string;
+  };
+}
+
+export interface PublicCourseLessonFile {
+  id: string;
+  title: string;
+  description: string | null;
+  downloadEnabled: boolean;
+  fileName: string | null;
+  mimeType: string | null;
+  extension: string | null;
+  sizeBytes: number | null;
+  type: string | null;
+  url: string | null;
+}
+
+export interface PublicCourseLessonFiles {
+  lesson: {
+    id: string;
+    title: string;
+    slug: string;
+    lessonType: string;
+    filesCount: number;
+  };
+  files: PublicCourseLessonFile[];
 }
 
 export interface RelatedCourse {

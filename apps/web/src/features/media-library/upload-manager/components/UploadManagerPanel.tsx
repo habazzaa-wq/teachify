@@ -46,7 +46,7 @@ export function UploadManagerPanel({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 16, scale: 0.98 }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
-      className="studio-glass-floating flex max-h-[70vh] w-[min(92vw,26rem)] flex-col overflow-hidden rounded-2xl border border-studio-border shadow-floating max-md:w-full max-md:max-h-[85vh] max-md:rounded-b-none"
+      className="flex max-h-[70vh] w-[min(92vw,26rem)] flex-col overflow-hidden rounded-2xl border border-studio-border bg-studio-surface shadow-[0_16px_48px_-12px_hsl(var(--studio-fg)/0.25)] max-md:w-full max-md:max-h-[85vh] max-md:rounded-b-none"
     >
       <UploadManagerHeader
         stats={stats}

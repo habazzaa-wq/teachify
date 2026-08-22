@@ -1,4 +1,5 @@
 import api from "@/services/api/axios";
+import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
 import type {
   OnlinePaymentCreateResponse,
   OnlinePaymentStatusResponse,
@@ -12,39 +13,48 @@ import type {
 
 export const walletService = {
   async getWallet(): Promise<Wallet> {
-    const { data } = await api.get<{ data: Wallet }>("/student/wallet");
-    return data.data;
+    const json = await tenantStudentFetch<{ data: Wallet }>("/student/wallet");
+    return json.data;
   },
 
   async getTransactions(params?: { per_page?: number }) {
-    const { data } = await api.get("/student/wallet/transactions", { params });
-    return data as {
+    const query = params?.per_page ? `?per_page=${params.per_page}` : "";
+    const json = await tenantStudentFetch<{
       data: WalletTransaction[];
       total: number;
       per_page: number;
       current_page: number;
       last_page: number;
-    };
+    }>(`/student/wallet/transactions${query}`);
+    return json;
   },
 
   async recharge(code: string): Promise<RechargeResponse> {
-    const { data } = await api.post<RechargeResponse>("/student/wallet/recharge", { code });
-    return data;
+    const json = await tenantStudentFetch<RechargeResponse>("/student/wallet/recharge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    return json;
   },
 
   async createOnlinePayment(amount: number): Promise<OnlinePaymentCreateResponse> {
-    const { data } = await api.post<OnlinePaymentCreateResponse>(
+    const json = await tenantStudentFetch<OnlinePaymentCreateResponse>(
       "/student/wallet/online-recharge",
-      { amount },
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      },
     );
-    return data;
+    return json;
   },
 
   async getOnlinePaymentStatus(reference: string): Promise<OnlinePaymentStatusResponse> {
-    const { data } = await api.get<OnlinePaymentStatusResponse>(
+    const json = await tenantStudentFetch<OnlinePaymentStatusResponse>(
       `/student/wallet/payments/${reference}`,
     );
-    return data;
+    return json;
   },
 };
 

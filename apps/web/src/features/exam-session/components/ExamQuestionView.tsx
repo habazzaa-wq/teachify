@@ -10,10 +10,6 @@ import type {
 import { QUESTION_TYPE_LABELS } from "../constants";
 import { toggleMultiOption } from "../utils";
 import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
-import {
-  StructuredQuestionContent,
-  parseQuestionDocument,
-} from "@/components/structured-question";
 
 interface ExamQuestionViewProps {
   question: ExamSessionQuestion;
@@ -33,10 +29,6 @@ function ExamQuestionViewInner({
   readOnly = false,
 }: ExamQuestionViewProps) {
   const options = question.content.options ?? [];
-  const structuredDoc =
-    question.questionFormat === "structured"
-      ? parseQuestionDocument(question.contentDocument)
-      : null;
 
   const selectable = !readOnly && onAnswerChange;
 
@@ -78,11 +70,7 @@ function ExamQuestionViewInner({
           )}
         </div>
 
-        {structuredDoc ? (
-          <div className="mt-4 rounded-xl border border-border/60 bg-background/40 p-4">
-            <StructuredQuestionContent document={structuredDoc} />
-          </div>
-        ) : question.questionFormat === "image" && question.scanUrl ? (
+        {question.questionFormat === "image" && question.scanUrl ? (
           <div className="mt-4">
             <ScanImageViewer
               src={question.scanUrl}

@@ -14,12 +14,24 @@ import type {
   CalendarItemType,
   StudentDashboardStats,
 } from "../types";
-import { BRAND_PRIMARY_DEFAULT, BRAND_SECONDARY_DEFAULT, brandContrast } from "@/lib/brand";
 
-export const BRAND_PRIMARY = BRAND_PRIMARY_DEFAULT;
-export const BRAND_SECONDARY = BRAND_SECONDARY_DEFAULT;
-export const BRAND_TEXT_ON_PRIMARY = brandContrast(BRAND_PRIMARY);
-export const BRAND_TEXT_ON_SECONDARY = brandContrast(BRAND_SECONDARY);
+/**
+ * Brand palette shared with the public site (the-mechanist.com).
+ * Each visual element uses exactly ONE of these two colors — never both.
+ * Values are CSS-var references so the student dashboard follows the site-wide
+ * branding configured by the teacher in site settings.
+ */
+export const BRAND_PRIMARY = "var(--brand-primary)";
+export const BRAND_SECONDARY = "var(--brand-secondary)";
+export const BRAND_TEXT_ON_PRIMARY = "var(--brand-primary-contrast)";
+export const BRAND_TEXT_ON_SECONDARY = "var(--brand-secondary-contrast)";
+
+/** Maps a stat-card semantic color to a single brand color. */
+export function brandColorFor(color: StatCardConfig["color"]): string {
+  return color === "warning" || color === "destructive"
+    ? BRAND_SECONDARY
+    : BRAND_PRIMARY;
+}
 
 export const TIMELINE_EVENT_LABELS: Record<TimelineEventType, string> = {
   course_enrolled: "التحق بدورة",

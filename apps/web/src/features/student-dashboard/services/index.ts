@@ -1,13 +1,11 @@
-import api from "@/services/api/axios";
+import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
 import type { StudentDashboardData } from "../types";
-
-interface RawDashboardPayload {
-  data: StudentDashboardData;
-}
 
 export const studentDashboardService = {
   async getOverview(): Promise<StudentDashboardData> {
-    const { data } = await api.get<RawDashboardPayload>("/student/dashboard");
-    return data.data;
+    const json = await tenantStudentFetch<{ data: StudentDashboardData }>(
+      "/student/dashboard",
+    );
+    return json.data;
   },
 };

@@ -37,6 +37,7 @@ import type { ViewMode, MediaType, MediaStatus } from "../types";
 interface MediaPickerResult {
   id: number;
   ids: number[];
+  title?: string | null;
 }
 
 interface MediaPickerProps {
@@ -75,7 +76,7 @@ function MediaPicker({
     (id: number, selected: boolean) => {
       if (mode === "single") {
         const asset = assets.find((a) => a.id === id);
-        if (asset) onSelect({ id, ids: [id] });
+        if (asset) onSelect({ id, ids: [id], title: asset.title ?? asset.originalName });
         return;
       }
       setSelectedIds((prev) => {
@@ -91,9 +92,10 @@ function MediaPicker({
   const handleConfirm = useCallback(() => {
     if (selectedIds.size > 0) {
       const ids = [...selectedIds];
-      if (ids[0] !== undefined) onSelect({ id: ids[0], ids });
+      const first = assets.find((a) => a.id === ids[0]);
+      if (ids[0] !== undefined) onSelect({ id: ids[0], ids, title: first?.title ?? first?.originalName });
     }
-  }, [selectedIds, onSelect]);
+  }, [selectedIds, assets, onSelect]);
 
   return (
     <AppDialog open={open} onOpenChange={onClose}>
@@ -131,7 +133,7 @@ function MediaPicker({
                 selectedIds={selectedIds}
                 onSelectionChange={setSelectedIds}
                 onAssetClick={(asset) => {
-                  if (mode === "single") onSelect({ id: asset.id, ids: [asset.id] });
+                  if (mode === "single") onSelect({ id: asset.id, ids: [asset.id], title: asset.title ?? asset.originalName });
                   else handleSelect(asset.id, !selectedIds.has(asset.id));
                 }}
                 selectable={mode === "multi"}

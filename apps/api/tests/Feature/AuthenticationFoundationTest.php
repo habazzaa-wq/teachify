@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Services\Auth\InvitationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -78,7 +79,10 @@ class AuthenticationFoundationTest extends TestCase
             'tenant_id' => $tenant->id,
             'slug' => 'admin',
         ]);
-        $permission = Permission::factory()->create(['slug' => 'users.invite']);
+        $permission = Permission::firstOrCreate(
+            ['slug' => 'users.invite'],
+            ['name' => 'Users Invite', 'description' => null],
+        );
 
         $role->permissions()->attach($permission->id);
         $membership->roles()->attach($role->id, ['tenant_id' => $tenant->id]);
@@ -104,7 +108,10 @@ class AuthenticationFoundationTest extends TestCase
         ]);
         $adminRole = Role::factory()->create(['tenant_id' => $tenant->id, 'slug' => 'admin']);
         $studentRole = Role::factory()->create(['tenant_id' => $tenant->id, 'slug' => 'student']);
-        $permission = Permission::factory()->create(['slug' => 'users.invite']);
+        $permission = Permission::firstOrCreate(
+            ['slug' => 'users.invite'],
+            ['name' => 'Users Invite', 'description' => null],
+        );
 
         $adminRole->permissions()->attach($permission->id);
         $membership->roles()->attach($adminRole->id, ['tenant_id' => $tenant->id]);
@@ -129,7 +136,7 @@ class AuthenticationFoundationTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $role = Role::factory()->create(['tenant_id' => $tenant->id, 'slug' => 'student']);
-        $token = app(\App\Services\Auth\InvitationService::class)
+        $token = app(InvitationService::class)
             ->create($tenant, 'invitee@example.com', [$role->id])['token'];
 
         $this->postJson('/api/v1/auth/invitations/accept', [

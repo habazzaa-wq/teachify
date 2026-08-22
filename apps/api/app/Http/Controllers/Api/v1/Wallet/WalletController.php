@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantUser;
 use App\Models\Wallet;
 use App\Models\WalletPayment;
+use App\Models\WalletTransaction;
 use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Wallet\WalletService;
@@ -23,12 +24,26 @@ class WalletController extends Controller
     }
 
     /**
+     * Ensure the active membership has the student role so a teacher/owner
+     * token can never read or create a wallet via the student endpoints.
+     */
+    private function assertStudentRole(TenantUser $membership): void
+    {
+        abort_unless(
+            $membership->roles()->where('slug', 'student')->exists(),
+            403,
+            'هذه الميزة متاحة للطلاب فقط.',
+        );
+    }
+
+    /**
      * Show the current student's wallet (creates it on first access).
      */
     public function me(): JsonResponse
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
@@ -44,6 +59,7 @@ class WalletController extends Controller
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
 
@@ -52,25 +68,39 @@ class WalletController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 20));
 
-        return response()->json([
-            'data' => collect($items->items())->map(function (WalletTransaction $tx): array {
-                $method = null;
-                if ($tx->wallet_payment_id !== null) {
-                    $method = 'online';
-                } elseif ($tx->recharge_code_id !== null) {
-                    $method = 'recharge_code';
-                }
+        $payload = $items->getCollection()->map(function (WalletTransaction $transaction): array {
+            $method = match (true) {
+                $transaction->wallet_payment_id !== null => 'online',
+                $transaction->recharge_code_id !== null => 'recharge_code',
+                default => 'wallet_use',
+            };
 
-                return array_merge($tx->toArray(), [
-                    'method' => $method,
-                    'recharge_code' => $tx->rechargeCode?->code,
-                    'payment' => $tx->walletPayment !== null ? [
-                        'reference' => $tx->walletPayment->reference,
-                        'provider' => $tx->walletPayment->provider,
-                        'status' => $tx->walletPayment->status,
-                    ] : null,
-                ]);
-            })->all(),
+            return [
+                'id' => $transaction->id,
+                'wallet_id' => $transaction->wallet_id,
+                'tenant_user_id' => $transaction->tenant_user_id,
+                'type' => $transaction->type,
+                'amount' => (float) $transaction->amount,
+                'balance_after' => (float) $transaction->balance_after,
+                'description' => $transaction->description,
+                'created_at' => $transaction->created_at?->toIso8601String(),
+                'method' => $method,
+                'recharge_code' => $method === 'recharge_code'
+                    ? $transaction->rechargeCode?->code
+                    : null,
+                'payment' => $method === 'online' && $transaction->walletPayment ? [
+                    'reference' => $transaction->walletPayment->reference,
+                    'provider' => $transaction->walletPayment->provider,
+                    'status' => $transaction->walletPayment->status,
+                    'paid_at' => $transaction->walletPayment->paid_at?->toIso8601String(),
+                ] : null,
+            ];
+        });
+
+        $items->setCollection($payload);
+
+        return response()->json([
+            'data' => $items->items(),
             'total' => $items->total(),
             'per_page' => $items->perPage(),
             'current_page' => $items->currentPage(),
@@ -89,6 +119,7 @@ class WalletController extends Controller
 
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $result = $this->walletService->recharge($tenant, $membership, $validated['code']);
 
@@ -114,6 +145,7 @@ class WalletController extends Controller
 
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
         $amount = (float) $validated['amount'];
 
@@ -214,6 +246,7 @@ class WalletController extends Controller
     {
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
+        $this->assertStudentRole($membership);
 
         $payment = WalletPayment::query()
             ->where('tenant_id', $tenant->id)

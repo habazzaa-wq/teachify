@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { usePublicCourse, usePublicCourseModules, useRelatedCourses, useEnrollmentCheck } from "../hooks";
 import { CourseHero } from "./CourseHero";
+import { CourseVideoPlayer } from "./CourseVideoPlayer";
+import { CourseFilePanel } from "./CourseFilePanel";
 import { CourseInformation } from "./CourseInformation";
 import { LearningOutcomes } from "./LearningOutcomes";
 import { CourseRequirements } from "./CourseRequirements";
@@ -18,6 +21,16 @@ import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import { isFileLesson } from "../utils";
+import type { PublicCourseLesson } from "../types";
+
+const PublicLoginCard = dynamic(
+  () =>
+    import("@/features/auth/components/PublicLoginCard").then(
+      (m) => m.PublicLoginCard,
+    ),
+  { ssr: false },
+);
 
 interface Props {
   slug: string;
@@ -51,6 +64,9 @@ export function PublicCoursePage({ slug }: Props) {
   const { isAuthenticated } = useCurrentUser();
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [activeLesson, setActiveLesson] = useState<PublicCourseLesson | null>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
@@ -65,21 +81,56 @@ export function PublicCoursePage({ slug }: Props) {
       return;
     }
     if (!isAuthenticated) {
-      router.push("/tenant-login");
+      setLoginOpen(true);
       return;
     }
     setPurchaseModalOpen(true);
   }, [isEnrolled, isAuthenticated, router]);
 
   const handleLogin = useCallback(() => {
-    router.push("/tenant-login");
-  }, [router]);
+    setLoginOpen(true);
+  }, []);
+
+  const handleLoginSuccess = useCallback(() => {
+    setLoginOpen(false);
+    setPurchaseModalOpen(true);
+  }, []);
 
   const handleLockedClick = useCallback(() => {
     if (!isEnrolled) {
       setLockedModalOpen(true);
     }
   }, [isEnrolled]);
+
+  const handlePlayLesson = useCallback((lesson: PublicCourseLesson) => {
+    setActiveLesson(lesson);
+  }, []);
+
+  const handleClosePlayer = useCallback(() => {
+    setActiveLesson(null);
+  }, []);
+
+  useEffect(() => {
+    if (activeLesson) {
+      playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeLesson]);
+
+  const curriculumSection = modulesLoading ? (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-64" />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+      ))}
+    </div>
+  ) : modules && modules.length > 0 ? (
+    <CurriculumSection
+      modules={modules}
+      isEnrolled={isEnrolled}
+      onLockedClick={handleLockedClick}
+      onPlay={handlePlayLesson}
+    />
+  ) : null;
 
   if (courseLoading || !course) {
     return <CoursePageSkeleton />;
@@ -89,10 +140,32 @@ export function PublicCoursePage({ slug }: Props) {
     <div className="min-h-screen bg-background">
       <CourseHero course={course} isEnrolled={isEnrolled} onEnroll={handleEnroll} onLogin={handleLogin} />
 
+      {activeLesson && (
+        <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+          <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
+            {isFileLesson(activeLesson) ? (
+              <CourseFilePanel
+                slug={slug}
+                lesson={activeLesson}
+                onClose={handleClosePlayer}
+              />
+            ) : (
+              <CourseVideoPlayer
+                slug={slug}
+                lesson={activeLesson}
+                onClose={handleClosePlayer}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
           {/* Main content */}
           <div className="min-w-0 space-y-14">
+            {isEnrolled && curriculumSection}
+
             <CourseInformation
               description={course.description}
               fullDescription={course.fullDescription}
@@ -112,22 +185,9 @@ export function PublicCoursePage({ slug }: Props) {
 
             {course.instructor && <InstructorCard instructor={course.instructor} />}
 
-            {modulesLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-10 w-64" />
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                ))}
-              </div>
-            ) : modules && modules.length > 0 ? (
-              <CurriculumSection
-                modules={modules}
-                isEnrolled={isEnrolled}
-                onLockedClick={handleLockedClick}
-              />
-            ) : null}
+            {!isEnrolled && curriculumSection}
 
-            <SubscriptionCta onEnroll={handleEnroll} />
+            {!isEnrolled && <SubscriptionCta onEnroll={handleEnroll} />}
           </div>
 
           {/* Sticky sidebar */}
@@ -160,6 +220,12 @@ export function PublicCoursePage({ slug }: Props) {
         open={purchaseModalOpen}
         onClose={() => setPurchaseModalOpen(false)}
         course={course}
+      />
+
+      <PublicLoginCard
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
       />
     </div>
   );

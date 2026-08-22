@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AUTH_EVENTS } from "@/services/api/axios";
+import { AUTH_EVENTS } from "@/constants/auth-events";
 import { authService } from "@/services/api/auth.service";
 import { tenantService } from "@/services/api/tenant.service";
 import { authKeys } from "@/services/queryKeys";
@@ -11,6 +11,10 @@ import { useTenantStore } from "@/stores/tenant.store";
 import type { CurrentUserResponse, LoginRequest } from "@/types/auth.types";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  isStudentRoute,
+  resolveStudentSession,
+} from "@/services/api/tenant-student-fetch";
 import { isSuperAdminPath, routes } from "@/constants/routes";
 
 interface AuthProviderValue {
@@ -19,10 +23,12 @@ interface AuthProviderValue {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthProviderValue | null>(null);
+
+export { AuthContext };
 
 /**
  * Public, user-independent query keys that must survive session invalidation
@@ -59,7 +65,6 @@ function isPublicRoute(pathname: string): boolean {
     pathname.startsWith(`${routes.publicCourse}/`) ||
     pathname.startsWith("/stages") ||
     pathname === routes.tenantLogin ||
-    pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/tenant-not-found"
   );
@@ -70,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const isSuperAdminRoute = isSuperAdminPath(pathname);
-  const refreshingRef = useRef(false);
+  const refreshingPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
@@ -91,23 +96,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateSession(queryClient);
     if (!isPublicRoute(window.location.pathname)) {
       clearTenant();
-      router.replace("/tenant-login");
+      router.replace(routes.home);
     }
   }, [clearAuth, clearTenant, queryClient, router]);
 
-  const refreshSession = useCallback(async () => {
-    if (refreshingRef.current || !refreshToken) return;
-    refreshingRef.current = true;
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    // Read at call time — bootstrap may have just re-seeded the store with a
+    // different identity's token (student route after a teacher login).
+    const currentRefresh = useAuthStore.getState().refreshToken;
+    if (!currentRefresh) {
+      handleStaleSession();
+      return false;
+    }
+
+    if (refreshingPromiseRef.current) {
+      return refreshingPromiseRef.current;
+    }
+
+    refreshingPromiseRef.current = (async (): Promise<boolean> => {
+      try {
+        const result = await authService.refresh({ refresh_token: currentRefresh });
+        setAccessToken(result.access_token);
+        queryClient.invalidateQueries({
+          predicate: (query) => !isPublicQueryKey(query.queryKey),
+        });
+        return true;
+      } catch {
+        handleStaleSession();
+        return false;
+      }
+    })();
 
     try {
-      const result = await authService.refresh({ refresh_token: refreshToken });
-      setAccessToken(result.access_token);
-    } catch {
-      handleStaleSession();
+      return await refreshingPromiseRef.current;
     } finally {
-      refreshingRef.current = false;
+      refreshingPromiseRef.current = null;
     }
-  }, [refreshToken, setAccessToken, handleStaleSession]);
+  }, [setAccessToken, handleStaleSession, queryClient]);
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
@@ -115,9 +140,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!accessToken) {
+    // On student routes the public student session (public-register-state) is
+    // the source of truth. A teacher/dashboard login must never resolve the
+    // student context, so prefer the student's own token here.
+    let token = accessToken;
+    let refresh = refreshToken;
+    if (isStudentRoute(pathname)) {
+      const studentSession = resolveStudentSession(pathname);
+      if (studentSession.accessToken) {
+        token = studentSession.accessToken;
+        refresh = studentSession.refreshToken ?? refresh;
+      }
+    }
+
+    if (!token) {
       setStatus("unauthenticated");
       return;
+    }
+
+    if (token !== accessToken || refresh !== refreshToken) {
+      setTokens(token, refresh ?? "");
     }
 
     setStatus("loading");
@@ -137,7 +179,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Token might be expired, try refresh
       try {
-        await refreshSession();
+        const refreshed = await refreshSession();
+        if (!refreshed) {
+          return;
+        }
         // Retry bootstrap with new token
         const context = await tenantService.resolveContext();
         setTenantContext({
@@ -150,10 +195,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         setUser(context.user);
       } catch {
-        clearAuth();
+        // Refresh succeeded but the retried /auth/me failed transiently
+        // (rate limit, 5xx, network). The session is still valid — keep it
+        // instead of logging the user out.
+        setStatus("authenticated");
       }
     }
-  }, [activeTenant, accessToken, setStatus, setUser, setTenantContext, refreshSession, clearAuth]);
+  }, [activeTenant, accessToken, refreshToken, pathname, setStatus, setUser, setTenantContext, refreshSession, setTokens]);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -200,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuth();
     clearTenant();
     invalidateSession(queryClient);
-    router.replace("/tenant-login");
+    router.replace(routes.home);
   }, [clearAuth, clearTenant, queryClient, router]);
 
   // Bootstrap session on mount when a tenant is already known
@@ -211,7 +259,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isGuestRoute =
       pathname === routes.tenantLogin ||
-      pathname === "/login" ||
       pathname === "/register" ||
       pathname === "/tenant-not-found";
 
@@ -223,6 +270,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [activeTenant, bootstrap, isSuperAdminRoute, pathname, status, setStatus]);
+
+  // The student dashboard must always reflect the public student session, never
+  // a different dashboard identity (e.g. a teacher signed in on /tenant-login).
+  // When the shared auth store holds someone else's session while navigating on
+  // to a student route, re-seed it from the student session and re-bootstrap so
+  // the student's own context is resolved.
+  useEffect(() => {
+    if (status !== "authenticated" || isSuperAdminRoute) {
+      return;
+    }
+    if (!isStudentRoute(pathname)) {
+      return;
+    }
+
+    const studentSession = resolveStudentSession(pathname);
+    if (!studentSession.accessToken) {
+      return;
+    }
+
+    const current = useAuthStore.getState();
+    if (current.accessToken === studentSession.accessToken) {
+      return;
+    }
+
+    setTokens(
+      studentSession.accessToken,
+      studentSession.refreshToken ?? current.refreshToken ?? "",
+    );
+    if (studentSession.name || studentSession.avatar) {
+      setUser({
+        id: 0,
+        name: studentSession.name ?? "",
+        email: "",
+        avatar: studentSession.avatar ?? null,
+        is_platform_super_admin: false,
+      });
+    }
+    setStatus("idle");
+  }, [pathname, status, isSuperAdminRoute, setTokens, setUser, setStatus]);
 
   // React to 401 from tenant API requests
   useEffect(() => {

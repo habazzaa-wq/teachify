@@ -28,7 +28,7 @@ class ExamService
                 'slug' => $this->uniqueSlug($data['slug'] ?? $data['title']),
                 'description' => $data['description'] ?? null,
                 'category' => $data['category'] ?? null,
-                'status' => 'draft',
+                'status' => 'published',
                 'visibility' => $data['visibility'] ?? 'private',
                 'language' => $data['language'] ?? 'ar',
                 'duration' => $data['duration'] ?? null,
@@ -77,6 +77,10 @@ class ExamService
 
     public function changeStatus(Exam $exam, string $status): Exam
     {
+        if ($status === $exam->status) {
+            return $exam;
+        }
+
         $allowed = [
             'draft' => ['published', 'archived'],
             'published' => ['draft', 'archived'],

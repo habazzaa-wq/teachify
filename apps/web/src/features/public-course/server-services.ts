@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
 import type { PublicCourse, PublicCourseModule, RelatedCourse } from "./types";
@@ -26,7 +27,7 @@ async function serverFetch<T>(path: string): Promise<T> {
       ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
       ...(tenantDomain ? { "X-Tenant-Domain": tenantDomain } : {}),
     },
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -161,6 +162,7 @@ function formatLesson(raw: Raw) {
     downloadable: raw.downloadable ?? false,
     featured: raw.featured ?? false,
     examId: raw.examId ?? raw.exam_id ?? null,
+    filesCount: raw.filesCount ?? raw.files_count ?? 0,
     publishedAt: raw.publishedAt ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
@@ -198,30 +200,30 @@ function formatRelated(raw: Raw): RelatedCourse {
 
 /** Server-only public course API (reads tenant headers from next/headers). */
 export const publicCourseServerService = {
-  async getBySlug(slug: string): Promise<PublicCourse | null> {
+  getBySlug: cache(async (slug: string): Promise<PublicCourse | null> => {
     try {
       const json = await serverFetch<{ data: Raw }>(`/public/courses/${slug}`);
       return json.data ? formatCourse(json.data) : null;
     } catch {
       return null;
     }
-  },
+  }),
 
-  async getModules(slug: string): Promise<PublicCourseModule[]> {
+  getModules: cache(async (slug: string): Promise<PublicCourseModule[]> => {
     try {
       const json = await serverFetch<{ data: Raw[] }>(`/public/courses/${slug}/modules`);
       return (json.data ?? []).map(formatModule);
     } catch {
       return [];
     }
-  },
+  }),
 
-  async getRelated(slug: string): Promise<RelatedCourse[]> {
+  getRelated: cache(async (slug: string): Promise<RelatedCourse[]> => {
     try {
       const json = await serverFetch<{ data: Raw[] }>(`/public/courses/${slug}/related`);
       return (json.data ?? []).map(formatRelated);
     } catch {
       return [];
     }
-  },
+  }),
 };

@@ -34,7 +34,7 @@ function LearningOutcomesInner({ outcomes }: LearningOutcomesProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.35, delay: (index % 8) * 0.04, ease: "easeOut" }}
-            className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.02] transition-colors duration-200 hover:border-[#BF6D58]/25 hover:bg-[#BF6D58]/[0.03]"
+            className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.02] transition-colors duration-200 hover:border-[var(--brand-primary)]"
           >
             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />

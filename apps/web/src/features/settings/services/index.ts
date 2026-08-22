@@ -19,11 +19,11 @@ export const settingsService = {
 
   async getSite() {
     const { data } = await api.get("/settings/site");
-    return data as SiteSettings;
+    return data.values as SiteSettings;
   },
 
   async updateSite(values: Partial<SiteSettings>) {
-    const { data } = await api.put("/settings/site", values);
-    return data as SiteSettings;
+    const { data } = await api.put("/settings/site", { values });
+    return data.values as SiteSettings;
   },
 };

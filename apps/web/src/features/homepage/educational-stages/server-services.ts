@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
 import type { PublicStagesResponse } from "./types";
 
 export const stagesServerService = {
-  async getPublicStages(): Promise<PublicStagesResponse | null> {
+  getPublicStages: cache(async (): Promise<PublicStagesResponse | null> => {
     try {
       const h = await headers();
       const tenantId = h.get("x-tenant-id") ?? "";
@@ -19,7 +20,7 @@ export const stagesServerService = {
           ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
           ...(tenantDomain ? { "X-Tenant-Domain": tenantDomain } : {}),
         },
-        next: { revalidate: 300 },
+        cache: "no-store",
       });
 
       if (!res.ok) return null;
@@ -29,5 +30,5 @@ export const stagesServerService = {
     } catch {
       return null;
     }
-  },
+  }),
 };

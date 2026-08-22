@@ -27,7 +27,7 @@ export function StudentProfileDrawer({ open, onClose }: StudentProfileDrawerProp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const { data: profile, isLoading } = useStudentProfile();
+  const { data: profile, isLoading } = useStudentProfile({ enabled: open });
   const uploadMutation = useUploadAvatar();
 
   const setUser = useAuthStore((s) => s.setUser);
@@ -61,6 +61,12 @@ export function StudentProfileDrawer({ open, onClose }: StudentProfileDrawerProp
             parsed.avatar = result.avatar;
             localStorage.setItem("public-register-state", JSON.stringify(parsed));
           }
+        } catch { /* ignore */ }
+        // Notify the navbar (and any other listeners) that the avatar changed
+        try {
+          window.dispatchEvent(
+            new CustomEvent("student-profile-updated", { detail: { avatar: result.avatar } }),
+          );
         } catch { /* ignore */ }
         setPreviewUrl(result.avatar);
       } catch {

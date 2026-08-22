@@ -14,6 +14,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\Bunny\BunnyCacheService;
 use Illuminate\Support\Facades\Cache;
@@ -547,9 +548,15 @@ class ResumableUploadService
 
         $session->chunks()->delete();
 
-        // Abandoned uploads leave an empty placeholder asset behind.
-        if (! $session->completed && $session->asset) {
-            $session->asset->delete();
+        // Abandoned uploads leave an empty placeholder asset behind. Load the
+        // asset outside the tenant scope — the GC command runs without tenant
+        // context, and the scope would call currentTenant() and crash.
+        $asset = MediaAsset::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->find($session->media_asset_id);
+
+        if (! $session->completed && $asset) {
+            $asset->delete();
         }
 
         $session->delete();
@@ -558,20 +565,33 @@ class ResumableUploadService
     private function purgeOrphanDirectories(): void
     {
         $root = Storage::disk('uploads')->path('');
-        if (! is_dir($root)) {
-            return;
-        }
 
-        foreach (File::directories($root) as $tenantDir) {
-            foreach (File::directories($tenantDir) as $sessionDir) {
-                $sessionId = (int) basename($sessionDir);
-                if ($sessionId > 0 && ! MediaUploadSession::query()
-                    ->withoutGlobalScope(TenantScope::class)
-                    ->where('id', $sessionId)
-                    ->exists()) {
-                    File::deleteDirectory($sessionDir);
+        // The web server (www-data) creates this tree with restricted
+        // permissions; a CLI scheduler without read access must not crash
+        // the whole run. Skip anything we cannot enumerate.
+        try {
+            if (! is_dir($root)) {
+                return;
+            }
+
+            foreach (File::directories($root) as $tenantDir) {
+                foreach (File::directories($tenantDir) as $sessionDir) {
+                    $sessionId = (int) basename($sessionDir);
+                    if ($sessionId > 0 && ! MediaUploadSession::query()
+                        ->withoutGlobalScope(TenantScope::class)
+                        ->where('id', $sessionId)
+                        ->exists()) {
+                        File::deleteDirectory($sessionDir);
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            // Best-effort cleanup: report and continue so scheduled runs
+            // never fail because the uploads tree is unreadable.
+            Log::warning('media:gc orphan-directory scan skipped', [
+                'root' => $root,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

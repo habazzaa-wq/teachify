@@ -61,7 +61,6 @@ use App\Http\Controllers\Api\v1\ExamBank\ExamSessionController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionImportController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
@@ -640,13 +639,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
             Route::post('/questions/{question}/scan', [QuestionController::class, 'uploadScan']);
             Route::delete('/questions/{question}/scan', [QuestionController::class, 'removeScan']);
-
-            // Structured question import (photo → editable document)
-            Route::post('/question-imports', [QuestionImportController::class, 'store']);
-            Route::post('/question-imports/validate-document', [QuestionImportController::class, 'validateDocument']);
-            Route::get('/question-imports/{import}', [QuestionImportController::class, 'show'])->whereUuid('import');
-            Route::post('/question-imports/{import}/retry', [QuestionImportController::class, 'retry'])->whereUuid('import');
-            Route::delete('/question-imports/{import}', [QuestionImportController::class, 'destroy'])->whereUuid('import');
 
             Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
             Route::apiResource('categories', QuestionCategoryController::class);

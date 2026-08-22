@@ -59,7 +59,7 @@ function LockedModalInner({ isOpen, onClose, onEnroll, onLogin }: LockedModalPro
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full max-w-md overflow-hidden rounded-3xl border border-[#BF6D58]/20 bg-card shadow-2xl shadow-black/20",
+              "relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--brand-primary)] bg-card shadow-2xl shadow-black/20",
             )}
           >
             <button
@@ -67,7 +67,7 @@ function LockedModalInner({ isOpen, onClose, onEnroll, onLogin }: LockedModalPro
               type="button"
               onClick={onClose}
               aria-label="إغلاق"
-              className="absolute end-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
+              className="absolute end-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
             >
               <X className="h-4 w-4" />
             </button>
@@ -76,17 +76,17 @@ function LockedModalInner({ isOpen, onClose, onEnroll, onLogin }: LockedModalPro
               className="p-8 text-center"
               style={{ background: LOCKED_GRADIENT }}
             >
-              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-amber-500/25 bg-gradient-to-br from-[#BF6D58]/20 to-[#FFB50E]/10 shadow-lg shadow-[#BF6D58]/10">
-                <Lock className="h-9 w-9 text-[#BF6D58]" strokeWidth={2} />
+              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-amber-500/25 bg-[var(--brand-primary)] shadow-lg shadow-[rgba(0,0,0,0.1)]">
+                <Lock className="h-9 w-9 text-[var(--brand-primary-contrast)]" strokeWidth={2} />
               </div>
 
               <h3
                 id="locked-modal-title"
-                className="mb-2 text-xl font-extrabold text-foreground"
+                className="mb-2 text-xl font-extrabold text-[var(--brand-primary-contrast)]"
               >
                 هذا المحتوى متاح للمشتركين فقط
               </h3>
-              <p className="mx-auto mb-7 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              <p className="mx-auto mb-7 max-w-xs text-sm leading-relaxed text-[var(--brand-primary-contrast)]/90">
                 اشترك الآن للوصول إلى جميع المحاضرات والملفات والاختبارات،
                 مع شهادة إتمام عند الانتهاء من الدورة.
               </p>
@@ -96,7 +96,7 @@ function LockedModalInner({ isOpen, onClose, onEnroll, onLogin }: LockedModalPro
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="group inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-[#BF6D58] transition-colors hover:text-[#a85a47] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-[var(--brand-primary)] transition-colors hover:text-[var(--brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
                 >
                   <LogIn className="h-4 w-4" />
                   لديك حساب بالفعل؟ سجّل الدخول

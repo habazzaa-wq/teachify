@@ -1,6 +1,5 @@
 "use client";
 
-import { StructuredQuestionContent, parseQuestionDocument } from "@/components/structured-question";
 import { StudioSurfaceCard, StudioChip, StudioStatusChip } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import {
@@ -29,10 +28,6 @@ export function QuestionPreview({ question }: { question: Question }) {
   const TypeIcon = typeCfg.icon;
   const difficultyCfg = DIFFICULTY_CONFIG[question.difficulty];
   const isScanned = question.questionFormat === "image" && question.scanUrl;
-  const structuredDoc =
-    question.questionFormat === "structured"
-      ? parseQuestionDocument(question.contentDocument)
-      : null;
 
   return (
     <StudioSurfaceCard padding="lg" className="space-y-4">
@@ -53,11 +48,6 @@ export function QuestionPreview({ question }: { question: Question }) {
             سؤال مصوّر
           </StudioChip>
         )}
-        {structuredDoc && (
-          <StudioChip variant="accent" size="sm">
-            سؤال مستورد
-          </StudioChip>
-        )}
         {question.category?.name && (
           <StudioChip variant="default" size="sm">
             {question.category.name}
@@ -66,9 +56,7 @@ export function QuestionPreview({ question }: { question: Question }) {
       </div>
 
       <div>
-        {structuredDoc ? (
-          <StructuredQuestionContent document={structuredDoc} />
-        ) : isScanned && question.scanUrl ? (
+        {isScanned && question.scanUrl ? (
           <div className="space-y-2">
             <ScanImageViewer
               src={question.scanUrl}

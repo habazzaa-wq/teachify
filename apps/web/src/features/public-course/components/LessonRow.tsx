@@ -11,6 +11,7 @@ interface LessonRowProps {
   lesson: PublicCourseLesson;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay?: (lesson: PublicCourseLesson) => void;
   isPreview?: boolean;
 }
 
@@ -18,6 +19,7 @@ function LessonRowInner({
   lesson,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isPreview = false,
 }: LessonRowProps) {
   const config = useMemo(() => getLessonConfig(lesson), [lesson]);
@@ -29,12 +31,16 @@ function LessonRowInner({
   );
 
   const hasExam = !!lesson.examId;
-  const hasResources = lesson.downloadable;
+  const hasResources = (lesson.filesCount ?? 0) > 0 || lesson.downloadable;
   const isLocked = !isEnrolled;
   const showPreview = isPreview && lesson.freePreview;
 
   const handleActivate = () => {
-    if (isLocked) onLockedClick();
+    if (isLocked) {
+      onLockedClick();
+      return;
+    }
+    onPlay?.(lesson);
   };
 
   return (
@@ -43,23 +49,19 @@ function LessonRowInner({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       onClick={handleActivate}
-      role={isLocked ? "button" : undefined}
-      tabIndex={isLocked ? 0 : undefined}
+      role="button"
+      tabIndex={0}
       aria-label={isLocked ? `الدرس مقفل: ${lesson.title}` : lesson.title}
-      onKeyDown={
-        isLocked
-          ? (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleActivate();
-              }
-            }
-          : undefined
-      }
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivate();
+        }
+      }}
       className={cn(
         "group/lesson flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200",
-        "hover:bg-[#BF6D58]/[0.05] dark:hover:bg-white/[0.03]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40 focus-visible:ring-inset",
+        "dark:hover:bg-white/[0.03]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-inset",
       )}
     >
       {/* Type Icon */}
@@ -106,10 +108,16 @@ function LessonRowInner({
         </div>
       </div>
 
-      {/* Lock */}
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 transition-transform duration-200 group-hover/lesson:scale-110 dark:text-amber-400">
-        <Lock className="h-3.5 w-3.5" />
-      </div>
+      {/* Status icon */}
+      {isLocked ? (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 transition-transform duration-200 group-hover/lesson:scale-110 dark:text-amber-400">
+          <Lock className="h-3.5 w-3.5" />
+        </div>
+      ) : (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] transition-transform duration-200 group-hover/lesson:scale-110">
+          <Play className="h-3.5 w-3.5 fill-current" />
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { memo, useCallback, type MouseEvent } from "react";
 import { motion } from "framer-motion";
-import { MoreHorizontal, Copy, Archive, Upload, Trash2 } from "lucide-react";
+import { MoreHorizontal, Copy, Archive, Upload, Trash2, ScanLine } from "lucide-react";
 import {
   AppDropdownMenu,
   AppDropdownMenuTrigger,
@@ -219,6 +219,12 @@ function QuestionRowBase({
                 <TypeIcon className="h-3 w-3" />
                 {typeCfg.label}
               </StudioChip>
+              {question.questionFormat === "image" && (
+                <StudioChip variant="success" size="sm" className="gap-1">
+                  <ScanLine className="h-3 w-3" />
+                  سؤال مصوّر
+                </StudioChip>
+              )}
               <StudioChip
                 variant={difficultyToChipVariant(difficultyCfg.color)}
                 size="sm"

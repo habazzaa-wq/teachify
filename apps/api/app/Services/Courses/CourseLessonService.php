@@ -42,7 +42,7 @@ class CourseLessonService
                 'description' => $data['description'] ?? null,
                 'type' => $data['lesson_type'] ?? $data['type'] ?? 'video',
                 'lesson_type' => $data['lesson_type'] ?? $data['type'] ?? 'video',
-                'status' => $data['status'] ?? 'draft',
+                'status' => $data['status'] ?? 'published',
                 'visibility' => $data['visibility'] ?? 'private',
                 'sort_order' => $data['sort_order'] ?? $this->nextSortOrder($section),
                 'duration_seconds' => $data['duration_seconds'] ?? null,
@@ -55,7 +55,7 @@ class CourseLessonService
                 'color' => $data['color'] ?? null,
                 'icon' => $data['icon'] ?? null,
                 'exam_id' => $data['exam_id'] ?? null,
-                'published_at' => ($data['status'] ?? 'draft') === 'published' ? now() : null,
+                'published_at' => ($data['status'] ?? 'published') === 'published' ? now() : null,
             ]);
         });
     }
@@ -139,6 +139,10 @@ class CourseLessonService
     public function changeStatus(Course $course, CourseSection $section, CourseLesson $lesson, string $status): CourseLesson
     {
         $this->ensureLessonBelongsToSection($course, $section, $lesson);
+
+        if ($status === $lesson->status) {
+            return $lesson;
+        }
 
         $allowed = [
             'draft' => ['review', 'published', 'archived'],

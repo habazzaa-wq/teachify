@@ -12,7 +12,6 @@ import {
   Code2,
   HelpCircle,
   ScanLine,
-  LayoutList,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -38,17 +37,14 @@ export const QUESTION_FORMAT_CONFIG: Record<
 > = {
   text: { label: "سؤال نصي", description: "اكتب السؤال بشكل طبيعي.", icon: FileText, color: "text-studio-fg", bg: "bg-studio-soft" },
   image: { label: "سؤال مصوّر", description: "التقط أو ارفع صورة السؤال.", icon: ScanLine, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  structured: { label: "سؤال مُهيكل", description: "محتوى مُستخرج من صورة وقابل للتحرير.", icon: LayoutList, color: "text-violet-500", bg: "bg-violet-500/10" },
 };
 
-export const QUESTION_FORMAT_OPTIONS = Object.entries(QUESTION_FORMAT_CONFIG)
-  .filter(([value]) => value !== "structured")
-  .map(([value, cfg]) => ({
-    value: value as QuestionFormat,
-    label: cfg.label,
-    description: cfg.description,
-    icon: cfg.icon,
-  }));
+export const QUESTION_FORMAT_OPTIONS = Object.entries(QUESTION_FORMAT_CONFIG).map(([value, cfg]) => ({
+  value: value as QuestionFormat,
+  label: cfg.label,
+  description: cfg.description,
+  icon: cfg.icon,
+}));
 
 export const QUESTION_TYPE_CONFIG: Record<
   QuestionType,

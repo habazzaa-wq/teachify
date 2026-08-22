@@ -18,8 +18,6 @@ import {
   type QuestionFormValues,
 } from "./CreateQuestionDialog";
 import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
-import { DocumentReviewEditor } from "./import/DocumentReviewEditor";
-import { parseQuestionDocument } from "@/components/structured-question";
 import type { Question, QuestionContent, QuestionFormat } from "@/features/exam-bank/types";
 import { Skeleton } from "@/components/ui";
 
@@ -68,7 +66,6 @@ export function EditQuestionDialog({
       visibility: q.visibility,
       shuffleOptions: q.shuffleOptions,
       content,
-      contentDocument: parseQuestionDocument(q.contentDocument),
     });
     setError(null);
     setEditScanUrl(q.scanUrl ?? null);
@@ -89,11 +86,10 @@ export function EditQuestionDialog({
   }, []);
 
   const isImageFormat = values?.questionFormat === "image";
-  const isStructuredFormat = values?.questionFormat === "structured";
 
   const handleSubmit = async () => {
     if (!values || !questionId || isSubmitting) return;
-    if (values.questionFormat !== "image" && values.questionFormat !== "structured" && !values.title.trim()) {
+    if (values.questionFormat !== "image" && !values.title.trim()) {
       setError("الرجاء إدخال عنوان للسؤال.");
       return;
     }
@@ -118,18 +114,12 @@ export function EditQuestionDialog({
       <AppDialogContent className="max-w-3xl">
         <AppDialogHeader>
           <AppDialogTitle>
-            {isImageFormat
-              ? "تحرير سؤال مصوّر"
-              : isStructuredFormat
-                ? "تحرير سؤال مُهيكل"
-                : "تحرير السؤال"}
+            {isImageFormat ? "تحرير سؤال مصوّر" : "تحرير السؤال"}
           </AppDialogTitle>
           <AppDialogDescription>
             {isImageFormat
               ? "حدّث صورة السؤال أو تفاصيل الإجابة."
-              : isStructuredFormat
-                ? "راجع المحتوى المستخرج من الصورة وعدّله ثم احفظ التغييرات."
-                : "عدّل تفاصيل السؤال ومحتواه ثم احفظ التغييرات."}
+              : "عدّل تفاصيل السؤال ومحتواه ثم احفظ التغييرات."}
           </AppDialogDescription>
         </AppDialogHeader>
 
@@ -157,25 +147,12 @@ export function EditQuestionDialog({
                 </div>
               )}
 
-              {isStructuredFormat && values.contentDocument && (
-                <div className="mb-4 space-y-4">
-                  <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
-                    <p className="mb-3 text-sm font-semibold text-studio-fg">المحتوى المستخرج</p>
-                    <DocumentReviewEditor
-                      document={values.contentDocument}
-                      onChange={(next) => handlePatch({ contentDocument: next })}
-                      disabled={updateMutation.isPending}
-                    />
-                  </div>
-                </div>
-              )}
-
               <QuestionFormFields
                 values={values}
                 onChange={handlePatch}
                 disabled={updateMutation.isPending}
                 hideTitle={isImageFormat}
-                hideFormat={isImageFormat || isStructuredFormat}
+                hideFormat={isImageFormat}
               />
             </>
           ) : null}

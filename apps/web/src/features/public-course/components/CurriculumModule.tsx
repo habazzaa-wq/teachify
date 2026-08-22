@@ -9,12 +9,13 @@ import { SubscribeButton } from "./primitives";
 import { ExamEntryCard } from "@/features/exam-entry/components/ExamEntryCard";
 import { getModuleStats, formatDuration } from "../utils";
 import { LOCKED_GRADIENT } from "../brand";
-import type { PublicCourseModule, PublicCourseSection } from "../types";
+import type { PublicCourseLesson, PublicCourseModule, PublicCourseSection } from "../types";
 
 interface CurriculumModuleProps {
   module: PublicCourseModule;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay: (lesson: PublicCourseLesson) => void;
   isExpanded: boolean;
   onToggle: () => void;
   expandedSections: ReadonlySet<string>;
@@ -25,6 +26,7 @@ function CurriculumModuleInner({
   module,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isExpanded,
   onToggle,
   expandedSections,
@@ -74,8 +76,8 @@ function CurriculumModuleInner({
         "overflow-hidden rounded-2xl border transition-colors duration-300",
         "border-border/50 dark:border-white/[0.07]",
         isExpanded
-          ? "border-[#BF6D58]/25 bg-card shadow-sm"
-          : "bg-card/60 hover:border-[#BF6D58]/25",
+          ? "border-[var(--brand-primary)] bg-card shadow-sm"
+          : "bg-card/60 hover:border-[var(--brand-primary)]",
       )}
     >
       {/* Module Header */}
@@ -86,8 +88,8 @@ function CurriculumModuleInner({
         className={cn(
           "flex w-full items-center gap-3 px-4 py-4 text-start sm:px-5",
           "transition-colors duration-200 focus-visible:outline-none",
-          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#BF6D58]/40",
-          isExpanded ? "bg-[#BF6D58]/[0.04]" : "hover:bg-muted/30",
+          "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-primary)]",
+          isExpanded ? "bg-[var(--brand-primary)]" : "hover:bg-muted/30",
         )}
       >
         {/* Module Number Badge */}
@@ -95,8 +97,8 @@ function CurriculumModuleInner({
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold tabular-nums transition-all duration-300",
             isExpanded
-              ? "scale-105 bg-gradient-to-br from-[#BF6D58] to-[#a85a47] text-white shadow-md shadow-[#BF6D58]/30"
-              : "border border-[#BF6D58]/20 bg-[#BF6D58]/8 text-[#BF6D58]",
+              ? "scale-105 bg-[var(--brand-primary)] text-white shadow-md shadow-[rgba(0,0,0,0.3)]"
+              : "border border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]",
           )}
         >
           {moduleNumber}
@@ -104,21 +106,31 @@ function CurriculumModuleInner({
 
         {/* Title & Meta */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="line-clamp-1 text-sm font-bold leading-snug text-foreground sm:text-[15px]">
+          <h3
+            className={cn(
+              "line-clamp-1 text-sm font-bold leading-snug sm:text-[15px]",
+              isExpanded ? "text-[var(--brand-primary-contrast)]" : "text-foreground",
+            )}
+          >
             {module.title}
           </h3>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground/70">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]",
+              isExpanded ? "text-[var(--brand-primary-contrast)]" : "text-muted-foreground/70",
+            )}
+          >
             <span className="inline-flex items-center gap-1">
-              <Layers className="h-3 w-3 text-[#BF6D58]/60" />
+              <Layers className={cn("h-3 w-3", isExpanded ? "text-[var(--brand-primary-contrast)]" : "text-[var(--brand-primary)]")} />
               {stats.sections} {stats.sections === 1 ? "قسم" : "أقسام"}
             </span>
             <span className="inline-flex items-center gap-1">
-              <GraduationCap className="h-3 w-3 text-[#BF6D58]/60" />
+              <GraduationCap className={cn("h-3 w-3", isExpanded ? "text-[var(--brand-primary-contrast)]" : "text-[var(--brand-primary)]")} />
               {stats.lessons} {stats.lessons === 1 ? "درس" : "دروس"}
             </span>
             {duration && (
               <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3 text-[#BF6D58]/60" />
+                <Clock className={cn("h-3 w-3", isExpanded ? "text-[var(--brand-primary-contrast)]" : "text-[var(--brand-primary)]")} />
                 {duration}
               </span>
             )}
@@ -132,7 +144,7 @@ function CurriculumModuleInner({
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
             isExpanded
-              ? "bg-[#BF6D58]/10 text-[#BF6D58]"
+              ? "bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]"
               : "bg-muted/50 text-muted-foreground/50",
           )}
         >
@@ -159,6 +171,7 @@ function CurriculumModuleInner({
                     section={section}
                     isEnrolled={isEnrolled}
                     onLockedClick={onLockedClick}
+                    onPlay={onPlay}
                     isExpanded={expandedSections.has(section.id)}
                     onToggle={() => onToggleSection(section.id)}
                   />
@@ -172,7 +185,7 @@ function CurriculumModuleInner({
               {/* Locked subscribe CTA card */}
               {!isEnrolled && (
                 <div
-                  className="overflow-hidden rounded-xl border border-[#BF6D58]/20"
+                  className="overflow-hidden rounded-xl border border-[var(--brand-primary)]"
                   style={{ background: LOCKED_GRADIENT }}
                 >
                   <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -180,10 +193,10 @@ function CurriculumModuleInner({
                       <Lock className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-extrabold text-foreground">
+                      <p className="text-sm font-extrabold text-[var(--brand-primary-contrast)]">
                         هذا المحتوى متاح للمشتركين فقط
                       </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                      <p className="mt-0.5 text-xs leading-relaxed text-[var(--brand-primary-contrast)]/80">
                         اشترك الآن للوصول إلى جميع المحاضرات والملفات والاختبارات الخاصة بهذه الدورة.
                       </p>
                     </div>
@@ -210,6 +223,7 @@ interface SectionAccordionProps {
   section: PublicCourseSection;
   isEnrolled: boolean;
   onLockedClick: () => void;
+  onPlay: (lesson: PublicCourseLesson) => void;
   isExpanded: boolean;
   onToggle: () => void;
 }
@@ -218,6 +232,7 @@ function SectionAccordionInner({
   section,
   isEnrolled,
   onLockedClick,
+  onPlay,
   isExpanded,
   onToggle,
 }: SectionAccordionProps) {
@@ -244,18 +259,18 @@ function SectionAccordionInner({
         aria-expanded={isExpanded}
         className={cn(
           "flex w-full items-center gap-2.5 px-3 py-2.5 text-start transition-colors duration-200",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#BF6D58]/40",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-primary)]",
           "hover:bg-muted/30",
         )}
       >
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#BF6D58]/70" />
+        <BookOpen className="h-3.5 w-3.5 shrink-0 text-[var(--brand-primary)]" />
         <span className="line-clamp-1 flex-1 text-xs font-bold text-foreground/80">
           {section.title}
         </span>
         <span
           className={cn(
             "inline-flex shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums",
-            "bg-[#BF6D58]/8 text-[#BF6D58]",
+            "bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]",
           )}
         >
           {lessons.length || section.lessonsCount} دروس
@@ -298,6 +313,7 @@ function SectionAccordionInner({
                       lesson={lesson}
                       isEnrolled={isEnrolled}
                       onLockedClick={onLockedClick}
+                      onPlay={onPlay}
                       isPreview={section.freePreview}
                     />
                     {isEnrolled && lesson.examId && (

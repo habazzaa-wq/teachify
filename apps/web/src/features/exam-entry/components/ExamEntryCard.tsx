@@ -69,18 +69,14 @@ function ExamEntryCardInner({ lessonId, enabled = true, className }: ExamEntryCa
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-[#BF6D58]/20 bg-card shadow-sm",
-          "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[#BF6D58]/40 before:to-transparent",
+          "relative overflow-hidden rounded-2xl border border-[var(--brand-primary)] bg-card shadow-sm",
+          "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-[var(--brand-primary)] before:to-transparent",
           className,
         )}
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(191,109,88,0.05), rgba(255,181,14,0.03))",
-        }}
       >
         {/* Header */}
         <div className="flex items-start gap-3 p-4 sm:p-5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-gradient-to-br from-[#BF6D58]/15 to-[#FFB50E]/8 text-amber-600 dark:text-amber-400">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] dark:text-[var(--brand-primary-contrast)]">
             <ClipboardCheck className="h-5 w-5" strokeWidth={1.9} />
           </div>
 
@@ -137,7 +133,7 @@ function ExamEntryCardInner({ lessonId, enabled = true, className }: ExamEntryCa
         {/* History + best score */}
         <div className="flex items-center gap-3 border-t border-border/30 bg-muted/20 px-4 py-3 sm:px-5">
           <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <History className="h-3.5 w-3.5 text-[#BF6D58]/70" />
+            <History className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
             {entry.previousAttempts === 0
               ? "لا توجد محاولات سابقة"
               : `${entry.previousAttempts} ${entry.previousAttempts === 1 ? "محاولة" : "محاولات"} سابقة`}
@@ -181,15 +177,14 @@ function ExamEntryCardInner({ lessonId, enabled = true, className }: ExamEntryCa
             onClick={() => setDialogOpen(true)}
             className={cn(
               "group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all duration-300",
-              "shadow-[0_8px_24px_rgba(191,109,88,0.35)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "shadow-[0_8px_24px_rgba(0,0,0,0.35)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               entry.canStart
-                ? "hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(191,109,88,0.45)]"
+                ? "hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.45)]"
                 : "cursor-not-allowed opacity-50 saturate-50",
             )}
             style={{
-              background:
-                "linear-gradient(135deg, #BF6D58, #a85a47)",
+              background: "var(--brand-primary)",
             }}
           >
             <span className="pointer-events-none absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

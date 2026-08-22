@@ -1,17 +1,6 @@
 export type ExamSessionStatus = "in_progress" | "submitted";
 
-export type ExamSessionQuestionType =
-  | "single_choice"
-  | "multiple_choice"
-  | "true_false"
-  | "short_answer"
-  | "essay"
-  | "fill_blank"
-  | "matching"
-  | "ordering"
-  | "numeric"
-  | "file_upload"
-  | "coding";
+export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false" | "numeric" | "essay" | "short_answer";
 
 export type ExamSessionAnswer = string[] | string | null;
 
@@ -23,7 +12,8 @@ export interface ExamSessionOption {
 
 export interface ExamSessionQuestionContent {
   options?: ExamSessionOption[];
-  correct?: string;
+  correct?: string | number;
+  tolerance?: number;
 }
 
 export interface ExamSessionQuestion {
@@ -36,12 +26,11 @@ export interface ExamSessionQuestion {
   order: number;
   section: string | null;
   content: ExamSessionQuestionContent;
-  questionFormat?: "text" | "image" | "structured";
-  scanUrl?: string | null;
-  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
   answer: ExamSessionAnswer;
   answered: boolean;
   isCorrect: boolean | null;
+  questionFormat?: "text" | "image";
+  scanUrl?: string | null;
 }
 
 export interface ExamSessionExamMeta {
@@ -81,6 +70,26 @@ export interface ExamSession {
   questions: ExamSessionQuestion[];
 }
 
+/**
+ * Lightweight payload returned by GET /exams/active-attempt — enough for the
+ * global reminder to surface an unfinished exam without loading the full
+ * session (questions, answers, ...).
+ */
+export interface ActiveExamAttempt {
+  id: string;
+  examId: string;
+  status: ExamSessionStatus;
+  isOfficial: boolean;
+  isPractice: boolean;
+  currentQuestionIndex: number | null;
+  timerEndsAt: string | null;
+  remainingSeconds: number | null;
+  exam: {
+    id: string;
+    title: string;
+  } | null;
+}
+
 export type AntiCheatEventType =
   | "page_hidden"
   | "page_visible"
@@ -98,17 +107,4 @@ export interface AntiCheatEvent {
 export interface SaveProgressPayload {
   current_question_index: number;
   events?: AntiCheatEvent[];
-}
-
-export interface ActiveExamAttempt {
-  id: string;
-  status: ExamSessionStatus;
-  isOfficial: boolean;
-  timerEndsAt: string | null;
-  remainingSeconds: number | null;
-  exam?: {
-    id: string;
-    title: string;
-    duration?: number | null;
-  } | null;
 }

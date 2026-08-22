@@ -41,9 +41,6 @@ export function HeroSection({ course }: HeroSectionProps) {
             "radial-gradient(ellipse at 50% 30%, var(--course-hero-gradient-from) 0%, var(--course-hero-gradient-via) 40%, var(--course-hero-gradient-to) 80%)",
         }}
       />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.03) 0%, transparent 50%)",
-      }} />
 
       <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
@@ -167,16 +164,16 @@ export function HeroSection({ course }: HeroSectionProps) {
                         viewBox="0 0 100 100"
                         className="relative h-20 w-20 sm:h-24 sm:w-24"
                         fill="none"
-                        stroke="#D87B63"
+                        stroke="var(--brand-primary)"
                         strokeWidth="1.5"
                       >
-                        <circle cx="50" cy="50" r="4" fill="#D87B63" stroke="none" />
+                        <circle cx="50" cy="50" r="4" fill="var(--brand-primary)" stroke="none" />
                         <ellipse cx="50" cy="50" rx="30" ry="12" />
                         <ellipse cx="50" cy="50" rx="30" ry="12" transform="rotate(60 50 50)" />
                         <ellipse cx="50" cy="50" rx="30" ry="12" transform="rotate(120 50 50)" />
-                        <circle cx="80" cy="50" r="3" fill="#D87B63" stroke="none" />
-                        <circle cx="35" cy="24" r="3" fill="#D87B63" stroke="none" />
-                        <circle cx="35" cy="76" r="3" fill="#D87B63" stroke="none" />
+                        <circle cx="80" cy="50" r="3" fill="var(--brand-primary)" stroke="none" />
+                        <circle cx="35" cy="24" r="3" fill="var(--brand-primary)" stroke="none" />
+                        <circle cx="35" cy="76" r="3" fill="var(--brand-primary)" stroke="none" />
                       </svg>
                     </div>
                   </div>
@@ -196,7 +193,7 @@ export function HeroSection({ course }: HeroSectionProps) {
                 {/* Free badge */}
                 {course.pricingType === "free" && (
                   <div className="absolute bottom-4 start-4 z-10">
-                    <span className="inline-flex items-center rounded-full bg-[#D87B63] px-3.5 py-1 text-xs font-bold text-white shadow-lg">
+                    <span className="inline-flex items-center rounded-full bg-[var(--brand-primary)] px-3.5 py-1 text-xs font-bold text-white shadow-lg">
                       مجانية الدورة
                     </span>
                   </div>

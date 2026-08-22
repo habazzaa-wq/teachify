@@ -5,6 +5,13 @@ import { getQueryClient } from "@/lib/get-query-client";
 import { publicCourseServerService } from "@/features/public-course/server-services";
 import { PUBLIC_COURSE_QUERY_KEY } from "@/features/public-course/constants";
 import { PublicCoursePage } from "@/features/public-course/components/PublicCoursePage";
+import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { routes } from "@/constants/routes";
+import { buildSeoMetadata, getSiteName } from "@/lib/seo/metadata";
+import { breadcrumbJsonLd, courseJsonLd } from "@/lib/seo/jsonld";
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
+import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -12,28 +19,46 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const course = await publicCourseServerService.getBySlug(slug);
+  const [tenant, origin, course] = await Promise.all([
+    getTenantSeoContext(),
+    getRequestOrigin(),
+    publicCourseServerService.getBySlug(slug),
+  ]);
 
   if (!course) {
     return { title: "الدورة غير موجودة" };
   }
 
-  return {
-    title: course.seo?.title || course.title,
-    description: course.seo?.description || course.shortDescription || course.subtitle,
-    keywords: course.seo?.keywords?.split(",") || [],
-    openGraph: {
-      title: course.seo?.title || course.title,
-      description: course.seo?.description || course.shortDescription || "",
-      images: course.coverImage ? [course.coverImage] : course.thumbnail ? [course.thumbnail] : [],
-      type: "website",
+  const title =
+    course.seo?.title ||
+    [course.title, course.subject?.name].filter(Boolean).join(" | ");
+  const description =
+    course.seo?.description || course.shortDescription || course.subtitle || course.description;
+
+  return buildSeoMetadata(
+    {
+      title,
+      description,
+      keywords: course.seo?.keywords
+        ?.split(",")
+        .map((keyword) => keyword.trim())
+        .filter(Boolean),
+      canonical: canonicalUrl(origin, `/courses/${course.slug}`),
+      ogImage: course.coverImage || course.thumbnail,
+      ogImageAlt: course.title,
     },
-  };
+    tenant,
+    origin,
+  );
 }
 
 export default async function CourseSlugPage({ params }: PageProps) {
   const { slug } = await params;
-  const course = await publicCourseServerService.getBySlug(slug);
+  const [course, tenant, origin] = await Promise.all([
+    publicCourseServerService.getBySlug(slug),
+    getTenantSeoContext(),
+    getRequestOrigin(),
+  ]);
 
   if (!course) {
     notFound();
@@ -56,9 +81,36 @@ export default async function CourseSlugPage({ params }: PageProps) {
     }),
   ]);
 
+  // Single source of truth for the visible breadcrumbs and the matching
+  // BreadcrumbList JSON-LD — the stage crumb is added only when the course has
+  // a real educational stage, keeping both signals identical.
+  const breadcrumbNodes: Array<{ name: string; href: string }> = [
+    { name: "الرئيسية", href: routes.home },
+    { name: "جميع الكورسات", href: routes.publicCourse },
+  ];
+  if (course.educationalStage) {
+    breadcrumbNodes.push({
+      name: course.educationalStage.name,
+      href: `/stages/${course.educationalStage.id}`,
+    });
+  }
+  breadcrumbNodes.push({ name: course.title, href: `/courses/${course.slug}` });
+
+  const breadcrumbJsonLdItems = breadcrumbNodes.map((node) => ({
+    name: node.name,
+    url: canonicalUrl(origin, node.href),
+  }));
+
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <PublicCoursePage slug={slug} />
-    </HydrationBoundary>
+    <>
+      <JsonLd data={courseJsonLd(course, origin, getSiteName(tenant))} />
+      <JsonLd data={breadcrumbJsonLd(breadcrumbJsonLdItems)} />
+      <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <Breadcrumbs items={breadcrumbNodes} />
+      </div>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <PublicCoursePage slug={slug} />
+      </HydrationBoundary>
+    </>
   );
 }

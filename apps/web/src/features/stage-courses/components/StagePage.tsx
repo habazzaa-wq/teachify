@@ -144,8 +144,8 @@ export function StagePage({ stageId }: StagePageProps) {
                 onClick={() => setSheetOpen(true)}
                 className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white transition-all duration-300"
                 style={{
-                  background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-                  boxShadow: `0 4px 16px ${PRIMARY}40`,
+                  background: "var(--brand-primary)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
                 }}
               >
                 <SlidersHorizontal className="h-4 w-4" />

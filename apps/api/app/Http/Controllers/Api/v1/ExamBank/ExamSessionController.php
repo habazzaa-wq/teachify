@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\ExamBank;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExamBank\SaveExamAnswerRequest;
 use App\Http\Requests\ExamBank\SaveExamProgressRequest;
+use App\Http\Resources\ExamActiveAttemptResource;
 use App\Http\Resources\ExamSessionResource;
 use App\Models\CourseLesson;
 use App\Models\ExamAttempt;
@@ -51,6 +52,21 @@ class ExamSessionController extends Controller
         ]);
     }
 
+    public function activeAttempt(ExamSessionService $service): JsonResponse
+    {
+        $attempt = $service->activeAttempt(request()->user());
+
+        if ($attempt === null) {
+            return response()->json(['data' => null]);
+        }
+
+        $attempt->load('exam');
+
+        return response()->json([
+            'data' => new ExamActiveAttemptResource($attempt),
+        ]);
+    }
+
     public function show(ExamAttempt $attempt, ExamSessionService $service): JsonResponse
     {
         abort_unless(Gate::allows('view', $attempt), 404);
@@ -93,34 +109,6 @@ class ExamSessionController extends Controller
             'message' => 'Progress saved.',
             'data' => [
                 'status' => $attempt->status,
-            ],
-        ]);
-    }
-
-    public function activeAttempt(ExamSessionService $service): JsonResponse
-    {
-        $attempt = $service->activeAttempt(request()->user());
-
-        if ($attempt === null) {
-            return response()->json(['data' => null]);
-        }
-
-        $exam = $attempt->exam;
-
-        return response()->json([
-            'data' => [
-                'id' => (string) $attempt->id,
-                'status' => $attempt->status,
-                'isOfficial' => (bool) $attempt->is_official,
-                'timerEndsAt' => $attempt->timer_ends_at?->toIso8601String(),
-                'remainingSeconds' => $attempt->timer_ends_at !== null
-                    ? max(0, $attempt->timer_ends_at->getTimestamp() - now()->getTimestamp())
-                    : null,
-                'exam' => [
-                    'id' => (string) $exam->id,
-                    'title' => $exam->title,
-                    'duration' => $exam->duration,
-                ],
             ],
         ]);
     }

@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { SubscribeButton } from "./primitives";
-import { ACCENT, CTA_GRADIENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
+import { CTA_GRADIENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
 import type { PublicCourse } from "../types";
 
 interface PurchaseSidebarProps {
@@ -49,7 +49,7 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = "ج.م";
+  const currency = course.currency;
 
   const discountPercent = useMemo(() => {
     if (!hasDiscount || !originalPrice || !course.discountPrice) return 0;
@@ -114,17 +114,19 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
                 <span className="text-3xl font-extrabold tracking-tight text-foreground">
                   {formatNumber(displayPrice)}
                 </span>
-                <span className="mb-1 text-sm font-semibold text-muted-foreground">
-                  {currency}
-                </span>
+                {currency && (
+                  <span className="mb-1 text-sm font-semibold text-muted-foreground">
+                    {currency}
+                  </span>
+                )}
                 {hasDiscount && (
                   <>
                     <span className="mb-1 text-base text-muted-foreground line-through">
-                      {formatNumber(originalPrice)} {currency}
+                      {formatNumber(originalPrice)} {currency ?? ""}
                     </span>
                     <span
                       className="mb-1 rounded-lg px-2 py-0.5 text-[11px] font-extrabold"
-                      style={{ background: `${ACCENT}22`, color: "#b45309" }}
+                      style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
                     >
                       خصم {discountPercent}%
                     </span>
@@ -167,8 +169,8 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
           <ul className="grid grid-cols-1 gap-2.5">
             {includes.map((item) => (
               <li key={item.text} className="flex items-center gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#BF6D58]/10">
-                  <Check className="h-3 w-3 text-[#BF6D58]" strokeWidth={3} />
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-primary)]">
+                  <Check className="h-3 w-3 text-[var(--brand-primary-contrast)]" strokeWidth={3} />
                 </span>
                 <span className="text-sm font-medium text-muted-foreground">{item.text}</span>
               </li>
@@ -181,12 +183,12 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
           {/* Stats */}
           <div className="flex items-center justify-center gap-1 rounded-xl bg-muted/50 px-4 py-2.5">
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <Users className="h-3.5 w-3.5 text-[#BF6D58]" />
+              <Users className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
               {formatNumber(course.studentsCount)} طالب
             </span>
             <span className="mx-1.5 text-xs text-muted-foreground/40">•</span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <BookOpen className="h-3.5 w-3.5 text-[#BF6D58]" />
+              <BookOpen className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
               {formatNumber(course.lessonsCount)} درس
             </span>
           </div>

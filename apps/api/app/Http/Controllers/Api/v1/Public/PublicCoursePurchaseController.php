@@ -27,6 +27,12 @@ class PublicCoursePurchaseController extends Controller
 
         abort_if(! $student, 401, 'يجب تسجيل الدخول أولاً.');
 
+        abort_unless(
+            $student->roles()->where('slug', 'student')->exists(),
+            403,
+            'هذه الميزة متاحة للطلاب فقط.',
+        );
+
         $course = Course::query()
             ->where('tenant_id', $tenant->id)
             ->where('slug', $slug)

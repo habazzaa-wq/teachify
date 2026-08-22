@@ -107,10 +107,11 @@ php artisan icons:cache 2>/dev/null || true
 php artisan storage:link --force 2>/dev/null || true
 
 # Fix permissions
-chown -R www-data:www-data "$DEPLOY_DIR"
+chown -R deplo:www-data "$DEPLOY_DIR"
 chmod -R 775 "$DEPLOY_DIR/apps/api/storage"
 chmod -R 775 "$DEPLOY_DIR/apps/api/bootstrap/cache"
 chmod -R 775 "$DEPLOY_DIR/logs"
+chmod g+s "$DEPLOY_DIR/apps/api/storage/app/uploads"
 
 # ── 11. Build frontend ──
 echo "[11/13] Building Next.js..."

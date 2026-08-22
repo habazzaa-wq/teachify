@@ -6,6 +6,7 @@ import { Upload, FolderOpen, Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
 import { useMediaAssets, useFolderBreadcrumbs, useToggleFavorite, useTogglePin, useArchiveAsset, useDuplicateAsset } from "../../hooks";
+import { mediaLibraryService } from "../../services";
 import { WorkspaceToolbar } from "./WorkspaceToolbar";
 import { MediaBreadcrumbs } from "./MediaBreadcrumbs";
 import { DamMediaCard } from "./DamMediaCard";
@@ -93,6 +94,7 @@ function AssetWorkspaceBase({
     sortDirection,
     selectedIds,
     selectAsset,
+    selectAll,
     clearSelection,
     setInspectorAssetId,
     filters,
@@ -156,6 +158,20 @@ function AssetWorkspaceBase({
     selectAsset(id, assets.findIndex((a) => a.id === id), !!e?.shiftKey, !!e?.ctrlKey || !!e?.metaKey, assetIds);
   }, [assets, selectAsset]);
 
+  const handleSelectAllToggle = useCallback(async (checked: boolean) => {
+    if (!checked) {
+      clearSelection();
+      return;
+    }
+    if (totalAssets === 0) return;
+    try {
+      const allIds = await mediaLibraryService.listAllAssetIds(assetParams);
+      selectAll(allIds);
+    } catch {
+      selectAll(assets.map((a) => a.id));
+    }
+  }, [assetParams, totalAssets, assets, selectAll, clearSelection]);
+
   const grouped = useMemo(() => groupAssets(assets, groupBy), [assets, groupBy]);
 
   const breadcrumbItems = useMemo(() => {
@@ -171,6 +187,8 @@ function AssetWorkspaceBase({
     <div className="flex h-full flex-col overflow-hidden">
       <WorkspaceToolbar
         totalAssets={totalAssets}
+        selectedCount={selectedIds.size}
+        onSelectAllToggle={handleSelectAllToggle}
         onUpload={onUpload}
         onCreateFolder={onCreateFolder}
         onRefresh={() => refetch()}

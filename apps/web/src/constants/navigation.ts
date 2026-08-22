@@ -15,6 +15,7 @@ import {
   HelpCircle,
   GraduationCap,
   Images,
+  SearchCheck,
   type LucideIcon,
 } from "lucide-react";
 import { routes } from "./routes";
@@ -31,6 +32,7 @@ export const permissions = {
   analyticsView: "analytics.view",
   certificatesView: "certificates.view",
   mediaView: "media.view",
+  seoStudioView: "seo.view",
   activityLogView: null,
   auditLogView: "audit.view",
   settingsView: "tenant.manage",
@@ -121,6 +123,12 @@ export const dashboardNav: readonly NavItem[] = [
     href: routes.dashboardMedia,
     icon: Images,
     permission: permissions.mediaView,
+  },
+  {
+    labelKey: "nav.seoStudio",
+    href: routes.seoStudio,
+    icon: SearchCheck,
+    permission: permissions.seoStudioView,
   },
   {
     labelKey: "nav.activityLog",

@@ -165,4 +165,22 @@ export const studentsService = {
   async bulkDelete(ids: string[]): Promise<void> {
     await api.post("/students/bulk-destroy", { ids: ids.map(Number) });
   },
+
+  async activate(id: string): Promise<Student> {
+    const { data } = await api.post(`/students/${id}/activate`);
+    return data.data ? formatStudent(data.data) : formatStudent({ id });
+  },
+
+  async suspend(id: string): Promise<Student> {
+    const { data } = await api.post(`/students/${id}/suspend`);
+    return data.data ? formatStudent(data.data) : formatStudent({ id });
+  },
+
+  async bulkActivate(ids: string[]): Promise<void> {
+    await api.post("/students/bulk/activate", { ids: ids.map(Number) });
+  },
+
+  async bulkSuspend(ids: string[]): Promise<void> {
+    await api.post("/students/bulk/suspend", { ids: ids.map(Number) });
+  },
 };

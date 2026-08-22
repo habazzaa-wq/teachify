@@ -24,6 +24,7 @@ import {
   BadgePercent,
   Signal,
   MapPin,
+  Send,
 } from "lucide-react";
 import {
   AppDropdownMenu,
@@ -46,6 +47,7 @@ interface CourseBlockProps {
   course: Course;
   index?: number;
   onEdit?: (course: Course) => void;
+  onPublish?: (course: Course) => void;
   onDuplicate?: (course: Course) => void;
   onArchive?: (course: Course) => void;
   onRestore?: (course: Course) => void;
@@ -105,6 +107,7 @@ function CourseBlock({
   course,
   index = 0,
   onEdit,
+  onPublish,
   onDuplicate,
   onArchive,
   onRestore,
@@ -322,6 +325,17 @@ function CourseBlock({
                           <Copy className="ms-2 h-4 w-4" />
                           نسخ
                         </AppDropdownMenuItem>
+                        {course.status !== "published" && onPublish && (
+                          <AppDropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onPublish(course);
+                            }}
+                          >
+                            <Send className="ms-2 h-4 w-4" />
+                            نشر
+                          </AppDropdownMenuItem>
+                        )}
                         {onToggleFeature && (
                           <AppDropdownMenuItem
                             onClick={(e) => {

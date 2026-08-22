@@ -1,6 +1,5 @@
 <?php
 
-use App\Console\Commands\CleanupAbandonedQuestionImports;
 use App\Console\Commands\CleanupAbandonedScanUploads;
 use App\Console\Commands\GarbageCollectUploads;
 use Illuminate\Foundation\Inspiring;
@@ -16,6 +15,3 @@ Schedule::command(GarbageCollectUploads::class)->everyFiveMinutes();
 
 // Clean up abandoned scan upload temp files daily.
 Schedule::command(CleanupAbandonedScanUploads::class)->daily();
-
-// Reap abandoned question imports past retention daily.
-Schedule::command(CleanupAbandonedQuestionImports::class)->dailyAt('03:20');

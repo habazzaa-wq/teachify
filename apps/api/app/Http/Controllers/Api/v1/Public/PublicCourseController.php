@@ -57,7 +57,7 @@ class PublicCourseController extends Controller
 
         match ($request->string('pricing_type')->toString()) {
             'free' => $query->where('pricing_type', 'free'),
-            'paid' => $query->whereIn('pricing_type', ['one_time', 'subscription']),
+            'paid' => $query->where('pricing_type', '!=', 'free'),
             default => null,
         };
 
@@ -179,7 +179,18 @@ class PublicCourseController extends Controller
             ->firstOrFail();
 
         $modules = $course->modules()
-            ->with(['sections.lessons'])
+            ->where('is_published', true)
+            ->with([
+                'sections' => fn ($q) => $q
+                    ->where('is_published', true)
+                    ->orderBy('sort_order')
+                    ->with([
+                        'lessons' => fn ($lq) => $lq
+                            ->where('status', 'published')
+                            ->orderBy('sort_order')
+                            ->with('files'),
+                    ]),
+            ])
             ->orderBy('order')
             ->get();
 

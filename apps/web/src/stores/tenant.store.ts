@@ -1,6 +1,8 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { addApiRequestContextReader } from "@/services/api/request-context";
 import type {
   ActiveTenant,
   Membership,
@@ -9,6 +11,7 @@ import type {
   Ability,
   NavigationItem,
 } from "@/types/tenant.types";
+import type { AuthBranding } from "@/types/auth.types";
 import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 
 export type BootstrapStatus =
@@ -33,6 +36,16 @@ interface TenantState {
   bootstrapError: string | null;
 
   setActiveTenant: (tenant: ActiveTenant | null) => void;
+  setTenantSite: (site: {
+    name: string;
+    favicon: string | null;
+    logo_type?: string | null;
+    logo_icon?: string | null;
+    logo_image?: string | null;
+    font?: string | null;
+    primary_color?: string | null;
+    secondary_color?: string | null;
+  }) => void;
   setTenantContext: (context: {
     tenant: ActiveTenant;
     membership: Membership;
@@ -49,16 +62,6 @@ interface TenantState {
     status: string;
     branding: TenantBranding;
     subdomain?: string | null;
-  }) => void;
-  setTenantSite: (site: {
-    name?: string | null;
-    favicon?: string | null;
-    font?: string | null;
-    logo_type?: string | null;
-    logo_icon?: string | null;
-    logo_image?: string | null;
-    primary_color?: string | null;
-    secondary_color?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
   setBootstrapError: (error: string | null) => void;
@@ -81,6 +84,55 @@ export const useTenantStore = create<TenantState>()(
     bootstrapError: null,
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
+
+    setTenantSite: ({ name, favicon, logo_type, logo_icon, logo_image, font, primary_color, secondary_color }) =>
+      set((state) => {
+        const brandingBase = state.activeTenant?.branding ?? {
+          logo: null,
+          favicon: null,
+          primary_color: null,
+          secondary_color: null,
+          accent_color: null,
+          font: null,
+          dark_logo: null,
+          light_logo: null,
+        };
+
+        const mergedBranding: AuthBranding = {
+          ...brandingBase,
+          favicon,
+          ...(logo_type !== undefined && { logo_type }),
+          ...(logo_icon !== undefined && { logo_icon }),
+          ...(logo_image !== undefined && { logo_image }),
+          ...(font !== undefined && { font }),
+          ...(primary_color !== undefined && { primary_color }),
+          ...(secondary_color !== undefined && { secondary_color }),
+        };
+
+        const activeTenant = state.activeTenant
+          ? {
+              ...state.activeTenant,
+              name,
+              branding: mergedBranding,
+            }
+          : null;
+
+        return {
+          activeTenant,
+          branding: state.branding
+            ? {
+                ...state.branding,
+                favicon,
+                ...(logo_type !== undefined && { logoType: logo_type }),
+                ...(logo_icon !== undefined && { logoIcon: logo_icon }),
+                ...(logo_image !== undefined && { logoImage: logo_image }),
+                ...(font !== undefined && { font }),
+                ...(primary_color !== undefined && { primaryColor: primary_color }),
+                ...(secondary_color !== undefined && { secondaryColor: secondary_color }),
+              }
+            : state.branding,
+        };
+      }),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
       set({
@@ -109,6 +161,9 @@ export const useTenantStore = create<TenantState>()(
             font: data.branding.font,
             dark_logo: data.branding.darkLogo,
             light_logo: data.branding.lightLogo,
+            logo_type: data.branding.logoType ?? null,
+            logo_icon: data.branding.logoIcon ?? null,
+            logo_image: data.branding.logoImage ?? null,
             domain: data.domain,
           },
         },
@@ -117,21 +172,6 @@ export const useTenantStore = create<TenantState>()(
         branding: data.branding,
         bootstrapStatus: "resolved",
         bootstrapError: null,
-      }),
-
-    setTenantSite: (site) =>
-      set((state) => {
-        if (!state.activeTenant) return state;
-        const { name, ...brandingPatch } = site;
-        const currentBranding = state.activeTenant.branding;
-        if (!currentBranding) return state;
-        return {
-          activeTenant: {
-            ...state.activeTenant,
-            name: name ?? state.activeTenant.name,
-            branding: { ...currentBranding, ...brandingPatch },
-          },
-        };
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
@@ -154,3 +194,11 @@ export const useTenantStore = create<TenantState>()(
       }),
   }),
 );
+
+// Provide tenant request context lazily to the API layer at request time.
+// Registered from the store itself so axios.ts never has to import Zustand
+// (see services/api/request-context.ts).
+addApiRequestContextReader(() => ({
+  tenantId: useTenantStore.getState().activeTenant?.id?.toString() ?? null,
+  tenantDomain: useTenantStore.getState().domain ?? null,
+}));

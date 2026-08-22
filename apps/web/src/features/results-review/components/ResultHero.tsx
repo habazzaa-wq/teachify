@@ -31,9 +31,6 @@ function ResultHeroInner({ result }: ResultHeroProps) {
       className="relative overflow-hidden rounded-3xl border p-6 shadow-2xl sm:p-8"
       style={{
         borderColor: passed ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)",
-        background: passed
-          ? "linear-gradient(135deg, rgba(16,185,129,0.10), rgba(191,109,88,0.05) 55%, rgba(255,181,14,0.04))"
-          : "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(191,109,88,0.04) 55%, rgba(255,181,14,0.03))",
       }}
     >
       {/* Decorative glow */}

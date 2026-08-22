@@ -13,6 +13,9 @@ import { useAuth } from "@/providers/AuthProvider";
 import { authKeys } from "@/services/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
+import { hasStaffAccess } from "@/lib/tenant-access";
+import { useTenantStore } from "@/stores/tenant.store";
+import { routes } from "@/constants/routes";
 import type { ApiError } from "@/types/common.types";
 import { ErrorMessage, type NoticeKind } from "./error-message";
 import { SuccessState } from "./success-state";
@@ -102,7 +105,10 @@ function LoginForm() {
       setDone(true);
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: authKeys.all });
-        router.replace("/teacher/dashboard");
+        const roles = useTenantStore.getState().roles;
+        // Only staff (owner/admin/instructor) may enter the teacher control
+        // panel. A student who signs in here lands on their own dashboard.
+        router.replace(hasStaffAccess(roles) ? routes.dashboard : routes.studentDashboard);
       }, 1200);
     },
     onError: (err: ApiError) => {

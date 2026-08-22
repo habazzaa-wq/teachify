@@ -9,8 +9,10 @@ use App\Models\MediaAssetVariant;
 use App\Models\MediaUploadSession;
 use App\Models\PlatformBunnySetting;
 use App\Models\TenantIntegration;
+use App\Services\Bunny\Contracts\BunnyStreamInterface;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class BunnyStreamProvider implements MediaProvider
 {
@@ -93,7 +95,7 @@ class BunnyStreamProvider implements MediaProvider
             ];
         }
 
-        app(\App\Services\Bunny\Contracts\BunnyStreamInterface::class)->deleteVideo($videoId);
+        app(BunnyStreamInterface::class)->deleteVideo($videoId);
 
         return [
             'provider' => 'bunny',
@@ -120,14 +122,36 @@ class BunnyStreamProvider implements MediaProvider
         $pullZone = $config['pull_zone'] ?? null;
         $videoId = (string) $asset->external_id;
 
+        $playbackUrl = null;
+        $status = null;
+
+        try {
+            $status = app(BunnyStreamInterface::class)->getVideoStatus($videoId);
+            $playbackUrl = $status['playback_url'] ?? null;
+        } catch (Throwable) {
+            // Stream API unavailable (not configured, transient failure) —
+            // fall back to the configured pull zone below.
+        }
+
+        if ($playbackUrl === null && filled($pullZone)) {
+            $host = trim((string) $pullZone, '/');
+            // The pull zone may already carry a scheme (e.g. the platform
+            // cdn_hostname). Never double-prefix the protocol.
+            if (! preg_match('#^[a-z][a-z0-9+.\-]*://#i', $host)) {
+                $host = 'https://'.$host;
+            }
+            $playbackUrl = rtrim($host, '/').'/'.$videoId.'/playlist.m3u8';
+        }
+
         return [
             'provider' => 'bunny',
             'provider_service' => 'stream',
             'video_id' => $videoId,
-            'playback_url' => $pullZone ? 'https://'.trim((string) $pullZone, '/').'/'.$videoId.'/playlist.m3u8' : null,
-            'thumbnail_url' => $asset->metadata['thumbnail_url'] ?? null,
-            'duration_seconds' => $asset->metadata['duration_seconds'] ?? null,
-            'available_resolutions' => $asset->metadata['available_resolutions'] ?? [],
+            'library_id' => $config['library_id'] ?? null,
+            'playback_url' => $playbackUrl,
+            'thumbnail_url' => $status['thumbnail_url'] ?? ($asset->metadata['thumbnail_url'] ?? null),
+            'duration_seconds' => $status['duration'] ?? ($asset->metadata['duration_seconds'] ?? null),
+            'available_resolutions' => $status['resolutions'] ?? ($asset->metadata['available_resolutions'] ?? []),
         ];
     }
 
@@ -143,22 +167,30 @@ class BunnyStreamProvider implements MediaProvider
             ->whereIn('status', ['pending', 'active'])
             ->first();
 
-        if (! $integration) {
-            $platform = PlatformBunnySetting::active();
+        $platform = PlatformBunnySetting::active();
 
-            if ($platform && $platform->hasStreamCredentials()) {
-                return $platform->toProviderConfig('stream');
+        if ($integration) {
+            $config = $integration->config ?? [];
+
+            // If the tenant integration config already has a stream library,
+            // use it directly.
+            if (! empty($config['library_id'])) {
+                return $config;
             }
 
-            throw new RuntimeException('Bunny Stream integration is not configured for this tenant.');
+            // Merge platform-wide Stream settings underneath tenant-specific
+            // config so per-tenant overrides (e.g. collection prefix) apply.
+            if ($platform && $platform->hasStreamCredentials()) {
+                return array_merge($platform->toProviderConfig('stream'), $config);
+            }
+
+            return $config;
         }
 
-        $config = $integration->config ?? [];
-
-        if (empty($config['library_id'])) {
-            throw new RuntimeException('Bunny Stream library is not configured for this tenant.');
+        if ($platform && $platform->hasStreamCredentials()) {
+            return $platform->toProviderConfig('stream');
         }
 
-        return $config;
+        throw new RuntimeException('Bunny Stream integration is not configured for this tenant.');
     }
 }

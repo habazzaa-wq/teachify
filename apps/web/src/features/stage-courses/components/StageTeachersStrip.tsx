@@ -42,7 +42,7 @@ export function StageTeachersStrip({ teachers, activeTeacherId, onSelect }: Stag
               background: active ? PRIMARY : isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.85)",
               border: `1px solid ${active ? PRIMARY : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
               boxShadow: active
-                ? `0 4px 16px ${PRIMARY}40`
+                ? "0 4px 16px rgba(0,0,0,0.251)"
                 : isDark
                   ? "0 1px 2px rgba(0,0,0,0.2)"
                   : "0 1px 3px rgba(120,90,60,0.05)",
@@ -58,20 +58,20 @@ export function StageTeachersStrip({ teachers, activeTeacherId, onSelect }: Stag
             ) : (
               <span
                 className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                style={{ background: `linear-gradient(135deg, ${PRIMARY}, #FFB50E)` }}
+                style={{ background: "var(--brand-primary)" }}
               >
                 {initialsOf(teacher.name)}
               </span>
             )}
             <span
               className="text-xs font-bold"
-              style={{ color: active ? "#fff" : isDark ? "#F0ECE6" : "#1a1510" }}
+              style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#F0ECE6" : "#1a1510" }}
             >
               {teacher.name}
             </span>
             <span
               className="flex items-center gap-1 text-[10px] font-bold tabular-nums"
-              style={{ color: active ? "rgba(255,255,255,0.85)" : isDark ? "#8a8290" : "#9CA3AF" }}
+              style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#8a8290" : "#9CA3AF", opacity: active ? 0.85 : undefined }}
             >
               <Users className="h-3 w-3" />
               {formatNumber(teacher.coursesCount)}

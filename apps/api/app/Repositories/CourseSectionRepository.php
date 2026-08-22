@@ -101,7 +101,7 @@ class CourseSectionRepository
 
     public function restore(int $id, ?Course $course = null): ?CourseSection
     {
-        $query = CourseSection::onlyTrashed()
+        $query = CourseSection::withTrashed()
             ->where('tenant_id', currentTenant()->id)
             ->where('id', $id);
 
@@ -113,7 +113,12 @@ class CourseSectionRepository
 
         if ($section) {
             $section->restore();
-            return $section->load($this->defaultEagerLoads());
+            $section->forceFill([
+                'status' => 'published',
+                'is_published' => true,
+            ])->save();
+
+            return $section->refresh()->load($this->defaultEagerLoads());
         }
 
         return null;

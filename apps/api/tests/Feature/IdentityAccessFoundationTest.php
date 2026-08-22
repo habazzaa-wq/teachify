@@ -70,7 +70,10 @@ class IdentityAccessFoundationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $permission = Permission::factory()->create(['slug' => 'courses.create']);
+        $permission = Permission::firstOrCreate(
+            ['slug' => 'courses.create'],
+            ['name' => 'Courses Create', 'description' => null],
+        );
         $role = Role::factory()->create([
             'tenant_id' => $tenant->id,
             'slug' => 'instructor',

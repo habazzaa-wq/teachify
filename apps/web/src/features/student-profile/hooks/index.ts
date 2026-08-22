@@ -8,11 +8,12 @@ export const studentProfileKeys = {
   profile: () => [...studentProfileKeys.all, "profile"] as const,
 };
 
-export function useStudentProfile() {
+export function useStudentProfile(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: studentProfileKeys.profile(),
     queryFn: studentProfileService.getProfile,
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled,
   });
 }
 

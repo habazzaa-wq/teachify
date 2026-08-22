@@ -93,7 +93,7 @@ class QuestionCategoryController extends Controller
 
     public function restore(int $category): JsonResponse
     {
-        Gate::authorize('update', QuestionCategory::class);
+        Gate::authorize('restore', QuestionCategory::class);
 
         $category = $this->repository->restore($category);
         abort_if($category === null, 404);

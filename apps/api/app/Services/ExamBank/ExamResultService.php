@@ -85,13 +85,6 @@ class ExamResultService
                 'difficulty' => $question->difficulty,
                 'tags' => $question->tags ?? [],
                 'content' => $this->contentForReview($question, $revealCorrect),
-                'questionFormat' => $question->question_format ?? 'text',
-                'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
-                    ? $question->scan?->cdn_url
-                    : null,
-                'contentDocument' => $question->question_format === 'structured'
-                    ? $question->content_document
-                    : null,
                 'studentAnswer' => $saved?->answer,
                 'correctAnswer' => $revealCorrect ? $this->correctAnswerFor($question) : null,
                 'explanation' => $revealCorrect ? $question->explanation : null,
@@ -99,6 +92,10 @@ class ExamResultService
                 'answered' => $answered,
                 'status' => $answered ? ($isCorrect ? 'correct' : 'wrong') : 'skipped',
                 'earnedPoints' => $isCorrect ? $points : 0,
+                'questionFormat' => $question->question_format ?? 'text',
+                'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
+                    ? ($question->scan?->cdn_url ?? null)
+                    : null,
             ];
         }
 
@@ -300,6 +297,11 @@ class ExamResultService
             'true_false' => $revealCorrect && isset($content['correct'])
                 ? ['correct' => (string) $content['correct']]
                 : [],
+            'numeric' => array_filter([
+                'tolerance' => (int) ($content['tolerance'] ?? 0),
+                'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
+            ], fn (mixed $value): bool => $value !== null),
+            'essay', 'short_answer' => [],
             default => [],
         };
     }
@@ -319,8 +321,23 @@ class ExamResultService
                 ->values()
                 ->all(),
             'true_false' => isset($content['correct']) ? (string) $content['correct'] : null,
+            'numeric' => $this->numericCorrectValue($content),
+            'essay', 'short_answer' => null,
             default => null,
         };
+    }
+
+    /**
+     * Numeric questions store their expected value under `answer` (teacher UI)
+     * or `correct` (seed data).
+     *
+     * @param  array<string, mixed>  $content
+     */
+    private function numericCorrectValue(array $content): ?string
+    {
+        $value = $content['answer'] ?? $content['correct'] ?? null;
+
+        return is_numeric($value) ? (string) $value : null;
     }
 
     private function percent(int $part, int $total): float

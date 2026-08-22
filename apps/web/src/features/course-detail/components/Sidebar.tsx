@@ -85,7 +85,7 @@ export function Sidebar({ course, isEnrolled }: SidebarProps) {
         ) : (
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-[#BF6D58] to-[#a85a47] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#BF6D58]/25 transition-all duration-300 hover:from-[#a85a47] hover:to-[#BF6D58] hover:shadow-xl hover:shadow-[#BF6D58]/30"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-primary)] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.25)] transition-all duration-300 hover:shadow-xl hover:shadow-[rgba(0,0,0,0.3)]"
           >
             اشتراك الآن
             <Lock className="h-4 w-4" />

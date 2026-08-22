@@ -246,7 +246,6 @@ class ExamSessionService
                     order: (int) $examQuestion->order,
                     section: $examQuestion->section,
                     content: $this->sanitizeContent($question, $revealCorrect),
-                    contentDocument: $question->question_format === 'structured' ? $question->content_document : null,
                     answer: $saved?->answer,
                     answered: $saved !== null,
                     isCorrect: $isCorrect,

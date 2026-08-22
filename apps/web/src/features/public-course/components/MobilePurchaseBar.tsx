@@ -6,7 +6,6 @@ import { Play } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { SubscribeButton } from "./primitives";
-import { ACCENT } from "../brand";
 import type { PublicCourse } from "../types";
 
 interface MobilePurchaseBarProps {
@@ -20,7 +19,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
   const hasDiscount = !isFree && originalPrice > displayPrice && displayPrice > 0;
-  const currency = "ج.م";
+  const currency = course.currency;
 
   const discountPercent = useMemo(
     () =>
@@ -46,8 +45,8 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
             </span>
           ) : (
             <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-lg font-extrabold text-[#BF6D58]">
-                {formatNumber(displayPrice)} {currency}
+              <span className="text-lg font-extrabold text-[var(--brand-primary)]">
+                {formatNumber(displayPrice)} {currency ?? ""}
               </span>
               {hasDiscount && (
                 <>
@@ -56,7 +55,7 @@ function MobilePurchaseBarInner({ course, isEnrolled, onEnroll }: MobilePurchase
                   </span>
                   <span
                     className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold"
-                    style={{ background: `${ACCENT}22`, color: "#b45309" }}
+                    style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
                   >
                     -{discountPercent}%
                   </span>

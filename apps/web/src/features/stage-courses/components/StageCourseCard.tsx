@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { m } from "framer-motion";
+import { motion } from "framer-motion";
 import { BookOpen, Clock, Users, Award, Tag, Sparkles } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
@@ -59,25 +59,19 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background: isDark
-                ? `linear-gradient(135deg, ${PRIMARY}20, ${ACCENT}0d)`
-                : `linear-gradient(135deg, ${PRIMARY}12, ${ACCENT}08)`,
-            }}
-          >
-            <BookOpen className="h-12 w-12" style={{ color: `${PRIMARY}40` }} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <BookOpen className="h-12 w-12" style={{ color: "var(--brand-primary)" }} />
           </div>
         )}
 
         {/* featured ribbon */}
         {course.featured && (
           <span
-            className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold text-white shadow-lg"
+            className="absolute end-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold shadow-lg"
             style={{
-              background: "linear-gradient(135deg, #FFB50E, #F59E0B)",
-              boxShadow: "0 4px 16px rgba(245,158,11,0.4)",
+              background: "var(--brand-secondary)",
+              color: "var(--brand-secondary-contrast)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
             }}
           >
             <Sparkles className="h-3 w-3" />
@@ -90,8 +84,8 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
           <span
             className="absolute start-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg"
             style={{
-              background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-              boxShadow: `0 4px 16px ${PRIMARY}40`,
+              background: "var(--brand-primary)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
             }}
           >
             <Tag className="h-3 w-3" />
@@ -171,7 +165,7 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             ) : (
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: `linear-gradient(135deg, ${PRIMARY}, ${ACCENT})` }}
+                style={{ background: "var(--brand-primary)" }}
               >
                 {initialsOf(course.instructor.name)}
               </div>
@@ -229,8 +223,8 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
               <span
                 className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-                  boxShadow: `0 4px 16px ${PRIMARY}40`,
+                  background: "var(--brand-primary)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
                 }}
               >
                 {formatNumber(course.discountPrice!)} {currency}
@@ -246,8 +240,8 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             <span
               className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
               style={{
-                background: `linear-gradient(135deg, ${PRIMARY}, ${PRIMARY}cc)`,
-                boxShadow: `0 4px 16px ${PRIMARY}40`,
+                background: "var(--brand-primary)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
               }}
             >
               {formatNumber(course.price)} {currency}
@@ -258,19 +252,36 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
             </span>
           )}
 
-          <span
-            className="text-xs font-bold transition-all duration-300 group-hover:-translate-x-1"
-            style={{ color: PRIMARY }}
-          >
-            التفاصيل
-          </span>
+          {isFree ? (
+            <span
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
+              style={{
+                background: "var(--brand-secondary)",
+                color: "var(--brand-secondary-contrast)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.333)",
+              }}
+            >
+              اشترك الآن مجاناً
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
+              style={{
+                background: "var(--brand-secondary)",
+                color: "var(--brand-secondary-contrast)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              }}
+            >
+              اشترك الآن
+            </span>
+          )}
         </div>
       </div>
 
       {/* bottom accent bar */}
       <div
         className="h-[3px] w-full origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-        style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${ACCENT})` }}
+        style={{ background: "var(--brand-primary)" }}
       />
     </div>
   );
@@ -287,13 +298,13 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
   };
 
   return (
-    <m.div {...anim} style={{ perspective: "800px" }}>
+    <motion.div {...anim} style={{ perspective: "800px" }}>
       <Link
         href={`/courses/${course.slug}`}
         className={cn("block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl")}
       >
         {card}
       </Link>
-    </m.div>
+    </motion.div>
   );
 }

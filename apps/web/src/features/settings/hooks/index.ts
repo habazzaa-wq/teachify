@@ -12,6 +12,13 @@ export function useSettings() {
   });
 }
 
+export function useSettingsGroup(group: string) {
+  return useQuery({
+    queryKey: [SETTINGS_QUERY_KEY, "group", group],
+    queryFn: () => settingsService.getGroup(group),
+  });
+}
+
 export function useSiteSettings() {
   return useQuery({
     queryKey: [SETTINGS_QUERY_KEY, "site"],
@@ -22,15 +29,9 @@ export function useSiteSettings() {
 export function useUpdateSiteSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (values: Partial<SiteSettings>) => settingsService.updateSite(values),
-    onSuccess: (result) => qc.setQueryData([SETTINGS_QUERY_KEY, "site"], result),
-  });
-}
-
-export function useSettingsGroup(group: string) {
-  return useQuery({
-    queryKey: [SETTINGS_QUERY_KEY, "group", group],
-    queryFn: () => settingsService.getGroup(group),
+    mutationFn: (values: Partial<SiteSettings>) =>
+      settingsService.updateSite(values),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] }),
   });
 }
 

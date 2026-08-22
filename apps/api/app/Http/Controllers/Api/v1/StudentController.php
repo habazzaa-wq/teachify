@@ -354,6 +354,84 @@ class StudentController extends Controller
         ]);
     }
 
+    public function activate(int $id): JsonResponse
+    {
+        $tenantId = currentTenant()->id;
+
+        $membership = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->where('id', $id)
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
+            ->firstOrFail();
+
+        $membership->update(['status' => 'active']);
+
+        return response()->json([
+            'message' => 'تم تفعيل الطالب بنجاح.',
+            'data' => $this->formatStudent($membership->loadMissing(['user', 'roles'])),
+        ]);
+    }
+
+    public function suspend(int $id): JsonResponse
+    {
+        $tenantId = currentTenant()->id;
+
+        $membership = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->where('id', $id)
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
+            ->firstOrFail();
+
+        $membership->update(['status' => 'suspended']);
+
+        return response()->json([
+            'message' => 'تم إيقاف الطالب بنجاح.',
+            'data' => $this->formatStudent($membership->loadMissing(['user', 'roles'])),
+        ]);
+    }
+
+    public function bulkActivate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer'],
+        ]);
+
+        $tenantId = currentTenant()->id;
+
+        $count = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $validated['ids'])
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
+            ->update(['status' => 'active']);
+
+        return response()->json([
+            'message' => "تم تفعيل {$count} طالب بنجاح.",
+            'count' => $count,
+        ]);
+    }
+
+    public function bulkSuspend(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer'],
+        ]);
+
+        $tenantId = currentTenant()->id;
+
+        $count = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $validated['ids'])
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
+            ->update(['status' => 'suspended']);
+
+        return response()->json([
+            'message' => "تم إيقاف {$count} طالب بنجاح.",
+            'count' => $count,
+        ]);
+    }
+
     private function formatStudent(TenantUser $membership, bool $detailed = false): array
     {
         $user = $membership->user;

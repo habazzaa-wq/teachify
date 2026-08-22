@@ -224,6 +224,149 @@ class ExamSessionFoundationTest extends TestCase
         $this->assertNotNull($response->json('data.attempt.durationSeconds'));
     }
 
+    public function test_exam_with_numeric_questions_can_start_and_is_graded_with_tolerance(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->memberWithRole($tenant, 'admin');
+        $student = $this->memberWithRole($tenant, 'student');
+        [$course, $section, $lesson] = $this->publishedLessonStack($tenant, $admin, 'Numeric Fixture');
+        $this->setCourseAccess($tenant, $admin, $course, 'enrolled_only');
+        $this->enrollStudent($tenant, $admin, $course, $student);
+        $exam = $this->createPublishedExam($tenant, $admin, [
+            'title' => 'Numeric Exam',
+            'duration' => 30,
+            'passing_score' => 60,
+        ]);
+
+        $numeric = $this->createQuestion($tenant, $admin, 'numeric', [
+            'correct' => 6,
+            'tolerance' => 1,
+        ]);
+        $this->attachQuestionToExam($tenant, $admin, $exam, $numeric);
+        $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
+
+        Sanctum::actingAs($student->user);
+        $data = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data');
+
+        $this->assertCount(1, $data['questions']);
+        $this->assertSame('numeric', $data['questions'][0]['type']);
+        $this->assertArrayNotHasKey('correct', $data['questions'][0]['content']);
+
+        $question = $data['questions'][0];
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => 'abc'],
+            $this->tenantHeader($tenant),
+        )->assertUnprocessable();
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '5.5'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved = ExamAttemptAnswer::query()
+            ->where('exam_attempt_id', $data['attempt']['id'])
+            ->where('exam_question_id', $question['examQuestionId'])
+            ->firstOrFail();
+
+        $this->assertSame('5.5', $saved->answer);
+        $this->assertTrue($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '8'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved->refresh();
+        $this->assertFalse($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '6'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $response = $this->postJson("/api/v1/exam-sessions/{$data['attempt']['id']}/submit", [], $this->tenantHeader($tenant))
+            ->assertOk();
+
+        $this->assertSame('submitted', $response->json('data.attempt.status'));
+        $this->assertSame(1.0, (float) $response->json('data.attempt.score'));
+        $this->assertSame(1.0, (float) $response->json('data.attempt.maxScore'));
+        $this->assertSame('6', $response->json('data.questions.0.content.correct'));
+    }
+
+    public function test_numeric_question_with_ui_answer_key_schema_is_graded_with_tolerance(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->memberWithRole($tenant, 'admin');
+        $student = $this->memberWithRole($tenant, 'student');
+        [$course, $section, $lesson] = $this->publishedLessonStack($tenant, $admin, 'Numeric UI Fixture');
+        $this->setCourseAccess($tenant, $admin, $course, 'enrolled_only');
+        $this->enrollStudent($tenant, $admin, $course, $student);
+        $exam = $this->createPublishedExam($tenant, $admin, [
+            'title' => 'Numeric UI Exam',
+            'duration' => 30,
+            'passing_score' => 60,
+        ]);
+
+        $numeric = $this->createQuestion($tenant, $admin, 'numeric', [
+            'answer' => 6,
+            'unit' => 'm/s',
+            'tolerance' => 1,
+        ]);
+        $this->attachQuestionToExam($tenant, $admin, $exam, $numeric);
+        $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
+
+        Sanctum::actingAs($student->user);
+        $data = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data');
+
+        $question = $data['questions'][0];
+        $this->assertSame('numeric', $question['type']);
+        $this->assertSame(1, $question['content']['tolerance']);
+        $this->assertArrayNotHasKey('correct', $question['content']);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '5.5'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved = ExamAttemptAnswer::query()
+            ->where('exam_attempt_id', $data['attempt']['id'])
+            ->where('exam_question_id', $question['examQuestionId'])
+            ->firstOrFail();
+
+        $this->assertTrue($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '8'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $saved->refresh();
+        $this->assertFalse($saved->is_correct);
+
+        $this->putJson(
+            "/api/v1/exam-sessions/{$data['attempt']['id']}/answers/{$question['examQuestionId']}",
+            ['answer' => '6'],
+            $this->tenantHeader($tenant),
+        )->assertOk();
+
+        $response = $this->postJson("/api/v1/exam-sessions/{$data['attempt']['id']}/submit", [], $this->tenantHeader($tenant))
+            ->assertOk();
+
+        $this->assertSame(1.0, (float) $response->json('data.attempt.score'));
+        $this->assertSame('6', $response->json('data.questions.0.content.correct'));
+    }
+
     public function test_partial_submission_is_scored_accordingly(): void
     {
         [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();
@@ -349,6 +492,105 @@ class ExamSessionFoundationTest extends TestCase
         $this->getJson("/api/v1/lessons/{$lesson}/exam-sessions/current", $this->tenantHeader($tenant))
             ->assertOk()
             ->assertJsonPath('data.attempt.id', $attempt);
+    }
+
+    public function test_active_attempt_returns_null_when_none_running(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_returns_the_running_attempt_with_exam_title(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        $response = $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk();
+
+        $this->assertSame($attempt, $response->json('data.id'));
+        $this->assertSame('in_progress', $response->json('data.status'));
+        $this->assertSame((string) $exam, $response->json('data.examId'));
+        $this->assertSame('Session Exam', $response->json('data.exam.title'));
+        $this->assertNotNull($response->json('data.timerEndsAt'));
+        $this->assertGreaterThan(0, $response->json('data.remainingSeconds'));
+    }
+
+    public function test_active_attempt_is_isolated_per_user_and_tenant(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated();
+
+        // Another student of the same tenant has no active attempt.
+        $otherStudent = $this->memberWithRole($tenant, 'student');
+        Sanctum::actingAs($otherStudent->user);
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_submitted_attempt(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $links] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        $this->postJson("/api/v1/exam-sessions/{$attempt}/submit", [], $this->tenantHeader($tenant))->assertOk();
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_attempt_with_expired_timer(): void
+    {
+        [$tenant, $admin, $student, $lesson] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $attempt = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated()
+            ->json('data.attempt.id');
+
+        ExamAttempt::withoutGlobalScopes()
+            ->whereKey($attempt)
+            ->update(['timer_ends_at' => now()->subMinutes(5)]);
+
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_active_attempt_hides_attempt_when_exam_is_not_published(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam] = $this->sessionFixture();
+
+        Sanctum::actingAs($student->user);
+        $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
+            ->assertCreated();
+
+        // Teacher closes the exam.
+        Sanctum::actingAs($admin->user);
+        $this->patchJson("/api/v1/exam-bank/exams/{$exam}/archive", [], $this->tenantHeader($tenant))->assertOk();
+
+        Sanctum::actingAs($student->user);
+        $this->getJson('/api/v1/exams/active-attempt', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('data', null);
     }
 
     public function test_session_is_owner_and_tenant_isolated(): void

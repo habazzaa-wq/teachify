@@ -173,7 +173,10 @@ class TenantAuthController extends Controller
             return response()->json(['message' => 'No active membership found.'], 403);
         }
 
-        $user->tokens()->where('name', 'access_token')->delete();
+        $user->tokens()
+            ->where('name', 'access_token')
+            ->where('expires_at', '<', now())
+            ->delete();
 
         $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));
         $this->memberships->touchLastAccessed($membership);
@@ -277,6 +280,10 @@ class TenantAuthController extends Controller
             ->unique('id')
             ->values();
 
+        // Only staff memberships (owner/admin/instructor) may enter the tenant
+        // control panel. Student accounts get no dashboard access.
+        $canAccessDashboard = $roles->contains(fn ($role) => in_array($role->slug, ['tenant_owner', 'admin', 'instructor']));
+
         $response = [
             'message' => 'Authenticated.',
             'token_type' => 'Bearer',
@@ -311,7 +318,7 @@ class TenantAuthController extends Controller
                 'slug' => $permission->slug,
             ])->values(),
             'abilities' => [
-                'can_access_dashboard' => true,
+                'can_access_dashboard' => $canAccessDashboard,
                 'can_manage_courses' => $permissions->contains(fn ($p) => in_array($p->slug, ['courses.create', 'courses.update', 'courses.delete'])),
                 'can_manage_users' => $permissions->contains(fn ($p) => in_array($p->slug, ['users.create', 'users.update', 'users.delete'])),
                 'can_manage_settings' => $permissions->contains(fn ($p) => str_starts_with($p->slug, 'settings.')),

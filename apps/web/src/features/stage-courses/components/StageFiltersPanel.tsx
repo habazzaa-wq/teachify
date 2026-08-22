@@ -196,7 +196,7 @@ export function StageFiltersPanel({
           <X className="h-4 w-4" />
           إعادة تعيين
           {activeCount > 0 && (
-            <span className="rounded-full px-1.5 text-[11px] font-bold" style={{ background: `${PRIMARY}22`, color: PRIMARY }}>
+            <span className="rounded-full px-1.5 text-[11px] font-bold" style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}>
               {activeCount}
             </span>
           )}
