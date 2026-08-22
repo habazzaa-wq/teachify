@@ -14,13 +14,15 @@
     .\scripts\deploy-server.ps1 -NoBuild        # skip composer/migrate/frontend build
     .\scripts\deploy-server.ps1 -NoMigrate      # build but do not run DB migrations
     .\scripts\deploy-server.ps1 -NoRestart      # deploy code but do not restart PM2
+    .\scripts\deploy-server.ps1 -LocalDirty      # deploy GitHub code even if local tree is dirty
 #>
 
 param(
     [switch]$Yes,
     [switch]$NoBuild,
     [switch]$NoMigrate,
-    [switch]$NoRestart
+    [switch]$NoRestart,
+    [switch]$LocalDirty
 )
 
 $ErrorActionPreference = 'Stop'
@@ -45,14 +47,22 @@ if ($localBranch -ne $Branch) {
     Write-Fail "Local branch is '$localBranch', expected '$Branch'. Checkout '$Branch' first."
     exit 1
 }
-if (-not (Test-CleanTree -Path $repo)) {
-    Write-Fail "Local working tree is dirty. Commit (or stash) everything before deploying."
-    exit 1
-}
-$ahead = & git -C $repo rev-list --count "origin/$Branch..$Branch"
-if ([int]$ahead -gt 0) {
-    Write-Fail "Local '$Branch' is $ahead commit(s) ahead of origin. Push to GitHub first."
-    exit 1
+
+# By default we require a clean, pushed tree. With -LocalDirty we skip those
+# checks on purpose: the actual deploy is performed on the SERVER from
+# origin/deploy, so local uncommitted work never reaches production.
+if (-not $LocalDirty) {
+    if (-not (Test-CleanTree -Path $repo)) {
+        Write-Fail "Local working tree is dirty. Commit/stash it, or pass -LocalDirty to deploy what is on GitHub."
+        exit 1
+    }
+    $ahead = & git -C $repo rev-list --count "origin/$Branch..$Branch"
+    if ([int]$ahead -gt 0) {
+        Write-Fail "Local '$Branch' is $ahead commit(s) ahead of origin. Push to GitHub first, or pass -LocalDirty."
+        exit 1
+    }
+} else {
+    Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/deploy currently is."
 }
 
 $localSha = (& git -C $repo rev-parse $Branch).Trim()
@@ -98,7 +108,8 @@ DO_RESTART=__DO_RESTART__
 export PATH="$HOME/.config/composer/vendor/bin:/usr/local/bin:/usr/local/node/bin:/usr/local/bin:/usr/bin:$PATH"
 
 MAINT_OK=0
-trap 'if [ "$MAINT_OK" = "1" ]; then echo "==> Bringing app back up"; php artisan up || true; fi' EXIT
+bring_up() { if [ "$MAINT_OK" = "1" ]; then echo "==> Bringing app back up"; cd "$REMOTE_DIR/apps/api" && php artisan up || true; fi }
+trap bring_up EXIT
 
 cd "$REMOTE_DIR"
 echo "==> Server: $(hostname) | dir $REMOTE_DIR"
@@ -144,6 +155,9 @@ if [ "$DO_RESTART" = "1" ]; then
   echo "==> Restarting PM2 processes"
   pm2 restart all
 fi
+
+# Bring the app out of maintenance BEFORE the health check so we probe a live site.
+bring_up
 
 CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
 echo "HEALTH=$CODE"
