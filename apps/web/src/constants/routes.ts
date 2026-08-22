@@ -48,6 +48,7 @@ export const routes = {
   homepageHero: "/teacher/homepage/hero",
   homepageWhyChooseUs: "/teacher/homepage/why-choose-us",
   homepageEducationalStages: "/teacher/homepage/educational-stages",
+  homepageCommunity: "/teacher/homepage/community",
   dashboardRolePermissionMatrix: "/teacher/role-permission-matrix",
   dashboardRoles: "/teacher/roles",
   dashboardUsers: "/teacher/users",

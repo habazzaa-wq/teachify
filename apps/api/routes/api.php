@@ -96,6 +96,7 @@ use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSeoContentController;
@@ -166,6 +167,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/seo/faq-collections/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'faq_collection');
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
+    Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);

@@ -11,6 +11,8 @@ import { whyChooseUsKeys } from "@/features/homepage/why-choose-us/keys";
 import { whyChooseUsServerService } from "@/features/homepage/why-choose-us/server-services";
 import { stagesKeys } from "@/features/homepage/educational-stages/keys";
 import { stagesServerService } from "@/features/homepage/educational-stages/server-services";
+import { communitySectionKeys } from "@/features/homepage/community/keys";
+import { communitySectionServerService } from "@/features/homepage/community/server-services";
 import { getQueryClient } from "@/lib/get-query-client";
 import { routes } from "@/constants/routes";
 import {
@@ -33,8 +35,8 @@ const EducationalStagesSection = dynamic(
   { ssr: true }
 );
 
-const HomeCommunitySection = dynamic(
-  () => import("@/features/community/components/community-section/HomeCommunitySection").then((m) => m.HomeCommunitySection),
+const PublicCommunitySection = dynamic(
+  () => import("@/features/homepage/community/components/PublicCommunitySection").then((m) => m.PublicCommunitySection),
   { ssr: true }
 );
 
@@ -79,10 +81,11 @@ export async function generateMetadata(): Promise<Metadata> {
 async function HomePage() {
   const queryClient = getQueryClient();
 
-  const [hero, whyChooseUs, stages, tenant, origin] = await Promise.all([
+  const [hero, whyChooseUs, stages, communitySection, tenant, origin] = await Promise.all([
     heroServerService.getPublicHero(),
     whyChooseUsServerService.getPublicWhyChooseUs(),
     stagesServerService.getPublicStages(),
+    communitySectionServerService.getPublicCommunitySection(),
     getTenantSeoContext(),
     getRequestOrigin(),
   ]);
@@ -96,6 +99,7 @@ async function HomePage() {
   if (stages) {
     queryClient.setQueryData(stagesKeys.public, stages);
   }
+  queryClient.setQueryData(communitySectionKeys.public, communitySection);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -114,7 +118,7 @@ async function HomePage() {
       </LazyMount>
       <LazyMount minHeight="520px">
         <Suspense fallback={<SectionFallback />}>
-          <HomeCommunitySection />
+          <PublicCommunitySection />
         </Suspense>
       </LazyMount>
     </HydrationBoundary>

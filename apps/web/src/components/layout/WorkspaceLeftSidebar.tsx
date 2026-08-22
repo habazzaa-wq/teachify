@@ -9,6 +9,7 @@ import {
   Layout,
   Palette,
   Globe,
+  MessagesSquare,
   PanelLeftClose,
   PanelLeftOpen,
   ClipboardList,
@@ -321,6 +322,14 @@ export function WorkspaceLeftSidebar() {
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
                 onClick={() => router.push(routes.homepageEducationalStages)}
+              />
+              <StudioSidebarItem
+                icon={<MessagesSquare className="h-4 w-4" />}
+                label="سكشن منتدى الطلاب"
+                active={pathname === routes.homepageCommunity}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => router.push(routes.homepageCommunity)}
               />
             </StudioSidebarSection>
           </div>
