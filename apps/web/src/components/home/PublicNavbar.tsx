@@ -3,13 +3,13 @@
 import { useState, useCallback, useEffect, useRef, useContext } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Sun, Moon, GraduationCap, LogIn,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
-  Menu, X,
+  Menu, X, LayoutDashboard,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
@@ -231,6 +231,7 @@ export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
   const pathname = usePathname();
+  const router = useRouter();
   const auth = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState("/");
 
@@ -427,8 +428,9 @@ export function PublicNavbar() {
       setLoginOpen(false);
       setStudentRegistered(state);
       queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
+      router.push("/student/dashboard");
     },
-    [queryClient],
+    [queryClient, router],
   );
 
   const handleRegisterSuccess = useCallback(
@@ -720,6 +722,26 @@ export function PublicNavbar() {
                               type="button"
                               onClick={() => {
                                 setProfileDropdownOpen(false);
+                                router.push("/student/dashboard");
+                              }}
+                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                            >
+                              <span
+                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                              />
+                              <span
+                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ backgroundColor: primary }}
+                              />
+                              <LayoutDashboard className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <span className="relative z-10">لوحة تحكم الطالب</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileDropdownOpen(false);
                                 setProfileDrawerOpen(true);
                               }}
                               className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
@@ -832,11 +854,11 @@ export function PublicNavbar() {
                   </div>
                 ) : (
                   <>
-                    <div className="transition-transform duration-300 hover:scale-105 active:scale-95">
+                    <div className="shrink-0 transition-transform duration-300 hover:scale-105 active:scale-95">
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-xs font-semibold transition-all duration-300"
+                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2 py-1 text-[11px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:px-3 sm:py-1.5 sm:text-xs md:text-sm"
                         style={{
                           color: "hsl(var(--foreground))",
                           border: `1px solid hsl(var(--border))`,
@@ -844,7 +866,7 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl"
                           style={{
                             backgroundColor: secondary,
                             border: `3px solid var(--brand-primary)`,
@@ -852,29 +874,29 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
-                        <span className="relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors max-sm:hidden">تسجيل الدخول</span>
+                        <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
+                        <span className="relative z-10 whitespace-nowrap group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
 
-                    <div className="transition-transform duration-300 hover:scale-105 hover:-translate-y-px active:scale-95">
+                    <div className="shrink-0 transition-transform duration-300 hover:scale-105 hover:-translate-y-px active:scale-95">
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300"
+                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2.5 py-1 text-[11px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:px-3.5 sm:py-1.5 sm:text-xs md:text-sm"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.271)`,
                         }}
                       >
                         <span
-                          className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-[18px]"
                           style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
-                        <span className="relative z-10 max-sm:hidden">إنشاء حساب</span>
-                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
+                        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 relative z-10" />
+                        <span className="relative z-10 whitespace-nowrap">إنشاء حساب</span>
+                        <ChevronLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
                       </button>
                     </div>
                   </>
