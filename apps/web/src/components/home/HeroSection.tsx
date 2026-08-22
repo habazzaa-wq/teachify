@@ -108,6 +108,68 @@ const DESKTOP_MATH = [
   { char: "∑", x: "90%", y: "70%", size: 26, rotate: 15 },
   { char: "√", x: "15%", y: "85%", size: 22, rotate: -20 },
   { char: "∞", x: "3%", y: "40%", size: 20, rotate: 10 },
+  { char: "Δ", x: "82%", y: "18%", size: 18, rotate: -8 },
+  { char: "±", x: "70%", y: "45%", size: 16, rotate: 22 },
+  { char: "∫", x: "5%", y: "62%", size: 24, rotate: -15 },
+  { char: "θ", x: "92%", y: "42%", size: 18, rotate: 10 },
+  { char: "λ", x: "45%", y: "8%", size: 16, rotate: -18 },
+  { char: "φ", x: "60%", y: "92%", size: 14, rotate: 12 },
+  { char: "Ω", x: "25%", y: "5%", size: 18, rotate: -5 },
+  { char: "α", x: "75%", y: "60%", size: 15, rotate: 20 },
+  { char: "β", x: "35%", y: "95%", size: 14, rotate: -10 },
+  { char: "γ", x: "88%", y: "88%", size: 16, rotate: 8 },
+  { char: "μ", x: "12%", y: "48%", size: 15, rotate: -25 },
+  { char: "σ", x: "55%", y: "75%", size: 14, rotate: 15 },
+  { char: "ω", x: "38%", y: "12%", size: 16, rotate: -8 },
+  { char: "ε", x: "65%", y: "30%", size: 13, rotate: 18 },
+  { char: "η", x: "20%", y: "68%", size: 14, rotate: -12 },
+  { char: "π", x: "48%", y: "55%", size: 20, rotate: 5 },
+];
+
+const DESKTOP_ARABIC = [
+  { char: "أ", x: "8%", y: "15%", size: 32, rotate: -12 },
+  { char: "ب", x: "90%", y: "70%", size: 30, rotate: 15 },
+  { char: "ت", x: "15%", y: "85%", size: 28, rotate: -20 },
+  { char: "ث", x: "3%", y: "40%", size: 26, rotate: 10 },
+  { char: "ج", x: "82%", y: "18%", size: 24, rotate: -8 },
+  { char: "ح", x: "70%", y: "45%", size: 22, rotate: 22 },
+  { char: "خ", x: "5%", y: "62%", size: 28, rotate: -15 },
+  { char: "د", x: "92%", y: "42%", size: 22, rotate: 10 },
+  { char: "ذ", x: "45%", y: "8%", size: 20, rotate: -18 },
+  { char: "ر", x: "60%", y: "92%", size: 20, rotate: 12 },
+  { char: "ز", x: "25%", y: "5%", size: 22, rotate: -5 },
+  { char: "س", x: "75%", y: "60%", size: 26, rotate: 20 },
+  { char: "ش", x: "35%", y: "95%", size: 24, rotate: -10 },
+  { char: "ص", x: "88%", y: "88%", size: 22, rotate: 8 },
+  { char: "ض", x: "12%", y: "48%", size: 20, rotate: -25 },
+  { char: "ط", x: "55%", y: "75%", size: 22, rotate: 15 },
+  { char: "ظ", x: "38%", y: "12%", size: 20, rotate: -8 },
+  { char: "ع", x: "65%", y: "30%", size: 24, rotate: 18 },
+  { char: "غ", x: "20%", y: "68%", size: 22, rotate: -12 },
+  { char: "ف", x: "48%", y: "55%", size: 26, rotate: 5 },
+];
+
+const DESKTOP_ENGLISH = [
+  { char: "A", x: "8%", y: "15%", size: 30, rotate: -12 },
+  { char: "B", x: "90%", y: "70%", size: 28, rotate: 15 },
+  { char: "C", x: "15%", y: "85%", size: 26, rotate: -20 },
+  { char: "D", x: "3%", y: "40%", size: 24, rotate: 10 },
+  { char: "E", x: "82%", y: "18%", size: 22, rotate: -8 },
+  { char: "F", x: "70%", y: "45%", size: 20, rotate: 22 },
+  { char: "G", x: "5%", y: "62%", size: 26, rotate: -15 },
+  { char: "H", x: "92%", y: "42%", size: 20, rotate: 10 },
+  { char: "I", x: "45%", y: "8%", size: 18, rotate: -18 },
+  { char: "J", x: "60%", y: "92%", size: 18, rotate: 12 },
+  { char: "K", x: "25%", y: "5%", size: 20, rotate: -5 },
+  { char: "L", x: "75%", y: "60%", size: 22, rotate: 20 },
+  { char: "M", x: "35%", y: "95%", size: 22, rotate: -10 },
+  { char: "N", x: "88%", y: "88%", size: 20, rotate: 8 },
+  { char: "O", x: "12%", y: "48%", size: 18, rotate: -25 },
+  { char: "P", x: "55%", y: "75%", size: 20, rotate: 15 },
+  { char: "Q", x: "38%", y: "12%", size: 18, rotate: -8 },
+  { char: "R", x: "65%", y: "30%", size: 22, rotate: 18 },
+  { char: "S", x: "20%", y: "68%", size: 20, rotate: -12 },
+  { char: "T", x: "48%", y: "55%", size: 24, rotate: 5 },
 ];
 
 const DESKTOP_DOTS = [
@@ -139,10 +201,30 @@ const MOBILE_DECOR = {
     { x: "78%", y: "25%", size: 10, color: neutralDeco, shape: "diamond" as const },
     { x: "16%", y: "80%", size: 12, color: neutralDeco, shape: "circle" as const },
   ],
-  math: [{ char: "π", x: "88%", y: "68%", size: 22, rotate: 8 }],
+  math: [
+    { char: "π", x: "88%", y: "68%", size: 22, rotate: 8 },
+    { char: "∑", x: "10%", y: "30%", size: 18, rotate: -12 },
+    { char: "∞", x: "50%", y: "90%", size: 16, rotate: 15 },
+    { char: "√", x: "75%", y: "15%", size: 14, rotate: -8 },
+  ],
+  arabic: [
+    { char: "أ", x: "88%", y: "68%", size: 24, rotate: 8 },
+    { char: "ب", x: "10%", y: "30%", size: 20, rotate: -12 },
+    { char: "ت", x: "50%", y: "90%", size: 18, rotate: 15 },
+    { char: "ث", x: "75%", y: "15%", size: 16, rotate: -8 },
+  ],
+  english: [
+    { char: "A", x: "88%", y: "68%", size: 22, rotate: 8 },
+    { char: "B", x: "10%", y: "30%", size: 18, rotate: -12 },
+    { char: "C", x: "50%", y: "90%", size: 16, rotate: 15 },
+    { char: "D", x: "75%", y: "15%", size: 14, rotate: -8 },
+  ],
 };
 
-function HeroBackground({ isDark }: { isDark: boolean }) {
+function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" | "arabic" | "english" }) {
+  const desktopSymbols = bgStyle === "arabic" ? DESKTOP_ARABIC : bgStyle === "english" ? DESKTOP_ENGLISH : DESKTOP_MATH;
+  const mobileSymbols = MOBILE_DECOR[bgStyle] || MOBILE_DECOR.math;
+
   return (
     <>
       {/* Desktop — richer background, heavily reduced element count */}
@@ -154,8 +236,8 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
           </div>
         ))}
 
-        {/* Static math symbols */}
-        {DESKTOP_MATH.map((m, i) => (
+        {/* Static symbols */}
+        {desktopSymbols.map((m, i) => (
           <span
             key={`math-${i}`}
             className="absolute select-none font-bold"
@@ -165,6 +247,7 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
               color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
+              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
             {m.char}
@@ -246,7 +329,7 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
             <ShapeElement shape={s.shape} size={s.size} color={s.color} />
           </div>
         ))}
-        {MOBILE_DECOR.math.map((m, i) => (
+        {mobileSymbols.map((m, i) => (
           <span
             key={`math-${i}`}
             className="absolute select-none font-bold"
@@ -256,6 +339,7 @@ function HeroBackground({ isDark }: { isDark: boolean }) {
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
               color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
+              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
             {m.char}
@@ -290,6 +374,7 @@ export function HeroSection() {
   const title = hero?.title || `مرحباً بكم في ${tenantName}`;
   const social = hero?.socialLinks;
   const icons = hero?.icons;
+  const bgStyle = hero?.bgStyle || "math";
 
   const heroImage = toAbsoluteAssetUrl(hero?.teacherImage);
   const heroName = hero?.teacherName || "المعلم";
@@ -313,7 +398,7 @@ export function HeroSection() {
         className="absolute inset-0 transition-colors duration-500"
         style={{ background: isDark ? darkBg : lightBg }}
       />
-      <HeroBackground isDark={isDark} />
+      <HeroBackground isDark={isDark} bgStyle={bgStyle} />
 
       {/* ── Content ── */}
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-4 pb-8 sm:pt-8 sm:pb-12 lg:pt-10">
