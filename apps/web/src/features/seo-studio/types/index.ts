@@ -255,6 +255,8 @@ export interface SeoSetting {
   socialProfiles: string[];
   homepageTitle: string | null;
   homepageDescription: string | null;
+  googleVerification: string | null;
+  bingVerification: string | null;
   updatedAt: string | null;
 }
 
@@ -270,6 +272,8 @@ export interface SeoSettingPayload {
   social_profiles?: string[];
   homepage_title?: string | null;
   homepage_description?: string | null;
+  google_verification?: string | null;
+  bing_verification?: string | null;
 }
 
 export interface SeoOverviewIssueItem {

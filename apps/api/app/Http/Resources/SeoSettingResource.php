@@ -23,6 +23,8 @@ class SeoSettingResource extends JsonResource
             'socialProfiles' => $this->social_profiles ?? [],
             'homepageTitle' => $this->homepage_title,
             'homepageDescription' => $this->homepage_description,
+            'googleVerification' => $this->google_verification,
+            'bingVerification' => $this->bing_verification,
             'updatedAt' => $this->updated_at?->toISOString(),
         ];
     }

@@ -42,6 +42,8 @@ interface SettingsFormState {
   homepageDescription: string;
   defaultOgImageAssetId: number | null;
   defaultTwitterImageAssetId: number | null;
+  googleVerification: string;
+  bingVerification: string;
 }
 
 const EMPTY_FORM: SettingsFormState = {
@@ -56,6 +58,8 @@ const EMPTY_FORM: SettingsFormState = {
   homepageDescription: "",
   defaultOgImageAssetId: null,
   defaultTwitterImageAssetId: null,
+  googleVerification: "",
+  bingVerification: "",
 };
 
 function SeoSettings() {
@@ -82,6 +86,8 @@ function SeoSettings() {
       homepageDescription: data.homepageDescription ?? "",
       defaultOgImageAssetId: data.defaultOgImage ? Number(data.defaultOgImage.id) : null,
       defaultTwitterImageAssetId: data.defaultTwitterImage ? Number(data.defaultTwitterImage.id) : null,
+      googleVerification: data.googleVerification ?? "",
+      bingVerification: data.bingVerification ?? "",
     });
     setDirty(false);
   }
@@ -124,6 +130,8 @@ function SeoSettings() {
         homepage_description: form.homepageDescription.trim() || null,
         default_og_image_asset_id: form.defaultOgImageAssetId,
         default_twitter_image_asset_id: form.defaultTwitterImageAssetId,
+        google_verification: form.googleVerification.trim() || null,
+        bing_verification: form.bingVerification.trim() || null,
       },
       {
         onSuccess: () => {
@@ -342,6 +350,35 @@ function SeoSettings() {
                 image={data.defaultTwitterImage}
                 onSelect={(assetId) => handleImageSelect("defaultTwitterImageAssetId", assetId)}
               />
+            </AppCardContent>
+          </AppCard>
+
+          <AppCard>
+            <AppCardHeader>
+              <AppCardTitle>{t("googleVerification")}</AppCardTitle>
+              <AppCardDescription>{t("googleVerificationHint")}</AppCardDescription>
+            </AppCardHeader>
+            <AppCardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{t("googleVerification")}</Label>
+                <AppInput
+                  value={form.googleVerification}
+                  onChange={(e) => patch({ googleVerification: e.target.value })}
+                  placeholder="e.g. abc123DEF456ghi"
+                  dir="ltr"
+                  className="text-left"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{t("bingVerification")}</Label>
+                <AppInput
+                  value={form.bingVerification}
+                  onChange={(e) => patch({ bingVerification: e.target.value })}
+                  placeholder="e.g. ABC123DEF456GHI"
+                  dir="ltr"
+                  className="text-left"
+                />
+              </div>
             </AppCardContent>
           </AppCard>
         </div>
