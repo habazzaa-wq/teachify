@@ -17,6 +17,10 @@ import { DIFFICULTY_LABELS, REVIEW_STATUS_LABELS } from "../constants";
 import type { ResultReviewItem } from "../types";
 import type { ExamSessionQuestionType } from "@/features/exam-session/types";
 import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
+import {
+  StructuredQuestionContent,
+  parseQuestionDocument,
+} from "@/components/structured-question";
 
 interface ReviewQuestionCardProps {
   item: ResultReviewItem;
@@ -53,6 +57,10 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
   const status = STATUS_STYLES[item.status];
   const StatusIcon = status.icon;
   const difficultyLabel = DIFFICULTY_LABELS[item.difficulty] ?? DIFFICULTY_LABELS.medium;
+  const structuredDoc =
+    item.questionFormat === "structured"
+      ? parseQuestionDocument(item.contentDocument)
+      : null;
 
   return (
     <div
@@ -114,7 +122,11 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="border-t border-border/30 px-4 py-5 sm:px-5">
-              {item.questionFormat === "image" && item.scanUrl ? (
+              {structuredDoc ? (
+                <div className="mb-4 rounded-xl border border-border/60 bg-background/40 p-4">
+                  <StructuredQuestionContent document={structuredDoc} />
+                </div>
+              ) : item.questionFormat === "image" && item.scanUrl ? (
                 <div className="mb-4">
                   <ScanImageViewer
                     src={item.scanUrl}

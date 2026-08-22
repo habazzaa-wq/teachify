@@ -29,8 +29,9 @@ export interface ExamSessionQuestion {
   answer: ExamSessionAnswer;
   answered: boolean;
   isCorrect: boolean | null;
-  questionFormat?: "text" | "image";
+  questionFormat?: "text" | "image" | "structured";
   scanUrl?: string | null;
+  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
 }
 
 export interface ExamSessionExamMeta {

@@ -35,8 +35,9 @@ export interface ResultReviewItem {
   answered: boolean;
   status: ReviewStatus;
   earnedPoints: number;
-  questionFormat?: "text" | "image";
+  questionFormat?: "text" | "image" | "structured";
   scanUrl?: string | null;
+  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
 }
 
 export interface ResultAttemptMeta {

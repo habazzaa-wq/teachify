@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\QuestionResource;
 use App\Models\Question;
 use App\Repositories\QuestionRepository;
+use App\Services\ExamBank\Import\QuestionDocumentValidator;
 use App\Services\ExamBank\QuestionService;
 use App\Services\ExamBank\ScannedQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class QuestionController extends Controller
 {
@@ -19,6 +21,7 @@ class QuestionController extends Controller
         private readonly QuestionRepository $repository,
         private readonly QuestionService $service,
         private readonly ScannedQuestionService $scanService,
+        private readonly QuestionDocumentValidator $documentValidator,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -321,13 +324,15 @@ class QuestionController extends Controller
     {
         $required = $partial ? 'sometimes' : 'required';
         $questionFormat = $request->input('question_format', $partial ? null : 'text');
+        $hasDocument = $request->filled('content_document');
 
-        // For image questions, title is auto-generated; for text questions, it is required
-        $titleRule = ($questionFormat === 'image')
+        // Image questions auto-generate their title; structured questions get
+        // theirs derived from the first text run when absent.
+        $titleRule = ($questionFormat === 'image' || $hasDocument)
             ? ['sometimes', 'nullable', 'string', 'max:500']
             : [$required, 'string', 'max:500'];
 
-        return $request->validate([
+        $validated = $request->validate([
             'title' => $titleRule,
             'slug' => ['sometimes', 'nullable', 'string', 'max:500', 'alpha_dash:ascii'],
             'description' => ['nullable', 'string'],
@@ -349,9 +354,22 @@ class QuestionController extends Controller
             'explanation' => ['nullable', 'string'],
             'hint' => ['nullable', 'string'],
             'content' => ['nullable', 'array'],
+            'content_document' => ['sometimes', 'nullable', 'string', 'max:131072'],
             'metadata' => ['nullable', 'array'],
-            'question_format' => ['sometimes', 'string', Rule::in(['text', 'image'])],
+            'question_format' => ['sometimes', 'string', Rule::in(['text', 'image', 'structured'])],
             'media_asset_id' => ['nullable', 'integer', 'exists:media_assets,id'],
         ]);
+
+        if (($validated['content_document'] ?? null) !== null) {
+            $errors = $this->documentValidator->validateJson($validated['content_document']);
+
+            if ($errors !== []) {
+                throw ValidationException::withMessages([
+                    'content_document' => $errors,
+                ]);
+            }
+        }
+
+        return $validated;
     }
 }

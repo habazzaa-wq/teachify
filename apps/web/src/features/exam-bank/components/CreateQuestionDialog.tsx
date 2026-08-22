@@ -38,6 +38,7 @@ import {
 import { QuestionBuilderForm } from "./QuestionBuilderForm";
 import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
 import { ScanImageViewer } from "./ScanImageViewer";
+import type { QuestionDocument } from "@/components/structured-question";
 import type {
   Question,
   QuestionType,
@@ -62,6 +63,7 @@ export interface QuestionFormValues {
   visibility: QuestionVisibility;
   shuffleOptions: boolean;
   content: QuestionContent;
+  contentDocument?: QuestionDocument | null;
 }
 
 export function defaultQuestionForm(
@@ -84,6 +86,7 @@ export function defaultQuestionForm(
     visibility: "private",
     shuffleOptions: false,
     content: {},
+    contentDocument: null,
   };
 }
 
@@ -114,6 +117,12 @@ export function buildQuestionPayload(
 
   if (extra?.mediaAssetId) {
     payload.media_asset_id = Number(extra.mediaAssetId);
+  }
+
+  if (values.questionFormat === "structured") {
+    payload.content_document = values.contentDocument
+      ? JSON.stringify(values.contentDocument)
+      : null;
   }
 
   return payload;

@@ -29,6 +29,7 @@ class QuestionResource extends JsonResource
             'explanation' => $this->explanation,
             'hint' => $this->hint,
             'content' => $this->content ?? new \stdClass(),
+            'contentDocument' => $this->content_document,
             'metadata' => $this->metadata ?? new \stdClass(),
             'questionFormat' => $this->question_format ?? 'text',
             'scanUrl' => $this->whenLoaded('scan', fn () => $this->scan->cdn_url),
