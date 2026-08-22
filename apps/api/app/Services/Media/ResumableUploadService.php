@@ -451,9 +451,10 @@ class ResumableUploadService
             $asset->forceFill([
                 'status' => 'ready',
                 'processing_status' => 'ready',
+                'processing_progress' => 100,
                 'size_bytes' => $session->size,
                 'checksum' => $session->final_file_hash,
-                'cdn_url' => $cdnUrl,
+                'cdn_url' => $cdnUrl ?? $asset->cdn_url,
             ])->save();
             $asset->refresh();
         }
