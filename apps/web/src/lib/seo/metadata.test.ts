@@ -174,7 +174,7 @@ describe("robots policy mapping", () => {
     vi.resetModules();
     const { robotsRulesForPolicy } = await import("@/lib/seo/metadata");
     expect(robotsRulesForPolicy("index_follow")).toEqual({ index: true, follow: true });
-    expect(robotsRulesForPolicy("index")).toEqual({ index: true, follow: false });
+    expect(robotsRulesForPolicy("index")).toEqual({ index: true, follow: true });
     expect(robotsRulesForPolicy("noindex")).toEqual({ index: false, follow: false });
     expect(robotsRulesForPolicy("noindex_nofollow")).toEqual({ index: false, follow: false });
     expect(robotsRulesForPolicy(null)).toEqual({ index: true, follow: true });

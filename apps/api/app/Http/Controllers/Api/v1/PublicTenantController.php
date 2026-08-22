@@ -83,6 +83,8 @@ class PublicTenantController extends Controller
             'sitemapIncludeDefault' => (bool) $settings->sitemap_include_default,
             'ogImage' => $ogImage !== null ? $this->assetUrl($ogImage) : null,
             'twitterImage' => $twitterImage !== null ? $this->assetUrl($twitterImage) : null,
+            'googleVerification' => $settings->google_verification,
+            'bingVerification' => $settings->bing_verification,
         ];
     }
 

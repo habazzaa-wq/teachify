@@ -49,6 +49,8 @@ class SeoSettingController extends Controller
             'social_profiles.*' => ['url', 'max:2048'],
             'homepage_title' => ['nullable', 'string', 'max:255'],
             'homepage_description' => ['nullable', 'string', 'max:500'],
+            'google_verification' => ['nullable', 'string', 'max:255'],
+            'bing_verification' => ['nullable', 'string', 'max:255'],
         ]);
 
         $this->assertMediaAsset($validated['default_og_image_asset_id'] ?? null);

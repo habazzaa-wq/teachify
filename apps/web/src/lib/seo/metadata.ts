@@ -54,20 +54,19 @@ export function getRobotsPolicy(tenant: TenantSeoContext | null): TenantSeoRobot
 
 /**
  * Map a saved robots policy value to the Next.js `robots` metadata object.
- * `index` implies "index, nofollow" in the settings vocabulary, so it differs
- * from the default (index + follow) used when no policy is configured.
+ *
+ * - `index` / `index_follow` → allow indexing and link-following (default)
+ * - `noindex` / `noindex_nofollow` → block indexing and link-following
  */
 export function robotsRulesForPolicy(
   policy: TenantSeoRobotsPolicy | null | undefined,
 ): NonNullable<Metadata["robots"]> {
   switch (policy) {
-    case "index":
-      return { index: true, follow: false };
     case "noindex":
     case "noindex_nofollow":
       return { index: false, follow: false };
+    case "index":
     case "index_follow":
-      return { index: true, follow: true };
     default:
       return { index: true, follow: true };
   }

@@ -124,6 +124,8 @@ return new class extends Migration
             $table->json('social_profiles')->nullable();
             $table->string('homepage_title')->nullable();
             $table->text('homepage_description')->nullable();
+            $table->string('google_verification')->nullable();
+            $table->string('bing_verification')->nullable();
             $table->timestamps();
 
             $table->unique('tenant_id');

@@ -26,6 +26,8 @@ class SeoSetting extends Model
         'social_profiles',
         'homepage_title',
         'homepage_description',
+        'google_verification',
+        'bing_verification',
     ];
 
     protected function casts(): array
