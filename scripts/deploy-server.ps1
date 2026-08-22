@@ -164,8 +164,14 @@ fi
 # Bring the app out of maintenance BEFORE the health check so we probe a live site.
 bring_up
 
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
-echo "HEALTH=$CODE"
+# Next.js needs a few seconds to boot after pm2 restart, so retry the probe.
+HEALTH=000
+for h in $(seq 1 15); do
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
+  if [ "$CODE" = "200" ]; then HEALTH=$CODE; break; fi
+  sleep 3
+done
+echo "HEALTH=$HEALTH"
 echo "DEPLOY_OK sha=$GOT"
 '@
 
@@ -200,8 +206,8 @@ $result = $null
 for ($i = 0; $i -lt 180; $i++) {
     Start-Sleep -Seconds 10
     $raw = & ssh @SshArgs "tail -n +$start $remoteLog" 2>$null
-    if ($null -ne $raw -and $raw -ne '') {
-        $lines = $raw -split "`n" | Where-Object { $_ -ne '' }
+    $lines = @($raw) | ForEach-Object { $_ -split "`n" } | Where-Object { $_.Trim() -ne '' }
+    if ($lines.Count -gt 0) {
         $lines | ForEach-Object { Write-Host $_ }
         $start += $lines.Count
     }
