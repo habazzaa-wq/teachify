@@ -42,11 +42,11 @@ class MediaLibraryAssetResource extends JsonResource
             'duration' => (float) ($this->duration ?? 0),
             'width' => $this->width,
             'height' => $this->height,
-            'status' => $this->status,
+            'status' => $this->resolveEffectiveStatus(),
             'visibility' => $this->visibility,
-            'processingStatus' => $this->processing_status,
+            'processingStatus' => $this->resolveEffectiveProcessingStatus(),
             'transcodingStatus' => $this->transcoding_status,
-            'isProcessing' => (bool) ($this->processing_status !== null && $this->processing_status !== 'ready' && $this->processing_status !== 'failed'),
+            'isProcessing' => $this->resolveIsProcessing(),
             'processingProgress' => (int) ($this->processing_progress ?? 0),
             'captions' => $this->whenLoaded('captions', fn () => $this->captions->map(fn ($c) => [
                 'id' => $c->id,
@@ -94,5 +94,33 @@ class MediaLibraryAssetResource extends JsonResource
                 'url' => $u->url,
             ])),
         ];
+    }
+
+    private function resolveIsProcessing(): bool
+    {
+        $raw = $this->processing_status !== null && $this->processing_status !== 'ready' && $this->processing_status !== 'failed';
+        if (! $raw) return false;
+        if ($this->type !== 'video' && $this->provider_service === 'storage') {
+            if (! empty($this->cdn_url)) return false;
+            if ($this->created_at && $this->created_at->lt(now()->subMinutes(5))) return false;
+        }
+        if ($this->type === 'image' && ! empty($this->cdn_url)) return false;
+        return true;
+    }
+
+    private function resolveEffectiveStatus(): string
+    {
+        if (! $this->resolveIsProcessing() && in_array($this->status, ['pending', 'uploading', 'processing'], true)) {
+            return 'ready';
+        }
+        return $this->status;
+    }
+
+    private function resolveEffectiveProcessingStatus(): string
+    {
+        if (! $this->resolveIsProcessing() && in_array($this->processing_status, ['pending', 'uploading', 'processing'], true)) {
+            return 'ready';
+        }
+        return $this->processing_status;
     }
 }

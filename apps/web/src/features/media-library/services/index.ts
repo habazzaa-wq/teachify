@@ -70,7 +70,13 @@ function formatAsset(raw: RawAsset): MediaAsset {
     transcodingStatus: raw.transcodingStatus == null
       ? null
       : (str(raw.transcodingStatus) as ProcessingStatus),
-    isProcessing: raw.isProcessing === true,
+    isProcessing: (() => {
+      const rawProcessing = raw.isProcessing === true;
+      const hasCdn = !!str(raw.cdnUrl);
+      const type = str(raw.type, "file");
+      if (rawProcessing && hasCdn && type !== "video") return false;
+      return rawProcessing;
+    })(),
     processingProgress: num(raw.processingProgress),
     captions: Array.isArray(raw.captions) ? (raw.captions as MediaCaption[]) : [],
     qualities: Array.isArray(raw.qualities) ? (raw.qualities as MediaQuality[]) : [],
