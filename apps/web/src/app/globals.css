@@ -41,6 +41,10 @@
     --sidebar: 42 15% 94%;
     --sidebar-foreground: 225 25% 12%;
     --sidebar-accent: 42 12% 88%;
+    --sidebar-accent-foreground: 225 25% 12%;
+    --sidebar-soft: 42 14% 90%;
+    --sidebar-fg-muted: 225 12% 45%;
+    --sidebar-fg-subtle: 225 10% 60%;
     --sidebar-border: 42 10% 84%;
     --sidebar-ring: 230 65% 50%;
 
@@ -143,6 +147,10 @@
     --sidebar: 225 30% 9%;
     --sidebar-foreground: 210 40% 94%;
     --sidebar-accent: 225 20% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-soft: 225 24% 13%;
+    --sidebar-fg-muted: 215 14% 65%;
+    --sidebar-fg-subtle: 215 12% 50%;
     --sidebar-border: 225 15% 17%;
     --sidebar-ring: 230 65% 55%;
 

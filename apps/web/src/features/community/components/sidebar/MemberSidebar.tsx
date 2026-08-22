@@ -25,16 +25,22 @@ export function MemberSidebar({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex h-full flex-col overflow-y-auto bg-card", className)}>
-      <div className="border-b px-4 py-3">
+      <div className="border-b border-border/70 px-4 py-3.5">
         <div className="flex items-center gap-2 text-sm font-extrabold">
-          <Users className="h-4 w-4 text-primary" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Users className="h-4 w-4" />
+          </span>
           الأعضاء
-          <span className="ms-auto rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+          <span className="ms-auto inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
             {online?.length ?? 0} متصل
           </span>
         </div>
         {activeChannelId && activeHere.length > 0 && (
-          <p className="mt-1 text-[10px] text-muted-foreground">
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
             {activeHere.length} في هذه القناة
           </p>
         )}
@@ -139,9 +145,9 @@ export function MemberSidebar({ className }: { className?: string }) {
 
 function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border bg-background p-2.5">
-      <div className="text-sm font-extrabold tabular-nums">{value}</div>
-      <div className="text-[10px] text-muted-foreground">{label}</div>
+    <div className="rounded-xl border border-border/70 bg-background/60 p-2.5">
+      <div className="text-sm font-extrabold tabular-nums text-foreground">{value}</div>
+      <div className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{label}</div>
     </div>
   );
 }
