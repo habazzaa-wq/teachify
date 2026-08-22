@@ -15,7 +15,9 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope());
 
         static::creating(function (Model $model) {
-            $model->tenant_id = \currentTenant()->id;
+            if (empty($model->tenant_id)) {
+                $model->tenant_id = \currentTenant()->id;
+            }
         });
     }
 }

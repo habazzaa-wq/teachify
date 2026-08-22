@@ -512,7 +512,8 @@ export type {
 
 export function useCreateQuestionImport() {
   return useMutation({
-    mutationFn: (file: File) => examBankService.createQuestionImport(file),
+    mutationFn: ({ file, mode }: { file: File; mode?: string }) =>
+      examBankService.createQuestionImport(file, mode ?? "auto"),
   });
 }
 

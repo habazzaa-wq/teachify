@@ -640,11 +640,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
             Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
             Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
-            Route::post('/questions/{question}/scan', [QuestionController::class, 'uploadScan']);
-            Route::delete('/questions/{question}/scan', [QuestionController::class, 'removeScan']);
-
             // Structured question import (photo → editable document)
             Route::post('/question-imports', [QuestionImportController::class, 'store']);
+            Route::get('/question-imports/health', [QuestionImportController::class, 'health']);
             Route::post('/question-imports/validate-document', [QuestionImportController::class, 'validateDocument']);
             Route::get('/question-imports/{import}', [QuestionImportController::class, 'show'])->whereUuid('import');
             Route::post('/question-imports/{import}/retry', [QuestionImportController::class, 'retry'])->whereUuid('import');

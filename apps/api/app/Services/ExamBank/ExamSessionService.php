@@ -230,12 +230,6 @@ class ExamSessionService
                     $isCorrect = $this->grader->grade($question, $saved->answer);
                 }
 
-                $scanUrl = null;
-                if ($question->question_format === 'image' && $question->media_asset_id) {
-                    $scan = $question->scan;
-                    $scanUrl = $scan?->cdn_url;
-                }
-
                 return new ExamSessionQuestionDto(
                     examQuestionId: (int) $examQuestion->id,
                     questionId: (int) $question->id,
@@ -251,7 +245,7 @@ class ExamSessionService
                     answered: $saved !== null,
                     isCorrect: $isCorrect,
                     questionFormat: $question->question_format ?? 'text',
-                    scanUrl: $scanUrl,
+                    scanUrl: null,
                 );
             })
             ->all();

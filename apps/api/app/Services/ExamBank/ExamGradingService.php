@@ -92,7 +92,7 @@ class ExamGradingService
     {
         $exam ??= $attempt->exam()->firstOrFail();
 
-        $questions = $exam->examQuestions()->with(['question', 'question.scan'])->orderBy('order')->get();
+        $questions = $exam->examQuestions()->with(['question'])->orderBy('order')->get();
 
         $included = $attempt->included_exam_question_ids;
 

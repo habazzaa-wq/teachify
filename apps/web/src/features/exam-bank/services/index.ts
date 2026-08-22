@@ -235,9 +235,10 @@ export const examBankService = {
   },
 
   // ---- Structured question imports (photo → editable document) ----
-  async createQuestionImport(file: File): Promise<QuestionImportStatus> {
+  async createQuestionImport(file: File, mode: string = "auto"): Promise<QuestionImportStatus> {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("mode", mode);
     const { data } = await api.post("/exam-bank/question-imports", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });

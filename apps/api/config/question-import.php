@@ -48,4 +48,20 @@ return [
 
     // Abandoned non-finalized imports are reaped after this many days.
     'retention_days' => (int) env('QUESTION_IMPORT_RETENTION_DAYS', 7),
+
+    'vision' => [
+        'enabled' => env('QUESTION_IMPORT_VISION_ENABLED', false),
+        'endpoint' => env('QUESTION_IMPORT_VISION_ENDPOINT', ''),
+        'api_key' => env('QUESTION_IMPORT_VISION_API_KEY', ''),
+        'model' => env('QUESTION_IMPORT_VISION_MODEL', 'gpt-4o-mini'),
+        'timeout' => (int) env('QUESTION_IMPORT_VISION_TIMEOUT', 45),
+        'max_retries' => (int) env('QUESTION_IMPORT_VISION_MAX_RETRIES', 1),
+        'daily_limit' => (int) env('QUESTION_IMPORT_VISION_DAILY_LIMIT', 50),
+        'rate_limit' => (int) env('QUESTION_IMPORT_VISION_RATE_LIMIT', 10),
+    ],
+
+    'limits' => [
+        'vision_daily' => (int) env('QUESTION_IMPORT_VISION_DAILY_LIMIT', 50),
+        'vision_rate' => (int) env('QUESTION_IMPORT_VISION_RATE_LIMIT', 10),
+    ],
 ];

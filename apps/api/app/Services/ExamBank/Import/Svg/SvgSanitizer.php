@@ -18,14 +18,12 @@ final class SvgSanitizer
     ];
 
     private const ALLOWED_ATTRS = [
-        // geometry
         'x', 'y', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'r', 'rx', 'ry',
         'width', 'height', 'points', 'd',
-        // presentation
         'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
         'stroke-linejoin', 'opacity', 'fill-opacity', 'font-size', 'font-family',
         'font-weight', 'text-anchor', 'dominant-baseline', 'direction',
-        'transform', 'viewBox', 'xmlns', 'class',
+        'transform', 'viewbox', 'viewBox', 'xmlns', 'class',
     ];
 
     /**
@@ -50,7 +48,7 @@ final class SvgSanitizer
 
         libxml_use_internal_errors(true);
         $loaded = $dom->loadXML(
-            '<?xml encoding="UTF-8">'.$this->closeVoidElements($svg),
+            '<?xml version="1.0" encoding="UTF-8"?>'.$this->closeVoidElements($svg),
             LIBXML_NONET | LIBXML_NOENT,
         );
         libxml_clear_errors();
@@ -75,7 +73,7 @@ final class SvgSanitizer
 
         // Collapse the empty-tag expansion back to self-closing form.
         $output = str_replace('></line>', '/>', $output);
-        $output = preg_replace('/<\/(line|rect|circle|ellipse|path|polyline|polygon)>/', '/>', $output) ?? $output;
+        $output = preg_replace('/><\/(line|rect|circle|ellipse|path|polyline|polygon)>/', '/>', $output) ?? $output;
 
         return $output;
     }

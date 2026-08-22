@@ -32,14 +32,6 @@ class QuestionResource extends JsonResource
             'contentDocument' => $this->content_document,
             'metadata' => $this->metadata ?? new \stdClass(),
             'questionFormat' => $this->question_format ?? 'text',
-            'scanUrl' => $this->whenLoaded('scan', fn () => $this->scan->cdn_url),
-            'scanAssetId' => $this->whenLoaded('scan', fn () => (string) $this->scan->id),
-            'scanProcessing' => $this->whenLoaded('scan', fn () => [
-                'mode' => $this->scan->metadata['scan_mode'] ?? 'auto',
-                'fallbackUsed' => (bool) ($this->scan->metadata['scan_fallback_used'] ?? false),
-                'qualityLevel' => $this->scan->metadata['scan_quality_level'] ?? null,
-                'stages' => $this->scan->metadata['scan_stages'] ?? [],
-            ]),
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => (string) $this->category->id,
                 'name' => $this->category->name,
