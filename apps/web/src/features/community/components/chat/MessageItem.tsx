@@ -186,10 +186,10 @@ export const MessageItem = memo(function MessageItem({
           ) : (
             <div
               className={cn(
-                "relative w-fit min-w-10 rounded-2xl px-3 py-1.5 text-start shadow-sm",
+                "relative w-fit min-w-10 rounded-2xl px-3.5 py-2 text-start shadow-sm ring-1",
                 isOwn
-                  ? "rounded-ee-sm bg-primary text-primary-foreground"
-                  : "rounded-se-sm bg-secondary text-secondary-foreground",
+                  ? "rounded-ee-md bg-primary text-primary-foreground ring-black/10"
+                  : "rounded-es-md bg-card text-card-foreground ring-border/70",
                 "break-words",
               )}
             >
@@ -202,12 +202,12 @@ export const MessageItem = memo(function MessageItem({
                       .getElementById(`community-message-${replied.id}`)
                       ?.scrollIntoView({ behavior: "smooth", block: "center" });
                   }}
-                  className={cn(
-                    "mb-1.5 flex w-full max-w-[19rem] items-start gap-2 rounded-lg border-s-2 px-2 py-1.5 text-start",
-                    isOwn
-                      ? "border-white/50 bg-black/10"
-                      : "border-primary/50 bg-background/60",
-                  )}
+                   className={cn(
+                     "mb-1.5 flex w-full max-w-[19rem] items-start gap-2 rounded-lg border-s-2 px-2 py-1.5 text-start",
+                     isOwn
+                       ? "border-white/50 bg-black/10"
+                       : "border-primary/50 bg-muted/70",
+                   )}
                 >
                   <MessageSquareReply className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
                   <span className="min-w-0">
@@ -267,7 +267,7 @@ export const MessageItem = memo(function MessageItem({
           {/* Hover action row */}
           <div
             className={cn(
-              "mt-1 flex items-center gap-0.5",
+              "mt-1 flex items-center gap-0.5 rounded-full bg-card/90 p-0.5 shadow-sm ring-1 ring-border/60 backdrop-blur",
               isOwn ? "justify-end" : "justify-start",
               "opacity-100 lg:opacity-0 lg:transition-opacity lg:group-hover:opacity-100",
             )}

@@ -33,16 +33,16 @@ export function CommunityLayoutShell({
   return (
     <div className="flex h-full w-full overflow-hidden bg-background text-foreground">
       {/* Desktop channel sidebar */}
-      <aside className="hidden w-72 shrink-0 border-e lg:flex lg:flex-col">
+      <aside className="relative z-10 hidden w-72 shrink-0 border-e border-border/70 bg-sidebar shadow-sm lg:flex lg:flex-col">
         {channelSidebar}
       </aside>
 
       {/* Main chat area */}
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col bg-background">{children}</main>
 
       {/* Desktop info/members sidebar */}
       {rightPaneOpen && (
-        <aside className="hidden w-80 shrink-0 border-s xl:flex xl:flex-col">
+        <aside className="relative z-10 hidden w-80 shrink-0 border-s border-border/70 bg-card shadow-sm xl:flex xl:flex-col">
           {rightSidebar}
         </aside>
       )}
@@ -52,7 +52,7 @@ export function CommunityLayoutShell({
         open={mobileChannelsOpen}
         onOpenChange={setMobileChannelsOpen}
         side="start"
-        className="w-[85vw] max-w-xs"
+        className="w-[86vw] max-w-xs shadow-2xl"
       >
         {channelSidebar}
       </AppDrawer>
@@ -63,7 +63,7 @@ export function CommunityLayoutShell({
           open={rightPaneOpen}
           onOpenChange={setRightPaneOpen}
           side="end"
-          className="w-[85vw] max-w-sm"
+          className="w-[88vw] max-w-sm shadow-2xl"
         >
           {rightSidebar}
         </AppDrawer>

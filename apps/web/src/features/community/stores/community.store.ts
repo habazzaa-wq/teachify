@@ -54,7 +54,7 @@ export const useCommunityStore = create<CommunityState>((set) => ({
   activeChannelId: null,
   activeThreadId: null,
   mobileChannelsOpen: false,
-  rightPaneOpen: true,
+  rightPaneOpen: false,
   searchOpen: false,
   examBlocked: false,
   connection: "connecting",
