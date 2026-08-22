@@ -68,6 +68,9 @@ final class QuestionDocumentValidator
 
                 continue;
             }
+            if (($block['type'] ?? null) === 'legacy_image') {
+                $block = ['type' => 'image', 'src' => $block['url'] ?? $block['src'] ?? '', 'alt' => $block['alt'] ?? null];
+            }
 
             array_push($errors, ...array_map(
                 fn (string $message): string => "$label: $message",
@@ -110,15 +113,23 @@ final class QuestionDocumentValidator
      */
     private function validateBlock(array $block): array
     {
-        return match ($block['type'] ?? null) {
+        $type = $block['type'] ?? null;
+        if ($type === 'legacy_image') {
+            return $this->validateImage($block, true);
+        }
+        return match ($type) {
             'paragraph' => $this->validateRuns((array) ($block['runs'] ?? [])),
             'heading' => $this->validateHeading($block),
             'math' => $this->validateMath($block),
             'diagram' => $this->validateDiagram($block),
             'list' => $this->validateList($block),
             'table' => $this->validateTable($block),
-            'unresolved_visual' => [],
-            default => ['نوع كتلة غير معروف: '.(is_string($block['type'] ?? null) ? $block['type'] : 'غير محدد').'.'],
+            'image' => $this->validateImage($block, false),
+            'chemical_equation' => $this->validateChemicalEquation($block),
+            'callout' => $this->validateCallout($block),
+            'separator' => [],
+            'unresolved_visual' => $this->validateUnresolvedVisual($block),
+            default => ['نوع كتلة غير معروف: '.(is_string($type) ? $type : 'غير محدد').'.'],
         };
     }
 
@@ -128,17 +139,14 @@ final class QuestionDocumentValidator
     private function validateHeading(array $block): array
     {
         $level = $block['level'] ?? null;
-
         if (! in_array($level, [2, 3], true)) {
             return ['مستوى العنوان يجب أن يكون 2 أو 3.'];
         }
-
-        $text = trim((string) ($block['text'] ?? ''));
-
-        if ($text === '') {
-            return ['نص العنوان مطلوب.'];
+        if (isset($block['runs']) && is_array($block['runs'])) {
+            return $this->validateRuns($block['runs']);
         }
-
+        $text = trim((string) ($block['text'] ?? ''));
+        if ($text === '') return ['نص العنوان مطلوب.'];
         return [];
     }
 
@@ -323,6 +331,72 @@ final class QuestionDocumentValidator
         }
 
         return $errors;
+    }
+
+    private function validateImage(array $block, bool $legacy): array
+    {
+        $url = trim((string) ($block['url'] ?? $block['src'] ?? ''));
+        if ($url === '') {
+            return ['رابط الصورة مطلوب.'];
+        }
+        if (strlen($url) > 2048) {
+            return ['رابط الصورة طويل جداً.'];
+        }
+        if (preg_match('/^\s*javascript:/i', $url) || preg_match('/^\s*data:(?!image\/)/i', $url)) {
+            return ['رابط الصورة غير آمن.'];
+        }
+        return [];
+    }
+
+    private function validateChemicalEquation(array $block): array
+    {
+        $content = trim((string) ($block['content'] ?? $block['latex'] ?? ''));
+        if ($content === '') {
+            return ['محتوى المعادلة الكيميائية مطلوب.'];
+        }
+        if (mb_strlen($content) > 2000) {
+            return ['محتوى المعادلة الكيميائية طويل جداً.'];
+        }
+        return [];
+    }
+
+    private function validateCallout(array $block): array
+    {
+        $text = trim((string) ($block['text'] ?? ''));
+        if ($text === '' && empty($block['runs'])) {
+            return ['نص التنبيه مطلوب.'];
+        }
+        if (isset($block['runs'])) {
+            return $this->validateRuns((array) $block['runs']);
+        }
+        return [];
+    }
+
+    private function validateUnresolvedVisual(array $block): array
+    {
+        if (isset($block['bounds']) && ! is_array($block['bounds'])) {
+            return ['حدود العنصر البصري غير صالحة.'];
+        }
+        return [];
+    }
+
+    public static function normalizeLegacyBlocks(array $document): array
+    {
+        if (! isset($document['blocks']) || ! is_array($document['blocks'])) {
+            return $document;
+        }
+        $document['blocks'] = array_map(function (array $block): array {
+            if (($block['type'] ?? null) === 'legacy_image') {
+                return [
+                    'type' => 'image',
+                    'src' => $block['url'] ?? $block['src'] ?? '',
+                    'alt' => $block['alt'] ?? null,
+                    'caption' => $block['caption'] ?? null,
+                ];
+            }
+            return $block;
+        }, $document['blocks']);
+        return $document;
     }
 
     /**

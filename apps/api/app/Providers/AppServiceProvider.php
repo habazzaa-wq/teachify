@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(MediaManager::class);
         $this->app->singleton(PlatformBunnySettingRepository::class);
         $this->app->singleton(PlatformBunnySettingService::class);
+        $this->app->bind(\App\Services\ExamBank\Import\Vision\VisionQuestionExtractorInterface::class, \App\Services\ExamBank\Import\Vision\OpenAICompatibleVisionExtractor::class);
     }
 
     /**

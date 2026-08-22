@@ -20,6 +20,11 @@ return new class extends Migration
             // consumed: finalized into a question; source file deleted.
             // expired: purged by the cleanup command.
             $table->string('status')->default('pending')->index();
+            $table->string('requested_mode')->default('auto');
+            $table->string('used_mode')->nullable();
+            $table->boolean('fallback_used')->default(false);
+            $table->string('fallback_reason')->nullable();
+            $table->string('strategy')->nullable();
             $table->json('source')->nullable();
             $table->json('stages')->nullable();
             $table->json('document')->nullable();

@@ -37,6 +37,11 @@ export function StructuredQuestionContent({
 }
 
 function BlockView({ block, index }: { block: DocumentBlock; index: number }) {
+  const t = (block as { type: string }).type;
+  if (t === "legacy_image") {
+    const b = block as unknown as { url?: string; src?: string; alt?: string };
+    return <ImageView block={{ type: "image", src: b.url ?? b.src ?? "", alt: b.alt ?? null } as import("./types").ImageBlock} />;
+  }
   switch (block.type) {
     case "paragraph":
       return <ParagraphView block={block} />;
@@ -50,6 +55,14 @@ function BlockView({ block, index }: { block: DocumentBlock; index: number }) {
       return <ListView block={block} />;
     case "table":
       return <TableView block={block} />;
+    case "image":
+      return <ImageView block={block} />;
+    case "chemical_equation":
+      return <ChemicalView block={block} />;
+    case "callout":
+      return <CalloutView block={block} />;
+    case "separator":
+      return <hr className="my-2 border-studio-border" />;
     case "unresolved_visual":
       return <UnresolvedView block={block} index={index} />;
     default:
@@ -157,6 +170,36 @@ function TableView({ block }: { block: TableBlock }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ImageView({ block }: { block: import("./types").ImageBlock }) {
+  if (!block.src) return null;
+  const safe = !/^\s*javascript:/i.test(block.src);
+  if (!safe) return null;
+  return (
+    <figure className="space-y-1">
+      <img src={block.src} alt={block.alt ?? ""} className="mx-auto max-w-full rounded-lg border border-studio-border" loading="lazy" />
+      {block.caption && <figcaption className="text-center text-xs text-studio-fg-muted">{block.caption}</figcaption>}
+    </figure>
+  );
+}
+
+function ChemicalView({ block }: { block: import("./types").ChemicalEquationBlock }) {
+  const content = block.content ?? block.latex ?? "";
+  return (
+    <div dir="ltr" className="rounded-lg border border-studio-border bg-studio-soft/40 p-2 text-center font-mono text-sm">
+      {content}
+    </div>
+  );
+}
+
+function CalloutView({ block }: { block: import("./types").CalloutBlock }) {
+  const text = block.text ?? "";
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+      {block.runs ? <RunText runs={block.runs} /> : text}
     </div>
   );
 }

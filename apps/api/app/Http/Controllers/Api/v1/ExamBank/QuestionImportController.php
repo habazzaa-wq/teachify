@@ -27,9 +27,10 @@ class QuestionImportController extends Controller
 
         $validated = $request->validate([
             'file' => ['required', 'file', 'max:'.(int) (config('question-import.upload.max_size', 10485760) / 1024)],
+            'mode' => ['sometimes','string','in:auto,vision,local'],
         ]);
 
-        $import = $this->service->create(currentTenant(), currentTenantUser(), $validated['file']);
+        $import = $this->service->create(currentTenant(), currentTenantUser(), $validated['file'], $validated['mode'] ?? 'auto');
 
         return response()->json([
             'message' => 'تم رفع الصورة وبدء المعالجة.',
@@ -75,6 +76,25 @@ class QuestionImportController extends Controller
         $this->service->delete($import);
 
         return response()->json(['message' => 'تم حذف الاستيراد.']);
+    }
+
+    public function health(Request $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Question::class);
+        $enabled = (bool) config('question-import.vision.enabled');
+        $hasKey = (bool) config('question-import.vision.api_key');
+        $hasEndpoint = (bool) config('question-import.vision.endpoint');
+        $model = (string) config('question-import.vision.model', 'gpt-4o-mini');
+        $endpoint = (string) config('question-import.vision.endpoint');
+        $host = $endpoint ? (parse_url($endpoint, PHP_URL_HOST) ?: 'configured') : null;
+        return response()->json(['data' => [
+            'enabled' => $enabled,
+            'configured' => $enabled && $hasKey && $hasEndpoint,
+            'model' => $model,
+            'endpointHost' => $host,
+            'available' => app(\App\Services\ExamBank\Import\Vision\VisionQuestionExtractorInterface::class)->available(),
+            'reason' => app(\App\Services\ExamBank\Import\Vision\VisionQuestionExtractorInterface::class)->unavailabilityReason(),
+        ]]);
     }
 
     /**

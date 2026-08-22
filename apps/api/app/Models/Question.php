@@ -36,7 +36,6 @@ class Question extends Model
         'content_document',
         'metadata',
         'question_format',
-        'media_asset_id',
     ];
 
     protected $casts = [
@@ -71,11 +70,6 @@ class Question extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(QuestionBank::class, 'bank_id');
-    }
-
-    public function scan(): BelongsTo
-    {
-        return $this->belongsTo(MediaAsset::class, 'media_asset_id');
     }
 
     public function examQuestions(): \Illuminate\Database\Eloquent\Relations\HasMany

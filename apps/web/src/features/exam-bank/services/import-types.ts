@@ -10,9 +10,16 @@ export interface ImportStage {
   finishedAt?: string;
 }
 
+export type ExtractionMode = "auto" | "vision" | "local";
+
 export interface QuestionImportStatus {
   id: string;
   status: "pending" | "processing" | "ready" | "failed" | "consumed" | "expired";
+  requestedMode: ExtractionMode;
+  usedMode: ExtractionMode | null;
+  fallbackUsed: boolean;
+  fallbackReason: string | null;
+  strategy: string | null;
   attempts: number;
   stages: ImportStage[];
   document: QuestionDocument | null;

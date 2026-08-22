@@ -8,7 +8,6 @@ use App\Models\Question;
 use App\Repositories\QuestionRepository;
 use App\Services\ExamBank\Import\QuestionDocumentValidator;
 use App\Services\ExamBank\QuestionService;
-use App\Services\ExamBank\ScannedQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,7 +19,6 @@ class QuestionController extends Controller
     public function __construct(
         private readonly QuestionRepository $repository,
         private readonly QuestionService $service,
-        private readonly ScannedQuestionService $scanService,
         private readonly QuestionDocumentValidator $documentValidator,
     ) {}
 
@@ -62,6 +60,14 @@ class QuestionController extends Controller
 
         $validated = $this->validateQuestion($request);
         $question = $this->service->create(currentTenant(), currentTenantUser(), $validated);
+        if (!empty($validated['import_id'])) {
+            try {
+                $import = \App\Models\QuestionImport::where('uuid', $validated['import_id'])->where('tenant_id', currentTenant()->id)->first();
+                if ($import) app(\App\Services\ExamBank\Import\QuestionImportService::class)->markConsumed($import);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('question.import_mark_consumed_failed', ['import_id'=>$validated['import_id'],'error'=>$e->getMessage()]);
+            }
+        }
 
         return response()->json([
             'message' => 'Question created successfully.',
@@ -75,7 +81,7 @@ class QuestionController extends Controller
         Gate::authorize('view', $question);
 
         return response()->json([
-            'data' => new QuestionResource($question->load(['category', 'creator.user', 'scan'])),
+            'data' => new QuestionResource($question->load(['category', 'creator.user'])),
         ]);
     }
 
@@ -89,7 +95,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question updated successfully.',
-            'data' => new QuestionResource($question->load('scan')),
+            'data' => new QuestionResource($question),
         ]);
     }
 
@@ -121,7 +127,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question status updated.',
-            'data' => new QuestionResource($question->load('scan')),
+            'data' => new QuestionResource($question),
         ]);
     }
 
@@ -134,7 +140,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question published successfully.',
-            'data' => new QuestionResource($question->load('scan')),
+            'data' => new QuestionResource($question),
         ]);
     }
 
@@ -147,7 +153,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question archived successfully.',
-            'data' => new QuestionResource($question->load('scan')),
+            'data' => new QuestionResource($question),
         ]);
     }
 
@@ -160,7 +166,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question restored successfully.',
-            'data' => new QuestionResource($question->load('scan')),
+            'data' => new QuestionResource($question),
         ]);
     }
 
@@ -173,7 +179,7 @@ class QuestionController extends Controller
 
         return response()->json([
             'message' => 'Question duplicated successfully.',
-            'data' => new QuestionResource($copy->load('scan')),
+            'data' => new QuestionResource($copy),
         ], 201);
     }
 
@@ -228,7 +234,7 @@ class QuestionController extends Controller
 
         $copies = [];
         foreach ($this->repository->findByIds($validated['ids']) as $question) {
-            $copies[] = new QuestionResource($this->service->duplicate($question, currentTenantUser())->load('scan'));
+            $copies[] = new QuestionResource($this->service->duplicate($question, currentTenantUser()));
         }
 
         return response()->json([
@@ -278,48 +284,6 @@ class QuestionController extends Controller
         return response()->json(['message' => "{$count} questions moved."]);
     }
 
-    public function uploadScan(Request $request, Question $question): JsonResponse
-    {
-        abort_if($question->tenant_id !== currentTenant()->id, 404);
-        Gate::authorize('update', $question);
-
-        $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:jpeg,png,webp'],
-            'mode' => ['sometimes', 'string', Rule::in(config('scanner.modes'))],
-        ]);
-
-        $errors = $this->scanService->validateUpload($request->file('file'));
-        if (! empty($errors)) {
-            return response()->json(['message' => 'Validation failed.', 'errors' => $errors], 422);
-        }
-
-        $asset = $this->scanService->processScan(
-            currentTenant(),
-            currentTenantUser(),
-            $question,
-            $request->file('file'),
-            $request->input('mode', 'auto'),
-        );
-
-        return response()->json([
-            'message' => 'تم رفع ومعالجة الصورة بنجاح.',
-            'data' => new QuestionResource($question->refresh()->load(['scan'])),
-        ]);
-    }
-
-    public function removeScan(Question $question): JsonResponse
-    {
-        abort_if($question->tenant_id !== currentTenant()->id, 404);
-        Gate::authorize('update', $question);
-
-        $this->scanService->unlinkScan($question);
-
-        return response()->json([
-            'message' => 'تم إزالة الصورة المرفقة بنجاح.',
-            'data' => new QuestionResource($question->refresh()->load(['scan'])),
-        ]);
-    }
-
     private function validateQuestion(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
@@ -356,8 +320,8 @@ class QuestionController extends Controller
             'content' => ['nullable', 'array'],
             'content_document' => ['sometimes', 'nullable', 'string', 'max:131072'],
             'metadata' => ['nullable', 'array'],
-            'question_format' => ['sometimes', 'string', Rule::in(['text', 'image', 'structured'])],
-            'media_asset_id' => ['nullable', 'integer', 'exists:media_assets,id'],
+            'question_format' => ['sometimes', 'string', Rule::in(['text', 'structured'])],
+            'import_id' => ['sometimes','nullable','string','max:64'],
         ]);
 
         if (($validated['content_document'] ?? null) !== null) {

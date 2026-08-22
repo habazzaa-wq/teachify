@@ -16,14 +16,26 @@ class ImportStageRecorder
 {
     public const STAGES = [
         'ingest' => 'تم استلام الصورة',
-        'preprocess' => 'جاري تحليل المستند',
+        'preprocess' => 'جاري تجهيز الصورة',
         'layout' => 'جاري تحليل تخطيط الصفحة',
         'ocr' => 'جاري استخراج النص',
         'structure' => 'جاري بناء الفقرات والقوائم',
         'math' => 'جاري تحليل المعادلات',
         'diagram' => 'جاري تحليل الرسومات',
         'compose' => 'جاري بناء السؤال',
+        'vision_prepare' => 'جاري تجهيز الصورة',
+        'vision_upload' => 'جاري إرسال الصورة للتحليل',
+        'vision_request' => 'جاري استخراج محتوى السؤال',
+        'vision_text' => 'جاري تحليل النصوص والمعادلات',
+        'vision_visual' => 'جاري تحليل الرسومات والجداول',
+        'vision_compose' => 'جاري بناء السؤال بصيغة منظمة',
+        'vision_parse' => 'جاري معالجة الاستجابة',
+        'vision_validate' => 'جاري التحقق من النتيجة',
+        'vision_ready' => 'جاهز للمراجعة',
     ];
+
+    public const VISION_STAGES = ['vision_prepare','vision_upload','vision_request','vision_text','vision_visual','vision_compose','vision_parse','vision_validate','vision_ready'];
+    public const LOCAL_STAGES = ['ingest','preprocess','layout','ocr','structure','math','diagram','compose'];
 
     /** @var array<string, array{key: string, label: string, status: string, detail?: string, startedAt: string, finishedAt?: string}> */
     private array $stages = [];
@@ -33,6 +45,14 @@ class ImportStageRecorder
     public function start(string $key, string $detail = ''): void
     {
         if (! isset(self::STAGES[$key])) {
+            $this->stages[$key] = [
+                'key' => $key,
+                'label' => $key,
+                'status' => 'running',
+                'startedAt' => now()->toIso8601String(),
+            ];
+            if ($detail !== '') $this->stages[$key]['detail'] = $detail;
+            $this->persist();
             return;
         }
 
@@ -53,6 +73,15 @@ class ImportStageRecorder
     public function finish(string $key, string $detail = ''): void
     {
         if (! isset($this->stages[$key])) {
+            $this->stages[$key] = [
+                'key' => $key,
+                'label' => $key,
+                'status' => 'done',
+                'startedAt' => now()->toIso8601String(),
+                'finishedAt' => now()->toIso8601String(),
+            ];
+            if ($detail !== '') $this->stages[$key]['detail'] = $detail;
+            $this->persist();
             return;
         }
 
@@ -71,6 +100,15 @@ class ImportStageRecorder
     public function skip(string $key, string $reason): void
     {
         if (! isset(self::STAGES[$key])) {
+            $this->stages[$key] = [
+                'key' => $key,
+                'label' => $key,
+                'status' => 'skipped',
+                'detail' => $reason,
+                'startedAt' => now()->toIso8601String(),
+                'finishedAt' => now()->toIso8601String(),
+            ];
+            $this->persist();
             return;
         }
 

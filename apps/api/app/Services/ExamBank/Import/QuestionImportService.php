@@ -29,9 +29,10 @@ class QuestionImportService
      *
      * @throws ValidationException
      */
-    public function create(Tenant $tenant, TenantUser $creator, UploadedFile $file): QuestionImport
+    public function create(Tenant $tenant, TenantUser $creator, UploadedFile $file, string $mode = 'auto'): QuestionImport
     {
         $this->validateUpload($file);
+        $mode = in_array($mode, ['auto','vision','local'], true) ? $mode : 'auto';
 
         $uuid = (string) Str::uuid();
         $binary = (string) file_get_contents($file->getRealPath());
@@ -49,13 +50,14 @@ class QuestionImportService
             ]);
         }
 
-        $import = DB::transaction(function () use ($tenant, $creator, $uuid, $file, $binary): QuestionImport {
+        $import = DB::transaction(function () use ($tenant, $creator, $uuid, $file, $binary, $mode): QuestionImport {
             /** @var QuestionImport $import */
             $import = QuestionImport::query()->create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
                 'uuid' => $uuid,
                 'status' => QuestionImport::STATUS_PENDING,
+                'requested_mode' => $mode,
                 'source' => [
                     'original_name' => $file->getClientOriginalName(),
                     'mime' => $file->getMimeType(),
@@ -83,6 +85,11 @@ class QuestionImportService
         return [
             'id' => $import->uuid,
             'status' => $import->status,
+            'requestedMode' => $import->requested_mode ?? 'auto',
+            'usedMode' => $import->used_mode,
+            'fallbackUsed' => (bool) $import->fallback_used,
+            'fallbackReason' => $import->fallback_reason,
+            'strategy' => $import->strategy ?? $import->used_mode,
             'attempts' => $import->attempts,
             'stages' => $this->stagesWithDefaults($import),
             'document' => $import->isReady() ? $import->document : null,
@@ -191,21 +198,27 @@ class QuestionImportService
     {
         $recorded = collect($import->stages ?? [])->keyBy('key');
         $payload = [];
+        $requested = $import->requested_mode ?? 'auto';
+        $used = $import->used_mode ?? $requested;
+        $stageKeys = $requested === 'vision' || $used === 'vision' || $requested === 'auto'
+            ? array_keys(ImportStageRecorder::STAGES)
+            : ImportStageRecorder::LOCAL_STAGES;
 
-        foreach (ImportStageRecorder::STAGES as $key => $label) {
-            if ($recorded->has($key)) {
-                $payload[] = $recorded->get($key);
-
-                continue;
-            }
-
-            $payload[] = [
-                'key' => $key,
-                'label' => $label,
-                'status' => 'pending',
-            ];
+        if ($requested === 'auto' && $used === 'local' && $import->fallback_used) {
+            $stageKeys = array_keys(ImportStageRecorder::STAGES);
         }
 
+        foreach ($stageKeys as $key) {
+            $label = ImportStageRecorder::STAGES[$key] ?? $key;
+            if ($recorded->has($key)) {
+                $payload[] = $recorded->get($key);
+                continue;
+            }
+            $payload[] = ['key'=>$key,'label'=>$label,'status'=>'pending'];
+        }
+        foreach ($recorded as $k=>$v) {
+            if (!in_array($k, $stageKeys, true)) $payload[] = $v;
+        }
         return $payload;
     }
 

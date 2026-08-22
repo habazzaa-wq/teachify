@@ -74,7 +74,33 @@ export interface UnresolvedVisualBlock {
   type: "unresolved_visual";
   reason?: string;
   region?: { x: number; y: number; w: number; h: number };
+  bounds?: { x: number; y: number; width: number; height: number };
   confidence?: number;
+  description?: string;
+}
+
+export interface ImageBlock {
+  type: "image";
+  src: string;
+  alt?: string | null;
+  caption?: string | null;
+}
+
+export interface ChemicalEquationBlock {
+  type: "chemical_equation";
+  content: string;
+  latex?: string;
+}
+
+export interface CalloutBlock {
+  type: "callout";
+  variant?: "info" | "warning" | "success";
+  text?: string;
+  runs?: ContentRun[];
+}
+
+export interface SeparatorBlock {
+  type: "separator";
 }
 
 export type DocumentBlock =
@@ -84,6 +110,10 @@ export type DocumentBlock =
   | DiagramBlock
   | ListBlock
   | TableBlock
+  | ImageBlock
+  | ChemicalEquationBlock
+  | CalloutBlock
+  | SeparatorBlock
   | UnresolvedVisualBlock;
 
 export interface QuestionDocumentMeta {

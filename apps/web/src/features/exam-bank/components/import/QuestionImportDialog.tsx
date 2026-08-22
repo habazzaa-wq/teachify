@@ -62,6 +62,7 @@ export function QuestionImportDialog({
   const [phase, setPhase] = useState<ImportPhase>("source");
   const [status, setStatus] = useState<QuestionImportStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [extractionMode, setExtractionMode] = useState<"auto"|"vision"|"local">("auto");
   const [values, setValues] = useState<QuestionFormValues>(() =>
     defaultQuestionForm("single_choice", categoryId ? String(categoryId) : "", bankId ? String(bankId) : ""),
   );
@@ -140,19 +141,18 @@ export function QuestionImportDialog({
       setError(null);
       setStatus(null);
       try {
-        const created = await createImport.mutateAsync(file);
+        const created = await createImport.mutateAsync({ file, mode: extractionMode });
         setStatus(created);
         setPhase("processing");
       } catch (err: unknown) {
         const message =
-          // axios-style error body
-          ((err as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors?.file?.[0]
-            ?? null)
-          || "تعذر رفع الصورة. تأكد من الصيغة والحجم وحاول مجدداً.";
+          ((err as { response?: { data?: { errors?: Record<string, string[]> } } })?.response?.data?.errors?.file?.[0] ?? null) ||
+          ((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? null) ||
+          "تعذر رفع الصورة. تأكد من الصيغة والحجم وحاول مجدداً.";
         setError(message);
       }
     },
-    [createImport],
+    [createImport, extractionMode],
   );
 
   const handleFilePicked = useCallback(
@@ -242,57 +242,37 @@ export function QuestionImportDialog({
 
         <div className="max-h-[65vh] overflow-y-auto pe-1">
           {phase === "source" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => cameraInputRef.current?.click()}
-                className="flex flex-col items-start gap-3 rounded-xl border-2 border-studio-border bg-studio-surface p-5 text-start transition-all hover:border-studio-accent-border hover:bg-studio-accent/5"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-studio-accent-soft text-studio-accent">
-                  <Camera className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold text-studio-fg">التقاط بالكاميرا</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-studio-fg-muted">
-                    صوّر الورقة بإضاءة جيدة وتأكد من وضوح النص.
-                  </span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-start gap-3 rounded-xl border-2 border-studio-border bg-studio-surface p-5 text-start transition-all hover:border-studio-accent-border hover:bg-studio-accent/5"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-studio-accent-soft text-studio-accent">
-                  <Upload className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold text-studio-fg">رفع ملف صورة</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-studio-fg-muted">
-                    JPEG أو PNG أو WebP بحد أقصى 10 ميجابايت.
-                  </span>
-                </span>
-              </button>
-
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFilePicked} />
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleFilePicked} />
-
-              {error && (
-                <p role="alert" className="text-sm text-studio-danger sm:col-span-2">{error}</p>
-              )}
-
-              {createImport.isPending && (
-                <div className="flex items-center gap-2 text-sm text-studio-fg-muted sm:col-span-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  جاري رفع الصورة...
-                </div>
-              )}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {(["auto","vision","local"] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => setExtractionMode(m)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${extractionMode===m ? "border-studio-accent bg-studio-accent text-white" : "border-studio-border bg-studio-surface text-studio-fg-muted hover:border-studio-accent-border"}`}>{m==="auto"?"تلقائي":m==="vision"?"ذكاء بصري":"محلي"}</button>
+                ))}
+              </div>
+              <p className="text-xs text-studio-fg-muted">{extractionMode==="auto"?"يجرب الذكاء البصري أولاً ثم ينتقل للمحلي عند الحاجة.":extractionMode==="vision"?"يستخدم الذكاء البصري فقط ويظهر خطأ واضحاً عند الفشل.":"معالجة محلية بدون تكلفة خارجية."}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button type="button" onClick={() => cameraInputRef.current?.click()} className="flex flex-col items-start gap-3 rounded-xl border-2 border-studio-border bg-studio-surface p-5 text-start transition-all hover:border-studio-accent-border hover:bg-studio-accent/5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-studio-accent-soft text-studio-accent"><Camera className="h-5 w-5" /></span>
+                  <span><span className="block text-sm font-semibold text-studio-fg">التقاط بالكاميرا</span><span className="mt-0.5 block text-xs leading-snug text-studio-fg-muted">صوّر الورقة بإضاءة جيدة وتأكد من وضوح النص.</span></span>
+                </button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex flex-col items-start gap-3 rounded-xl border-2 border-studio-border bg-studio-surface p-5 text-start transition-all hover:border-studio-accent-border hover:bg-studio-accent/5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-studio-accent-soft text-studio-accent"><Upload className="h-5 w-5" /></span>
+                  <span><span className="block text-sm font-semibold text-studio-fg">رفع ملف صورة</span><span className="mt-0.5 block text-xs leading-snug text-studio-fg-muted">JPEG أو PNG أو WebP بحد أقصى 10 ميجابايت.</span></span>
+                </button>
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" hidden onChange={handleFilePicked} />
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleFilePicked} />
+                {error && <p role="alert" className="text-sm text-studio-danger sm:col-span-2">{error}</p>}
+                {createImport.isPending && <div className="flex items-center gap-2 text-sm text-studio-fg-muted sm:col-span-2"><Loader2 className="h-4 w-4 animate-spin" />جاري رفع الصورة...</div>}
+              </div>
             </div>
           )}
 
           {phase === "processing" && status && (
             <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full bg-studio-soft px-2 py-1 text-studio-fg-muted">المطلوب: {status.requestedMode}</span>
+                {status.usedMode && <span className="rounded-full bg-studio-accent-soft px-2 py-1 text-studio-accent">المستخدم: {status.usedMode}</span>}
+                {status.fallbackUsed && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">تم التبديل للمحلي ({status.fallbackReason})</span>}
+              </div>
               <ProcessingStages stages={status.stages} />
               {isProcessing && (
                 <p className="flex items-center gap-2 text-xs text-studio-fg-muted">
