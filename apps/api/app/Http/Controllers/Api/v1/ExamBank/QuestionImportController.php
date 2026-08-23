@@ -81,6 +81,7 @@ class QuestionImportController extends Controller
     public function health(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Question::class);
+        \App\Services\ExamBank\Import\QuestionImportSettings::applyForTenant(currentTenant()->id);
         $enabled = (bool) config('question-import.vision.enabled');
         $hasKey = (bool) config('question-import.vision.api_key');
         $hasEndpoint = (bool) config('question-import.vision.endpoint');

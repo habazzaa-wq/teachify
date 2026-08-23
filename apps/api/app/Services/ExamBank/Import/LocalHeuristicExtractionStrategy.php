@@ -32,13 +32,33 @@ final class LocalHeuristicExtractionStrategy implements ExtractionStrategyInterf
         $recorder->start('ingest');
         $recorder->finish('ingest', number_format(strlen($bytes)/1024, 0).' KB');
 
-        $recorder->start('preprocess');
-        $analysis = $this->pageAnalyzer->decodeToAnalysisScale($bytes, $this->exifOrientation($absolutePath));
-        $recorder->finish('preprocess', $analysis['width'].'x'.$analysis['height']);
+        // Pixel analysis needs the GD extension. When it is unavailable we still
+        // attempt a fully OCR-driven extraction (text + structure) so the import
+        // does not hard-fail purely because of a missing graphics library.
+        $gdAvailable = extension_loaded('gd') && function_exists('imagecreatefromstring');
+
+        $components = [];
+        $analysisScale = 1.0;
+        $image = null;
+        if ($gdAvailable) {
+            $recorder->start('preprocess');
+            try {
+                $analysis = $this->pageAnalyzer->decodeToAnalysisScale($bytes, $this->exifOrientation($absolutePath));
+            } catch (\Throwable $e) {
+                throw new ExtractionFailure('image_decode_failed', 'preprocess', 'تعذر قراءة الصورة (قد تكون تالفة أو أن مكتبة معالجة الصور غير مفعّلة على الخادم).');
+            }
+            $recorder->finish('preprocess', $analysis['width'].'x'.$analysis['height']);
+            $image = $analysis['image'];
+            $analysisScale = $analysis['scale'];
+        } else {
+            $recorder->skip('preprocess', 'تم تخطي تحليل البكسل: مكتبة الصور GD غير متاحة');
+        }
 
         try {
             $recorder->start('layout');
-            $components = $this->pageAnalyzer->findInkComponents($analysis['image']);
+            if ($gdAvailable) {
+                $components = $this->pageAnalyzer->findInkComponents($image);
+            }
             $recorder->finish('layout', count($components).' components');
 
             $recorder->start('ocr');
@@ -58,7 +78,9 @@ final class LocalHeuristicExtractionStrategy implements ExtractionStrategyInterf
             $recorder->start('structure');
             $lines = $this->layoutBuilder->buildLines($wordSet);
             $textBlocks = $this->layoutBuilder->buildBlocks($lines);
-            $graphicRegions = $this->layoutBuilder->graphicRegions($components, $this->scaleLines($lines, $analysis['scale']), $analysis['scale']);
+            $graphicRegions = $gdAvailable
+                ? $this->layoutBuilder->graphicRegions($components, $this->scaleLines($lines, $analysisScale), $analysisScale)
+                : [];
             $recorder->finish('structure', count($textBlocks).' blocks, '.count($graphicRegions).' graphics');
 
             $recorder->start('math');
@@ -69,30 +91,43 @@ final class LocalHeuristicExtractionStrategy implements ExtractionStrategyInterf
             }
             $recorder->finish('math', $mathSegments.' segments');
 
-            $recorder->start('diagram');
-            $diagramBlocks = [];
-            foreach ($graphicRegions as $region) {
-                try {
-                    $draft = $this->diagramReconstructor->reconstruct($analysis['image'], $region, $analysis['scale'], $wordSet->words);
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::notice('question-import.diagram_skipped', ['error' => $e->getMessage()]);
-                    $draft = ['type' => 'unresolved_visual', 'reason' => 'reconstruction_error', 'confidence' => 0.0];
+            if ($gdAvailable) {
+                $recorder->start('diagram');
+                $diagramBlocks = [];
+                foreach ($graphicRegions as $region) {
+                    try {
+                        $draft = $this->diagramReconstructor->reconstruct($image, $region, $analysisScale, $wordSet->words);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::notice('question-import.diagram_skipped', ['error' => $e->getMessage()]);
+                        $draft = ['type' => 'unresolved_visual', 'reason' => 'reconstruction_error', 'confidence' => 0.0];
+                    }
+                    $draft['region'] = ['x' => $region['x'], 'y' => $region['y'], 'w' => $region['w'], 'h' => $region['h']];
+                    $diagramBlocks[] = $draft;
                 }
-                $draft['region'] = ['x' => $region['x'], 'y' => $region['y'], 'w' => $region['w'], 'h' => $region['h']];
-                $diagramBlocks[] = $draft;
+                $recorder->finish('diagram', count($diagramBlocks).' regions');
+            } else {
+                $diagramBlocks = [];
+                $recorder->skip('diagram', 'تم تخطي تحليل الرسومات: مكتبة الصور غير متاحة');
             }
-            $recorder->finish('diagram', count($diagramBlocks).' regions');
 
             $recorder->start('compose');
             $document = $this->composer->compose($textBlocks, $diagramBlocks, $wordSet);
             $recorder->finish('compose', count($document['blocks'] ?? []).' blocks');
 
             $errors = $this->validator->validate($document);
-            if ($errors !== []) throw new \RuntimeException('Local document validation failed: '.implode(', ', $errors));
+            if ($errors !== []) {
+                throw new ExtractionFailure(
+                    'local_validation_failed',
+                    'compose',
+                    'لم يتمكّن المحرك المحلي من بناء سؤال صالح من الصورة. ' . implode(' ', $errors),
+                );
+            }
 
             return $document;
         } finally {
-            imagedestroy($analysis['image']);
+            if ($gdAvailable && $image !== null) {
+                imagedestroy($image);
+            }
         }
     }
 
