@@ -326,7 +326,7 @@ export function EducationalStagesSection() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
 
-  const geomRef = useRef({ viewport: 0, card: 0, gap: GAP_FALLBACK, step: 0, maxPage: 0 });
+  const geomRef = useRef({ viewport: 0, card: 0, gap: GAP_FALLBACK, step: 0, maxPage: 0, content: 0, fits: false });
   const txRef = useRef(0);
   const pageRef = useRef(0);
   const animRef = useRef<number | null>(null);
@@ -335,6 +335,7 @@ export function EducationalStagesSection() {
 
   const [page, setPage] = useState(0);
   const [maxPage, setMaxPage] = useState(0);
+  const [isStatic, setIsStatic] = useState(false);
 
   const { data, isLoading } = usePublicStages();
   const all = useMemo(() => data?.items ?? [], [data]);
@@ -374,16 +375,36 @@ export function EducationalStagesSection() {
 
   /* ── transform helpers ── */
 
-  const offsetFor = useCallback((p: number) => {
+  /**
+   * Translate for page `p`. Pages are centered (spotlight), but the rail is
+   * clamped flush at both ends — page 0 hugs the start edge and the last page
+   * hugs the end edge — so the carousel never shows dead empty space, no
+   * matter how few stages exist.
+   */
+  const txFor = useCallback((p: number) => {
     const g = geomRef.current;
-    return g.viewport / 2 - p * g.step - g.card / 2;
+    if (g.fits || g.viewport <= 0 || g.step <= 0) return 0;
+    const centered = g.viewport / 2 - p * g.step - g.card / 2;
+    return clampNum(centered, g.viewport - g.content, 0);
   }, []);
 
-  const pageFromTx = useCallback((tx: number) => {
-    const g = geomRef.current;
-    if (g.step <= 0) return 0;
-    return clampNum(Math.round((g.viewport / 2 - g.card / 2 - tx) / g.step), 0, g.maxPage);
-  }, []);
+  const pageFromTx = useCallback(
+    (tx: number) => {
+      const g = geomRef.current;
+      if (g.fits || g.step <= 0) return 0;
+      let best = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+      for (let p = 0; p <= g.maxPage; p += 1) {
+        const dist = Math.abs(txFor(p) - tx);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = p;
+        }
+      }
+      return best;
+    },
+    [txFor],
+  );
 
   const applyTx = useCallback((tx: number) => {
     txRef.current = tx;
@@ -395,6 +416,17 @@ export function EducationalStagesSection() {
     const track = trackRef.current;
     const inner = innerRef.current;
     if (!track || !inner) return;
+    if (geomRef.current.fits) {
+      track.querySelectorAll<HTMLElement>("[data-stage-slide]").forEach((slide) => {
+        const card = slide.firstElementChild as HTMLElement | null;
+        if (!card) return;
+        card.style.opacity = "";
+        card.style.filter = "";
+        card.style.zIndex = "";
+        card.style.boxShadow = "";
+      });
+      return;
+    }
     const ir = inner.getBoundingClientRect();
     const zoneL = ir.left + ir.width * 0.07;
     const zoneR = ir.right - ir.width * 0.07;
@@ -417,6 +449,12 @@ export function EducationalStagesSection() {
 
   const animateTo = useCallback(
     (toTx: number) => {
+      if (geomRef.current.fits) {
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+        applyTx(0);
+        applyFocus();
+        return;
+      }
       const from = txRef.current;
       if (Math.abs(toTx - from) < 0.5) {
         applyTx(toTx);
@@ -453,14 +491,14 @@ export function EducationalStagesSection() {
       const target = clampNum(p, 0, g.maxPage);
       setPage(target);
       pageRef.current = target;
-      if (animate) animateTo(offsetFor(target));
+      if (animate) animateTo(txFor(target));
       else {
         if (animRef.current) cancelAnimationFrame(animRef.current);
-        applyTx(offsetFor(target));
+        applyTx(txFor(target));
         applyFocus();
       }
     },
-    [animateTo, applyTx, applyFocus, offsetFor],
+    [animateTo, applyTx, applyFocus, txFor],
   );
 
   const measure = useCallback(() => {
@@ -471,19 +509,25 @@ export function EducationalStagesSection() {
     const card = slide.offsetWidth;
     const next = slide.nextElementSibling as HTMLElement | null;
     const gap = next ? Math.abs(next.offsetLeft - slide.offsetLeft - card) : GAP_FALLBACK;
+    const viewport = vp.clientWidth;
+    const content = count * card + Math.max(0, count - 1) * gap;
+    const fits = content <= viewport + 1;
     geomRef.current = {
-      viewport: vp.clientWidth,
+      viewport,
       card,
       gap,
       step: card + gap,
       maxPage: Math.max(0, count - 1),
+      content,
+      fits,
     };
+    setIsStatic(fits);
     setMaxPage(Math.max(0, count - 1));
     setPage((prev) => clampNum(prev, 0, Math.max(0, count - 1)));
     pageRef.current = clampNum(pageRef.current, 0, Math.max(0, count - 1));
   }, [count]);
 
-  /* ── init: measure + center first slide ── */
+  /* ── init: measure + position first slide ── */
 
   useEffect(() => {
     if (count === 0) return;
@@ -491,11 +535,11 @@ export function EducationalStagesSection() {
     initializedRef.current = true;
     const raf = requestAnimationFrame(() => {
       measure();
-      applyTx(offsetFor(0));
+      applyTx(txFor(0));
       applyFocus();
     });
     return () => cancelAnimationFrame(raf);
-  }, [count, measure, offsetFor, applyTx, applyFocus]);
+  }, [count, measure, txFor, applyTx, applyFocus]);
 
   /* ── resize ── */
 
@@ -503,12 +547,12 @@ export function EducationalStagesSection() {
     if (count === 0) return;
     const onResize = () => {
       measure();
-      applyTx(offsetFor(pageRef.current));
+      applyTx(txFor(pageRef.current));
       applyFocus();
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [count, measure, offsetFor, applyTx, applyFocus]);
+  }, [count, measure, txFor, applyTx, applyFocus]);
 
   useEffect(() => {
     return () => {
@@ -611,8 +655,8 @@ export function EducationalStagesSection() {
           }}
         >
           <div className="px-5 pb-8 pt-8 sm:px-8 sm:pb-10 sm:pt-9 lg:px-12">
-            {/* top controls — inside panel */}
-            {count > 1 ? (
+            {/* top controls — inside panel (hidden when every stage fits without scrolling) */}
+            {!isStatic && count > 1 ? (
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <span className="hidden text-xs font-bold tabular-nums text-muted-foreground sm:inline-block">
               {formatNumber(count)} مراحل
@@ -647,20 +691,36 @@ export function EducationalStagesSection() {
                 aria-roledescription="carousel"
                 aria-label="المراحل الدراسية"
                 tabIndex={0}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={endDrag}
-                onPointerCancel={endDrag}
+                {...(isStatic
+                  ? {}
+                  : {
+                      onPointerDown: handlePointerDown,
+                      onPointerMove: handlePointerMove,
+                      onPointerUp: endDrag,
+                      onPointerCancel: endDrag,
+                    })}
                 onClickCapture={handleClickCapture}
                 onKeyDown={handleKeyDown}
                 onDragStart={(e) => e.preventDefault()}
-                className="relative cursor-grab touch-pan-y select-none overflow-hidden py-2 outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-primary/70"
+                className={`relative touch-pan-y select-none overflow-hidden py-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/70 ${
+                  isStatic ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+                }`}
               >
-                <div ref={trackRef} dir="ltr" className="flex items-stretch gap-4 will-change-transform" style={{ transform: "translate3d(0, 0, 0)" }}>
+                <div
+                  ref={trackRef}
+                  dir="ltr"
+                  className={`flex items-stretch gap-4 will-change-transform ${isStatic ? "justify-center" : ""}`}
+                  style={{ transform: "translate3d(0, 0, 0)" }}
+                >
                   {all.map((stage, i) => {
                     const stats = statsById.get(stage.id);
                     return (
-                      <div key={stage.id} dir="rtl" data-stage-slide className={`${SLIDE_WIDTH} shrink-0`}>
+                      <div
+                        key={stage.id}
+                        dir="rtl"
+                        data-stage-slide
+                        className={`${count === 1 ? "w-full max-w-[35rem]" : SLIDE_WIDTH} shrink-0`}
+                      >
                         <StageCard
                           stage={stage}
                           index={i}
