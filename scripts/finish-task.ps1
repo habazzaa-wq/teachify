@@ -168,9 +168,24 @@ if (-not $KeepWorktree) {
         Write-Warn2 "Close it, then run: git -C `"$repo`" worktree remove `"$taskPath`""
     }
 
+    # The branch was merged into deploy and pushed (via the temp worktree), but
+    # the LOCAL 'deploy' branch is often not yet in sync (its sync is blocked
+    # because it is checked out in the main worktree). So `git branch -d`
+    # against the local deploy can falsely report "not fully merged". Verify the
+    # branch actually landed in origin/deploy (the authoritative state) and force
+    # delete only then; otherwise keep it to avoid losing unpushed work.
     & git -C $repo branch -d $Branch | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Ok "Deleted branch $Branch" }
-    else                     { Write-Warn2 "Could not delete branch '$Branch' (not merged?). Keep it or delete with -D." }
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Deleted branch $Branch"
+    } else {
+        $merged = & git -C $repo merge-base --is-ancestor $Branch "origin/deploy" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            & git -C $repo branch -D $Branch | Out-Null
+            Write-Ok "Deleted branch $Branch (verified merged into origin/deploy)"
+        } else {
+            Write-Warn2 "Branch '$Branch' not merged into origin/deploy - kept. Delete manually with: git branch -D $Branch"
+        }
+    }
 } else {
     Write-Warn2 "-KeepWorktree given: worktree and branch kept."
 }
