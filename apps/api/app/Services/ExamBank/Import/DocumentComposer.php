@@ -194,7 +194,7 @@ final class DocumentComposer
      * @param  list<float>  $confidenceScores
      * @return array<string, mixed>|null
      */
-    private function listBlock(array $block, array &$confidenceScores): array
+    private function listBlock(array $block, array &$confidenceScores): ?array
     {
         $items = [];
 
