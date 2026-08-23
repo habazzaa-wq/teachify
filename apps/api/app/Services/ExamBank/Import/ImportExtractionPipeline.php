@@ -203,8 +203,14 @@ final class ImportExtractionPipeline
             return ['validation_failed', 'لم يتمكّن المحرك من بناء سؤال صالح من هذه الصورة. جرّب صورة أوضح أو استخدم النمط البصري.'];
         }
 
-        if (str_contains($msg, 'Vision provider failed') || str_contains($msg, 'Vision provider rate')) {
-            return ['vision_provider_error', 'تعذر الاتصال بمزود الذكاء البصري أو أنه أرجع خطأ.'];
+        if ($e instanceof \Illuminate\Http\Client\ConnectionException
+            || str_contains($msg, 'Vision provider failed')
+            || str_contains($msg, 'Vision provider rate')
+            || str_contains($msg, 'cURL error')
+            || str_contains($msg, 'Could not resolve')
+            || str_contains($msg, 'Connection timed out')
+        ) {
+            return ['vision_provider_error', 'تعذر الاتصال بمزود الذكاء البصري (تأكد من صحة الرابط والمفتاح وأن الخادم يستطيع الوصول إليه).'];
         }
 
         if (str_contains($msg, 'Invalid vision') || str_contains($msg, 'Invalid vision JSON')) {
