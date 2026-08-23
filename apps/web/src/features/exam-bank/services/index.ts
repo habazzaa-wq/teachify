@@ -255,6 +255,24 @@ export const examBankService = {
   async deleteQuestionImport(uuid: string): Promise<void> {
     await api.delete(`/exam-bank/question-imports/${uuid}`);
   },
+  async questionImportHealth(): Promise<{
+    enabled: boolean;
+    configured: boolean;
+    available: boolean;
+    model: string;
+    endpointHost: string | null;
+    reason: string | null;
+  }> {
+    const { data } = await api.get("/exam-bank/question-imports/health");
+    return (data.data ?? {}) as {
+      enabled: boolean;
+      configured: boolean;
+      available: boolean;
+      model: string;
+      endpointHost: string | null;
+      reason: string | null;
+    };
+  },
   async validateQuestionDocument(documentJson: string): Promise<{ valid: boolean; errors: string[] }> {
     const { data } = await api.post("/exam-bank/question-imports/validate-document", {
       document: documentJson,

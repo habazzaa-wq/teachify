@@ -118,7 +118,7 @@ class TenantSettingController extends Controller
 
     public function update(Request $request, string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'question_import'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);
@@ -126,6 +126,13 @@ class TenantSettingController extends Controller
 
         $validated = $request->validate([
             'values' => ['required', 'array'],
+            'values.enabled' => ['sometimes', 'boolean'],
+            'values.endpoint' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.api_key' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'values.model' => ['sometimes', 'nullable', 'string', 'max:128'],
+            'values.timeout' => ['sometimes', 'integer', 'min:5', 'max:300'],
+            'values.daily_limit' => ['sometimes', 'integer', 'min:1', 'max:10000'],
+            'values.rate_limit' => ['sometimes', 'integer', 'min:1', 'max:10000'],
         ]);
 
         $existing = TenantSetting::query()
@@ -152,7 +159,7 @@ class TenantSettingController extends Controller
 
     public function show(string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'question_import'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);

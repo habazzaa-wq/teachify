@@ -11,6 +11,8 @@ use RuntimeException;
 
 final class ImportExtractionPipeline
 {
+    private ?string $visionFallbackReason = null;
+
     public function __construct(
         private readonly LocalHeuristicExtractionStrategy $localStrategy,
         private readonly VisionExtractionStrategy $visionStrategy,
@@ -19,6 +21,8 @@ final class ImportExtractionPipeline
 
     public function run(QuestionImport $import): void
     {
+        $this->visionFallbackReason = null;
+        QuestionImportSettings::applyForTenant($import->tenant_id);
         $recorder = new ImportStageRecorder($import);
         $requested = $import->requested_mode ?? 'auto';
         if (!in_array($requested, ['auto','vision','local'], true)) $requested = 'auto';
@@ -34,14 +38,30 @@ final class ImportExtractionPipeline
             [$document, $used, $fallbackUsed, $fallbackReason] = $this->executeWithMode($import, $recorder, $requested);
         } catch (ExtractionFailure $failure) {
             Log::warning('question-import.extraction_failed', ['import_id'=>$import->id,'code'=>$failure->errorCode,'stage'=>$failure->stage]);
+            // When an auto vision attempt already failed and we then fell back to
+            // the local strategy (which also failed), reflect the real path.
+            $usedMode = $requested;
+            $strategy = $requested;
+            $fbUsed = $fallbackUsed;
+            $fbReason = $fallbackReason;
+            if ($this->visionFallbackReason !== null) {
+                $usedMode = 'local';
+                $strategy = 'local';
+                $fbUsed = true;
+                $fbReason = $this->visionFallbackReason;
+            }
+            $message = $failure->getMessage();
+            if ($this->visionFallbackReason !== null) {
+                $message .= ' (تحوّلنا للمعالجة المحلية بسبب: '.$this->visionFallbackReason.')';
+            }
             $import->forceFill([
                 'status'=>QuestionImport::STATUS_FAILED,
                 'requested_mode'=>$requested,
-                'used_mode'=>$failure->errorCode === 'vision_unavailable' ? null : $requested,
-                'fallback_used'=>$fallbackUsed,
-                'fallback_reason'=>$fallbackReason,
-                'strategy'=>$failure->errorCode === 'vision_unavailable' ? null : $requested,
-                'error'=>['code'=>$failure->errorCode,'stage'=>$failure->stage,'message'=>$failure->getMessage()],
+                'used_mode'=>$failure->errorCode === 'vision_unavailable' ? null : $usedMode,
+                'fallback_used'=>$fbUsed,
+                'fallback_reason'=>$fbReason,
+                'strategy'=>$failure->errorCode === 'vision_unavailable' ? null : $strategy,
+                'error'=>['code'=>$failure->errorCode,'stage'=>$failure->stage,'message'=>$message],
                 'finished_at'=>now(),
             ])->save();
             return;
@@ -73,15 +93,16 @@ final class ImportExtractionPipeline
             ])->save();
             return;
         } catch (\Throwable $e) {
-            Log::error('question-import.unexpected_error', ['import_id'=>$import->id,'stage'=>$stage,'exception'=>$e->getMessage()]);
+            Log::error('question-import.unexpected_error', ['import_id'=>$import->id,'stage'=>$stage,'exception'=>$e->getMessage(),'class'=>get_class($e)]);
+            [$code, $message] = $this->classifyError($e);
             $import->forceFill([
                 'status'=>QuestionImport::STATUS_FAILED,
                 'requested_mode'=>$requested,
                 'used_mode'=>$used ?? $requested,
-                'fallback_used'=>$fallbackUsed,
-                'fallback_reason'=>$fallbackReason,
+                'fallback_used'=>$fallbackUsed || $this->visionFallbackReason !== null,
+                'fallback_reason'=>$fallbackReason ?? $this->visionFallbackReason,
                 'strategy'=>$used ?? $requested,
-                'error'=>['code'=>'extraction_failed','stage'=>$stage ?: null,'message'=>'تعذر تحليل الصورة. تأكد من وضوحها واعد المحاولة.'],
+                'error'=>['code'=>$code,'stage'=>$stage ?: null,'message'=>$message,'detail'=>$e->getMessage()],
                 'finished_at'=>now(),
             ])->save();
             return;
@@ -94,7 +115,7 @@ final class ImportExtractionPipeline
                 'fallback_used'=>$fallbackUsed,
                 'fallback_reason'=>$fallbackReason ?? 'unknown',
                 'strategy'=>$used,
-                'error'=> $error ?? ['code'=>'extraction_failed','stage'=>null,'message'=>'تعذر تحليل الصورة.'],
+                'error'=> $error ?? ['code'=>'extraction_failed','stage'=>null,'message'=>'تعذر استخراج السؤال من الصورة لأسباب تقنية.'],
                 'finished_at'=>now(),
             ])->save();
             return;
@@ -141,6 +162,7 @@ final class ImportExtractionPipeline
             } catch (\Throwable $e) {
                 Log::warning('question-import.auto_vision_fallback', ['import_id'=>$import->id,'error'=>$e->getMessage()]);
                 $reason = $this->mapFallbackReason($e);
+                $this->visionFallbackReason = $reason;
                 $recorder->start('ingest', 'التبديل الى المعالجة المحلية');
                 $recorder->finish('ingest', 'fallback');
                 $doc = $this->localStrategy->extract($import, $recorder);
@@ -160,6 +182,36 @@ final class ImportExtractionPipeline
         if (str_contains($msg, 'validation failed')) return 'vision_validation_failed';
         if (str_contains($msg, 'Invalid vision')) return 'vision_invalid_response';
         return 'vision_failed';
+    }
+
+    /**
+     * Maps an unexpected exception to an honest, specific error the teacher sees,
+     * instead of the old blanket "image is unclear" message that blamed the
+     * upload for infrastructure/code failures.
+     *
+     * @return array{0: string, 1: string} [code, user-facing Arabic message]
+     */
+    private function classifyError(\Throwable $e): array
+    {
+        $msg = $e->getMessage();
+
+        if ($e instanceof \InvalidArgumentException) {
+            return ['image_decode_failed', 'تعذر قراءة الصورة (قد تكون تالفة، أو أن مكتبة معالجة الصور GD غير مفعّلة على الخادم).'];
+        }
+
+        if (str_contains($msg, 'Local document validation failed') || str_contains($msg, 'Vision document validation failed')) {
+            return ['validation_failed', 'لم يتمكّن المحرك من بناء سؤال صالح من هذه الصورة. جرّب صورة أوضح أو استخدم النمط البصري.'];
+        }
+
+        if (str_contains($msg, 'Vision provider failed') || str_contains($msg, 'Vision provider rate')) {
+            return ['vision_provider_error', 'تعذر الاتصال بمزود الذكاء البصري أو أنه أرجع خطأ.'];
+        }
+
+        if (str_contains($msg, 'Invalid vision') || str_contains($msg, 'Invalid vision JSON')) {
+            return ['vision_invalid_response', 'أرجع مزود الذكاء البصري استجابة غير صالحة.'];
+        }
+
+        return ['extraction_failed', 'تعذر استخراج السؤال من الصورة لأسباب تقنية. راجع سجلات الخادم أو جرّب نمط معالجة مختلفاً.'];
     }
 }
 
