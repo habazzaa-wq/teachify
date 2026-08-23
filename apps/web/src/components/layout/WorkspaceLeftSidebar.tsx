@@ -25,7 +25,6 @@ import {
   CreditCard,
   ImageIcon,
   Search,
-  ScanLine,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -280,13 +279,6 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith("/teacher/settings/payment-gateway")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => router.push("/teacher/settings/payment-gateway")}
-              />
-              <StudioSidebarItem
-                icon={<ScanLine className="h-4 w-4" />}
-                label="استيراد الأسئلة بالذكاء البصري"
-                active={pathname.startsWith("/teacher/settings/question-import")}
-                collapsed={leftSidebarCollapsed}
-                onClick={() => router.push("/teacher/settings/question-import")}
               />
             </StudioSidebarSection>
 

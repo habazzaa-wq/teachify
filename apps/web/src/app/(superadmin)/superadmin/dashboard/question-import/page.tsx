@@ -1,22 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { CheckCircle2, Loader2, RefreshCw, Save, XCircle } from "lucide-react";
-
-import {
-  AppButton,
-  AppCard,
-  AppDivider,
-  AppErrorState,
-  AppInput,
-  AppLoadingState,
-  AppPage,
-  AppPageHeader,
-  AppSwitch,
-} from "@/components/ui";
-import { useSettingsGroup, useUpdateSettingsGroup } from "@/features/settings/hooks";
-import { examBankService } from "@/features/exam-bank/services";
+import { AppButton, AppCard, AppErrorState, AppInput, AppLoadingState, AppPage, AppPageHeader, AppSwitch } from "@/components/ui";
+import { platformQuestionImportService, type QuestionImportHealth } from "@/features/platform-question-import/services";
 
 type FormState = {
   enabled: boolean;
@@ -38,18 +26,98 @@ const DEFAULTS: FormState = {
   rate_limit: 10,
 };
 
-export default function QuestionImportSettingsPage() {
-  const { data, isLoading, isError, refetch } = useSettingsGroup("question_import");
+export default function PlatformQuestionImportPage() {
+  const queryClient = useQueryClient();
+  const [tenantId, setTenantId] = useState<string>("");
 
-  if (isLoading) return <AppLoadingState />;
-  if (isError) return <AppErrorState onRetry={() => refetch()} />;
+  const tenantsQuery = useQuery({
+    queryKey: ["platform-qi-tenants"],
+    queryFn: () => platformQuestionImportService.listTenants(),
+  });
 
-  return <QuestionImportForm initial={data ?? {}} />;
+  return (
+    <AppPage maxWidth="xl">
+      <AppPageHeader
+        title="استيراد الأسئلة بالذكاء البصري"
+        description="فعّل مزوّد الذكاء البصري واضبط إعداداته لاستخراج الأسئلة من الصور لكل أكاديمية على حدة."
+      />
+
+      <AppCard className="mb-6 p-5">
+        <label className="mb-1 block text-sm font-medium">الأكاديمية</label>
+        <select
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          value={tenantId}
+          onChange={(e) => setTenantId(e.target.value)}
+          disabled={tenantsQuery.isLoading}
+        >
+          <option value="">اختر أكاديمية...</option>
+          {(tenantsQuery.data ?? []).map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </AppCard>
+
+      {!tenantId ? (
+        <AppCard className="p-6 text-sm text-muted-foreground">
+          اختر أكاديمية لعرض وإدارة إعدادات استيراد الأسئلة بالذكاء البصري الخاصة بها.
+        </AppCard>
+      ) : (
+        <TenantQuestionImportForm tenantId={tenantId} queryClient={queryClient} />
+      )}
+    </AppPage>
+  );
 }
 
-function QuestionImportForm({ initial }: { initial: Record<string, unknown> }) {
-  const updateSettings = useUpdateSettingsGroup();
+function TenantQuestionImportForm({
+  tenantId,
+  queryClient,
+}: {
+  tenantId: string;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
+  const settingsQuery = useQuery({
+    queryKey: ["platform-qi-settings", tenantId],
+    queryFn: () => platformQuestionImportService.getSettings(tenantId),
+  });
 
+  const healthQuery = useQuery({
+    queryKey: ["platform-qi-health", tenantId],
+    queryFn: () => platformQuestionImportService.health(tenantId),
+  });
+
+  if (settingsQuery.isLoading) return <AppLoadingState />;
+  if (settingsQuery.isError)
+    return <AppErrorState onRetry={() => settingsQuery.refetch()} />;
+
+  return (
+    <QuestionImportForm
+      tenantId={tenantId}
+      initial={settingsQuery.data ?? {}}
+      health={healthQuery.data ?? null}
+      healthLoading={healthQuery.isFetching}
+      onRefetchHealth={() => healthQuery.refetch()}
+      queryClient={queryClient}
+    />
+  );
+}
+
+function QuestionImportForm({
+  tenantId,
+  initial,
+  health,
+  healthLoading,
+  onRefetchHealth,
+  queryClient,
+}: {
+  tenantId: string;
+  initial: Record<string, unknown>;
+  health: QuestionImportHealth | null;
+  healthLoading: boolean;
+  onRefetchHealth: () => void;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
   const [form, setForm] = useState<FormState>(() => ({
     enabled: initial.enabled === true,
     endpoint: (initial.endpoint as string) ?? "",
@@ -60,34 +128,29 @@ function QuestionImportForm({ initial }: { initial: Record<string, unknown> }) {
     rate_limit: Number(initial.rate_limit ?? DEFAULTS.rate_limit),
   }));
 
-  const healthQuery = useQuery({
-    queryKey: ["question-import-health"],
-    queryFn: () => examBankService.questionImportHealth(),
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const values: Record<string, unknown> = {
+        enabled: form.enabled,
+        endpoint: form.endpoint,
+        model: form.model,
+        timeout: Number(form.timeout),
+        daily_limit: Number(form.daily_limit),
+        rate_limit: Number(form.rate_limit),
+      };
+      if (form.api_key.trim() !== "") {
+        values.api_key = form.api_key;
+      }
+      await platformQuestionImportService.updateSettings(tenantId, values);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platform-qi-settings", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["platform-qi-health", tenantId] });
+    },
   });
-
-  const health = healthQuery.data ?? null;
-  const healthLoading = healthQuery.isFetching;
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
-
-  const save = async () => {
-    const values: Record<string, unknown> = {
-      enabled: form.enabled,
-      endpoint: form.endpoint,
-      model: form.model,
-      timeout: Number(form.timeout),
-      daily_limit: Number(form.daily_limit),
-      rate_limit: Number(form.rate_limit),
-    };
-    // Only send the key when the teacher actually pasted a new one, so we
-    // don't overwrite the stored secret with an empty field.
-    if (form.api_key.trim() !== "") {
-      values.api_key = form.api_key;
-    }
-    await updateSettings.mutateAsync({ group: "question_import", values });
-    await healthQuery.refetch();
-  };
 
   const healthLabel = healthLoading
     ? "جاري الفحص..."
@@ -100,13 +163,7 @@ function QuestionImportForm({ initial }: { initial: Record<string, unknown> }) {
       : "—";
 
   return (
-    <AppPage maxWidth="xl">
-      <AppPageHeader
-        title="استيراد الأسئلة بالذكاء البصري"
-        description="فعّل مزوّد الذكاء البصري واضبط إعداداته لاستخراج الأسئلة من الصور تلقائياً بدل الاستخراج المحلي."
-      />
-      <AppDivider className="mb-8" />
-
+    <>
       <AppCard className="mb-6 p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -124,11 +181,7 @@ function QuestionImportForm({ initial }: { initial: Record<string, unknown> }) {
             ) : (
               <XCircle className="h-5 w-5 text-destructive" />
             )}
-            <AppButton
-              variant="secondary"
-              size="sm"
-              onClick={() => healthQuery.refetch()}
-            >
+            <AppButton variant="secondary" size="sm" onClick={onRefetchHealth}>
               <RefreshCw className="h-3.5 w-3.5" /> فحص
             </AppButton>
           </div>
@@ -222,11 +275,11 @@ function QuestionImportForm({ initial }: { initial: Record<string, unknown> }) {
         </div>
 
         <div className="flex justify-end">
-          <AppButton onClick={() => save()} loading={updateSettings.isPending}>
+          <AppButton onClick={() => saveMutation.mutate()} loading={saveMutation.isPending}>
             <Save className="ml-1 h-4 w-4" /> حفظ الإعدادات
           </AppButton>
         </div>
       </AppCard>
-    </AppPage>
+    </>
   );
 }
