@@ -156,34 +156,63 @@ foreach ($wt in $others) {
     }
 }
 
-# ---- 4) Cleanup --------------------------------------------------------------
+# ---- 4) Cleanup (ask before removing the worktree/folder) --------------------
 if (-not $KeepWorktree) {
-    Remove-JunctionLink -Destination (Join-Path $taskPath 'apps\web\node_modules') | Out-Null
-    Remove-JunctionLink -Destination (Join-Path $taskPath 'apps\api\vendor')       | Out-Null
-
-    & git -C $repo worktree remove "$taskPath" | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Ok "Removed worktree $taskPath" }
-    else {
-        Write-Warn2 "Could not auto-remove worktree (is an editor/session still open on it?)."
-        Write-Warn2 "Close it, then run: git -C `"$repo`" worktree remove `"$taskPath`""
-    }
-
-    # The branch was merged into deploy and pushed (via the temp worktree), but
-    # the LOCAL 'deploy' branch is often not yet in sync (its sync is blocked
-    # because it is checked out in the main worktree). So `git branch -d`
-    # against the local deploy can falsely report "not fully merged". Verify the
-    # branch actually landed in origin/deploy (the authoritative state) and force
-    # delete only then; otherwise keep it to avoid losing unpushed work.
-    & git -C $repo branch -d $Branch | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Ok "Deleted branch $Branch"
+    $ans = Read-Host "Delete task worktree '$taskPath' and branch '$Branch'? [y/N] (Enter = keep working on it)"
+    if ($ans -notmatch '^[yY]') {
+        Write-Warn2 "Kept worktree '$taskPath' and branch '$Branch'. Continue editing; run finish-task again later to finalize."
     } else {
-        $merged = & git -C $repo merge-base --is-ancestor $Branch "origin/deploy" 2>$null
+        Remove-JunctionLink -Destination (Join-Path $taskPath 'apps\web\node_modules') | Out-Null
+        Remove-JunctionLink -Destination (Join-Path $taskPath 'apps\api\vendor')       | Out-Null
+
+        # Unregister the git worktree, then force-delete the folder even if an
+        # opencode session is still holding it open.
+        & git -C $repo worktree remove --force "$taskPath" | Out-Null
+        if ($LASTEXITCODE -eq 0) { Write-Ok "Removed worktree $taskPath" }
+        else                     { Write-Warn2 "Could not unregister worktree; will try to delete the folder directly." }
+
+        if (Test-Path -LiteralPath $taskPath) {
+            Remove-Item -LiteralPath $taskPath -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $taskPath) { & cmd /c "rmdir /s /q `"$taskPath`"" 2>$null }
+            # Still locked? Close any opencode session that has this folder open,
+            # then retry once. Never targets the current process tree.
+            if (Test-Path -LiteralPath $taskPath) {
+                $curPid = $PID
+                $parent = (Get-CimInstance Win32_Process -Filter "ProcessId=$curPid" -ErrorAction SilentlyContinue).ParentProcessId
+                Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+                    Where-Object { ($_.Name -match 'opencode') -and ($_.CommandLine -like "*$taskPath*") -and ($_.ProcessId -ne $curPid) -and ($_.ProcessId -ne $parent) } |
+                    ForEach-Object {
+                        Write-Warn2 "Closing opencode session holding the folder (pid $($_.ProcessId))"
+                        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+                    }
+                Start-Sleep -Seconds 1
+                Remove-Item -LiteralPath $taskPath -Recurse -Force -ErrorAction SilentlyContinue
+                if (Test-Path -LiteralPath $taskPath) { & cmd /c "rmdir /s /q `"$taskPath`"" 2>$null }
+            }
+            if (Test-Path -LiteralPath $taskPath) {
+                Write-Warn2 "Folder still in use. Close the opencode session for this task, then: Remove-Item -Recurse -Force '$taskPath'"
+            } else {
+                Write-Ok "Deleted folder $taskPath"
+            }
+        }
+
+        # The branch was merged into deploy and pushed (via the temp worktree), but
+        # the LOCAL 'deploy' branch is often not yet in sync (its sync is blocked
+        # because it is checked out in the main worktree). So `git branch -d`
+        # against the local deploy can falsely report "not fully merged". Verify the
+        # branch actually landed in origin/deploy (the authoritative state) and force
+        # delete only then; otherwise keep it to avoid losing unpushed work.
+        & git -C $repo branch -d $Branch | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            & git -C $repo branch -D $Branch | Out-Null
-            Write-Ok "Deleted branch $Branch (verified merged into origin/deploy)"
+            Write-Ok "Deleted branch $Branch"
         } else {
-            Write-Warn2 "Branch '$Branch' not merged into origin/deploy - kept. Delete manually with: git branch -D $Branch"
+            $merged = & git -C $repo merge-base --is-ancestor $Branch "origin/deploy" 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                & git -C $repo branch -D $Branch | Out-Null
+                Write-Ok "Deleted branch $Branch (verified merged into origin/deploy)"
+            } else {
+                Write-Warn2 "Branch '$Branch' not merged into origin/deploy - kept. Delete manually with: git branch -D $Branch"
+            }
         }
     }
 } else {
