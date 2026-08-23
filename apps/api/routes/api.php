@@ -86,6 +86,7 @@ use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
+use App\Http\Controllers\Api\v1\Platform\PlatformTenantQuestionImportController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
@@ -757,6 +758,12 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
             Route::post('/{tenantDomain}/refresh-status', [PlatformDomainController::class, 'refreshStatus']);
             Route::post('/{tenantDomain}/renew-ssl', [PlatformDomainController::class, 'renewSsl']);
             Route::post('/bulk/delete', [PlatformDomainController::class, 'bulkDelete']);
+        });
+
+        Route::prefix('tenants/{tenant}')->group(function () {
+            Route::get('/question-import/settings', [PlatformTenantQuestionImportController::class, 'settings']);
+            Route::put('/question-import/settings', [PlatformTenantQuestionImportController::class, 'updateSettings']);
+            Route::get('/question-import/health', [PlatformTenantQuestionImportController::class, 'health']);
         });
     });
 
