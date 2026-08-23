@@ -76,6 +76,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const isSuperAdminRoute = isSuperAdminPath(pathname);
   const refreshingPromiseRef = useRef<Promise<boolean> | null>(null);
+  // Tracks the token we most recently obtained from a refresh so we can detect
+  // the "refreshed but the new token still 401s" case and break the loop.
+  const lastRefreshedTokenRef = useRef<string | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
@@ -96,7 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateSession(queryClient);
     if (!isPublicRoute(window.location.pathname)) {
       clearTenant();
-      router.replace(routes.home);
+      // Send expired dashboard sessions back to the teacher login so they can
+      // re-authenticate, instead of dumping them onto the public storefront
+      // home page (which is confusing and often unusable for a signed-out
+      // teacher). Public routes keep their own (guest) behavior.
+      router.replace(routes.tenantLogin);
     }
   }, [clearAuth, clearTenant, queryClient, router]);
 
@@ -117,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const result = await authService.refresh({ refresh_token: currentRefresh });
         setAccessToken(result.access_token);
+        lastRefreshedTokenRef.current = result.access_token;
         queryClient.invalidateQueries({
           predicate: (query) => !isPublicQueryKey(query.queryKey),
         });
@@ -322,6 +330,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     function handleTokenExpired() {
       if (isSuperAdminPath(window.location.pathname)) {
+        return;
+      }
+
+      // If the in-flight request is already using the token we just refreshed,
+      // refreshing again won't help — the 401 is persistent (e.g. the tenant
+      // context isn't resolvable). Bail out instead of looping 401 → refresh
+      // → 401 forever, which manifests as the page "constantly reloading".
+      const currentToken = useAuthStore.getState().accessToken;
+      if (currentToken && lastRefreshedTokenRef.current === currentToken) {
+        handleStaleSession();
         return;
       }
 
