@@ -32,6 +32,15 @@ class ProcessQuestionImportJob implements ShouldQueue
     {
         $this->import->refresh();
 
+        // The extraction pipeline and its dependencies call currentTenant()
+        // (e.g. via the TenantScope applied to QuestionImport writes), but a
+        // queued worker has no request-time tenant context. Re-establish it
+        // from the import's own tenant so saves/stage updates don't crash.
+        $tenant = $this->import->tenant;
+        if ($tenant !== null) {
+            app()->instance('currentTenant', $tenant);
+        }
+
         // Retry of a finished import must not clobber its terminal state.
         if (! $this->import->isPending() && ! $this->import->isProcessing()) {
             return;

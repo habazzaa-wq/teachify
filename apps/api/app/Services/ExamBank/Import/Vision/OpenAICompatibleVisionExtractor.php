@@ -88,7 +88,12 @@ final class OpenAICompatibleVisionExtractor implements VisionQuestionExtractorIn
             'response_format' => ['type' => 'json_object'],
         ];
 
-        $response = Http::timeout($timeout)->withToken($apiKey)->withHeaders(['Accept' => 'application/json'])->post($endpoint, $payload);
+        try {
+            $response = Http::timeout($timeout)->withToken($apiKey)->withHeaders(['Accept' => 'application/json'])->post($endpoint, $payload);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning('vision.connection_failed', ['endpoint' => $this->redactedEndpoint($endpoint), 'error' => $e->getMessage()]);
+            throw new \RuntimeException('Vision provider failed: '.$e->getMessage());
+        }
 
         if (!$response->successful()) {
             Log::warning('vision.extraction_failed', ['status' => $response->status(), 'body' => substr($response->body(), 0, 2000), 'endpoint' => $this->redactedEndpoint($endpoint)]);
