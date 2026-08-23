@@ -24,7 +24,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(routes.home);
+      // An unauthenticated dashboard session belongs on the teacher login
+      // page, not the public storefront home page.
+      router.replace(routes.tenantLogin);
       return;
     }
 

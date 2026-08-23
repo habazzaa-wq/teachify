@@ -468,7 +468,7 @@ export function HeroSection() {
 
         {/* ── Title ── */}
         <h1
-          className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
+          className="home-enter-up mb-4 mt-14 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mt-16 sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
           style={{ fontFamily: "var(--font-sans)" }}
         >
           {(() => {
