@@ -44,6 +44,8 @@ export interface MediaWorkspaceState {
   rightPanelWidth: number;
   filters: MediaWorkspaceFilters;
   hasActiveFilters: boolean;
+  currentPage: number;
+  perPage: number;
 
   setSelectedFolderId: (id: number | "root" | null) => void;
   setViewMode: (mode: AssetViewMode) => void;
@@ -78,6 +80,8 @@ export interface MediaWorkspaceState {
   setUnusedOnly: (unused: boolean) => void;
   setRecentlyUploaded: (recent: boolean) => void;
   resetFilters: () => void;
+  setCurrentPage: (page: number) => void;
+  setPerPage: (perPage: number) => void;
 }
 
 const defaultFilters: MediaWorkspaceFilters = {
@@ -116,13 +120,15 @@ export const useMediaWorkspaceStore = create<MediaWorkspaceState>((set) => ({
   rightPanelWidth: 340,
   filters: { ...defaultFilters },
   hasActiveFilters: false,
+  currentPage: 1,
+  perPage: 24,
 
-  setSelectedFolderId: (id) => set({ selectedFolderId: id, selectedIds: new Set(), lastSelectedIndex: null }),
+  setSelectedFolderId: (id) => set({ selectedFolderId: id, selectedIds: new Set(), lastSelectedIndex: null, currentPage: 1 }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setGroupBy: (group) => set({ groupBy: group }),
-  setSortField: (field) => set({ sortField: field }),
-  setSortDirection: (dir) => set({ sortDirection: dir }),
-  toggleSortDirection: () => set((s) => ({ sortDirection: s.sortDirection === "asc" ? "desc" : "asc" })),
+  setSortField: (field) => set({ sortField: field, currentPage: 1 }),
+  setSortDirection: (dir) => set({ sortDirection: dir, currentPage: 1 }),
+  toggleSortDirection: () => set((s) => ({ sortDirection: s.sortDirection === "asc" ? "desc" : "asc", currentPage: 1 })),
   setSelectionMode: (mode) => set({ selectionMode: mode }),
 
   selectAsset: (id, index, shift, ctrl, assetIds) =>
@@ -225,7 +231,11 @@ export const useMediaWorkspaceStore = create<MediaWorkspaceState>((set) => ({
       filters: { ...s.filters, recentlyUploaded: recent },
       hasActiveFilters: recent || computeHasActiveFilters({ ...s.filters, recentlyUploaded: recent }),
     })),
-  resetFilters: () => set({ filters: { ...defaultFilters }, hasActiveFilters: false }),
+  resetFilters: () => set({ filters: { ...defaultFilters }, hasActiveFilters: false, currentPage: 1 }),
+
+  setCurrentPage: (page) => set({ currentPage: Math.max(1, Math.floor(page)) }),
+
+  setPerPage: (perPage) => set({ perPage: Math.max(1, Math.floor(perPage)), currentPage: 1 }),
 }));
 
 function computeHasActiveFilters(f: MediaWorkspaceFilters): boolean {
