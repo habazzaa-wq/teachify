@@ -44,9 +44,19 @@ export function WorkspaceLeftSidebar() {
     leftSidebarOpen,
     leftSidebarWidth,
     leftSidebarCollapsed,
+    mobileMenuOpen,
     setLeftSidebarWidth,
     setLeftSidebarCollapsed,
+    setMobileMenuOpen,
   } = useWorkspaceStore();
+
+  const handleNavigate = useCallback(
+    (href: string) => {
+      router.push(href);
+      if (mobileMenuOpen) setMobileMenuOpen(false);
+    },
+    [router, mobileMenuOpen, setMobileMenuOpen],
+  );
 
   const [isResizing, setIsResizing] = useState(false);
   const isRTL = typeof document !== "undefined"
@@ -188,41 +198,41 @@ export function WorkspaceLeftSidebar() {
                 label="الكورسات"
                 active={pathname.startsWith("/teacher/courses")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push("/teacher/courses")}
+                onClick={() => handleNavigate("/teacher/courses")}
               />
               <StudioSidebarItem
                 icon={<Images className="h-4 w-4" />}
                 label="مكتبة الوسائط"
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push("/teacher/media")}
+                onClick={() => handleNavigate("/teacher/media")}
               />
               <StudioSidebarItem
                 icon={<ClipboardList className="h-4 w-4" />}
                 label="مكتبة الاختبارات"
                 active={pathname.startsWith("/teacher/exams")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardExams)}
+                onClick={() => handleNavigate(routes.dashboardExams)}
               />
               <StudioSidebarItem
                 icon={<BookOpen className="h-4 w-4" />}
                 label="المواد"
                 active={pathname.startsWith("/teacher/subjects")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardSubjects)}
+                onClick={() => handleNavigate(routes.dashboardSubjects)}
               />
               <StudioSidebarItem
                 icon={<GraduationCap className="h-4 w-4" />}
                 label="الطلاب"
                 active={pathname.startsWith("/teacher/students")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardStudents)}
+                onClick={() => handleNavigate(routes.dashboardStudents)}
               />
               <StudioSidebarItem
                 icon={<TicketCheck className="h-4 w-4" />}
                 label="أكواد الشحن"
                 active={pathname.startsWith("/teacher/recharge-codes")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardRechargeCodes)}
+                onClick={() => handleNavigate(routes.dashboardRechargeCodes)}
               />
             </StudioSidebarSection>
 
@@ -251,34 +261,34 @@ export function WorkspaceLeftSidebar() {
                 label="إعدادات SEO"
                 active={pathname.startsWith(routes.seoSettings)}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.seoSettings)}
+                onClick={() => handleNavigate(routes.seoSettings)}
               />
               <StudioSidebarItem
                 icon={<Globe className="h-4 w-4" />}
                 label="إعدادات الموقع"
                 active={pathname.startsWith(routes.dashboardSiteSettings)}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardSiteSettings)}
+                onClick={() => handleNavigate(routes.dashboardSiteSettings)}
               />
               <StudioSidebarItem
                 icon={<ImageIcon className="h-4 w-4" />}
                 label="الشعار واسم المنصة"
                 active={pathname.startsWith(routes.dashboardBranding)}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.dashboardBranding)}
+                onClick={() => handleNavigate(routes.dashboardBranding)}
               />
               <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}
                 label="مظهر لوحة التحكم"
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push("/teacher/settings/appearance")}
+                onClick={() => handleNavigate("/teacher/settings/appearance")}
               />
               <StudioSidebarItem
                 icon={<CreditCard className="h-4 w-4" />}
                 label="بوابة الدفع"
                 active={pathname.startsWith("/teacher/settings/payment-gateway")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push("/teacher/settings/payment-gateway")}
+                onClick={() => handleNavigate("/teacher/settings/payment-gateway")}
               />
             </StudioSidebarSection>
 
@@ -289,7 +299,7 @@ export function WorkspaceLeftSidebar() {
                 label="إدارة الصفحة الرئيسية"
                 active={pathname.startsWith("/teacher/homepage")}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => router.push(routes.homepageNews)}
+                onClick={() => handleNavigate(routes.homepageNews)}
               />
               <StudioSidebarItem
                 icon={<Megaphone className="h-4 w-4" />}
@@ -297,7 +307,7 @@ export function WorkspaceLeftSidebar() {
                 active={pathname === routes.homepageNews}
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
-                onClick={() => router.push(routes.homepageNews)}
+                onClick={() => handleNavigate(routes.homepageNews)}
               />
               <StudioSidebarItem
                 icon={<User className="h-4 w-4" />}
@@ -305,7 +315,7 @@ export function WorkspaceLeftSidebar() {
                 active={pathname === routes.homepageHero}
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
-                onClick={() => router.push(routes.homepageHero)}
+                onClick={() => handleNavigate(routes.homepageHero)}
               />
               <StudioSidebarItem
                 icon={<Award className="h-4 w-4" />}
@@ -313,7 +323,7 @@ export function WorkspaceLeftSidebar() {
                 active={pathname === routes.homepageWhyChooseUs}
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
-                onClick={() => router.push(routes.homepageWhyChooseUs)}
+                onClick={() => handleNavigate(routes.homepageWhyChooseUs)}
               />
               <StudioSidebarItem
                 icon={<GraduationCap className="h-4 w-4" />}
@@ -321,7 +331,7 @@ export function WorkspaceLeftSidebar() {
                 active={pathname === routes.homepageEducationalStages}
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
-                onClick={() => router.push(routes.homepageEducationalStages)}
+                onClick={() => handleNavigate(routes.homepageEducationalStages)}
               />
               <StudioSidebarItem
                 icon={<MessagesSquare className="h-4 w-4" />}
@@ -329,7 +339,7 @@ export function WorkspaceLeftSidebar() {
                 active={pathname === routes.homepageCommunity}
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
-                onClick={() => router.push(routes.homepageCommunity)}
+                onClick={() => handleNavigate(routes.homepageCommunity)}
               />
             </StudioSidebarSection>
           </div>
