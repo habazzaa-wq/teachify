@@ -12,16 +12,17 @@
 .EXAMPLE
     .\scripts\finish-task.ps1 betaka
     .\scripts\finish-task.ps1 betaka -Commit
-    .\scripts\finish-task.ps1 feat/wallet -NoPush -KeepWorktree
+    .\scripts\finish-task.ps1 feat/wallet -NoPush
+    .\scripts\finish-task.ps1 -Help
 #>
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
+    [Parameter(Position = 0)]
     [string]$Name,
 
     [switch]$Commit,
     [string]$Message,
-    [switch]$KeepWorktree,
-    [switch]$NoPush
+    [switch]$NoPush,
+    [switch]$Help
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +31,12 @@ $ErrorActionPreference = 'Stop'
 $repo      = Get-RepoRoot
 $worktrees = @(Get-Worktrees -RepoRoot $repo)
 $tasksRoot = Split-Path -Parent $repo
+
+if ($Help -or -not $Name) {
+    Get-Help -Name $MyInvocation.MyCommand.Path -Full
+    if (-not $Help) { Write-Fail "Task name is required." }
+    return
+}
 
 # ---- Resolve the task name into a branch + worktree ---------------------------
 function Resolve-Task {
@@ -108,9 +115,23 @@ try {
     Write-Step "Merging '$Branch' into deploy"
     & git -C $tmp merge --no-ff $Branch -m "merge: $Branch into deploy" | Out-Null
     if ($LASTEXITCODE -ne 0) {
+        $conflicts = @(& git -C $tmp diff --name-only --diff-filter=U)
         Write-Fail "Merge conflict while merging '$Branch'."
-        Write-Warn2 "Resolve manually in: $tmp  (then: git add -A ; git commit ; git push origin HEAD:deploy ; git -C '$repo' worktree remove '$tmp')"
-        exit 1
+        Write-Warn2 "Conflicting files:"
+        $conflicts | ForEach-Object { Write-Host "    $_" }
+        $ans = Read-Host "Auto-resolve ALL conflicts using the INCOMING branch ($Branch) version? [y/N] (else resolve manually)"
+        if ($ans -notmatch '^[yY]') {
+            Write-Warn2 "Resolve manually in: $tmp"
+            Write-Warn2 "then: git add -A ; git commit ; git push origin HEAD:deploy ; git -C '$repo' worktree remove '$tmp'"
+            exit 1
+        }
+        # Take the incoming branch's version for every conflicted file, then commit
+        # the merge. This is safe for styling-only clashes; choose 'n' for anything
+        # that needs a real 3-way resolution.
+        $conflicts | ForEach-Object { & git -C $tmp checkout --theirs -- "$_" | Out-Null }
+        & git -C $tmp add -A
+        & git -C $tmp commit -m "merge: $Branch into deploy" | Out-Null
+        Write-Ok "Auto-resolved conflicts using $Branch version"
     }
     $mergeSucceeded = $true
 
