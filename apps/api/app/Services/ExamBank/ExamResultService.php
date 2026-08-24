@@ -35,12 +35,21 @@ class ExamResultService
 
         if ($attempt->status === 'in_progress') {
             if ($this->isExpired($attempt)) {
-                $attempt = $this->grading->grade($attempt);
+                // Claim-once + queue grading so the read path never scores
+                // synchronously under load. On the sync queue (tests) the
+                // attempt is already "submitted" when this returns.
+                $attempt = $this->grading->reconcileExpiredAttempt($attempt);
             } else {
                 throw ValidationException::withMessages([
                     'attempt' => ['This attempt has not been submitted yet.'],
                 ]);
             }
+        }
+
+        // An attempt still being graded (async queue) is finalized inline so
+        // this explicit review request returns complete results.
+        if ($attempt->status === 'grading') {
+            $attempt = $this->grading->grade($attempt);
         }
 
         $exam = $attempt->exam()->firstOrFail();
@@ -62,7 +71,12 @@ class ExamResultService
             $points = max(0, (int) ($examQuestion->points ?? $question?->points ?? 0));
             $totalPoints += $points;
 
-            $isCorrect = $answered && $this->grader->grade($question, $saved->answer);
+            // Reuse the correctness already persisted on the answer row instead
+            // of re-grading on every review request. The grader is only a
+            // fallback for answers that were never scored (defensive).
+            $isCorrect = $answered
+                ? (bool) ($saved->is_correct ?? $this->grader->grade($question, $saved->answer))
+                : false;
 
             if ($isCorrect) {
                 $correctCount++;

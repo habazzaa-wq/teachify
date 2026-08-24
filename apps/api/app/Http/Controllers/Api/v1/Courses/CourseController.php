@@ -54,7 +54,7 @@ class CourseController extends Controller
         Gate::authorize('view', $course);
 
         return response()->json([
-            'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections'])),
+                'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections', 'lessons'])),
         ]);
     }
 

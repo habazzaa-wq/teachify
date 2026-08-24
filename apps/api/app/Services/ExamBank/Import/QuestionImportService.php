@@ -7,7 +7,6 @@ use App\Models\QuestionImport;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -50,27 +49,26 @@ class QuestionImportService
             ]);
         }
 
-        $import = DB::transaction(function () use ($tenant, $creator, $uuid, $file, $binary, $mode): QuestionImport {
-            /** @var QuestionImport $import */
-            $import = QuestionImport::query()->create([
-                'tenant_id' => $tenant->id,
-                'created_by_tenant_user_id' => $creator->id,
-                'uuid' => $uuid,
-                'status' => QuestionImport::STATUS_PENDING,
-                'requested_mode' => $mode,
-                'source' => [
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                ],
-            ]);
+        /** @var QuestionImport $import */
+        $import = QuestionImport::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $creator->id,
+            'uuid' => $uuid,
+            'status' => QuestionImport::STATUS_PENDING,
+            'requested_mode' => $mode,
+            'source' => [
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ],
+        ]);
 
-            $this->fileStorage->store($import, $binary);
+        // Write bytes to storage only after the row is committed: a failure
+        // here leaves a pending row without a file (which the worker will
+        // fail cleanly) instead of an orphaned blob on disk.
+        $this->fileStorage->store($import, $binary);
 
-            return $import;
-        });
-
-        ProcessQuestionImportJob::dispatch($import);
+        ProcessQuestionImportJob::dispatch($tenant->id, $import->id);
 
         return $import;
     }
@@ -94,7 +92,8 @@ class QuestionImportService
             'stages' => $this->stagesWithDefaults($import),
             'document' => $import->isReady() ? $import->document : null,
             'error' => $import->error,
-            'source' => $import->source,
+            // Internal storage coordinates (disk/path) are not tenant-facing.
+            'source' => collect($import->source ?? [])->except(['disk', 'path'])->all(),
             'created_at' => $import->created_at?->toIso8601String(),
             'finished_at' => $import->finished_at?->toIso8601String(),
         ];
@@ -127,7 +126,7 @@ class QuestionImportService
             'finished_at' => null,
         ])->save();
 
-        ProcessQuestionImportJob::dispatch($import->refresh());
+        ProcessQuestionImportJob::dispatch((int) $import->tenant_id, (int) $import->refresh()->id);
 
         return $import;
     }
@@ -170,6 +169,7 @@ class QuestionImportService
         $cutoff = now()->subDays($retentionDays);
 
         $stale = QuestionImport::query()
+            ->withoutGlobalScopes()
             ->whereIn('status', [
                 QuestionImport::STATUS_PENDING,
                 QuestionImport::STATUS_PROCESSING,

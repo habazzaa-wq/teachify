@@ -42,30 +42,48 @@ export function usePresencePulse(enabled: boolean) {
     if (!enabled) return;
 
     let stopped = false;
+    let interval: number | undefined;
+
     const pulse = () => {
       void communityApi.presenceOnline("online").catch(() => {
         // ignore
       });
     };
 
-    pulse();
-    const interval = window.setInterval(pulse, 60_000);
+    const startInterval = () => {
+      if (interval !== undefined) return;
+      interval = window.setInterval(pulse, 60_000);
+    };
+
+    const stopInterval = () => {
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+        interval = undefined;
+      }
+    };
 
     const shutdown = () => {
       stopped = true;
-      window.clearInterval(interval);
+      stopInterval();
       void communityApi.presenceOffline().catch(() => {
         // ignore
       });
     };
 
+    // Pause the heartbeat while the tab is backgrounded; resume (and immediately
+    // re-pulse) when it becomes visible again. This avoids burning presence
+    // writes server-side for tabs nobody is looking at.
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
         pulse();
+        startInterval();
       } else if (document.visibilityState === "hidden") {
-        // Don't tear down; the server times stale presence out on its own.
+        stopInterval();
       }
     };
+
+    pulse();
+    startInterval();
     document.addEventListener("visibilitychange", onVisibility);
 
     const onUnload = () => shutdown();

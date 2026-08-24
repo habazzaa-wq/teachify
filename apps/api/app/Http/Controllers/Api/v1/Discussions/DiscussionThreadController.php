@@ -17,8 +17,19 @@ class DiscussionThreadController extends Controller
     {
         $filters = $this->validateFilters($request);
 
+        $page = $threads->list(
+            currentTenant(),
+            app(TenantUser::class),
+            $filters,
+            (int) $request->input('per_page', 25),
+        );
+
         return response()->json([
-            'threads' => $threads->list(currentTenant(), app(TenantUser::class), $filters),
+            'threads' => $page->items(),
+            'total' => $page->total(),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
         ]);
     }
 

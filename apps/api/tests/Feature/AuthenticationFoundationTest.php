@@ -23,6 +23,12 @@ class AuthenticationFoundationTest extends TestCase
     public function test_user_can_login_only_with_active_tenant_membership(): void
     {
         $tenant = Tenant::factory()->create();
+        $tenant->domains()->create([
+            'domain' => 'localhost',
+            'is_primary' => true,
+            'status' => 'active',
+            'type' => 'platform_subdomain',
+        ]);
         $user = User::factory()->create([
             'email' => 'member@example.com',
             'password' => 'password',
@@ -48,6 +54,12 @@ class AuthenticationFoundationTest extends TestCase
     public function test_login_rejects_suspended_membership(): void
     {
         $tenant = Tenant::factory()->create();
+        $tenant->domains()->create([
+            'domain' => 'localhost',
+            'is_primary' => true,
+            'status' => 'active',
+            'type' => 'platform_subdomain',
+        ]);
         $user = User::factory()->create([
             'email' => 'suspended@example.com',
             'password' => 'password',

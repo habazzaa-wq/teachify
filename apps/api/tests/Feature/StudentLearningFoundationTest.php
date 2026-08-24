@@ -246,10 +246,10 @@ class StudentLearningFoundationTest extends TestCase
             ->assertCreated()
             ->tap(function ($response): void {
                 Course::withoutGlobalScopes()
-                    ->whereKey($response->json('course.id'))
+                    ->whereKey($response->json('data.id'))
                     ->update(['status' => 'published', 'visibility' => 'enrolled_only']);
             })
-            ->json('course.id');
+            ->json('data.id');
     }
 
     private function createSection(Tenant $tenant, TenantUser $manager, int $courseId, string $title): int
@@ -263,10 +263,10 @@ class StudentLearningFoundationTest extends TestCase
             ->assertCreated()
             ->tap(function ($response): void {
                 CourseSection::withoutGlobalScopes()
-                    ->whereKey($response->json('section.id'))
+                    ->whereKey($response->json('data.id'))
                     ->update(['status' => 'published', 'is_published' => true]);
             })
-            ->json('section.id');
+            ->json('data.id');
     }
 
     private function createLesson(
@@ -281,17 +281,17 @@ class StudentLearningFoundationTest extends TestCase
         return $this->postJson("/api/v1/courses/{$courseId}/sections/{$sectionId}/lessons", [
             'title' => $title,
             'slug' => str($title)->slug()->toString(),
-            'type' => 'text',
-            'visibility' => 'enrolled_only',
+            'lesson_type' => 'text',
+            'visibility' => 'private',
             'sort_order' => 1,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
             ->tap(function ($response): void {
                 CourseLesson::withoutGlobalScopes()
-                    ->whereKey($response->json('lesson.id'))
+                    ->whereKey($response->json('data.id'))
                     ->update(['status' => 'published']);
             })
-            ->json('lesson.id');
+            ->json('data.id');
     }
 
     private function enrollStudent(Tenant $tenant, TenantUser $admin, int $courseId, TenantUser $student): int

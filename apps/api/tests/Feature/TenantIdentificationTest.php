@@ -13,15 +13,15 @@ class TenantIdentificationTest extends TestCase
     public function test_api_requests_without_tenant_header_are_rejected(): void
     {
         $this->getJson('/api/v1/health')
-            ->assertForbidden()
-            ->assertJson(['message' => 'Tenant identification missing.']);
+            ->assertNotFound()
+            ->assertJson(['message' => 'Tenant not found or inactive.']);
     }
 
     public function test_api_requests_with_unknown_tenant_are_rejected(): void
     {
         $this->getJson('/api/v1/health', ['X-Tenant-ID' => '999'])
-            ->assertForbidden()
-            ->assertJson(['message' => 'Invalid tenant.']);
+            ->assertNotFound()
+            ->assertJson(['message' => 'Tenant not found or inactive.']);
     }
 
     public function test_api_requests_with_inactive_tenant_are_rejected(): void
@@ -33,8 +33,8 @@ class TenantIdentificationTest extends TestCase
         ]);
 
         $this->getJson('/api/v1/health', ['X-Tenant-ID' => (string) $tenant->id])
-            ->assertForbidden()
-            ->assertJson(['message' => 'Invalid tenant.']);
+            ->assertNotFound()
+            ->assertJson(['message' => 'Tenant not found or inactive.']);
     }
 
     public function test_api_requests_with_active_tenant_are_allowed(): void

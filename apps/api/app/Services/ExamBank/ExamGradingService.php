@@ -2,8 +2,10 @@
 
 namespace App\Services\ExamBank;
 
+use App\Jobs\ExamBank\GradeExamAttemptJob;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\Tenant;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +14,13 @@ use Illuminate\Validation\ValidationException;
 /**
  * Grades an exam attempt exactly once: scores every saved answer, computes the
  * final percentage, pass/fail state and persists the submission. Idempotent by
- * design — calling it on an attempt that is no longer in-progress is a no-op.
+ * design — calling it on an attempt that is no longer gradable is a no-op.
+ *
+ * The "grading" status is a transitional state used to move the expensive
+ * scoring off the HTTP read path: a read/autosave path claims an expired
+ * in-progress attempt (flip to "grading") and dispatches GradeExamAttemptJob,
+ * which calls grade() here. grade() treats both "in_progress" and "grading"
+ * as gradable so retries / duplicate dispatches can never double-score.
  */
 class ExamGradingService
 {
@@ -23,7 +31,9 @@ class ExamGradingService
         return DB::transaction(function () use ($attempt): ExamAttempt {
             $attempt = ExamAttempt::query()->lockForUpdate()->find($attempt->id) ?? $attempt;
 
-            if ($attempt->status !== 'in_progress') {
+            // Idempotent: a submitted attempt is already scored; "grading" means
+            // another worker / the submit path already claimed it, so do nothing.
+            if (! in_array($attempt->status, ['in_progress', 'grading'], true)) {
                 return $attempt;
             }
 
@@ -76,6 +86,46 @@ class ExamGradingService
 
             return $attempt->refresh()->load('answers');
         });
+    }
+
+    /**
+     * Claim-once reconciliation for an expired, still in-progress attempt.
+     *
+     * Detects expiry cheaply, flips the status to "grading" (atomic, idempotent
+     * — a second caller sees a non-in_progress row and bails) and dispatches the
+     * grading job so the expensive scoring never runs on a GET/autosave request.
+     *
+     * On the sync queue (tests) the job runs inline and the attempt is
+     * "submitted" by the time this returns; in production the job runs on a
+     * worker and the attempt briefly stays "grading" until graded.
+     */
+    public function reconcileExpiredAttempt(ExamAttempt $attempt): ExamAttempt
+    {
+        if ($attempt->status !== 'in_progress') {
+            return $attempt;
+        }
+
+        if ($attempt->timer_ends_at === null || ! now()->greaterThanOrEqualTo($attempt->timer_ends_at)) {
+            return $attempt;
+        }
+
+        $claimed = ExamAttempt::withoutGlobalScopes()
+            ->where('id', $attempt->id)
+            ->where('status', 'in_progress')
+            ->update(['status' => 'grading']);
+
+        if ($claimed) {
+            $tenant = currentTenant();
+            GradeExamAttemptJob::dispatch($tenant->id, $attempt->id);
+
+            // A synchronous (test) dispatch runs the job's SetTenantContext
+            // middleware whose `finally` unbinds the request's tenant context.
+            // Restore it so the calling HTTP request keeps working.
+            app()->instance('currentTenant', $tenant);
+            app()->instance(Tenant::class, $tenant);
+        }
+
+        return $attempt->refresh();
     }
 
     /**

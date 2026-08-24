@@ -259,7 +259,7 @@ class QuizFoundationTest extends TestCase
 
         $course = $this->postJson('/api/v1/courses', $payload, $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('course.id');
+            ->json('data.id');
 
         Course::withoutGlobalScopes()->whereKey($course)->update(['status' => 'published', 'visibility' => 'public']);
 
@@ -268,18 +268,18 @@ class QuizFoundationTest extends TestCase
             'sort_order' => 1,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('section.id');
+            ->json('data.id');
 
         CourseSection::withoutGlobalScopes()->whereKey($section)->update(['status' => 'published', 'is_published' => true]);
 
         $lesson = $this->postJson("/api/v1/courses/{$course}/sections/{$section}/lessons", [
             'title' => "{$title} Lesson",
             'slug' => str("{$title} Lesson")->slug()->toString(),
-            'type' => 'quiz',
-            'visibility' => 'enrolled_only',
+            'lesson_type' => 'video',
+            'visibility' => 'private',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('lesson.id');
+            ->json('data.id');
 
         CourseLesson::withoutGlobalScopes()->whereKey($lesson)->update(['status' => 'published']);
 

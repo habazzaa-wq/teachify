@@ -25,6 +25,7 @@ import {
   useCreateQuestion,
   useAddExamQuestion,
   useRetryQuestionImport,
+  useQuestionImportPolling,
 } from "@/features/exam-bank/hooks";
 import { examBankService } from "@/features/exam-bank/services";
 import type { QuestionImportStatus } from "@/features/exam-bank/services/import-types";
@@ -34,8 +35,6 @@ import { DocumentReviewEditor } from "./DocumentReviewEditor";
 import { ProcessingStages } from "./ProcessingStages";
 
 type ImportPhase = "source" | "processing" | "review";
-
-const POLL_INTERVAL_MS = 1500;
 
 interface QuestionImportDialogProps {
   open: boolean;
@@ -61,6 +60,8 @@ export function QuestionImportDialog({
 }: QuestionImportDialogProps) {
   const [phase, setPhase] = useState<ImportPhase>("source");
   const [status, setStatus] = useState<QuestionImportStatus | null>(null);
+  // Bumped when a failed import is retried so polling re-arms for the same id.
+  const [pollRestart, setPollRestart] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [extractionMode, setExtractionMode] = useState<"auto"|"vision"|"local">("auto");
   const [values, setValues] = useState<QuestionFormValues>(() =>
@@ -86,31 +87,20 @@ export function QuestionImportDialog({
   }, [open, reset]);
 
   // Poll the import while processing — reflects only real backend stages.
-  useEffect(() => {
-    if (phase !== "processing" || !status?.id) return;
+  // The hook stops itself on terminal statuses, backs off on errors and
+  // pauses while the tab is hidden.
+  const handleImportUpdate = useCallback((next: QuestionImportStatus) => {
+    setStatus(next);
+    if (next.status === "ready") setPhase("review");
+    // "failed" stays on the processing view so the error + retry UI shows.
+  }, []);
 
-    let cancelled = false;
-
-    const tick = async () => {
-      try {
-        const next = await examBankService.getQuestionImport(status.id);
-        if (cancelled) return;
-        setStatus(next);
-        if (next.status === "ready") setPhase("review");
-        if (next.status === "failed") return; // stay on processing view w/ error
-      } catch {
-        /* transient network errors: keep polling */
-      }
-    };
-
-    const timer = setInterval(tick, POLL_INTERVAL_MS);
-    void tick();
-
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [phase, status?.id]);
+  useQuestionImportPolling({
+    importId: status?.id ?? null,
+    enabled: phase === "processing",
+    restartKey: pollRestart,
+    onUpdate: handleImportUpdate,
+  });
 
   // When extraction finishes, derive a working title from the first text run
   // so the teacher almost never has to type one.
@@ -170,10 +160,11 @@ export function QuestionImportDialog({
     try {
       const next = await retryImport.mutateAsync(status.id);
       setStatus(next);
+      setPollRestart((n) => n + 1);
     } catch {
       setError("تعذرت إعادة المحاولة.");
     }
-  }, [retryImport, status?.id]);
+  }, [retryImport, status]);
 
   const handlePatch = (patch: Partial<QuestionFormValues>) =>
     setValues((prev) => ({ ...prev, ...patch }));

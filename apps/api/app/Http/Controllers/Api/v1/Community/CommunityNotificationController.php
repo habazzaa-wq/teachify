@@ -9,7 +9,6 @@ use App\Models\TenantUser;
 use App\Policies\CommunityPolicy;
 use App\Policies\NotificationPolicy;
 use App\Services\Notifications\NotificationService;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 
 class CommunityNotificationController extends Controller
@@ -23,10 +22,19 @@ class CommunityNotificationController extends Controller
 
         abort_unless($policy->view($member, $tenant), 403);
 
+        $page = $notifications->list(
+            $tenant,
+            $member,
+            typePrefix: 'community.',
+            perPage: (int) request()->input('per_page', 25),
+        );
+
         return response()->json([
-            'notifications' => CommunityNotificationResource::collection(
-                $this->communityNotifications($notifications->list($tenant, $member)),
-            ),
+            'notifications' => CommunityNotificationResource::collection($page->items()),
+            'total' => $page->total(),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
         ]);
     }
 
@@ -39,10 +47,20 @@ class CommunityNotificationController extends Controller
 
         abort_unless($policy->view($member, $tenant), 403);
 
+        $page = $notifications->list(
+            $tenant,
+            $member,
+            unreadOnly: true,
+            typePrefix: 'community.',
+            perPage: (int) request()->input('per_page', 25),
+        );
+
         return response()->json([
-            'notifications' => CommunityNotificationResource::collection(
-                $this->communityNotifications($notifications->list($tenant, $member, unreadOnly: true)),
-            ),
+            'notifications' => CommunityNotificationResource::collection($page->items()),
+            'total' => $page->total(),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
         ]);
     }
 
@@ -78,13 +96,4 @@ class CommunityNotificationController extends Controller
         ]);
     }
 
-    /**
-     * @return Collection<int, Notification>
-     */
-    private function communityNotifications(Collection $notifications): Collection
-    {
-        return $notifications
-            ->filter(fn (Notification $notification) => str_starts_with($notification->type, 'community.'))
-            ->values();
-    }
 }

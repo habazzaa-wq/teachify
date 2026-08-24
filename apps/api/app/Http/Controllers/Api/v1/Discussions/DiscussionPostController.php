@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 class DiscussionPostController extends Controller
 {
     public function index(
+        Request $request,
         DiscussionThread $thread,
         DiscussionPostService $posts,
         DiscussionPolicy $policy,
@@ -24,8 +25,14 @@ class DiscussionPostController extends Controller
 
         $includeModerated = $policy->viewModeratedPosts(app(TenantUser::class), currentTenant(), $thread);
 
+        $page = $posts->list(currentTenant(), $thread, $includeModerated, (int) $request->input('per_page', 50));
+
         return response()->json([
-            'posts' => $posts->list(currentTenant(), $thread, $includeModerated),
+            'posts' => $page->items(),
+            'total' => $page->total(),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
         ]);
     }
 

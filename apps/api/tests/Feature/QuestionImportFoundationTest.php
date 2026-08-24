@@ -38,7 +38,14 @@ class QuestionImportFoundationTest extends TestCase
 
         $this->bindTesseract(new OcrWordSet($this->arabicWords(), 90.0, 200, 100));
 
-        (new ProcessQuestionImportJob($import))->handle(app(ImportExtractionPipeline::class));
+        // Queue workers resolve the import through the tenant scope, exactly
+        // like production (SetTenantContext binds before handle runs).
+        app()->instance('currentTenant', $tenant);
+        try {
+            (new ProcessQuestionImportJob($tenant->id, $import->id))->handle(app(ImportExtractionPipeline::class));
+        } finally {
+            app()->forgetInstance('currentTenant');
+        }
 
         $import->refresh();
 
@@ -111,7 +118,12 @@ class QuestionImportFoundationTest extends TestCase
             'attempts' => 1,
         ]);
 
-        (new ProcessQuestionImportJob($import))->handle(app(ImportExtractionPipeline::class));
+        app()->instance('currentTenant', $tenant);
+        try {
+            (new ProcessQuestionImportJob($tenant->id, $import->id))->handle(app(ImportExtractionPipeline::class));
+        } finally {
+            app()->forgetInstance('currentTenant');
+        }
 
         $fresh = $import->refresh();
         $this->assertSame(QuestionImport::STATUS_CONSUMED, $fresh->status);

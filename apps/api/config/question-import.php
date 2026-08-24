@@ -46,6 +46,22 @@ return [
         'allowed_mimes' => ['image/jpeg', 'image/png', 'image/webp'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Source Image Storage
+    |--------------------------------------------------------------------------
+    |
+    | Upload bytes are persisted under question-imports/{tenant_id}/{uuid}.bin
+    | on this filesystem disk (see config/filesystems.php) instead of inside
+    | the database row. "local" keeps current single-server behaviour; swap to
+    | an S3-compatible disk for multi-node deployments without code changes.
+    |
+    */
+
+    'storage' => [
+        'disk' => env('QUESTION_IMPORT_STORAGE_DISK', 'local'),
+    ],
+
     // Abandoned non-finalized imports are reaped after this many days.
     'retention_days' => (int) env('QUESTION_IMPORT_RETENTION_DAYS', 7),
 

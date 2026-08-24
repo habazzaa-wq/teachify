@@ -369,23 +369,23 @@ class DiscussionsFoundationTest extends TestCase
         $course = $this->postJson('/api/v1/courses', [
             'title' => "{$title} Course",
             'slug' => str("{$title} Course")->slug()->toString(),
-        ], $this->tenantHeader($tenant))->assertCreated()->json('course.id');
+        ], $this->tenantHeader($tenant))->assertCreated()->json('data.id');
 
         Course::withoutGlobalScopes()->whereKey($course)->update(['status' => 'published', 'visibility' => 'public']);
 
         $section = $this->postJson("/api/v1/courses/{$course}/sections", [
             'title' => "{$title} Section",
             'sort_order' => 1,
-        ], $this->tenantHeader($tenant))->assertCreated()->json('section.id');
+        ], $this->tenantHeader($tenant))->assertCreated()->json('data.id');
 
         CourseSection::withoutGlobalScopes()->whereKey($section)->update(['status' => 'published', 'is_published' => true]);
 
         $lesson = $this->postJson("/api/v1/courses/{$course}/sections/{$section}/lessons", [
             'title' => "{$title} Lesson",
             'slug' => str("{$title} Lesson")->slug()->toString(),
-            'type' => 'video',
+            'lesson_type' => 'video',
             'visibility' => 'public',
-        ], $this->tenantHeader($tenant))->assertCreated()->json('lesson.id');
+        ], $this->tenantHeader($tenant))->assertCreated()->json('data.id');
 
         CourseLesson::withoutGlobalScopes()->whereKey($lesson)->update(['status' => 'published']);
 
@@ -404,7 +404,7 @@ class DiscussionsFoundationTest extends TestCase
         $course = $this->postJson('/api/v1/courses', [
             'title' => 'Private Discussion Course',
             'slug' => str('Private Discussion Course')->slug()->toString(),
-        ], $this->tenantHeader($tenant))->assertCreated()->json('course.id');
+        ], $this->tenantHeader($tenant))->assertCreated()->json('data.id');
 
         Course::withoutGlobalScopes()->whereKey($course)->update(['status' => 'published', 'visibility' => 'private']);
 
