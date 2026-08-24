@@ -16,7 +16,6 @@ import { usePublicStages, useStageStatsState } from "@/features/homepage/educati
 import type { StageItem, StageStats } from "@/features/homepage/educational-stages/types";
 import { brandContrast } from "@/lib/brand";
 import { formatNumber } from "@/lib/format";
-import { toAbsoluteAssetUrl } from "@/lib/url";
 
 const AUTOPLAY_MS = 2800;
 
@@ -78,7 +77,7 @@ function PathNode({
 
 function StagePanel({ stage, primary, secondary, stats, loading, animClass }: { stage: StageItem; primary: string; secondary: string; stats?: StageStats; loading: boolean; animClass: string }) {
   const [failed, setFailed] = useState(false);
-  const src = useMemo(() => toAbsoluteAssetUrl(stage.image), [stage.image]);
+  const src = stage.image;
   const showImage = Boolean(src) && !failed;
 
   return (
@@ -91,6 +90,7 @@ function StagePanel({ stage, primary, secondary, stats, loading, animClass }: { 
             fill
             sizes="(max-width: 639px) 100vw, 45vw"
             className="object-cover"
+            unoptimized
             onError={() => setFailed(true)}
           />
         ) : (
