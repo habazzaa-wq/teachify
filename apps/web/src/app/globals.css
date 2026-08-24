@@ -1047,6 +1047,27 @@ body.page-is-scrolling .news-marquee-track {
   border-color: var(--brand-primary);
 }
 
+/* stages section — content swap on selection */
+@keyframes stageSwapIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stage-swap {
+  animation: stageSwapIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-swap {
+    animation: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-enter-up,
   .home-enter-pop,
