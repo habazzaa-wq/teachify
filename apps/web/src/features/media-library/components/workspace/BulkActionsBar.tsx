@@ -38,9 +38,9 @@ function BulkActionsBarBase({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="fixed bottom-6 start-1/2 z-50 -translate-x-1/2"
+          className="fixed bottom-4 start-1/2 z-50 w-[calc(100vw-1rem)] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 sm:w-auto sm:max-w-none"
         >
-          <div className="flex items-center gap-1.5 rounded-2xl border bg-background/95 px-4 py-2.5 shadow-2xl backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:flex-nowrap sm:justify-start sm:px-4">
             <button
               onClick={onClear}
               className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -56,7 +56,7 @@ function BulkActionsBarBase({
               {selectedCount === 1 ? "محدد" : "محددين"}
             </span>
 
-            <div className="h-5 w-px bg-border" />
+            <div className="hidden h-5 w-px bg-border sm:block" />
 
             <ActionButton icon={Download} label="تحميل" onClick={onDownload} />
             <ActionButton icon={FolderInput} label="نقل" onClick={onMove} />
@@ -71,7 +71,7 @@ function BulkActionsBarBase({
             {onPin && <ActionButton icon={Pin} label="تثبيت" onClick={onPin} />}
             <ActionButton icon={Archive} label="أرشفة" onClick={onArchive} />
 
-            <div className="h-5 w-px bg-border" />
+            <div className="hidden h-5 w-px bg-border sm:block" />
 
             <ActionButton icon={Trash2} label="حذف" onClick={onDelete} className="text-destructive" />
           </div>
