@@ -41,6 +41,7 @@ class PublicTenantController extends Controller
             'domain' => $domainRecord?->domain ?? $domain,
             'status' => $tenant->status,
             'branding' => $branding,
+            'platform_branding' => $this->resolvePlatformBranding($tenant),
             'seo' => $this->resolveSeo($tenant),
         ]);
     }
@@ -85,6 +86,32 @@ class PublicTenantController extends Controller
             'twitterImage' => $twitterImage !== null ? $this->assetUrl($twitterImage) : null,
             'googleVerification' => $settings->google_verification,
             'bingVerification' => $settings->bing_verification,
+        ];
+    }
+
+    /**
+     * Platform-level brand colors (the "platform colors" field managed by the
+     * platform admin). These are distinct from the tenant's appearance settings
+     * (`branding` group) which only apply to the teacher dashboard and login.
+     *
+     * @return array<string, mixed>
+     */
+    private function resolvePlatformBranding($tenant): array
+    {
+        $values = $tenant->branding ?? [];
+
+        return [
+            'logo' => $values['logo'] ?? null,
+            'favicon' => $values['favicon'] ?? null,
+            'primaryColor' => $values['primary_color'] ?? $values['primaryColor'] ?? '#6366f1',
+            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? '#8b5cf6',
+            'accentColor' => $values['accent_color'] ?? $values['accentColor'] ?? '#f59e0b',
+            'font' => $values['fonts'] ?? $values['font'] ?? null,
+            'darkLogo' => $values['dark_logo'] ?? null,
+            'lightLogo' => $values['light_logo'] ?? null,
+            'logoType' => $values['logo_type'] ?? null,
+            'logoIcon' => $values['logo_icon'] ?? null,
+            'logoImage' => $values['logo_image'] ?? null,
         ];
     }
 

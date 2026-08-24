@@ -8,19 +8,22 @@ import { resolveBrandHexColors, brandContrast } from "@/lib/brand";
 const STYLE_ID = "brand-theme-vars";
 
 /**
- * Applies the tenant's configured site colors (primary + secondary) globally as
- * CSS variables. All brand-colored details across the public site (navbar,
- * hero, cards, auth, wallet, courses…) read `--brand-*` so changing the colors
- * in the teacher site settings restyles the entire platform — no rebuild.
+ * Applies the tenant's *platform* brand colors (primary + secondary) globally
+ * as CSS variables. These are the "platform colors" field — distinct from the
+ * teacher appearance settings, which only apply to the teacher dashboard and
+ * login (see `useTenantTheme` / `.tenant-theme`). All brand-colored details
+ * across the public site (navbar, hero, cards, auth, wallet, courses…) read
+ * `--brand-*` so changing the platform colors restyles the entire platform —
+ * no rebuild.
  *
  * Also overrides the `.community-theme` shadcn tokens (`--primary`/`--secondary`
  * /`--accent`/`--ring`) so framework components follow the same palette.
  */
 export function BrandThemeProvider() {
   const activeTenant = useTenantStore((s) => s.activeTenant);
-  const branding = useTenantStore((s) => s.branding);
+  const platformBranding = useTenantStore((s) => s.platformBranding);
 
-  const { primary, secondary } = resolveBrandHexColors(activeTenant, branding);
+  const { primary, secondary } = resolveBrandHexColors(activeTenant, platformBranding);
 
   const css = useMemo(() => {
     const light = generateCommunityThemeColors(primary, secondary, false);
