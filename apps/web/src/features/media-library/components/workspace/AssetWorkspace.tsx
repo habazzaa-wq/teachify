@@ -23,6 +23,7 @@ interface AssetWorkspaceProps {
   onDownloadAsset: (asset: MediaAsset) => void;
   onBulkDelete: () => void;
   onBulkMove: () => void;
+  onOpenFolders?: () => void;
 }
 
 function groupAssets(assets: MediaAsset[], groupBy: string): Map<string, MediaAsset[]> {
@@ -85,6 +86,7 @@ function AssetWorkspaceBase({
   onDownloadAsset,
   onBulkDelete,
   onBulkMove,
+  onOpenFolders,
 }: AssetWorkspaceProps) {
   const {
     selectedFolderId,
@@ -192,6 +194,7 @@ function AssetWorkspaceBase({
         onUpload={onUpload}
         onCreateFolder={onCreateFolder}
         onRefresh={() => refetch()}
+        onOpenFolders={onOpenFolders}
       />
 
       {/* Breadcrumbs */}

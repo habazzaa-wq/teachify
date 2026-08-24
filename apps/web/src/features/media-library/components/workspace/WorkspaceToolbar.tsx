@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Search,
   Upload,
   Plus,
+  Folder,
   Grid3X3,
   List,
   LayoutGrid,
@@ -16,6 +17,7 @@ import {
   ArrowDown,
   RefreshCw,
   Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   StudioContextMenu,
@@ -47,9 +49,11 @@ interface WorkspaceToolbarProps {
   onUpload: () => void;
   onCreateFolder: () => void;
   onRefresh: () => void;
+  onOpenFolders?: () => void;
 }
 
-function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpload, onCreateFolder, onRefresh }: WorkspaceToolbarProps) {
+function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpload, onCreateFolder, onRefresh, onOpenFolders }: WorkspaceToolbarProps) {
+  const [showFilters, setShowFilters] = useState(false);
   const {
     viewMode, setViewMode,
     groupBy, setGroupBy,
@@ -89,12 +93,114 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
     onSelect: () => setGroupBy(opt.value as AssetGroupBy),
   })), [setGroupBy]);
 
+  const renderControls = () => (
+    <>
+      {/* Type filter */}
+      <select
+        value={filters.type}
+        onChange={(e) => setTypeFilter(e.target.value as typeof filters.type)}
+        className="h-9 w-full rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-auto"
+      >
+        {TYPE_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+
+      {/* Status filter */}
+      <select
+        value={filters.status}
+        onChange={(e) => setStatusFilter(e.target.value as typeof filters.status)}
+        className="h-9 w-full rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-auto"
+      >
+        {STATUS_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+
+      {/* Sort */}
+      <div className="flex items-center gap-0">
+        <select
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value as typeof sortField)}
+          className="h-9 w-full rounded-e-lg border border-e-0 bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-auto"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <button
+          onClick={toggleSortDirection}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-s-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          title={sortDirection === "asc" ? "تصاعدي" : "تنازلي"}
+        >
+          {sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+
+      {/* View mode */}
+      <StudioContextMenu items={viewMenuItems}>
+        <button
+          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent sm:w-auto"
+          title="وضع العرض"
+        >
+          {(() => {
+            const Icon = viewModeIcons[viewMode] ?? Grid3X3;
+            return <Icon className="h-3.5 w-3.5" />;
+          })()}
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </button>
+      </StudioContextMenu>
+
+      {/* Group by */}
+      <StudioContextMenu items={groupMenuItems}>
+        <button
+          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent sm:w-auto"
+          title="تجميع"
+        >
+          <span className="text-xs">
+            {GROUP_BY_OPTIONS.find((o) => o.value === groupBy)?.label ?? "تجميع"}
+          </span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </button>
+      </StudioContextMenu>
+
+      {/* Refresh */}
+      <button
+        onClick={onRefresh}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        title="تحديث"
+      >
+        <RefreshCw className="h-4 w-4" />
+      </button>
+
+      {/* Create folder */}
+      <button
+        onClick={onCreateFolder}
+        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent sm:w-auto"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        <span>مجلد</span>
+      </button>
+    </>
+  );
+
   return (
-    <div className="flex flex-col gap-2 border-b bg-background px-4 py-2.5">
-      {/* Top row: Search + actions */}
+    <div className="flex flex-col gap-2 border-b bg-background px-3 py-2.5 sm:px-4">
+      {/* Top row: Search + primary actions */}
       <div className="flex items-center gap-2">
+        {/* Folders toggle (mobile) */}
+        {onOpenFolders && (
+          <button
+            onClick={onOpenFolders}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-background text-foreground transition-colors hover:bg-accent lg:hidden"
+            title="المجلدات"
+          >
+            <Folder className="h-4 w-4" />
+          </button>
+        )}
+
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
           <input
             value={filters.search}
@@ -113,105 +219,41 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
           )}
         </div>
 
-        {/* Type filter */}
-        <select
-          value={filters.type}
-          onChange={(e) => setTypeFilter(e.target.value as typeof filters.type)}
-          className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        {/* Filters toggle (mobile) */}
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-background text-foreground transition-colors hover:bg-accent lg:hidden"
+          title="الفلاتر"
         >
-          {TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-
-        {/* Status filter */}
-        <select
-          value={filters.status}
-          onChange={(e) => setStatusFilter(e.target.value as typeof filters.status)}
-          className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-
-        {/* Sort */}
-        <div className="flex items-center gap-0">
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value as typeof sortField)}
-            className="h-9 rounded-e-lg border border-e-0 bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <button
-            onClick={toggleSortDirection}
-            className="flex h-9 w-9 items-center justify-center rounded-s-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title={sortDirection === "asc" ? "تصاعدي" : "تنازلي"}
-          >
-            {sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
-          </button>
-        </div>
-
-        {/* View mode */}
-        <StudioContextMenu items={viewMenuItems}>
-          <button
-            className="flex h-9 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent"
-            title="وضع العرض"
-          >
-            {(() => {
-              const Icon = viewModeIcons[viewMode] ?? Grid3X3;
-              return <Icon className="h-3.5 w-3.5" />;
-            })()}
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
-        </StudioContextMenu>
-
-        {/* Group by */}
-        <StudioContextMenu items={groupMenuItems}>
-          <button
-            className="flex h-9 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent"
-            title="تجميع"
-          >
-            <span className="text-xs">
-              {GROUP_BY_OPTIONS.find((o) => o.value === groupBy)?.label ?? "تجميع"}
+          <SlidersHorizontal className="h-4 w-4" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold text-accent-foreground">
+              {activeFilterCount}
             </span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
-        </StudioContextMenu>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Refresh */}
-        <button
-          onClick={onRefresh}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          title="تحديث"
-        >
-          <RefreshCw className="h-4 w-4" />
+          )}
         </button>
 
-        {/* Create folder */}
-        <button
-          onClick={onCreateFolder}
-          className="flex h-9 items-center gap-1.5 rounded-lg border bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">مجلد</span>
-        </button>
+        {/* Desktop inline controls */}
+        <div className="hidden items-center gap-2 lg:flex">
+          {renderControls()}
+        </div>
 
         {/* Upload */}
         <button
           onClick={onUpload}
-          className="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
         >
           <Upload className="h-3.5 w-3.5" />
           <span>رفع</span>
         </button>
       </div>
+
+      {/* Mobile collapsible filters */}
+      {showFilters && (
+        <div className="flex flex-wrap items-center gap-2 lg:hidden">
+          {renderControls()}
+        </div>
+      )}
 
       {/* Second row: Active filters + summary */}
       <div className="flex items-center gap-2">
