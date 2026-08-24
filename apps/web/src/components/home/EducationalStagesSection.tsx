@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
-  Pause,
-  Play,
   Users,
 } from "lucide-react";
 import { useBrandColors } from "@/hooks/useBrandColors";
@@ -55,12 +53,15 @@ function PathNode({
       className="group flex shrink-0 flex-col items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
     >
       <span
-        className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold tabular-nums transition-all duration-300 ${
+        className={`relative flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold tabular-nums transition-all duration-300 ${
           active ? "scale-110 shadow-sm" : "border-border bg-card text-muted-foreground group-hover:scale-105 group-hover:text-card-foreground"
         }`}
         style={active ? { background: primary, borderColor: primary, color: brandContrast(primary) } : undefined}
       >
-        {index + 1}
+        {active ? (
+          <span aria-hidden="true" className="absolute inset-0 rounded-full animate-ping" style={{ background: primary, opacity: 0.28 }} />
+        ) : null}
+        <span className="relative">{index + 1}</span>
       </span>
       <span
         className={`hidden max-w-[7rem] truncate text-center text-xs font-semibold transition-colors sm:block ${
@@ -75,13 +76,13 @@ function PathNode({
 
 /* ────────────── featured panel ────────────── */
 
-function StagePanel({ stage, primary, secondary, stats, loading }: { stage: StageItem; primary: string; secondary: string; stats?: StageStats; loading: boolean }) {
+function StagePanel({ stage, primary, secondary, stats, loading, animClass }: { stage: StageItem; primary: string; secondary: string; stats?: StageStats; loading: boolean; animClass: string }) {
   const [failed, setFailed] = useState(false);
   const src = useMemo(() => toAbsoluteAssetUrl(stage.image), [stage.image]);
   const showImage = Boolean(src) && !failed;
 
   return (
-    <article className="stage-swap grid gap-0 overflow-hidden rounded-3xl border border-border bg-card sm:grid-cols-2" key={stage.id}>
+    <article className={`${animClass} grid gap-0 overflow-hidden rounded-3xl border border-border bg-card sm:grid-cols-2`} key={stage.id}>
       <div className="relative order-1 min-h-[220px] w-full sm:order-2 sm:min-h-[340px]">
         {showImage ? (
           <Image
@@ -197,12 +198,13 @@ export function EducationalStagesSection() {
     [],
   );
 
-  const [auto, setAuto] = useState(true);
   const [hovering, setHovering] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
   const mountedRef = useRef(false);
+  const prevIdxRef = useRef(0);
+  const [animClass, setAnimClass] = useState("stage-swap-fwd");
 
-  const playing = auto && !reduce && !hovering && !tabHidden && count > 1;
+  const playing = !reduce && !hovering && !tabHidden && count > 1;
 
   useEffect(() => {
     const onVis = () => setTabHidden(document.hidden);
@@ -217,6 +219,14 @@ export function EducationalStagesSection() {
     }, AUTOPLAY_MS);
     return () => window.clearInterval(id);
   }, [playing, count, safeIndex]);
+
+  /* detect direction for the slide animation */
+  useEffect(() => {
+    const prev = prevIdxRef.current;
+    const fwd = safeIndex > prev || (prev === count - 1 && safeIndex === 0);
+    setAnimClass(fwd ? "stage-swap-fwd" : "stage-swap-back");
+    prevIdxRef.current = safeIndex;
+  }, [safeIndex, count]);
 
   /* keep the active node centered in the path strip as it advances */
   useEffect(() => {
@@ -251,7 +261,8 @@ export function EducationalStagesSection() {
               المسار التعليمي
             </div>
             <h2 id="educational-stages-title" className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              المراحل الدراسية
+              <span className="text-primary">المراحل</span>{" "}
+              <span style={{ color: secondary }}>الدراسية</span>
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
               مسار متكامل يبدأ من حيث أنت — اختر المرحلة واكتشف الدورات والمدرّسين المتاحين لها.
@@ -260,14 +271,6 @@ export function EducationalStagesSection() {
 
           {!isLoading && count > 1 ? (
             <div className="flex items-center gap-3">
-              {!reduce ? (
-                <IconButton
-                  label={auto ? "إيقاف التشغيل التلقائي" : "تشغيل التشغيل التلقائي"}
-                  onClick={() => setAuto((a) => !a)}
-                >
-                  {auto ? <Pause aria-hidden="true" className="h-5 w-5" /> : <Play aria-hidden="true" className="h-5 w-5" />}
-                </IconButton>
-              ) : null}
               <span className="hidden text-xs font-bold tabular-nums text-muted-foreground sm:inline">
                 {formatNumber(safeIndex + 1)} / {formatNumber(count)}
               </span>
@@ -325,7 +328,7 @@ export function EducationalStagesSection() {
           {isLoading || !active ? (
             <div className="aspect-[16/10] w-full animate-pulse rounded-3xl bg-muted" aria-busy="true" aria-label="جارٍ تحميل المرحلة" />
           ) : (
-            <StagePanel stage={active} primary={primary} secondary={secondary} stats={activeStats} loading={activeLoading} />
+            <StagePanel stage={active} primary={primary} secondary={secondary} stats={activeStats} loading={activeLoading} animClass={animClass} />
           )}
         </div>
       </div>

@@ -1072,8 +1072,37 @@ body.page-is-scrolling .news-marquee-track {
   }
 }
 
+/* stages section — directional panel slide */
+@keyframes stageInFwd {
+  from {
+    opacity: 0;
+    transform: translateX(-36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes stageInBack {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.stage-swap-fwd {
+  animation: stageInFwd 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stage-swap-back {
+  animation: stageInBack 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .stage-swap {
+  .stage-swap-fwd,
+  .stage-swap-back {
     animation: none !important;
   }
   .stage-auto-bar {
