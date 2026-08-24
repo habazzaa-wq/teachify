@@ -62,17 +62,19 @@ class CurrentUserController extends Controller
 
     private function getBranding(\App\Models\Tenant $tenant): array
     {
+        $setting = $tenant->settings()->where('group', 'branding')->first();
+        $values = $setting?->values ?? [];
         $domain = $tenant->getPrimaryDomain();
 
         return [
-            'logo' => null,
-            'favicon' => null,
-            'primary_color' => null,
-            'secondary_color' => null,
-            'accent_color' => null,
-            'font' => null,
-            'dark_logo' => null,
-            'light_logo' => null,
+            'logo' => $values['logo'] ?? null,
+            'favicon' => $values['favicon'] ?? null,
+            'primary_color' => $values['primary_color'] ?? null,
+            'secondary_color' => $values['secondary_color'] ?? null,
+            'accent_color' => $values['accent_color'] ?? null,
+            'font' => $values['font'] ?? null,
+            'dark_logo' => $values['dark_logo'] ?? null,
+            'light_logo' => $values['light_logo'] ?? null,
             'domain' => $domain?->domain ?? $tenant->slug . '.' . config('app.base_domain', 'localhost'),
         ];
     }
