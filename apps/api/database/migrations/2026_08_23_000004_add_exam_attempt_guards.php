@@ -12,23 +12,22 @@ use Illuminate\Support\Facades\Schema;
  *    (tenant scope + user + in_progress), which previously had no covering
  *    index and degraded as attempts grew.
  *
- * 2. Duplicate-active-attempt invariant (MySQL only): a stored generated
- *    column exposes the (tenant, user, exam) triple while an attempt is
- *    officially "in_progress" and NULL otherwise. A unique index on it makes
- *    the database reject a second concurrent official attempt per exam even
- *    if future code bypasses the application-level row locks.
+ * 2. Duplicate-active-attempt invariant (MySQL only): a unique functional
+ *    index over (tenant, user, exam) while an attempt is officially
+ *    "in_progress" makes the database reject a second concurrent official
+ *    attempt per exam even if future code bypasses the application-level
+ *    row locks. The expression yields NULL for non-active rows, so the unique
+ *    constraint only governs in_progress attempts.
  *
  *    Practice attempts are deliberately exempt: starting untimed practice is
  *    legal while another official attempt is in progress.
  *
- *    SQLite (test database) does not support the generated-column syntax used
- *    here, so the invariant exists only on MySQL; application logic enforces
- *    the same rule everywhere else.
+ *    SQLite (test database) does not support functional indexes, so the
+ *    invariant exists only on MySQL; application logic enforces the same rule
+ *    everywhere else.
  */
 return new class extends Migration
 {
-    private const GUARD_COLUMN = 'active_attempt_guard';
-
     private const GUARD_INDEX = 'exam_attempts_active_attempt_guard_unique';
 
     public function up(): void
@@ -70,24 +69,16 @@ return new class extends Migration
                 $this->prefixTable(),
             ));
 
-            if (!Schema::hasColumn('exam_attempts', self::GUARD_COLUMN)) {
-                DB::statement(sprintf(
-                    'ALTER TABLE `%s` ADD COLUMN `%s` VARCHAR(255) GENERATED ALWAYS AS (
-                        IF(`status` = \'in_progress\' AND `is_practice` = 0,
-                           CONCAT_WS(\':\', `tenant_id`, `user_id`, `exam_id`),
-                           NULL)
-                    ) STORED',
-                    $this->prefixTable(),
-                    self::GUARD_COLUMN,
-                ));
-            }
-
             if (!Schema::hasIndex('exam_attempts', self::GUARD_INDEX)) {
+                // Enforce "at most one official in_progress attempt per
+                // (tenant, user, exam)" at the DB level via a unique
+                // functional index. A stored generated column is avoided on
+                // purpose: adding one to a table that already has foreign
+                // keys fails on MySQL with errno 1215.
                 DB::statement(sprintf(
-                    'ALTER TABLE `%s` ADD UNIQUE INDEX `%s` (`%s`)',
+                    'ALTER TABLE `%s` ADD UNIQUE INDEX `%s` ((IF(`status` = \'in_progress\' AND `is_practice` = 0, CONCAT_WS(\':\', `tenant_id`, `user_id`, `exam_id`), NULL)))',
                     $this->prefixTable(),
                     self::GUARD_INDEX,
-                    self::GUARD_COLUMN,
                 ));
             }
         }
@@ -101,13 +92,6 @@ return new class extends Migration
                     'ALTER TABLE `%s` DROP INDEX `%s`',
                     $this->prefixTable(),
                     self::GUARD_INDEX,
-                ));
-            }
-            if (Schema::hasColumn('exam_attempts', self::GUARD_COLUMN)) {
-                DB::statement(sprintf(
-                    'ALTER TABLE `%s` DROP COLUMN `%s`',
-                    $this->prefixTable(),
-                    self::GUARD_COLUMN,
                 ));
             }
         }
