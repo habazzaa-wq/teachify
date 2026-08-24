@@ -622,6 +622,18 @@ export function WhyChooseUsOrbit({ settings }: { settings?: WhyChooseUsSettings 
             <div className="wcu-anim-rise mt-8" style={{ ["--wcu-d" as string]: "0.18s" }}>
               <a
                 href="#educational-stages"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const el = document.getElementById("educational-stages");
+                  if (!el) return;
+                  const reduce =
+                    typeof window !== "undefined" &&
+                    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                  el.scrollIntoView({
+                    behavior: reduce ? "auto" : "smooth",
+                    block: "start",
+                  });
+                }}
                 className="group inline-flex items-center gap-2.5 rounded-full py-1.5 pe-1.5 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2"
                 style={{ color: PRIMARY }}
               >
