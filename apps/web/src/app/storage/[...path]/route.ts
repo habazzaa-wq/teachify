@@ -15,7 +15,7 @@ import { Readable } from "node:stream";
  */
 const STORAGE_ROOT =
   process.env.NEXT_PUBLIC_STORAGE_ROOT ??
-  join(process.cwd(), "..", "api", "public", "storage");
+  join(/* turbopackIgnore: true */ process.cwd(), "..", "api", "public", "storage");
 
 const MIME_TYPES: Record<string, string> = {
   png: "image/png",
