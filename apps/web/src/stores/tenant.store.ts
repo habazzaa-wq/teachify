@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
 import { addApiRequestContextReader } from "@/services/api/request-context";
 import type {
   ActiveTenant,
@@ -145,33 +144,48 @@ export const useTenantStore = create<TenantState>()(
       }),
 
     setTenantBootstrap: (data) =>
-      set({
-        activeTenant: {
-          id: data.id,
-          name: data.name,
-          slug: data.slug,
-          status: data.status,
-          domain: data.domain,
-          branding: {
-            logo: data.branding.logo,
-            favicon: data.branding.favicon,
-            primary_color: data.branding.primaryColor,
-            secondary_color: data.branding.secondaryColor,
-            accent_color: data.branding.accentColor,
-            font: data.branding.font,
-            dark_logo: data.branding.darkLogo,
-            light_logo: data.branding.lightLogo,
-            logo_type: data.branding.logoType ?? null,
-            logo_icon: data.branding.logoIcon ?? null,
-            logo_image: data.branding.logoImage ?? null,
+      set((state) => {
+        const prev = state.activeTenant?.branding;
+        const incoming = data.branding;
+
+        // Preserve the previously-applied brand colors if the incoming payload
+        // doesn't carry them (e.g. a bootstrap source with null branding), so a
+        // re-bootstrap can never reset the control-panel colors to defaults.
+        const primaryColor = incoming.primaryColor ?? prev?.primary_color ?? null;
+        const secondaryColor = incoming.secondaryColor ?? prev?.secondary_color ?? null;
+
+        return {
+          activeTenant: {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            status: data.status,
             domain: data.domain,
+            branding: {
+              logo: incoming.logo ?? prev?.logo ?? null,
+              favicon: incoming.favicon ?? prev?.favicon ?? null,
+              primary_color: primaryColor,
+              secondary_color: secondaryColor,
+              accent_color: incoming.accentColor ?? prev?.accent_color ?? null,
+              font: incoming.font ?? prev?.font ?? null,
+              dark_logo: incoming.darkLogo ?? prev?.dark_logo ?? null,
+              light_logo: incoming.lightLogo ?? prev?.light_logo ?? null,
+              logo_type: incoming.logoType ?? prev?.logo_type ?? null,
+              logo_icon: incoming.logoIcon ?? prev?.logo_icon ?? null,
+              logo_image: incoming.logoImage ?? prev?.logo_image ?? null,
+              domain: data.domain,
+            },
           },
-        },
-        domain: data.domain,
-        subdomain: data.subdomain ?? null,
-        branding: data.branding,
-        bootstrapStatus: "resolved",
-        bootstrapError: null,
+          domain: data.domain,
+          subdomain: data.subdomain ?? null,
+          branding: {
+            ...incoming,
+            primaryColor,
+            secondaryColor,
+          },
+          bootstrapStatus: "resolved",
+          bootstrapError: null,
+        };
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
