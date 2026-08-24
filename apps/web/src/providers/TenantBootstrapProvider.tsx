@@ -58,6 +58,7 @@ export function TenantBootstrapProvider({
         domain: tenantContext.domain,
         status: tenantContext.status,
         branding: tenantContext.branding,
+        platformBranding: tenantContext.platformBranding ?? null,
         subdomain: getTenantSubdomain(hostname),
       });
       return;
@@ -103,6 +104,7 @@ export function TenantBootstrapProvider({
                 domain: data.domain,
                 status: data.status,
                 branding: data.branding,
+                platformBranding: data.platformBranding ?? null,
                 subdomain: getTenantSubdomain(hostname),
               });
             } else {

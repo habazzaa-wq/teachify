@@ -201,24 +201,21 @@ function AppearancePage() {
               {/* Preview header */}
               <div
                 className="flex h-12 items-center gap-2 border-b px-4"
-                style={{ backgroundColor: preview["--tenant-header"], borderColor: preview["--tenant-border"] }}
+                style={{ backgroundColor: preview["--studio-glass-toolbar"], borderColor: preview["--studio-glass-toolbar-border"], color: preview["--studio-glass-toolbar-fg"] }}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className="h-6 w-6 rounded-md"
-                    style={{ backgroundColor: preview["--studio-accent"] }}
+                    style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }}
                   />
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: preview["--tenant-fg"] }}
-                  >
+                  <span className="text-sm font-semibold">
                     الأكاديمية
                   </span>
                 </div>
                 <div className="flex-1" />
                 <div className="flex gap-1.5">
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-soft"] }} />
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-accent"] }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-glass-toolbar-soft"] }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }} />
                 </div>
               </div>
 
@@ -232,7 +229,7 @@ function AppearancePage() {
                     <div
                       key={i}
                       className="h-2 rounded"
-                      style={{ backgroundColor: i === 1 ? preview["--studio-accent"] : preview["--studio-soft"] }}
+                      style={{ backgroundColor: i === 1 ? preview["--studio-accent"] : preview["--studio-sidebar-hover"] }}
                     />
                   ))}
                 </div>

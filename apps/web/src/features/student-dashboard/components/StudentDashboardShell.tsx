@@ -7,8 +7,10 @@ import { PublicNavbar } from "@/components/home/PublicNavbar";
 import { MobileSecondaryNav } from "@/components/home/MobileSecondaryNav";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
+import { useTenantStore } from "@/stores/tenant.store";
 import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
 import { generateThemeColors } from "@/lib/color";
+import { resolveBrandHexColors } from "@/lib/brand";
 
 interface StudentDashboardShellProps {
   children: React.ReactNode;
@@ -17,19 +19,19 @@ interface StudentDashboardShellProps {
 function StudentDashboardShell({ children }: StudentDashboardShellProps) {
   const { tenant } = useActiveTenant();
   const { primaryColor, secondaryColor, isActive, setColors } = useDashboardThemeStore();
+  const platformBranding = useTenantStore((s) => s.platformBranding);
   const theme = useUiStore((s) => s.theme);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Auto-apply the tenant's control-panel primary/secondary colors the first
-  // time they're available, unless the user already customized them.
+  // لوحة الطالب تستخدم "ألوان المنصة" (platformBranding) المستقلة عن مظهر
+  // المدرس. نزامن ألوان السمة منها فقط عندما لا يكون المستخدم قد خصّص السمة
+  // يدوياً (isActive=false). نمرّر null كـ activeTenant حتى لا تُسحب ألوان مظهر
+  // المدرس من tenant.branding عن طريق الخطأ.
   useEffect(() => {
-    const branding = tenant?.branding;
-    const primary = branding?.primary_color;
-    const secondary = branding?.secondary_color;
-    if (primary && secondary && !isActive) {
-      setColors(primary, secondary);
-    }
-  }, [tenant, isActive, setColors]);
+    if (!platformBranding || isActive) return;
+    const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
+    setColors(primary, secondary);
+  }, [platformBranding, isActive, setColors]);
 
   // Inject the tenant-themed palette for the shared neutral tokens still used
   // by some of the child UI (drawers, modals, loading states).
@@ -53,6 +55,10 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
       .join("");
     styleTag.textContent = `.student-theme { ${vars} }`;
   }, [primaryColor, secondaryColor, isActive, theme]);
+
+  // ملاحظة: ألوان "مظهر لوحة التحكم" الخاصة بالمدرس تُطبَّق على لوحة المدرس
+  // وصفحة تسجيل الدخول فقط. لوحة الطالب (والمنصة عموماً) تستخدم ألوان المنصة
+  // المستقلة، لذا لا نرث ألوان مظهر المدرس هنا حتى لا تتسرّب إلى باقي المنصة.
 
   const isDark = theme === "dark";
 

@@ -1,4 +1,5 @@
 import type { ApiMessageResponse } from "./common.types";
+import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 
 export interface LoginRequest {
   email?: string;
@@ -25,6 +26,10 @@ export interface AuthTenant {
   status: string;
   domain: string;
   branding?: AuthBranding;
+  /** Platform-level brand colors (the "platform colors" field). Distinct from
+   *  `branding`, which is the teacher appearance and only applies to the teacher
+   *  dashboard and login. */
+  platformBranding?: TenantBranding | null;
 }
 
 export interface AuthBranding {

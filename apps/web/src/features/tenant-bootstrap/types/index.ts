@@ -59,6 +59,10 @@ export interface TenantByDomainResponse {
   domain: string;
   status: string;
   branding: TenantBranding;
+  /** Platform-level brand colors (the "platform colors" field). Distinct from
+   *  `branding`, which is the teacher appearance applied only to the teacher
+   *  dashboard and login. */
+  platformBranding?: TenantBranding | null;
   /** Present only when the proxy/API supplies tenant-specific SEO settings. */
   seo?: TenantSeoConfig | null;
 }

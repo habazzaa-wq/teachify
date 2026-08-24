@@ -31,6 +31,10 @@ interface TenantState {
   domain: string | null;
   subdomain: string | null;
   branding: TenantBranding | null;
+  /** Platform-level brand colors (the "platform colors" field). Distinct from
+   *  `branding`, which is the teacher appearance applied only to the teacher
+   *  dashboard and login. */
+  platformBranding: TenantBranding | null;
   bootstrapStatus: BootstrapStatus;
   bootstrapError: string | null;
 
@@ -60,6 +64,7 @@ interface TenantState {
     domain: string;
     status: string;
     branding: TenantBranding;
+    platformBranding?: TenantBranding | null;
     subdomain?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
@@ -79,6 +84,7 @@ export const useTenantStore = create<TenantState>()(
     domain: null,
     subdomain: null,
     branding: null,
+    platformBranding: null,
     bootstrapStatus: "idle",
     bootstrapError: null,
 
@@ -141,6 +147,7 @@ export const useTenantStore = create<TenantState>()(
         permissions,
         abilities,
         navigation,
+        platformBranding: tenant.platformBranding ?? null,
       }),
 
     setTenantBootstrap: (data) =>
@@ -183,6 +190,7 @@ export const useTenantStore = create<TenantState>()(
             primaryColor,
             secondaryColor,
           },
+          platformBranding: data.platformBranding ?? state.platformBranding,
           bootstrapStatus: "resolved",
           bootstrapError: null,
         };
@@ -203,6 +211,7 @@ export const useTenantStore = create<TenantState>()(
         domain: null,
         subdomain: null,
         branding: null,
+        platformBranding: null,
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),
