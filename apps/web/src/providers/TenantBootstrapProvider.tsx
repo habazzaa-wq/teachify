@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   getHostname,
@@ -13,6 +13,7 @@ import { TenantNotFound } from "@/components/system/TenantNotFound";
 import { TenantBootstrapError } from "@/components/system/TenantBootstrapError";
 import { isSuperAdminPath } from "@/constants/routes";
 import { env } from "@/config/env";
+import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
 
 const MAX_RETRIES = 3;
 
@@ -23,7 +24,7 @@ export function TenantBootstrapProvider({
 }: {
   children: React.ReactNode;
   serverHostname?: string;
-  tenantContext?: any;
+  tenantContext?: TenantByDomainResponse | null;
 }) {
   const pathname = usePathname();
   const hostname = getHostname() || serverHostname || "";
@@ -36,6 +37,15 @@ export function TenantBootstrapProvider({
 
   useEffect(() => {
     if (platform || isSuperAdmin || pathname === "/tenant-not-found") {
+      setBootstrapStatus("resolved");
+      return;
+    }
+
+    // Already bootstrapped (e.g. via login/me). Never re-clobber the tenant's
+    // branding colors on client-side navigation — doing so resets the
+    // control-panel colors back to defaults and causes them to "change on their
+    // own" between pages.
+    if (useTenantStore.getState().activeTenant) {
       setBootstrapStatus("resolved");
       return;
     }
