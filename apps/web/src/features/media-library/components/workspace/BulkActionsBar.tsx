@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash2, FolderInput, Tag, Download, Archive, Heart, Pin, Copy } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -31,16 +32,19 @@ function BulkActionsBarBase({
   onDuplicate,
 }: BulkActionsBarProps) {
   return (
-    <AnimatePresence>
-      {selectedCount > 0 && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="fixed bottom-4 start-1/2 z-50 w-[calc(100vw-1rem)] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 sm:w-auto sm:max-w-none"
-        >
-          <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:flex-nowrap sm:justify-start sm:px-4">
+    <>
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {selectedCount > 0 && (
+              <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 100, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="fixed bottom-4 start-1/2 z-[60] w-[calc(100vw-1rem)] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] sm:w-auto sm:max-w-none"
+              >
+                <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:flex-nowrap sm:justify-start sm:px-4">
             <button
               onClick={onClear}
               className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -75,9 +79,12 @@ function BulkActionsBarBase({
 
             <ActionButton icon={Trash2} label="حذف" onClick={onDelete} className="text-destructive" />
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
   );
 }
 
