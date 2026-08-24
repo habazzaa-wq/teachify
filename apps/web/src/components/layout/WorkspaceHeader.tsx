@@ -29,6 +29,7 @@ export function WorkspaceHeader() {
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
   const setGlobalSearchOpen = useWorkspaceStore((s) => s.setGlobalSearchOpen);
+  const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
   const { tenant } = useActiveTenant();
   const router = useRouter();
@@ -41,8 +42,8 @@ export function WorkspaceHeader() {
   }, [setGlobalSearchOpen]);
 
   const handleMobileMenuToggle = useCallback(() => {
-    setMobileMenuOpen(true);
-  }, [setMobileMenuOpen]);
+    setMobileMenuOpen(!mobileMenuOpen);
+  }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
     <motion.header
