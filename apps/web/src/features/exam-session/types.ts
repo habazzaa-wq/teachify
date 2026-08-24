@@ -1,4 +1,4 @@
-export type ExamSessionStatus = "in_progress" | "submitted";
+export type ExamSessionStatus = "in_progress" | "grading" | "submitted";
 
 export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false" | "numeric" | "essay" | "short_answer";
 

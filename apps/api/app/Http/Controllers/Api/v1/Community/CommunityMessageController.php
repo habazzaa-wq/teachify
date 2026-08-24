@@ -29,10 +29,15 @@ class CommunityMessageController extends Controller
 
         abort_unless($policy->viewMessages(app(TenantUser::class), $tenant, $channel), 403);
 
+        $page = $messages->list($tenant, $channel, app(TenantUser::class), $request->validated());
+
         return response()->json([
-            'messages' => CommunityMessageResource::collection(
-                $messages->list($tenant, $channel, app(TenantUser::class), $request->validated()),
-            ),
+            'messages' => CommunityMessageResource::collection($page),
+            'has_more' => $page->hasMorePages(),
+            'total' => $page->total(),
+            'per_page' => $page->perPage(),
+            'oldest_id' => $page->getCollection()->min('id'),
+            'newest_id' => $page->getCollection()->max('id'),
         ]);
     }
 

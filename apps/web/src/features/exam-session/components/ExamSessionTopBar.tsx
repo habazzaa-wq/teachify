@@ -1,15 +1,18 @@
 "use client";
 
 import { memo } from "react";
-import { Clock, Send, ClipboardCheck } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { Send, ClipboardCheck } from "lucide-react";
 import { AppProgress } from "@/components/ui/AppProgress";
-import { TIMER_TONES } from "../constants";
-import { formatCountdown, getTimerTone } from "../utils";
+import { ExamCountdown } from "./ExamCountdown";
 
 interface ExamSessionTopBarProps {
   title: string;
-  remainingSeconds: number | null;
+  attempt: {
+    timerEndsAt?: string | null;
+    remainingSeconds?: number | null;
+    status?: string;
+  } | null;
+  inProgress: boolean;
   answeredCount: number;
   total: number;
   submitting: boolean;
@@ -18,14 +21,14 @@ interface ExamSessionTopBarProps {
 
 function ExamSessionTopBarInner({
   title,
-  remainingSeconds,
+  attempt,
+  inProgress,
   answeredCount,
   total,
   submitting,
   onSubmitClick,
 }: ExamSessionTopBarProps) {
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
-  const tone = remainingSeconds === null ? "safe" : getTimerTone(remainingSeconds);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/40 bg-background/90 backdrop-blur-xl">
@@ -44,17 +47,7 @@ function ExamSessionTopBarInner({
             </p>
           </div>
 
-          <div
-            className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/50 bg-card px-3 py-2 font-mono text-sm font-extrabold tabular-nums",
-              TIMER_TONES[tone],
-            )}
-            role="timer"
-            aria-live="off"
-          >
-            <Clock className="h-4 w-4" />
-            {remainingSeconds === null ? "—" : formatCountdown(remainingSeconds)}
-          </div>
+          <ExamCountdown attempt={attempt} inProgress={inProgress} />
 
           <button
             type="button"

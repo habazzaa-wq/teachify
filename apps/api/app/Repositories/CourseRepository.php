@@ -32,7 +32,7 @@ class CourseRepository
 
     public function withEnrollmentsCount(Builder $query): Builder
     {
-        return $query->withCount('enrollments');
+        return $query->withCount(['enrollments', 'sections', 'lessons']);
     }
 
     public function list(array $params = []): LengthAwarePaginator

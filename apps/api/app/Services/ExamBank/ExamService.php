@@ -13,6 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class ExamService
 {
+    public function __construct(
+        private readonly ExamCacheService $cache = new ExamCacheService(),
+    ) {}
+
     public function create(Tenant $tenant, TenantUser $creator, array $data): Exam
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Exam {
@@ -71,6 +75,8 @@ class ExamService
                 'random_question_pool', 'pinned', 'featured',
             ])->all())->save();
 
+            $this->cache->bump($tenant->id, $exam->id);
+
             return $exam->refresh();
         });
     }
@@ -110,6 +116,8 @@ class ExamService
 
         $exam->forceFill($updates)->save();
 
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
         return $exam->refresh();
     }
 
@@ -126,6 +134,8 @@ class ExamService
     public function restore(Exam $exam): Exam
     {
         $exam->forceFill(['status' => 'draft', 'archived_at' => null])->save();
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
 
         return $exam->refresh();
     }
@@ -158,6 +168,8 @@ class ExamService
             }
 
             $this->recompute($copy);
+
+            $this->cache->bump($exam->tenant_id, $copy->id);
 
             return $copy->refresh();
         });
@@ -198,6 +210,10 @@ class ExamService
 
             return $this->recompute($exam);
         });
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
+        return $exam;
     }
 
     public function updateQuestionLink(Exam $exam, int $questionId, array $data): Exam
@@ -221,7 +237,11 @@ class ExamService
 
         $link->save();
 
-        return $this->recompute($exam);
+        $exam = $this->recompute($exam);
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
+        return $exam;
     }
 
     public function removeQuestion(Exam $exam, int $questionId): Exam
@@ -236,11 +256,15 @@ class ExamService
 
             return $this->recompute($exam);
         });
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
+        return $exam;
     }
 
     public function reorderQuestions(Exam $exam, array $orderedIds): Exam
     {
-        return DB::transaction(function () use ($exam, $orderedIds): Exam {
+        $exam = DB::transaction(function () use ($exam, $orderedIds): Exam {
             foreach ($orderedIds as $index => $questionId) {
                 ExamQuestion::query()
                     ->where('exam_id', $exam->id)
@@ -250,11 +274,15 @@ class ExamService
 
             return $this->recompute($exam);
         });
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
+        return $exam;
     }
 
     public function setQuestions(Exam $exam, array $items): Exam
     {
-        return DB::transaction(function () use ($exam, $items): Exam {
+        $exam = DB::transaction(function () use ($exam, $items): Exam {
             ExamQuestion::query()->where('exam_id', $exam->id)->delete();
 
             foreach ($items as $index => $item) {
@@ -276,6 +304,10 @@ class ExamService
 
             return $this->recompute($exam);
         });
+
+        $this->cache->bump($exam->tenant_id, $exam->id);
+
+        return $exam;
     }
 
     public function togglePinned(Exam $exam): Exam

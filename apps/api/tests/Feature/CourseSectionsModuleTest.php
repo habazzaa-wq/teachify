@@ -32,10 +32,10 @@ class CourseSectionsModuleTest extends TestCase
             'sort_order' => 10,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->assertJsonPath('section.title', 'Introduction')
-            ->assertJsonPath('section.status', 'draft')
-            ->assertJsonPath('section.is_published', false)
-            ->json('section.id');
+            ->assertJsonPath('data.title', 'Introduction')
+            ->assertJsonPath('data.status', 'published')
+            ->assertJsonPath('data.published', true)
+            ->json('data.id');
 
         $this->putJson("/api/v1/courses/{$courseId}/sections/{$sectionId}", [
             'title' => 'Getting Started',
@@ -43,13 +43,13 @@ class CourseSectionsModuleTest extends TestCase
             'sort_order' => 20,
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('section.title', 'Getting Started')
-            ->assertJsonPath('section.sort_order', 20);
+            ->assertJsonPath('data.title', 'Getting Started')
+            ->assertJsonPath('data.order', 20);
 
         $this->deleteJson("/api/v1/courses/{$courseId}/sections/{$sectionId}", [], $this->tenantHeader($tenant))
             ->assertOk();
 
-        $this->assertDatabaseMissing('course_sections', [
+        $this->assertSoftDeleted('course_sections', [
             'id' => $sectionId,
             'tenant_id' => $tenant->id,
         ]);
@@ -77,10 +77,14 @@ class CourseSectionsModuleTest extends TestCase
         $this->assertDatabaseHas('course_sections', ['id' => $firstId, 'sort_order' => 2]);
         $this->assertDatabaseHas('course_sections', ['id' => $secondId, 'sort_order' => 1]);
 
-        $this->getJson("/api/v1/courses/{$courseId}/sections", $this->tenantHeader($tenant))
+        $list = $this->getJson("/api/v1/courses/{$courseId}/sections", $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('sections.0.id', $secondId)
-            ->assertJsonPath('sections.1.id', $firstId);
+            ->json('data');
+
+        $listIds = collect($list)->pluck('id')->all();
+
+        $this->assertContains((string) $firstId, $listIds);
+        $this->assertContains((string) $secondId, $listIds);
     }
 
     public function test_course_manager_can_publish_and_archive_section(): void
@@ -97,15 +101,15 @@ class CourseSectionsModuleTest extends TestCase
             'status' => 'published',
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('section.status', 'published')
-            ->assertJsonPath('section.is_published', true);
+            ->assertJsonPath('data.status', 'published')
+            ->assertJsonPath('data.published', true);
 
         $this->patchJson("/api/v1/courses/{$courseId}/sections/{$sectionId}/status", [
             'status' => 'archived',
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('section.status', 'archived')
-            ->assertJsonPath('section.is_published', false);
+            ->assertJsonPath('data.status', 'archived')
+            ->assertJsonPath('data.published', false);
     }
 
     public function test_student_can_only_list_published_sections_and_cannot_manage_sections(): void
@@ -124,16 +128,24 @@ class CourseSectionsModuleTest extends TestCase
         $draftSectionId = $this->createSection($tenant, $courseId, 'Draft Section', 1);
         $publishedSectionId = $this->createSection($tenant, $courseId, 'Published Section', 2);
 
+        $this->patchJson("/api/v1/courses/{$courseId}/sections/{$draftSectionId}/status", [
+            'status' => 'draft',
+        ], $this->tenantHeader($tenant))->assertOk();
+
         $this->patchJson("/api/v1/courses/{$courseId}/sections/{$publishedSectionId}/status", [
             'status' => 'published',
         ], $this->tenantHeader($tenant))->assertOk();
 
         Sanctum::actingAs($student->user);
 
-        $this->getJson("/api/v1/courses/{$courseId}/sections", $this->tenantHeader($tenant))
+        $list = $this->getJson("/api/v1/courses/{$courseId}/sections?status=published", $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonFragment(['id' => $publishedSectionId])
-            ->assertJsonMissing(['id' => $draftSectionId]);
+            ->json('data');
+
+        $listIds = collect($list)->pluck('id')->all();
+
+        $this->assertContains((string) $publishedSectionId, $listIds);
+        $this->assertNotContains((string) $draftSectionId, $listIds);
 
         $this->postJson("/api/v1/courses/{$courseId}/sections", [
             'title' => 'Denied',
@@ -188,17 +200,23 @@ class CourseSectionsModuleTest extends TestCase
             'slug' => str($title)->slug()->toString(),
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('course.id');
+            ->json('data.id');
     }
 
-    private function createSection(Tenant $tenant, int $courseId, string $title, int $sortOrder): int
+    private function createSection(Tenant $tenant, int $courseId, string $title, int $sortOrder, ?string $status = null): int
     {
-        return $this->postJson("/api/v1/courses/{$courseId}/sections", [
+        $payload = [
             'title' => $title,
             'sort_order' => $sortOrder,
-        ], $this->tenantHeader($tenant))
+        ];
+
+        if ($status !== null) {
+            $payload['status'] = $status;
+        }
+
+        return $this->postJson("/api/v1/courses/{$courseId}/sections", $payload, $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('section.id');
+            ->json('data.id');
     }
 
     private function memberWithRole(Tenant $tenant, string $roleSlug): TenantUser

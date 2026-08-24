@@ -2,6 +2,7 @@
 
 namespace App\Services\ExamBank;
 
+use App\Models\ExamQuestion;
 use App\Models\Question;
 use App\Models\QuestionCategory;
 use App\Models\Tenant;
@@ -11,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class QuestionService
 {
+    public function __construct(
+        private readonly ExamCacheService $cache = new ExamCacheService(),
+    ) {}
+
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Question {
@@ -105,6 +110,8 @@ class QuestionService
 
             $question->save();
 
+            $this->bumpExamsForQuestion($question);
+
             return $question->refresh();
         });
     }
@@ -125,6 +132,8 @@ class QuestionService
 
         $question->forceFill(['status' => $status])->save();
 
+        $this->bumpExamsForQuestion($question);
+
         return $question->refresh();
     }
 
@@ -142,7 +151,28 @@ class QuestionService
     {
         $question->forceFill(['status' => 'draft'])->save();
 
+        $this->bumpExamsForQuestion($question);
+
         return $question->refresh();
+    }
+
+    /**
+     * Invalidate every exam cache that references this question. Only published
+     * exams actually serve cached question content, but bumping all referenced
+     * exams is harmless and keeps the version counter authoritative.
+     */
+    private function bumpExamsForQuestion(Question $question): void
+    {
+        $examIds = ExamQuestion::query()
+            ->where('tenant_id', $question->tenant_id)
+            ->where('question_id', $question->id)
+            ->pluck('exam_id')
+            ->unique()
+            ->all();
+
+        foreach ($examIds as $examId) {
+            $this->cache->bump($question->tenant_id, (int) $examId);
+        }
     }
 
     public function createCategory(Tenant $tenant, TenantUser $creator, array $data): QuestionCategory

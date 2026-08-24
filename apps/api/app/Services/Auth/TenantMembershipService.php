@@ -9,6 +9,14 @@ use Illuminate\Auth\Access\AuthorizationException;
 
 class TenantMembershipService
 {
+    /**
+     * last_accessed_at is advisory telemetry, yet it was written on every
+     * single authenticated request (one UPDATE per request). Debounce it:
+     * skip the write when the stored timestamp is younger than this many
+     * seconds. Override via config key "teachify.membership_touch_debounce".
+     */
+    private const TOUCH_DEBOUNCE_SECONDS = 60;
+
     public function activeMembership(User $user, Tenant $tenant): ?TenantUser
     {
         return TenantUser::query()
@@ -34,6 +42,16 @@ class TenantMembershipService
 
     public function touchLastAccessed(TenantUser $membership): void
     {
+        // The model was loaded moments ago within the same request, so its
+        // last_accessed_at attribute is trustworthy for the freshness check —
+        // no extra query needed.
+        $last = $membership->last_accessed_at;
+        $debounce = max(0, (int) config('teachify.membership_touch_debounce', self::TOUCH_DEBOUNCE_SECONDS));
+
+        if ($last !== null && $last->gt(now()->subSeconds($debounce))) {
+            return;
+        }
+
         $membership->forceFill(['last_accessed_at' => now()])->save();
     }
 }

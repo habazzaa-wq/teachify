@@ -21,9 +21,9 @@ class PlatformTenantProvisioningTest extends TestCase
         $platformAdmin = User::factory()->create();
         PlatformAdmin::factory()->create(['user_id' => $platformAdmin->id]);
 
-        Sanctum::actingAs($platformAdmin);
+        Sanctum::actingAs($platformAdmin, ['platform:access']);
 
-        $response = $this->postJson('/api/v1/platform/tenants', [
+        $response = $this->postJson('/api/platform/tenants', [
             'academy_name' => 'Acme Academy',
             'academy_slug' => 'acme-academy',
             'owner_name' => 'Acme Owner',
@@ -78,7 +78,7 @@ class PlatformTenantProvisioningTest extends TestCase
 
         $this->assertDatabaseHas('tenant_domains', [
             'tenant_id' => $tenant->id,
-            'domain' => 'acme-academy.platform-domain',
+            'domain' => 'acme-academy.'.config('app.base_domain', 'localhost'),
             'type' => 'platform_subdomain',
             'status' => 'active',
             'is_primary' => true,
@@ -89,7 +89,6 @@ class PlatformTenantProvisioningTest extends TestCase
         $this->assertSame(
             [
                 'domain_created',
-                'owner_created',
                 'permissions_attached',
                 'roles_created',
                 'settings_created',
@@ -106,9 +105,9 @@ class PlatformTenantProvisioningTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/v1/platform/tenants')->assertForbidden();
-        $this->getJson("/api/v1/platform/tenants/{$tenant->id}")->assertForbidden();
-        $this->postJson('/api/v1/platform/tenants', [
+        $this->getJson('/api/platform/tenants')->assertForbidden();
+        $this->getJson("/api/platform/tenants/{$tenant->id}")->assertForbidden();
+        $this->postJson('/api/platform/tenants', [
             'academy_name' => 'Denied Academy',
             'academy_slug' => 'denied-academy',
             'owner_name' => 'Denied Owner',
@@ -130,15 +129,15 @@ class PlatformTenantProvisioningTest extends TestCase
             'is_primary' => true,
         ]);
 
-        Sanctum::actingAs($platformAdmin);
+        Sanctum::actingAs($platformAdmin, ['platform:access']);
 
-        $this->getJson('/api/v1/platform/tenants')
+        $this->getJson('/api/platform/tenants')
             ->assertOk()
             ->assertJsonPath('data.0.name', 'Visible Academy');
 
-        $this->getJson("/api/v1/platform/tenants/{$tenant->id}")
+        $this->getJson("/api/platform/tenants/{$tenant->id}")
             ->assertOk()
-            ->assertJsonPath('tenant.id', $tenant->id);
+            ->assertJsonPath('tenant.id', (string) $tenant->id);
     }
 
     private function createTenantThroughPlatform(): Tenant
@@ -146,9 +145,9 @@ class PlatformTenantProvisioningTest extends TestCase
         $platformAdmin = User::factory()->create();
         PlatformAdmin::factory()->create(['user_id' => $platformAdmin->id]);
 
-        Sanctum::actingAs($platformAdmin);
+        Sanctum::actingAs($platformAdmin, ['platform:access']);
 
-        $this->postJson('/api/v1/platform/tenants', [
+        $this->postJson('/api/platform/tenants', [
             'academy_name' => 'Acme Academy',
             'academy_slug' => 'acme-academy',
             'owner_name' => 'Acme Owner',

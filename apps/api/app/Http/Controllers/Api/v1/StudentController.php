@@ -24,6 +24,10 @@ class StudentController extends Controller
 
         $query = TenantUser::query()
             ->with(['user', 'roles'])
+            ->withCount([
+                'courseEnrollments',
+                'courseEnrollments as completed_course_enrollments_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
             ->where('tenant_id', $tenantId)
             ->whereHas('roles', fn ($q) => $q->where('slug', 'student'));
 
@@ -112,6 +116,10 @@ class StudentController extends Controller
         $tenantId = currentTenant()->id;
 
         $membership = TenantUser::with(['user', 'roles'])
+            ->withCount([
+                'courseEnrollments',
+                'courseEnrollments as completed_course_enrollments_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
             ->where('tenant_id', $tenantId)
             ->where('id', $id)
             ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
@@ -122,7 +130,7 @@ class StudentController extends Controller
         ]);
     }
 
-    public function enrollments(int $id): JsonResponse
+    public function enrollments(Request $request, int $id): JsonResponse
     {
         $tenantId = currentTenant()->id;
 
@@ -131,33 +139,54 @@ class StudentController extends Controller
             ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
             ->firstOrFail();
 
-        $enrollments = CourseEnrollment::with(['course', 'completion'])
+        $perPage = min((int) $request->input('per_page', 25), 100);
+
+        $paginator = CourseEnrollment::with(['course', 'completion'])
+            ->withCount([
+                'progressRecords',
+                'progressRecords as completed_progress_records_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
             ->where('tenant_id', $tenantId)
             ->where('tenant_user_id', $id)
             ->orderByDesc('enrolled_at')
-            ->get()
-            ->map(fn ($e) => [
-                'id' => (string) $e->id,
-                'courseId' => (string) $e->course_id,
-                'courseTitle' => $e->course->title ?? 'غير محدد',
-                'courseThumbnail' => $e->course->thumbnail_url ?? null,
-                'courseSlug' => $e->course->slug ?? null,
-                'status' => $e->status,
-                'enrolledAt' => $e->enrolled_at?->toIso8601String(),
-                'startedAt' => $e->started_at?->toIso8601String(),
-                'completedAt' => $e->completed_at?->toIso8601String(),
-                'cancelledAt' => $e->cancelled_at?->toIso8601String(),
-                'completionPercent' => $e->completion?->completion_percent ?? 0,
-                'progressRecordsCount' => $e->progressRecords()->count(),
-                'completedLessonsCount' => $e->progressRecords()->where('status', 'completed')->count(),
-                'totalLessonsCount' => DB::table('course_lessons')
-                    ->join('course_sections', 'course_sections.id', '=', 'course_lessons.course_section_id')
-                    ->where('course_sections.course_id', $e->course_id)
-                    ->count(),
-            ]);
+            ->paginate($perPage);
+
+        $courseIds = $paginator->getCollection()->map(fn ($e) => $e->course_id)->filter()->unique()->all();
+
+        $totalLessonsByCourse = [];
+        if (! empty($courseIds)) {
+            $totalLessonsByCourse = DB::table('course_lessons')
+                ->join('course_sections', 'course_sections.id', '=', 'course_lessons.course_section_id')
+                ->whereIn('course_sections.course_id', $courseIds)
+                ->groupBy('course_sections.course_id')
+                ->selectRaw('course_sections.course_id as cid, count(*) as total')
+                ->pluck('total', 'cid')
+                ->all();
+        }
+
+        $enrollments = $paginator->getCollection()->map(fn ($e) => [
+            'id' => (string) $e->id,
+            'courseId' => (string) $e->course_id,
+            'courseTitle' => $e->course->title ?? 'غير محدد',
+            'courseThumbnail' => $e->course->thumbnail_url ?? null,
+            'courseSlug' => $e->course->slug ?? null,
+            'status' => $e->status,
+            'enrolledAt' => $e->enrolled_at?->toIso8601String(),
+            'startedAt' => $e->started_at?->toIso8601String(),
+            'completedAt' => $e->completed_at?->toIso8601String(),
+            'cancelledAt' => $e->cancelled_at?->toIso8601String(),
+            'completionPercent' => $e->completion?->completion_percent ?? 0,
+            'progressRecordsCount' => $e->progress_records_count,
+            'completedLessonsCount' => $e->completed_progress_records_count,
+            'totalLessonsCount' => (int) ($totalLessonsByCourse[$e->course_id] ?? 0),
+        ]);
 
         return response()->json([
             'data' => $enrollments,
+            'total' => $paginator->total(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
         ]);
     }
 
@@ -436,14 +465,16 @@ class StudentController extends Controller
     {
         $user = $membership->user;
 
-        $enrollmentsCount = CourseEnrollment::where('tenant_id', $membership->tenant_id)
-            ->where('tenant_user_id', $membership->id)
-            ->count();
+        $enrollmentsCount = $membership->course_enrollments_count
+            ?? CourseEnrollment::where('tenant_id', $membership->tenant_id)
+                ->where('tenant_user_id', $membership->id)
+                ->count();
 
-        $completedCount = CourseEnrollment::where('tenant_id', $membership->tenant_id)
-            ->where('tenant_user_id', $membership->id)
-            ->where('status', 'completed')
-            ->count();
+        $completedCount = $membership->completed_course_enrollments_count
+            ?? CourseEnrollment::where('tenant_id', $membership->tenant_id)
+                ->where('tenant_user_id', $membership->id)
+                ->where('status', 'completed')
+                ->count();
 
         $data = [
             'id' => (string) $membership->id,

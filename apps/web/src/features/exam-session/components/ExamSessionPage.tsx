@@ -14,6 +14,7 @@ import type {
   ExamSessionAnswer,
 } from "../types";
 import { isAnswerEmpty } from "../utils";
+import { examSessionService } from "../services";
 import { ExamSessionTopBar } from "./ExamSessionTopBar";
 import { ExamSessionSidebar } from "./ExamSessionSidebar";
 import { ExamQuestionView } from "./ExamQuestionView";
@@ -35,7 +36,6 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
 
   const [navigationIndex, setNavigationIndex] = useState<number | null>(null);
   const [workspace, setWorkspace] = useState<Record<string, ExamSessionAnswer>>({});
-  const [now, setNow] = useState(() => Date.now());
   const [submitOpen, setSubmitOpen] = useState(false);
 
   const deadlineRef = useRef<number | null>(null);
@@ -104,17 +104,14 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     } else {
       deadlineRef.current = null;
     }
-
-    const anchor = window.setTimeout(() => setNow(Date.now()), 0);
-    return () => window.clearTimeout(anchor);
   }, [attempt]);
 
-  // Countdown ticker + auto-submit at expiry.
+  // Countdown ticker + auto-submit at expiry. The display ticking is handled by
+  // the isolated <ExamCountdown> leaf; this effect only enforces auto-submit.
   useEffect(() => {
     if (!inProgress || deadlineRef.current === null) return;
 
     const interval = window.setInterval(() => {
-      setNow(Date.now());
       if (
         !submittedRef.current &&
         deadlineRef.current !== null &&
@@ -140,17 +137,6 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inProgress]);
-
-  const remainingSeconds = useMemo(() => {
-    if (!inProgress || !attempt) return null;
-    const deadline = attempt.timerEndsAt
-      ? new Date(attempt.timerEndsAt).getTime()
-      : attempt.remainingSeconds != null
-        ? now + attempt.remainingSeconds * 1000
-        : null;
-    if (deadline == null) return null;
-    return Math.max(0, Math.round((deadline - now) / 1000));
-  }, [attempt, inProgress, now]);
 
   // Anti-cheat event listeners.
   useEffect(() => {
@@ -252,6 +238,10 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     return <SessionErrorScreen onBack={backToCourse} onRetry={() => window.location.reload()} />;
   }
 
+  if (attempt.status === "grading") {
+    return <SessionGradingScreen attemptId={attempt.id} />;
+  }
+
   if (attempt.status === "submitted") {
     return <RedirectToResults attemptId={attempt.id} />;
   }
@@ -265,7 +255,8 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     <div className="min-h-screen bg-background">
       <ExamSessionTopBar
         title={attempt.exam.title}
-        remainingSeconds={remainingSeconds}
+        attempt={attempt}
+        inProgress={inProgress}
         answeredCount={answeredCount}
         total={questions.length}
         submitting={submitMutation.isPending}
@@ -381,6 +372,47 @@ function RedirectToResults({ attemptId }: { attemptId: string }) {
   }, [router, attemptId]);
 
   return null;
+}
+
+function SessionGradingScreen({ attemptId }: { attemptId: string }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+    let retries = 0;
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const session = await examSessionService.get(attemptId);
+        if (cancelled) return;
+        if (session.attempt.status !== "grading") {
+          router.replace(`/exam-results/${attemptId}`);
+          return;
+        }
+      } catch {
+        if (cancelled) return;
+        retries += 1;
+        if (retries > 30) {
+          router.replace(`/exam-results/${attemptId}`);
+          return;
+        }
+      }
+      window.setTimeout(poll, 1500);
+    };
+    poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, attemptId]);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
+        <p className="text-sm font-semibold">جارٍ تصحيح الامتحان...</p>
+      </div>
+    </main>
+  );
 }
 
 function SessionLoadingScreen() {

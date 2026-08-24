@@ -354,7 +354,8 @@ Route::prefix('v1')->group(function () {
             // Resumable multipart upload pipeline (backend transport).
             Route::post('/upload/resumable/intent', [MediaLibraryUploadController::class, 'resumableIntent']);
             Route::put('/upload/resumable/{session}/chunk', [MediaLibraryUploadController::class, 'resumableChunk'])
-                ->withoutMiddleware('throttle:api');
+                ->withoutMiddleware('throttle:api')
+                ->middleware('throttle:resumable-upload');
             Route::get('/upload/resumable/{session}/resume', [MediaLibraryUploadController::class, 'resumableResume']);
             Route::post('/upload/resumable/{session}/finalize', [MediaLibraryUploadController::class, 'resumableFinalize']);
         });

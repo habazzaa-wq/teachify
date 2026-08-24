@@ -8,7 +8,6 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Security\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,13 +20,13 @@ class DiscussionPostService
     }
 
     /**
-     * @return Collection<int, DiscussionPost>
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function list(Tenant $tenant, DiscussionThread $thread, bool $includeModerated = false): Collection
+    public function list(Tenant $tenant, DiscussionThread $thread, bool $includeModerated = false, int $perPage = 50): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $this->ensureThreadInTenant($tenant, $thread);
 
-        return DiscussionPost::query()
+        $query = DiscussionPost::query()
             ->where('tenant_id', $tenant->id)
             ->where('discussion_thread_id', $thread->id)
             ->when(
@@ -36,8 +35,9 @@ class DiscussionPostService
                 fn (Builder $query) => $query->where('status', 'active'),
             )
             ->orderBy('created_at')
-            ->with(['author.user', 'parent'])
-            ->get();
+            ->with(['author.user', 'parent']);
+
+        return $query->paginate($perPage);
     }
 
     /**

@@ -16,7 +16,10 @@ interface StudentDashboardShellProps {
 
 function StudentDashboardShell({ children }: StudentDashboardShellProps) {
   const { tenant } = useActiveTenant();
-  const { primaryColor, secondaryColor, isActive, setColors } = useDashboardThemeStore();
+  const primaryColor = useDashboardThemeStore((s) => s.primaryColor);
+  const secondaryColor = useDashboardThemeStore((s) => s.secondaryColor);
+  const isActive = useDashboardThemeStore((s) => s.isActive);
+  const setColors = useDashboardThemeStore((s) => s.setColors);
   const theme = useUiStore((s) => s.theme);
   const rootRef = useRef<HTMLDivElement>(null);
 
