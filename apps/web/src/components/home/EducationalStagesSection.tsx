@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   GraduationCap,
+  Pause,
+  Play,
   Users,
 } from "lucide-react";
 import { useBrandColors } from "@/hooks/useBrandColors";
@@ -17,6 +19,8 @@ import type { StageItem, StageStats } from "@/features/homepage/educational-stag
 import { brandContrast } from "@/lib/brand";
 import { formatNumber } from "@/lib/format";
 import { toAbsoluteAssetUrl } from "@/lib/url";
+
+const AUTOPLAY_MS = 2800;
 
 function stageTag(name: string | null): string {
   const t = (name ?? "").trim();
@@ -44,10 +48,11 @@ function PathNode({
 }) {
   return (
     <button
+      id={`stage-node-${index}`}
       type="button"
       onClick={onSelect}
       aria-current={active ? "true" : undefined}
-      className="group flex shrink-0 flex-col items-center gap-2 outline-none"
+      className="group flex shrink-0 flex-col items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
     >
       <span
         className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold tabular-nums transition-all duration-300 ${
@@ -77,7 +82,6 @@ function StagePanel({ stage, primary, secondary, stats, loading }: { stage: Stag
 
   return (
     <article className="stage-swap grid gap-0 overflow-hidden rounded-3xl border border-border bg-card sm:grid-cols-2" key={stage.id}>
-      {/* image (left on desktop, top on mobile) */}
       <div className="relative order-1 min-h-[220px] w-full sm:order-2 sm:min-h-[340px]">
         {showImage ? (
           <Image
@@ -106,7 +110,6 @@ function StagePanel({ stage, primary, secondary, stats, loading }: { stage: Stag
         </span>
       </div>
 
-      {/* content (right on desktop, bottom on mobile) */}
       <div className="order-2 flex flex-col justify-between gap-6 p-6 sm:order-1 sm:p-8">
         <div>
           <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -150,17 +153,26 @@ function StagePanel({ stage, primary, secondary, stats, loading }: { stage: Stag
 
 /* ────────────── nav button ────────────── */
 
-function NavButton({ dir, disabled, onClick }: { dir: "prev" | "next"; disabled: boolean; onClick: () => void }) {
-  const isNext = dir === "next";
+function IconButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={isNext ? "التالي" : "السابق"}
+      aria-label={label}
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-card-foreground shadow-sm transition-colors duration-200 hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
     >
-      {isNext ? <ChevronLeft aria-hidden="true" className="h-5 w-5" /> : <ChevronRight aria-hidden="true" className="h-5 w-5" />}
+      {children}
     </button>
   );
 }
@@ -175,10 +187,46 @@ export function EducationalStagesSection() {
   const allIds = useMemo(() => all.map((s) => s.id), [all]);
   const { statsById, loadingIds } = useStageStatsState(allIds, true);
 
-  const [activeIndex, setActiveIndex] = useState(0);
   const count = all.length;
+  const [activeIndex, setActiveIndex] = useState(0);
   const safeIndex = Math.min(activeIndex, Math.max(0, count - 1));
   const active = all[safeIndex];
+
+  const reduce = useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
+
+  const [auto, setAuto] = useState(true);
+  const [hovering, setHovering] = useState(false);
+  const [tabHidden, setTabHidden] = useState(false);
+  const mountedRef = useRef(false);
+
+  const playing = auto && !reduce && !hovering && !tabHidden && count > 1;
+
+  useEffect(() => {
+    const onVis = () => setTabHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = window.setInterval(() => {
+      setActiveIndex((i) => (i + 1) % count);
+    }, AUTOPLAY_MS);
+    return () => window.clearInterval(id);
+  }, [playing, count, safeIndex]);
+
+  /* keep the active node centered in the path strip as it advances */
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    const el = document.getElementById(`stage-node-${safeIndex}`);
+    el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", inline: "center", block: "nearest" });
+  }, [safeIndex, reduce]);
 
   if (count === 0 && !isLoading) return null;
 
@@ -191,6 +239,8 @@ export function EducationalStagesSection() {
       dir="rtl"
       aria-labelledby="educational-stages-title"
       className="relative w-full scroll-mt-24 bg-muted/40 py-20 sm:py-24"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* header */}
@@ -207,13 +257,26 @@ export function EducationalStagesSection() {
               مسار متكامل يبدأ من حيث أنت — اختر المرحلة واكتشف الدورات والمدرّسين المتاحين لها.
             </p>
           </div>
+
           {!isLoading && count > 1 ? (
             <div className="flex items-center gap-3">
+              {!reduce ? (
+                <IconButton
+                  label={auto ? "إيقاف التشغيل التلقائي" : "تشغيل التشغيل التلقائي"}
+                  onClick={() => setAuto((a) => !a)}
+                >
+                  {auto ? <Pause aria-hidden="true" className="h-5 w-5" /> : <Play aria-hidden="true" className="h-5 w-5" />}
+                </IconButton>
+              ) : null}
               <span className="hidden text-xs font-bold tabular-nums text-muted-foreground sm:inline">
                 {formatNumber(safeIndex + 1)} / {formatNumber(count)}
               </span>
-              <NavButton dir="prev" disabled={safeIndex <= 0} onClick={() => setActiveIndex((i) => Math.max(0, i - 1))} />
-              <NavButton dir="next" disabled={safeIndex >= count - 1} onClick={() => setActiveIndex((i) => Math.min(count - 1, i + 1))} />
+              <IconButton label="السابق" disabled={safeIndex <= 0} onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}>
+                <ChevronRight aria-hidden="true" className="h-5 w-5" />
+              </IconButton>
+              <IconButton label="التالي" disabled={safeIndex >= count - 1} onClick={() => setActiveIndex((i) => Math.min(count - 1, i + 1))}>
+                <ChevronLeft aria-hidden="true" className="h-5 w-5" />
+              </IconButton>
             </div>
           ) : null}
         </div>
@@ -242,18 +305,27 @@ export function EducationalStagesSection() {
           </div>
         ) : null}
 
+        {/* autoplay progress */}
+        {!isLoading && count > 1 ? (
+          <div className="mx-auto mt-4 h-0.5 w-full max-w-2xl overflow-hidden rounded-full bg-border/60" aria-hidden="true">
+            <div
+              key={safeIndex}
+              className="stage-auto-bar h-full rounded-full bg-primary"
+              style={{
+                width: reduce ? "100%" : undefined,
+                animation: reduce ? undefined : `stageAutoProgress ${AUTOPLAY_MS}ms linear`,
+                animationPlayState: playing ? "running" : "paused",
+              }}
+            />
+          </div>
+        ) : null}
+
         {/* panel */}
         <div className="mt-8">
           {isLoading || !active ? (
             <div className="aspect-[16/10] w-full animate-pulse rounded-3xl bg-muted" aria-busy="true" aria-label="جارٍ تحميل المرحلة" />
           ) : (
-            <StagePanel
-              stage={active}
-              primary={primary}
-              secondary={secondary}
-              stats={activeStats}
-              loading={activeLoading}
-            />
+            <StagePanel stage={active} primary={primary} secondary={secondary} stats={activeStats} loading={activeLoading} />
           )}
         </div>
       </div>
