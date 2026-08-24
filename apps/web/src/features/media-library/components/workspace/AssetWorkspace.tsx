@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, memo } from "react";
+import { useMemo, useCallback, memo, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Upload, FolderOpen, Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -11,6 +11,7 @@ import { WorkspaceToolbar } from "./WorkspaceToolbar";
 import { MediaBreadcrumbs } from "./MediaBreadcrumbs";
 import { DamMediaCard } from "./DamMediaCard";
 import { BulkActionsBar } from "./BulkActionsBar";
+import { MediaPagination } from "./MediaPagination";
 import { StudioGenericError } from "@/components/studio";
 import type { MediaAsset, MediaFilterParams } from "../../types";
 
@@ -100,6 +101,10 @@ function AssetWorkspaceBase({
     clearSelection,
     setInspectorAssetId,
     filters,
+    currentPage,
+    perPage,
+    setCurrentPage,
+    setPerPage,
   } = useMediaWorkspaceStore();
 
   const assetParams = useMemo((): MediaFilterParams => {
@@ -119,12 +124,23 @@ function AssetWorkspaceBase({
     if (filters.uploaderId) params.uploader_id = filters.uploaderId;
     if (typeof selectedFolderId === "number") params.folder_id = selectedFolderId;
     if (selectedFolderId === "root") params.root = true;
+    if (currentPage > 1) params.page = currentPage;
+    if (perPage) params.per_page = perPage;
     return params;
-  }, [selectedFolderId, sortField, sortDirection, filters]);
+  }, [selectedFolderId, sortField, sortDirection, filters, currentPage, perPage]);
 
   const { data, isLoading, isError, refetch } = useMediaAssets(assetParams);
   const assets = useMemo(() => data?.data ?? [], [data]);
   const totalAssets = Number(data?.meta?.total ?? 0);
+  const paginationMeta = useMemo(() => {
+    const meta = data?.meta ?? {};
+    return {
+      currentPage: Number(meta.current_page ?? currentPage),
+      lastPage: Number(meta.last_page ?? 1),
+      perPage: Number(meta.per_page ?? perPage),
+      total: totalAssets,
+    };
+  }, [data, currentPage, perPage, totalAssets]);
 
   const { data: breadcrumbs } = useFolderBreadcrumbs(
     typeof selectedFolderId === "number" ? selectedFolderId : null,
@@ -175,6 +191,13 @@ function AssetWorkspaceBase({
   }, [assetParams, totalAssets, assets, selectAll, clearSelection]);
 
   const grouped = useMemo(() => groupAssets(assets, groupBy), [assets, groupBy]);
+
+  // Reset to the first page whenever the active filters, folder, or sort order
+  // change so the user never lands on a stale (now empty) page.
+  useEffect(() => {
+    if (currentPage !== 1) setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFolderId, sortField, sortDirection, filters]);
 
   const breadcrumbItems = useMemo(() => {
     if (!breadcrumbs) return [];
@@ -323,6 +346,17 @@ function AssetWorkspaceBase({
           </>
         )}
       </div>
+
+      {/* Pagination footer */}
+      <MediaPagination
+        currentPage={paginationMeta.currentPage}
+        lastPage={paginationMeta.lastPage}
+        total={paginationMeta.total}
+        perPage={paginationMeta.perPage}
+        onPageChange={setCurrentPage}
+        onPerPageChange={setPerPage}
+        isLoading={isLoading}
+      />
 
       {/* Bulk Actions */}
       <BulkActionsBar
