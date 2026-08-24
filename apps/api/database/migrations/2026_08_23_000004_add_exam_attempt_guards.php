@@ -33,9 +33,11 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::table('exam_attempts', function (Blueprint $table) {
-            $table->index(['tenant_id', 'user_id', 'status'], 'exam_attempts_tenant_user_status_index');
-        });
+        if (!Schema::hasIndex('exam_attempts', 'exam_attempts_tenant_user_status_index')) {
+            Schema::table('exam_attempts', function (Blueprint $table) {
+                $table->index(['tenant_id', 'user_id', 'status'], 'exam_attempts_tenant_user_status_index');
+            });
+        }
 
         if ($this->isMysql()) {
             // Rows predating the invariant may hold several simultaneous
@@ -51,12 +53,14 @@ return new class extends Migration
                   AND keeper.`user_id` = newer.`user_id`
                   AND keeper.`exam_id` = newer.`exam_id`
                   AND keeper.`id` = (
-                      SELECT MIN(oldest.`id`) FROM `%1$s` oldest
-                       WHERE oldest.`tenant_id` = newer.`tenant_id`
-                         AND oldest.`user_id` = newer.`user_id`
-                         AND oldest.`exam_id` = newer.`exam_id`
-                         AND oldest.`status` = \'in_progress\'
-                         AND oldest.`is_practice` = 0
+                      SELECT `min_id` FROM (
+                          SELECT MIN(oldest.`id`) AS `min_id` FROM `%1$s` oldest
+                           WHERE oldest.`tenant_id` = newer.`tenant_id`
+                             AND oldest.`user_id` = newer.`user_id`
+                             AND oldest.`exam_id` = newer.`exam_id`
+                             AND oldest.`status` = \'in_progress\'
+                             AND oldest.`is_practice` = 0
+                      ) AS `guard_keep`
                   )
                  SET newer.`status` = \'submitted\',
                      newer.`submitted_at` = NOW()
@@ -66,42 +70,52 @@ return new class extends Migration
                 $this->prefixTable(),
             ));
 
-            DB::statement(sprintf(
-                'ALTER TABLE `%s` ADD COLUMN `%s` VARCHAR(255) GENERATED ALWAYS AS (
-                    IF(`status` = \'in_progress\' AND `is_practice` = 0,
-                       CONCAT_WS(\':\', `tenant_id`, `user_id`, `exam_id`),
-                       NULL)
-                ) STORED',
-                $this->prefixTable(),
-                self::GUARD_COLUMN,
-            ));
+            if (!Schema::hasColumn('exam_attempts', self::GUARD_COLUMN)) {
+                DB::statement(sprintf(
+                    'ALTER TABLE `%s` ADD COLUMN `%s` VARCHAR(255) GENERATED ALWAYS AS (
+                        IF(`status` = \'in_progress\' AND `is_practice` = 0,
+                           CONCAT_WS(\':\', `tenant_id`, `user_id`, `exam_id`),
+                           NULL)
+                    ) STORED',
+                    $this->prefixTable(),
+                    self::GUARD_COLUMN,
+                ));
+            }
 
-            DB::statement(sprintf(
-                'ALTER TABLE `%s` ADD UNIQUE INDEX `%s` (`%s`)',
-                $this->prefixTable(),
-                self::GUARD_INDEX,
-                self::GUARD_COLUMN,
-            ));
+            if (!Schema::hasIndex('exam_attempts', self::GUARD_INDEX)) {
+                DB::statement(sprintf(
+                    'ALTER TABLE `%s` ADD UNIQUE INDEX `%s` (`%s`)',
+                    $this->prefixTable(),
+                    self::GUARD_INDEX,
+                    self::GUARD_COLUMN,
+                ));
+            }
         }
     }
 
     public function down(): void
     {
-        Schema::table('exam_attempts', function (Blueprint $table) {
-            $table->dropIndex('exam_attempts_tenant_user_status_index');
-        });
-
         if ($this->isMysql()) {
-            DB::statement(sprintf(
-                'ALTER TABLE `%s` DROP INDEX `%s`',
-                $this->prefixTable(),
-                self::GUARD_INDEX,
-            ));
-            DB::statement(sprintf(
-                'ALTER TABLE `%s` DROP COLUMN `%s`',
-                $this->prefixTable(),
-                self::GUARD_COLUMN,
-            ));
+            if (Schema::hasIndex('exam_attempts', self::GUARD_INDEX)) {
+                DB::statement(sprintf(
+                    'ALTER TABLE `%s` DROP INDEX `%s`',
+                    $this->prefixTable(),
+                    self::GUARD_INDEX,
+                ));
+            }
+            if (Schema::hasColumn('exam_attempts', self::GUARD_COLUMN)) {
+                DB::statement(sprintf(
+                    'ALTER TABLE `%s` DROP COLUMN `%s`',
+                    $this->prefixTable(),
+                    self::GUARD_COLUMN,
+                ));
+            }
+        }
+
+        if (Schema::hasIndex('exam_attempts', 'exam_attempts_tenant_user_status_index')) {
+            Schema::table('exam_attempts', function (Blueprint $table) {
+                $table->dropIndex('exam_attempts_tenant_user_status_index');
+            });
         }
     }
 
