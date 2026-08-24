@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Save, RotateCcw, Palette } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Save, RotateCcw } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
   AppCard, AppCardHeader, AppCardTitle, AppCardDescription, AppCardContent,
 } from "@/components/ui";
-import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { useTenantStore } from "@/stores/tenant.store";
+import { settingsService } from "@/features/settings/services";
 import { generateThemeColors } from "@/lib/color";
 import { cn } from "@/lib/cn";
 
@@ -63,28 +65,56 @@ function ColorPicker({
 }
 
 function AppearancePage() {
-  const { primaryColor, secondaryColor, isActive, setColors, resetColors } = useDashboardThemeStore();
+  const { tenant } = useActiveTenant();
+  const setTenantSite = useTenantStore((s) => s.setTenantSite);
 
-  const [primary, setPrimary] = useState(primaryColor);
-  const [secondary, setSecondary] = useState(secondaryColor);
+  const storedPrimary = tenant?.branding?.primary_color ?? "#4F46E5";
+  const storedSecondary = tenant?.branding?.secondary_color ?? "#F1F5F9";
+
+  const [primary, setPrimary] = useState(storedPrimary);
+  const [secondary, setSecondary] = useState(storedSecondary);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setPrimary(primaryColor);
-    setSecondary(secondaryColor);
-  }, [primaryColor, secondaryColor]);
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    try {
+      await settingsService.updateSite({
+        primary_color: primary,
+        secondary_color: secondary,
+      });
+      setTenantSite({
+        name: tenant?.name ?? "",
+        favicon: tenant?.branding?.favicon ?? null,
+        primary_color: primary,
+        secondary_color: secondary,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
+  }, [primary, secondary, setTenantSite, tenant]);
 
-  const handleSave = useCallback(() => {
-    setColors(primary, secondary);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [primary, secondary, setColors]);
-
-  const handleReset = useCallback(() => {
-    resetColors();
-    setPrimary("#4F46E5");
-    setSecondary("#F1F5F9");
-  }, [resetColors]);
+  const handleReset = useCallback(async () => {
+    setSaving(true);
+    try {
+      await settingsService.updateSite({
+        primary_color: null,
+        secondary_color: null,
+      });
+      setTenantSite({
+        name: tenant?.name ?? "",
+        favicon: tenant?.branding?.favicon ?? null,
+        primary_color: null,
+        secondary_color: null,
+      });
+      setPrimary("#4F46E5");
+      setSecondary("#F1F5F9");
+    } finally {
+      setSaving(false);
+    }
+  }, [setTenantSite, tenant]);
 
   const handlePreset = useCallback((p: string, s: string) => {
     setPrimary(p);
@@ -245,10 +275,10 @@ function AppearancePage() {
 
         {/* Actions */}
         <div className="flex items-center justify-between gap-4">
-          <AppButton variant="outline" onClick={handleReset}>
+          <AppButton variant="outline" onClick={handleReset} disabled={saving}>
             <RotateCcw className="h-4 w-4 ml-1" /> إعادة تعيين
           </AppButton>
-          <AppButton onClick={handleSave} loading={saved}>
+          <AppButton onClick={handleSave} loading={saving}>
             <Save className="h-4 w-4 ml-1" /> {saved ? "تم الحفظ" : "حفظ التغييرات"}
           </AppButton>
         </div>

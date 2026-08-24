@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useUiStore } from "@/stores/ui.store";
-import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { generateThemeColors } from "@/lib/color";
+import { useTenantTheme } from "@/hooks/useTenantTheme";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
 import { WorkspaceRightInspector } from "./WorkspaceRightInspector";
@@ -21,44 +20,17 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
-  const { primaryColor, secondaryColor, isActive, setColors } = useDashboardThemeStore();
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
-  const rootRef = useRef<HTMLDivElement>(null);
 
-  // Auto-apply the tenant's control-panel primary/secondary colors the first
-  // time they're available, unless the user already customized them.
-  useEffect(() => {
-    const branding = tenant?.branding;
-    const primary = branding?.primary_color;
-    const secondary = branding?.secondary_color;
-    if (primary && secondary && !isActive) {
-      setColors(primary, secondary);
-    }
-  }, [tenant, isActive, setColors]);
+  const branding = tenant?.branding;
+  const primaryColor = branding?.primary_color ?? null;
+  const secondaryColor = branding?.secondary_color ?? null;
 
-  // Inject the tenant-themed palette (primary = navbar/accent, secondary =
-  // sidebar/content) across the whole control panel, with dark-mode support.
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
-    const styleId = "dash-custom-theme";
-    let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
-    if (!isActive) {
-      if (styleTag) styleTag.remove();
-      return;
-    }
-    const colors = generateThemeColors(primaryColor, secondaryColor, theme === "dark");
-    if (!styleTag) {
-      styleTag = document.createElement("style");
-      styleTag.id = styleId;
-      document.head.appendChild(styleTag);
-    }
-    const vars = Object.entries(colors)
-      .map(([k, v]) => `${k}: ${v};`)
-      .join("");
-    styleTag.textContent = `.tenant-theme { ${vars} }`;
-  }, [primaryColor, secondaryColor, isActive, theme]);
+  // Apply the tenant's control-panel primary/secondary colors (sourced from the
+  // server-synced tenant so they're identical on every device) across the whole
+  // control panel, with dark-mode support.
+  useTenantTheme({ primaryColor, secondaryColor, isDark: theme === "dark" });
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);
@@ -75,7 +47,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
-    <div ref={rootRef} className="tenant-theme flex h-screen flex-col bg-studio-bg text-studio-fg overflow-hidden">
+    <div className="tenant-theme flex h-screen flex-col bg-studio-bg text-studio-fg overflow-hidden">
       {/* Header */}
       <WorkspaceHeader />
 
