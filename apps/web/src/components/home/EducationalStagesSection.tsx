@@ -201,6 +201,7 @@ export function EducationalStagesSection() {
   const [hovering, setHovering] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
   const mountedRef = useRef(false);
+  const stripRef = useRef<HTMLDivElement>(null);
   const prevIdxRef = useRef(0);
   const [animClass, setAnimClass] = useState("stage-swap-fwd");
 
@@ -228,14 +229,20 @@ export function EducationalStagesSection() {
     prevIdxRef.current = safeIndex;
   }, [safeIndex, count]);
 
-  /* keep the active node centered in the path strip as it advances */
+  /* keep the active node centered inside the path strip as it advances,
+     without scrolling the whole page to the section */
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
       return;
     }
+    const strip = stripRef.current;
     const el = document.getElementById(`stage-node-${safeIndex}`);
-    el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", inline: "center", block: "nearest" });
+    if (!strip || !el) return;
+    const stripRect = strip.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const delta = elRect.left + elRect.width / 2 - (stripRect.left + stripRect.width / 2);
+    strip.scrollTo({ left: strip.scrollLeft + delta, behavior: reduce ? "auto" : "smooth" });
   }, [safeIndex, reduce]);
 
   if (count === 0 && !isLoading) return null;
@@ -287,6 +294,7 @@ export function EducationalStagesSection() {
         {/* path */}
         {!isLoading && count > 1 ? (
           <div
+            ref={stripRef}
             className="mt-10 flex items-center gap-1 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             role="tablist"
             aria-label="مراحل المسار"
