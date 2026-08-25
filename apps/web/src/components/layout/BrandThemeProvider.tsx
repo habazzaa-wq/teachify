@@ -20,10 +20,12 @@ const STYLE_ID = "brand-theme-vars";
  * /`--accent`/`--ring`) so framework components follow the same palette.
  */
 export function BrandThemeProvider() {
-  const activeTenant = useTenantStore((s) => s.activeTenant);
+  // بَس ألوان "المنصة" (platformBranding) هي اللي بتظهر على طول المنصة.
+  // ألوان "مظهر لوحة التحكم" (activeTenant.branding) متطبَّقش هنا — دي مقتصرة
+  // على صفحة تسجيل الدخول ولوحة تحكم المدرس بس (شوف .tenant-theme).
   const platformBranding = useTenantStore((s) => s.platformBranding);
 
-  const { primary, secondary } = resolveBrandHexColors(activeTenant, platformBranding);
+  const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
 
   const css = useMemo(() => {
     const light = generateCommunityThemeColors(primary, secondary, false);

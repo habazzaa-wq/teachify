@@ -11,7 +11,8 @@ import { resolveBrandHexColors } from "@/lib/brand";
  * dashboard and login.
  */
 export function useBrandColors() {
-  const activeTenant = useTenantStore((s) => s.activeTenant);
+  // ألوان "المنصة" بس (platformBranding) — من غير ألوان مظهر المدرس عشان متسرّبش
+  // للمنصة كلها. مظهر المدرس مقتصر على صفحة الدخول ولوحة تحكم المدرس (.tenant-theme).
   const platformBranding = useTenantStore((s) => s.platformBranding);
-  return resolveBrandHexColors(activeTenant, platformBranding);
+  return resolveBrandHexColors(null, platformBranding);
 }
