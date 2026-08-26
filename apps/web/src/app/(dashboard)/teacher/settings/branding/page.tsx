@@ -98,11 +98,11 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
   const [name, setName] = useState(initial.name ?? "");
-  const [logoType, setLogoType] = useState<string | null>(initial.logo_type ?? null);
-  const [logoIcon, setLogoIcon] = useState<string | null>(initial.logo_icon ?? null);
-  const [logoImage, setLogoImage] = useState<string | null>(initial.logo_image ?? null);
-  const [primaryColor, setPrimaryColor] = useState<string>(initial.primary_color ?? BRAND_PRIMARY_DEFAULT);
-  const [secondaryColor, setSecondaryColor] = useState<string>(initial.secondary_color ?? BRAND_SECONDARY_DEFAULT);
+  const [logoType, setLogoType] = useState<string | null>(initial.logoType ?? null);
+  const [logoIcon, setLogoIcon] = useState<string | null>(initial.logoIcon ?? null);
+  const [logoImage, setLogoImage] = useState<string | null>(initial.logoImage ?? null);
+  const [primaryColor, setPrimaryColor] = useState<string>(initial.primaryColor ?? initial.primary_color ?? BRAND_PRIMARY_DEFAULT);
+  const [secondaryColor, setSecondaryColor] = useState<string>(initial.secondaryColor ?? initial.secondary_color ?? BRAND_SECONDARY_DEFAULT);
 
   const handleSave = useCallback(() => {
     const values: Partial<SiteSettings> = {
@@ -119,11 +119,11 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
         setPlatformBranding({
           logo: result.logo ?? null,
           favicon: result.favicon ?? null,
-          primaryColor: result.primary_color ?? primaryColor,
-          secondaryColor: result.secondary_color ?? secondaryColor,
-          logoType: result.logo_type ?? null,
-          logoIcon: result.logo_icon ?? null,
-          logoImage: result.logo_image ?? null,
+          primaryColor: result.primaryColor ?? result.primary_color ?? primaryColor,
+          secondaryColor: result.secondaryColor ?? result.secondary_color ?? secondaryColor,
+          logoType: result.logoType ?? result.logo_type ?? null,
+          logoIcon: result.logoIcon ?? result.logo_icon ?? null,
+          logoImage: result.logoImage ?? result.logo_image ?? null,
           font: result.font ?? null,
         });
       },
@@ -447,7 +447,7 @@ function BrandingSettingsPage() {
       <AppDivider className="mb-8" />
 
       <BrandingForm
-        key={[data.name, data.logo_type, data.logo_icon, data.logo_image, data.primary_color, data.secondary_color].join("|")}
+        key={[data.name, data.logoType ?? data.logo_type, data.logoIcon ?? data.logo_icon, data.logoImage ?? data.logo_image, data.primaryColor ?? data.primary_color, data.secondaryColor ?? data.secondary_color].join("|")}
         initial={data}
       />
     </AppPage>

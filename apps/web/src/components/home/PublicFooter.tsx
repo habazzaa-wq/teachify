@@ -5,9 +5,9 @@ import Image from "next/image";
 import { GraduationCap } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
+import { useTenantStore } from "@/stores/tenant.store";
+import { useBrandColors } from "@/hooks/useBrandColors";
 
-const primary = "#D87B63";
-const secondary = "#FFB50E";
 const DEVELOPER_WHATSAPP = "https://wa.me/201011245565";
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -21,11 +21,14 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function PublicFooter() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const { primary, secondary } = useBrandColors();
 
+  const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
   const logo = theme === "dark"
-    ? tenant?.branding?.dark_logo
-    : tenant?.branding?.light_logo ?? tenant?.branding?.logo;
-  const tenantName = tenant?.name ?? "أكاديميتي";
+    ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
+    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo;
+  const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
 
   return (
     <footer className="relative border-t bg-background/90 backdrop-blur-xl">

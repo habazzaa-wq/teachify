@@ -1,6 +1,7 @@
 export interface TenantBranding {
   logo: string | null;
   favicon: string | null;
+  name?: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
   accentColor: string | null;

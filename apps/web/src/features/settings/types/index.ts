@@ -27,6 +27,14 @@ export interface SiteSettings {
   primary_color?: string | null;
   /** Secondary brand color (hex) — drives the whole public site theme. */
   secondary_color?: string | null;
+
+  // The `/settings/platform` endpoint returns these keys in camelCase.
+  // Kept optional so the same type can describe both shapes.
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  logoType?: string | null;
+  logoIcon?: string | null;
+  logoImage?: string | null;
 }
 
 export type NavbarLogoType = "icon" | "image";
