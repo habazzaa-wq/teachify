@@ -43,7 +43,7 @@ class PublicTenantController extends Controller
             'branding' => $branding,
             'platform_branding' => $this->resolvePlatformBranding($tenant),
             'seo' => $this->resolveSeo($tenant),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**
