@@ -9,6 +9,7 @@ use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Media\Providers\BunnyStorageProvider;
+use App\Services\Media\Providers\BunnyStreamProvider;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
@@ -17,7 +18,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\Bunny\BunnyCacheService;
+use App\Services\Bunny\Contracts\BunnyStreamInterface;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -397,6 +400,15 @@ class ResumableUploadService
     protected function pushToBunny(MediaUploadSession $session, string $assembledAbs): ?MediaAsset
     {
         $provider = $this->manager->providerFor($session->provider, $session->provider_service);
+
+        // Bunny Stream requires the video object to exist in the library before
+        // its bytes can be uploaded (PUT /videos/{guid} returns 404 otherwise).
+        // Create it now, reusing the deterministic guid already reserved on the
+        // asset so retries stay idempotent.
+        if ($session->provider_service === 'stream' && $provider instanceof BunnyStreamProvider) {
+            $this->ensureStreamVideoExists($session);
+        }
+
         $intent = $provider->createUploadIntent($session);
 
         $url = $intent['upload_url'] ?? null;
@@ -460,6 +472,52 @@ class ResumableUploadService
         }
 
         return $asset;
+    }
+
+    /**
+     * Ensure a Bunny Stream video object exists for this session before its
+     * bytes are uploaded. Bunny's upload endpoint (PUT /videos/{guid}) only
+     * accepts an existing video; uploading to a never-created guid returns 404.
+     *
+     * We reuse the deterministic guid already reserved on the asset so that a
+     * retried finalize targets the same video and never creates duplicates.
+     */
+    private function ensureStreamVideoExists(MediaUploadSession $session): void
+    {
+        $asset = $session->asset;
+        if (! $asset) {
+            return;
+        }
+
+        $stream = app(BunnyStreamInterface::class);
+        $guid = $asset->external_id ?: (string) Str::uuid();
+        $title = $session->file_name ?: ($asset->title ?? 'Untitled Video');
+
+        $exists = false;
+        try {
+            // A 404 here means the video was never created (or was deleted).
+            $stream->getVideoStatus($guid);
+            $exists = true;
+        } catch (\Throwable) {
+            $exists = false;
+        }
+
+        if (! $exists) {
+            $created = $stream->createVideo($title, [
+                'collection_id' => $asset->metadata['collection'] ?? null,
+            ]);
+            $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
+        }
+
+        // Persist the (possibly freshly created) guid back onto the asset so the
+        // upload URL built later by createUploadIntent() targets the right video.
+        if ($asset->external_id !== $guid || $asset->bunny_video_id !== $guid) {
+            $asset->forceFill([
+                'external_id' => $guid,
+                'bunny_video_id' => $guid,
+            ])->save();
+            $session->load('asset');
+        }
     }
 
     /* ------------------------------------------------------------------ *
