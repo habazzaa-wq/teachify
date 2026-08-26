@@ -172,14 +172,17 @@ class BunnyStreamProvider implements MediaProvider
         if ($integration) {
             $config = $integration->config ?? [];
 
-            // If the tenant integration config already has a stream library,
-            // use it directly.
-            if (! empty($config['library_id'])) {
+            // If the tenant integration config already has both a stream library
+            // and an API key, use it directly.
+            if (! empty($config['library_id']) && ! empty($config['client_upload_key'])) {
                 return $config;
             }
 
-            // Merge platform-wide Stream settings underneath tenant-specific
-            // config so per-tenant overrides (e.g. collection prefix) apply.
+            // Otherwise fall back to the platform-wide Stream settings. This
+            // mirrors BunnyStorageProvider::config() so a tenant integration
+            // that only carries a library_id still gets its API key from the
+            // platform instead of sending a null AccessKey (which Bunny rejects
+            // with 401 → "Server Error" during finalize).
             if ($platform && $platform->hasStreamCredentials()) {
                 return array_merge($platform->toProviderConfig('stream'), $config);
             }
