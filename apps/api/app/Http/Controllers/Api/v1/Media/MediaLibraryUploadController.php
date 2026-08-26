@@ -173,6 +173,15 @@ class MediaLibraryUploadController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // Guaranteed file log so the error is capturable even if the Monolog
+            // channel is misconfigured or unwritable.
+            try {
+                $detail = '['.date('c').'] session='.$session->id
+                    .' | error='.$e->getMessage()."\n".$e->getTraceAsString()."\n";
+                file_put_contents(storage_path('logs/finalize-debug.log'), $detail, FILE_APPEND);
+            } catch (\Throwable) {
+            }
+
             return response()->json([
                 'message' => 'Finalize failed: '.$e->getMessage(),
             ], 500);
