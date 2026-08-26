@@ -25,7 +25,7 @@ import {
   AppLoadingState,
   AppErrorState,
 } from "@/components/ui";
-import { useSiteSettings, useUpdateSiteSettings } from "@/features/settings/hooks";
+import { usePlatformBranding, useUpdatePlatformBranding } from "@/features/settings/hooks";
 import type { SiteSettings } from "@/features/settings/types";
 import { NAVBAR_ICON_OPTIONS, getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { useTenantStore } from "@/stores/tenant.store";
@@ -94,8 +94,8 @@ function NavbarLogoPreview({
 }
 
 function BrandingForm({ initial }: { initial: SiteSettings }) {
-  const updateSite = useUpdateSiteSettings();
-  const setTenantSite = useTenantStore((s) => s.setTenantSite);
+  const updatePlatform = useUpdatePlatformBranding();
+  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
   const [name, setName] = useState(initial.name ?? "");
   const [logoType, setLogoType] = useState<string | null>(initial.logo_type ?? null);
@@ -114,20 +114,21 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
       secondary_color: secondaryColor,
     };
 
-    updateSite.mutate(values, {
+    updatePlatform.mutate(values, {
       onSuccess: (result) => {
-        setTenantSite({
-          name: result.name,
+        setPlatformBranding({
+          logo: result.logo ?? null,
           favicon: result.favicon ?? null,
-          logo_type: result.logo_type ?? null,
-          logo_icon: result.logo_icon ?? null,
-          logo_image: result.logo_image ?? null,
-          primary_color: result.primary_color ?? primaryColor,
-          secondary_color: result.secondary_color ?? secondaryColor,
+          primaryColor: result.primary_color ?? primaryColor,
+          secondaryColor: result.secondary_color ?? secondaryColor,
+          logoType: result.logo_type ?? null,
+          logoIcon: result.logo_icon ?? null,
+          logoImage: result.logo_image ?? null,
+          font: result.font ?? null,
         });
       },
     });
-  }, [name, logoType, logoIcon, logoImage, primaryColor, secondaryColor, updateSite, setTenantSite]);
+  }, [name, logoType, logoIcon, logoImage, primaryColor, secondaryColor, updatePlatform, setPlatformBranding]);
 
   const canSave = name.trim().length > 0 && (logoType !== "icon" || !!logoIcon);
 
@@ -422,7 +423,7 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
 
       {/* Actions */}
       <div className="flex justify-end">
-        <AppButton onClick={handleSave} loading={updateSite.isPending} disabled={!canSave}>
+        <AppButton onClick={handleSave} loading={updatePlatform.isPending} disabled={!canSave}>
           <Save className="h-4 w-4 ml-1" /> حفظ الشعار والاسم
         </AppButton>
       </div>
@@ -431,7 +432,7 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
 }
 
 function BrandingSettingsPage() {
-  const { data, isLoading, isError, refetch } = useSiteSettings();
+  const { data, isLoading, isError, refetch } = usePlatformBranding();
 
   if (isLoading) return <AppLoadingState />;
   if (isError) return <AppErrorState onRetry={() => refetch()} />;

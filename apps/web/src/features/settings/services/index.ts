@@ -26,4 +26,14 @@ export const settingsService = {
     const { data } = await api.put("/settings/site", { values });
     return data.values as SiteSettings;
   },
+
+  async getPlatform(): Promise<SiteSettings> {
+    const { data } = await api.get("/settings/platform");
+    return data.branding as SiteSettings;
+  },
+
+  async updatePlatform(values: Partial<SiteSettings>) {
+    const { data } = await api.put("/settings/platform", values);
+    return data.branding as SiteSettings;
+  },
 };

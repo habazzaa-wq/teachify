@@ -10,6 +10,71 @@ use Illuminate\Validation\Rule;
 
 class TenantSettingController extends Controller
 {
+    /**
+     * Platform-level brand colors (the "platform colors" field managed through
+     * the platform branding editor). These live on the tenant's `branding`
+     * attribute and drive the public site (via BrandThemeProvider). They are
+     * intentionally separate from the teacher appearance settings stored in the
+     * `branding` settings group (which only apply to the teacher dashboard and
+     * tenant login).
+     */
+    public function platform(): JsonResponse
+    {
+        $tenant = currentTenant();
+
+        return response()->json([
+            'branding' => $this->resolvePlatformBranding($tenant),
+        ]);
+    }
+
+    /**
+     * Persist the platform-level brand colors onto the tenant's `branding`
+     * attribute. This is distinct from `updateSite`, which writes the teacher
+     * appearance settings group (used only by the teacher dashboard + login).
+     */
+    public function updatePlatformBranding(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'favicon' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'primary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
+            'secondary_color' => ['sometimes', 'nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
+            'logo_type' => ['sometimes', 'nullable', 'string', Rule::in(['icon', 'image'])],
+            'logo_icon' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'logo_image' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'font' => ['sometimes', 'nullable', 'string', 'max:200'],
+        ]);
+
+        $tenant = currentTenant();
+        $values = $tenant->branding ?? [];
+
+        $map = [
+            'logo' => 'logo',
+            'favicon' => 'favicon',
+            'primary_color' => 'primary_color',
+            'secondary_color' => 'secondary_color',
+            'logo_type' => 'logo_type',
+            'logo_icon' => 'logo_icon',
+            'logo_image' => 'logo_image',
+            'font' => 'font',
+        ];
+
+        foreach ($map as $input => $key) {
+            if (array_key_exists($input, $validated)) {
+                $values[$key] = $validated[$input];
+            }
+        }
+
+        $tenant->update(['branding' => $values]);
+        $tenant->refresh();
+
+        return response()->json([
+            'message' => 'Platform branding updated.',
+            'branding' => $this->resolvePlatformBranding($tenant),
+        ]);
+    }
+
     public function site(): JsonResponse
     {
         $tenant = currentTenant();
@@ -103,6 +168,26 @@ class TenantSettingController extends Controller
                 'secondary_color' => $brandingValues['secondary_color'] ?? null,
             ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolvePlatformBranding(\App\Models\Tenant $tenant): array
+    {
+        $values = $tenant->branding ?? [];
+
+        return [
+            'name' => $tenant->name,
+            'logo' => $values['logo'] ?? null,
+            'favicon' => $values['favicon'] ?? null,
+            'primary_color' => $values['primary_color'] ?? $values['primaryColor'] ?? '#6366f1',
+            'secondary_color' => $values['secondary_color'] ?? $values['secondaryColor'] ?? '#8b5cf6',
+            'logo_type' => $values['logo_type'] ?? null,
+            'logo_icon' => $values['logo_icon'] ?? null,
+            'logo_image' => $values['logo_image'] ?? null,
+            'font' => $values['fonts'] ?? $values['font'] ?? null,
+        ];
     }
 
     public function index(): JsonResponse
