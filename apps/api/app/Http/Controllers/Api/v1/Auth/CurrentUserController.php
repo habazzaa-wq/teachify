@@ -58,7 +58,7 @@ class CurrentUserController extends Controller
                 'can_manage_settings' => $permissions->contains(fn ($p) => str_starts_with($p->slug, 'settings.')),
             ],
             'navigation' => $this->getNavigation($roles, $permissions),
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     private function getBranding(\App\Models\Tenant $tenant): array
