@@ -189,7 +189,7 @@ fi
 # Health check: retry while Next.js boots after restart.
 HEALTH=000
 for h in $(seq 1 15); do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3000" || true)
+  CODE=$(curl -s -o /dev/null -m 10 -w "%{http_code}" "http://127.0.0.1:3000" || true)
   if [ "$CODE" = "200" ]; then HEALTH=$CODE; break; fi
   sleep 3
 done
