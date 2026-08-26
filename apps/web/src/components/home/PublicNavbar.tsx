@@ -468,14 +468,20 @@ export function PublicNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // The public navbar reflects the *platform* branding (the Branding page),
+  // not the teacher dashboard appearance. Falls back to the tenant's legacy
+  // appearance branding so the navbar never breaks when platform branding is
+  // partially configured.
+  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
   const logo = theme === "dark"
-    ? tenant?.branding?.dark_logo
-    : tenant?.branding?.light_logo ?? tenant?.branding?.logo;
-  const tenantName = tenant?.name ?? "أكاديميتي";
+    ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
+    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo;
+  const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
 
-  const logoType = tenant?.branding?.logo_type;
-  const navbarLogoIcon = getNavbarIcon(tenant?.branding?.logo_icon);
-  const navbarLogoImage = tenant?.branding?.logo_image;
+  const logoType = platformBranding?.logoType ?? tenant?.branding?.logo_type ?? null;
+  const navbarLogoIcon = getNavbarIcon(platformBranding?.logoIcon ?? tenant?.branding?.logo_icon ?? null);
+  const navbarLogoImage = platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null;
 
   const showDynamicImage = logoType === "image" && !!navbarLogoImage;
   const showDynamicIcon = logoType === "icon" && !!navbarLogoIcon;
