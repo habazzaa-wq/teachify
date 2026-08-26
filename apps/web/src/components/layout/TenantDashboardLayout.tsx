@@ -74,13 +74,13 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
           aria-label="مساحة العمل الرئيسية"
         >
           <div className="flex-1 overflow-y-auto studio-scrollbar">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="popLayout">
               <motion.div
                 key="workspace-content"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
                 className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8"
               >
                 {children}

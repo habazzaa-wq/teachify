@@ -88,7 +88,7 @@ function CourseStudioCanvas({
       aria-label="مساحة العمل"
     >
       <div className="flex-1 overflow-y-auto studio-scrollbar">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {canvasView === "content" && selectedLecture && selectedSection && selectedContent ? (
             <motion.div
               key={`content-${selectedContent.id}`}

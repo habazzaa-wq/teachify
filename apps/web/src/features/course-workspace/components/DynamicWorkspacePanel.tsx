@@ -313,7 +313,7 @@ function SectionCanvas({ section }: { section: CourseModuleSection }) {
 function DynamicWorkspacePanel({ view, course, courseLoading, onAddLecture, totalModules = 0 }: DynamicWorkspacePanelProps) {
   return (
     <div className="min-h-[400px]">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {!view ? (
           <motion.div
             key="empty"

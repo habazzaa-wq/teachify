@@ -264,7 +264,7 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
       />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0, y: 10 }}

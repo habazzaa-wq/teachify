@@ -93,7 +93,7 @@ export function BunnySecretField({
         className="min-h-[2.25rem] rounded-lg border border-studio-border bg-studio-soft px-3 py-2 font-mono text-sm text-studio-fg-muted"
         aria-live="polite"
       >
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={isRevealed ? "revealed" : "masked"}
             initial={{ opacity: 0, y: 4 }}

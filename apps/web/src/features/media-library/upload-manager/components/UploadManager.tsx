@@ -89,7 +89,7 @@ export function UploadManager() {
       <input ref={folderRef} type="file" multiple hidden {...folderInputProps} onChange={handleFolder} aria-hidden />
 
       <div className="fixed z-50 bottom-4 end-4 flex flex-col items-end gap-3 max-md:inset-x-0 max-md:bottom-0 max-md:end-0 max-md:px-0">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {isOpen && (
             <UploadManagerPanel
               key="panel"

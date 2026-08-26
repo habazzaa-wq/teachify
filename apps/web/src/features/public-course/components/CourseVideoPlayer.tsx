@@ -146,7 +146,7 @@ function CourseVideoPlayerInner({ slug, lesson, onClose }: CourseVideoPlayerProp
 
       {/* Player area */}
       <div className="relative aspect-video w-full bg-black">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {busy ? (
             <motion.div
               key="loading"
