@@ -38,10 +38,16 @@ export function useTenantTheme({
     const primary = primaryColor || fallbackPrimary || null;
     const secondary = secondaryColor || fallbackSecondary || null;
 
-    if (!primary || !secondary) {
+    // We need at least a primary color to build a coherent theme. If only one
+    // of the pair is missing (e.g. the saved appearance has no secondary color),
+    // fall back to the studio default for the other so the chosen primary is
+    // always reflected instead of dropping the whole theme and reverting to the
+    // unrelated default studio palette.
+    if (!primary) {
       if (styleTag) styleTag.remove();
       return;
     }
+    const safeSecondary = secondary || "#F1F5F9";
 
     if (!styleTag) {
       styleTag = document.createElement("style");
@@ -49,7 +55,7 @@ export function useTenantTheme({
       document.head.appendChild(styleTag);
     }
 
-    const colors = generateThemeColors(primary, secondary, isDark);
+    const colors = generateThemeColors(primary, safeSecondary, isDark);
     const vars = Object.entries(colors)
       .map(([k, v]) => `${k}: ${v};`)
       .join("");

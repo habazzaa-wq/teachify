@@ -149,19 +149,36 @@ export const useTenantStore = create<TenantState>()(
         permissions,
         abilities,
         navigation,
-        platformBranding: tenant.platformBranding ?? null,
+        platformBranding:
+          (tenant.platformBranding as TenantBranding | null) ??
+          ((tenant as unknown as Record<string, unknown>).platform_branding as TenantBranding | null) ??
+          null,
       }),
 
     setTenantBootstrap: (data) =>
       set((state) => {
         const prev = state.activeTenant?.branding;
         const incoming = data.branding;
+        // The auth/me `branding` payload is snake_case at runtime (`primary_color`)
+        // while the public `by-domain` payload is camelCase (`primaryColor`).
+        // Read both shapes defensively.
+        const raw = incoming as unknown as Record<string, unknown>;
 
         // Preserve the previously-applied brand colors if the incoming payload
         // doesn't carry them (e.g. a bootstrap source with null branding), so a
         // re-bootstrap can never reset the control-panel colors to defaults.
-        const primaryColor = incoming.primaryColor ?? prev?.primary_color ?? null;
-        const secondaryColor = incoming.secondaryColor ?? prev?.secondary_color ?? null;
+        // Accept both snake_case (auth/me `getBranding`) and camelCase
+        // (public `by-domain`) key shapes.
+        const primaryColor =
+          (incoming.primaryColor as string | undefined) ??
+          (raw["primary_color"] as string | undefined) ??
+          prev?.primary_color ??
+          null;
+        const secondaryColor =
+          (incoming.secondaryColor as string | undefined) ??
+          (raw["secondary_color"] as string | undefined) ??
+          prev?.secondary_color ??
+          null;
 
         return {
           activeTenant: {
