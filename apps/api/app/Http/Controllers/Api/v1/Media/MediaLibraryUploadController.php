@@ -158,7 +158,21 @@ class MediaLibraryUploadController extends Controller
 
         set_time_limit(600);
 
-        $result = $this->resumable->finalize($request, $session);
+        try {
+            $result = $this->resumable->finalize($request, $session);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('media:resumable-finalize failed', [
+                'session_id' => $session->id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Surface the real exception so the client/network tab shows the
+            // underlying cause instead of a bare "Server Error".
+            return response()->json([
+                'message' => 'Finalize failed: '.$e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'data' => [
