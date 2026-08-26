@@ -10,6 +10,7 @@ import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useTenantStore } from "@/stores/tenant.store";
 import { settingsService } from "@/features/settings/services";
 import { generateThemeColors } from "@/lib/color";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
 
 const PRESET_COLORS = [
@@ -91,6 +92,8 @@ function AppearancePage() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch {
+      toast.error("تعذّر حفظ الألوان، حاول مرة أخرى");
     } finally {
       setSaving(false);
     }
@@ -111,6 +114,8 @@ function AppearancePage() {
       });
       setPrimary("#4F46E5");
       setSecondary("#F1F5F9");
+    } catch {
+      toast.error("تعذّر إعادة التعيين، حاول مرة أخرى");
     } finally {
       setSaving(false);
     }
