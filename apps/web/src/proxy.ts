@@ -11,7 +11,7 @@ const BASE_DOMAIN = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
  */
 const MARKETING_PATH = "/marketing";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const hostname = host.split(":")[0] ?? "";
   const pathname = request.nextUrl.pathname;
