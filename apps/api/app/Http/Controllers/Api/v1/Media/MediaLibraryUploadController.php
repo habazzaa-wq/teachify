@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MediaLibraryUploadController extends Controller
 {
@@ -160,15 +161,18 @@ class MediaLibraryUploadController extends Controller
 
         try {
             $result = $this->resumable->finalize($request, $session);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Let Laravel render validation failures as 422 as usual.
+            throw $e;
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('media:resumable-finalize failed', [
+            // Surface the real cause instead of an opaque "Server Error" and keep
+            // the session + chunk artifacts intact so the upload can be retried.
+            Log::error('media: resumable finalize failed', [
                 'session_id' => $session->id,
-                'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Surface the real exception so the client/network tab shows the
-            // underlying cause instead of a bare "Server Error".
             return response()->json([
                 'message' => 'Finalize failed: '.$e->getMessage(),
             ], 500);

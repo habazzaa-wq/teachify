@@ -401,7 +401,7 @@ export function HeroSection() {
       <HeroBackground isDark={isDark} bgStyle={bgStyle} />
 
       {/* ── Content ── */}
-      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-4 pb-12 sm:pt-6 sm:pb-20 lg:pt-6 lg:pb-24">
+      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-2 pb-12 sm:pt-4 sm:pb-20 lg:pt-4 lg:pb-24">
 
         {/* ── Floating badge pills ── */}
         {hero?.badge2Text && (
@@ -468,7 +468,7 @@ export function HeroSection() {
 
         {/* ── Title ── */}
         <h1
-          className="home-enter-up mb-3 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-4 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
+          className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
           style={{ fontFamily: "var(--font-sans)" }}
         >
           {(() => {
@@ -495,7 +495,7 @@ export function HeroSection() {
 
         {hero?.subtitle && (
           <p
-            className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-bold leading-snug tracking-tight text-[var(--brand-secondary)] sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
+            className="home-enter-up mb-6 max-w-2xl text-center text-3xl font-bold leading-snug tracking-tight text-[var(--brand-secondary)] sm:mb-8 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
             style={{ fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
           >
             {hero.subtitle}
@@ -503,7 +503,7 @@ export function HeroSection() {
         )}
 
         {/* ── Profile circle wrapper: 340×340 ── */}
-          <div className="home-enter-pop-soft relative mx-auto -mt-4 h-[340px] w-[340px] sm:-mt-6" style={{ animationDelay: "0.25s" }}>
+          <div className="home-enter-pop-soft relative mx-auto mt-6 h-[340px] w-[340px] sm:mt-8" style={{ animationDelay: "0.25s" }}>
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
             {heroImage ? (
