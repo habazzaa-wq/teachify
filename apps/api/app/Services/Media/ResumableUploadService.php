@@ -421,6 +421,7 @@ class ResumableUploadService
 
         $maxRetries = 3;
         $lastException = null;
+        $lastBody = null;
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
@@ -435,6 +436,7 @@ class ResumableUploadService
                 ]);
 
                 if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+                    $lastBody = (string) $response->getBody();
                     throw new RuntimeException("Bunny rejected the upload (HTTP {$response->getStatusCode()}).");
                 }
 
@@ -450,7 +452,18 @@ class ResumableUploadService
         }
 
         if ($lastException !== null) {
-            throw new RuntimeException("Failed to upload to Bunny storage after {$maxRetries} attempts: {$lastException->getMessage()}");
+            // Keep the assembled file + chunk artifacts so the caller can retry
+            // finalize. Log the real Bunny response so the failure is diagnosable
+            // instead of surfacing as an opaque "Server Error".
+            Log::error('media: resumable finalize Bunny push failed', [
+                'session_id' => $session->id,
+                'provider_service' => $session->provider_service,
+                'bunny_response' => $lastBody,
+                'error' => $lastException->getMessage(),
+            ]);
+            throw new RuntimeException(
+                "Failed to upload to Bunny after {$maxRetries} attempts: {$lastException->getMessage()}",
+            );
         }
 
         $asset = $session->asset;
@@ -460,14 +473,35 @@ class ResumableUploadService
                 $cdnUrl = $provider->createSignedReadUrl($asset)['url'] ?? null;
             }
 
-            $asset->forceFill([
+            $update = [
                 'status' => 'ready',
                 'processing_status' => 'ready',
                 'processing_progress' => 100,
                 'size_bytes' => $session->size,
                 'checksum' => $session->final_file_hash,
                 'cdn_url' => $cdnUrl ?? $asset->cdn_url,
-            ])->save();
+            ];
+
+            // For Bunny Stream the upload is only the first step: the video must
+            // still be transcoded and is marked ready by the Bunny webhook. Leaving
+            // it as "ready" here would make the UI show a playable asset before it
+            // actually is. Mirror the BunnyStreamService lifecycle instead.
+            if ($session->provider_service === 'stream') {
+                $update['status'] = 'uploading';
+                $update['processing_status'] = 'processing';
+                $update['processing_progress'] = 0;
+                $update['cdn_url'] = $asset->cdn_url;
+            }
+
+            $asset->forceFill($update)->save();
+
+            if ($session->provider_service === 'stream') {
+                $libraryId = $intent['library_id'] ?? null;
+                if ($libraryId && empty($asset->bunny_library_id)) {
+                    $asset->forceFill(['bunny_library_id' => $libraryId])->save();
+                }
+            }
+
             $asset->refresh();
         }
 
