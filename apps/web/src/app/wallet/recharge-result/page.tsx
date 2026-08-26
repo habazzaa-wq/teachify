@@ -143,7 +143,7 @@ export default function WalletRechargeResultPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.div
             key={status}
             initial={{ opacity: 0, y: 16, scale: 0.97 }}

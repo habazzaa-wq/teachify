@@ -536,7 +536,7 @@ const InspectorPanel = memo(function InspectorPanel(props: InspectorPanelProps) 
         <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{heading}</h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={key}
             initial={{ opacity: 0, x: 8 }}

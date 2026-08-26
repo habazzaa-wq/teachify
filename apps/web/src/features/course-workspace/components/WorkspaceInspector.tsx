@@ -388,7 +388,7 @@ function WorkspaceInspector({ course, moduleTree }: WorkspaceInspectorProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {selectedType === "course" && course && (
             <motion.div
               key="course-props"

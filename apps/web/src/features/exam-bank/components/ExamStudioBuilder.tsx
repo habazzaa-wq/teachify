@@ -163,7 +163,7 @@ export function ExamStudioBuilder({
 
   return (
     <div className="h-full overflow-y-auto studio-scrollbar bg-studio-bg">
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {view === "question" && selectedQuestionId ? (
           <motion.div
             key="question-view"

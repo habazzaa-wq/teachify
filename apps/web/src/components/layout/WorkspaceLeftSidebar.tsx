@@ -113,7 +113,7 @@ export function WorkspaceLeftSidebar() {
   }, [leftSidebarOpen, setLeftSidebarCollapsed]);
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="popLayout">
       <motion.aside
         initial={false}
         animate={{

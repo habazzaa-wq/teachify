@@ -360,7 +360,7 @@ function WorkspaceEditor({
   return (
     <div className="h-full overflow-y-auto scrollbar-thin">
       <div className="p-6">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {(!selectedType || selectedType === "course") && (
             <motion.div
               key="overview"

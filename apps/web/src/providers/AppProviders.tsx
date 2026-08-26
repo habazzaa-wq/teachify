@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "./ThemeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
@@ -53,22 +54,27 @@ export function AppProviders({
   tenantContext?: TenantByDomainResponse | null;
 }) {
   return (
-    <ThemeProvider>
-      <QueryProvider>
-        <TenantBootstrapProvider 
-          serverHostname={serverHostname}
-          tenantContext={tenantContext}
-        >
-          <TenantProvider>
-            <PauseAnimationsWhileScrolling />
-            <TenantFontProvider />
-            <BrandThemeProvider />
-            {children}
-            <ActiveExamProvider />
-            <Toaster />
-          </TenantProvider>
-        </TenantBootstrapProvider>
-      </QueryProvider>
-    </ThemeProvider>
+    <MotionConfig
+      reducedMotion="user"
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <ThemeProvider>
+        <QueryProvider>
+          <TenantBootstrapProvider 
+            serverHostname={serverHostname}
+            tenantContext={tenantContext}
+          >
+            <TenantProvider>
+              <PauseAnimationsWhileScrolling />
+              <TenantFontProvider />
+              <BrandThemeProvider />
+              {children}
+              <ActiveExamProvider />
+              <Toaster />
+            </TenantProvider>
+          </TenantBootstrapProvider>
+        </QueryProvider>
+      </ThemeProvider>
+    </MotionConfig>
   );
 }
