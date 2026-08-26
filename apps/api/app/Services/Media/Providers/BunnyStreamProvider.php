@@ -23,9 +23,16 @@ class BunnyStreamProvider implements MediaProvider
         $videoId = $asset?->external_id ?: (string) Str::uuid();
         $libraryId = (string) $config['library_id'];
         $apiRegion = trim((string) ($config['api_region'] ?? 'video'), '/');
-        $baseUrl = str_starts_with($apiRegion, 'http')
-            ? rtrim($apiRegion, '/')
-            : "https://{$apiRegion}.bunnycdn.com";
+        if (str_starts_with($apiRegion, 'http')) {
+            $baseUrl = rtrim($apiRegion, '/');
+        } elseif (str_contains($apiRegion, '.')) {
+            // api_region is already a full host (e.g. video.bunnycdn.com)
+            // as produced by PlatformBunnySetting::toProviderConfig('stream').
+            $baseUrl = 'https://'.ltrim($apiRegion, '/');
+        } else {
+            // bare region code (e.g. de, uk) — map to a Bunny Stream host.
+            $baseUrl = 'https://'.($this->streamHostForRegion($apiRegion));
+        }
 
         return [
             'provider' => 'bunny',
@@ -153,6 +160,17 @@ class BunnyStreamProvider implements MediaProvider
             'duration_seconds' => $status['duration'] ?? ($asset->metadata['duration_seconds'] ?? null),
             'available_resolutions' => $status['resolutions'] ?? ($asset->metadata['available_resolutions'] ?? []),
         ];
+    }
+
+    private function streamHostForRegion(string $region): string
+    {
+        return match (strtolower($region)) {
+            'uk', 'gb' => 'uk.bunnycdn.com',
+            'sg' => 'sg.bunnycdn.com',
+            'la' => 'la.bunnycdn.com',
+            'ny' => 'ny.bunnycdn.com',
+            default => 'video.bunnycdn.com',
+        };
     }
 
     /**

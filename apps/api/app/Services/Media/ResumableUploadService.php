@@ -362,19 +362,43 @@ class ResumableUploadService
             fclose($out);
         }
 
-        try {
-            $asset = $this->pushToBunny($session, $assembledAbs);
-        } catch (\Throwable $e) {
-            // Keep the assembled file and chunk artifacts so the caller can
-            // retry finalize. purgeTemporaryArtifacts runs only on success.
-            throw $e;
+        if ($session->provider_service === 'stream') {
+            // Reserve the Bunny Stream video object (deterministic guid) and hand
+            // the (potentially long) byte upload off to a queue worker. Doing
+            // the upload inside this HTTP request would exceed nginx/fastcgi
+            // timeouts on larger videos and abort before the asset is updated.
+            $this->ensureStreamVideoExists($session);
+
+            $asset = $session->asset;
+            if ($asset) {
+                $asset->forceFill([
+                    'status' => 'uploading',
+                    'processing_status' => 'processing',
+                    'processing_progress' => 0,
+                    'cdn_url' => $asset->cdn_url,
+                ])->save();
+                $asset->refresh();
+            }
+
+            \App\Services\Media\Jobs\PushResumableToBunnyJob::dispatch($session->id, $session->tenant_id);
+        } else {
+            try {
+                $asset = $this->pushToBunny($session, $assembledAbs);
+            } catch (\Throwable $e) {
+                // Keep the assembled file and chunk artifacts so the caller can
+                // retry finalize. purgeTemporaryArtifacts runs only on success.
+                throw $e;
+            }
+
+            $this->purgeTemporaryArtifacts($session, $assembledAbs);
         }
 
-        $this->purgeTemporaryArtifacts($session, $assembledAbs);
-
+        // Mark the upload session finalized. For stream the asset bytes are
+        // still being pushed by the background job, which marks the session
+        // completed once they reach Bunny.
         $session->forceFill([
             'status' => 'completed',
-            'completed' => true,
+            'completed' => $session->provider_service !== 'stream',
             'final_file_hash' => $fileHash ? strtolower((string) $fileHash) : $combined,
             'expires_at' => null,
         ])->save();
@@ -397,7 +421,7 @@ class ResumableUploadService
      * Push the assembled file to Bunny using the provider's own intent (URL +
      * AccessKey), streaming the body so large files never hit memory.
      */
-    protected function pushToBunny(MediaUploadSession $session, string $assembledAbs): ?MediaAsset
+    public function pushToBunny(MediaUploadSession $session, string $assembledAbs): ?MediaAsset
     {
         $provider = $this->manager->providerFor($session->provider, $session->provider_service);
 
@@ -777,6 +801,16 @@ class ResumableUploadService
     private function assembledPath(MediaUploadSession $session): string
     {
         return Storage::disk('uploads')->path("{$session->tenant_id}/{$session->id}/assembled");
+    }
+
+    /**
+     * Public accessor for the assembled file path. The queue worker (which runs
+     * as a different user) reads this file to push it to Bunny; it must not
+     * re-assemble because it lacks write permission on the session directory.
+     */
+    public function getAssembledPath(MediaUploadSession $session): string
+    {
+        return $this->assembledPath($session);
     }
 
     private function parseChunkIndex(?string $value): int
