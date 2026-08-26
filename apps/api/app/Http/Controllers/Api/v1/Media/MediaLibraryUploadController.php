@@ -183,7 +183,7 @@ class MediaLibraryUploadController extends Controller
             }
 
             return response()->json([
-                'message' => 'Finalize failed: '.$e->getMessage(),
+                'message' => 'Finalize failed: '.get_class($e).': '.$e->getMessage(),
             ], 500);
         }
 
