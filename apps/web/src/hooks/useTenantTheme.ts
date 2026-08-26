@@ -14,19 +14,31 @@ export function useTenantTheme({
   primaryColor,
   secondaryColor,
   isDark,
+  fallbackPrimary,
+  fallbackSecondary,
   styleId = "tenant-theme-vars",
   selector = ".tenant-theme",
 }: {
   primaryColor?: string | null;
   secondaryColor?: string | null;
   isDark: boolean;
+  /** Platform brand colors used when the teacher appearance is not customized,
+   *  so the dashboard/login still reflects the academy's real brand instead of
+   *  the unrelated default studio palette. */
+  fallbackPrimary?: string | null;
+  fallbackSecondary?: string | null;
   styleId?: string;
   selector?: string;
 }) {
   useEffect(() => {
     let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
 
-    if (!primaryColor || !secondaryColor) {
+    // Prefer the teacher appearance colors; fall back to the platform brand so
+    // the control panel never shows the wrong default studio palette.
+    const primary = primaryColor || fallbackPrimary || null;
+    const secondary = secondaryColor || fallbackSecondary || null;
+
+    if (!primary || !secondary) {
       if (styleTag) styleTag.remove();
       return;
     }
@@ -37,10 +49,10 @@ export function useTenantTheme({
       document.head.appendChild(styleTag);
     }
 
-    const colors = generateThemeColors(primaryColor, secondaryColor, isDark);
+    const colors = generateThemeColors(primary, secondary, isDark);
     const vars = Object.entries(colors)
       .map(([k, v]) => `${k}: ${v};`)
       .join("");
     styleTag.textContent = `${selector} { ${vars} }`;
-  }, [primaryColor, secondaryColor, isDark, styleId, selector]);
+  }, [primaryColor, secondaryColor, fallbackPrimary, fallbackSecondary, isDark, styleId, selector]);
 }

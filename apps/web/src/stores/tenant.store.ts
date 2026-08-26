@@ -57,6 +57,8 @@ interface TenantState {
     abilities: Ability;
     navigation: NavigationItem[];
   }) => void;
+  /** Updates only the platform-level brand colors (the public-site theme). */
+  setPlatformBranding: (branding: Partial<TenantBranding>) => void;
   setTenantBootstrap: (data: {
     id: number;
     name: string;
@@ -197,6 +199,26 @@ export const useTenantStore = create<TenantState>()(
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
+
+    setPlatformBranding: (branding) =>
+      set((state) => ({
+        platformBranding: {
+          ...(state.platformBranding ?? {
+            logo: null,
+            favicon: null,
+            primaryColor: null,
+            secondaryColor: null,
+            accentColor: null,
+            font: null,
+            darkLogo: null,
+            lightLogo: null,
+            logoType: null,
+            logoIcon: null,
+            logoImage: null,
+          }),
+          ...branding,
+        } as TenantBranding,
+      })),
 
     setBootstrapError: (error) => set({ bootstrapError: error }),
 

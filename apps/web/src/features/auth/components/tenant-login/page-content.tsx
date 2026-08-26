@@ -18,12 +18,29 @@ const containerVariants = {
 
 const PageContent = memo(function PageContent() {
   const branding = useTenantStore((state) => state.branding);
+  const activeTenant = useTenantStore((state) => state.activeTenant);
+  const platformBranding = useTenantStore((state) => state.platformBranding);
   const theme = useUiStore((state) => state.theme);
 
+  // The teacher appearance (settings `branding` group) is the single source of
+  // truth for the tenant login page. Read it from the authenticated tenant
+  // (snake_case) or the public bootstrap (camelCase), and fall back to the
+  // platform brand so the page never shows the wrong default palette.
+  const primaryColor =
+    activeTenant?.branding?.primary_color ??
+    branding?.primaryColor ??
+    null;
+  const secondaryColor =
+    activeTenant?.branding?.secondary_color ??
+    branding?.secondaryColor ??
+    null;
+
   useTenantTheme({
-    primaryColor: branding?.primaryColor ?? null,
-    secondaryColor: branding?.secondaryColor ?? null,
+    primaryColor,
+    secondaryColor,
     isDark: theme === "dark",
+    fallbackPrimary: platformBranding?.primaryColor ?? null,
+    fallbackSecondary: platformBranding?.secondaryColor ?? null,
   });
 
   return (

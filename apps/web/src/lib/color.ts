@@ -133,8 +133,9 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
   // Secondary = لون داعم (sidebar/active/hover/secondary button).
   const sSat = clamp(s.s, 32, 82);
 
-  // لون النص المتناقض داخل عناصر اللون الأساسي.
-  const pContrast = isDark ? "0 0% 100%" : p.l > 62 ? "0 0% 14%" : "0 0% 100%";
+  // لون النص المتناقض داخل عناصر اللون الأساسي يُحسب لاحقاً حسب إضاءة
+  // اللون الناتج فعلياً (accentL) حتى يبقى مقروءاً في الوضعين.
+  let pContrast: string;
 
   if (isDark) {
     // الأساسي في الوضع الداكن: أكثر إضاءة ليكون حيويّاً لكن بتباين أبيض.
@@ -144,6 +145,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     // الثانوي في الوضع الداكن.
     const secL = clamp(s.l < 50 ? s.l + 14 : s.l, 42, 64);
     const secSat = clamp(sSat, 30, 78);
+    // نص متناقض مقروء: أبيض على الألوان الغامقة، داكن على الألوان الفاتحة.
+    pContrast = accentL > 62 ? "0 0% 12%" : "0 0% 100%";
 
     return {
       // — المحتوى: رمادي داكن مائل لهوى الثانوي (متناغم) —
@@ -235,6 +238,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
   // الثانوي: فاتح وجذاب.
   const secL = clamp(s.l < 55 ? s.l + 16 : s.l, 55, 74);
   const secSat = clamp(sSat, 35, 80);
+  // نص متناقض مقروء: داكن على الألوان الفاتحة، أبيض على الغامقة.
+  pContrast = accentL > 60 ? "0 0% 12%" : "0 0% 100%";
 
   return {
     // — المحتوى: رمادي فاتح مائل لهوى الثانوي (متناغم ونظيف) —

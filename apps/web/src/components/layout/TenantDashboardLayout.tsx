@@ -6,6 +6,7 @@ import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useTenantTheme } from "@/hooks/useTenantTheme";
+import { useTenantStore } from "@/stores/tenant.store";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
 import { WorkspaceRightInspector } from "./WorkspaceRightInspector";
@@ -22,6 +23,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
 
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const platformBranding = useTenantStore((s) => s.platformBranding);
 
   const branding = tenant?.branding;
   const primaryColor = branding?.primary_color ?? null;
@@ -29,8 +31,15 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
 
   // Apply the tenant's control-panel primary/secondary colors (sourced from the
   // server-synced tenant so they're identical on every device) across the whole
-  // control panel, with dark-mode support.
-  useTenantTheme({ primaryColor, secondaryColor, isDark: theme === "dark" });
+  // control panel, with dark-mode support. Falls back to the platform brand so
+  // the panel never shows the unrelated default studio palette.
+  useTenantTheme({
+    primaryColor,
+    secondaryColor,
+    isDark: theme === "dark",
+    fallbackPrimary: platformBranding?.primaryColor ?? null,
+    fallbackSecondary: platformBranding?.secondaryColor ?? null,
+  });
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);

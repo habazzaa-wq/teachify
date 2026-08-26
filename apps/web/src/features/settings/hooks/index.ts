@@ -35,6 +35,22 @@ export function useUpdateSiteSettings() {
   });
 }
 
+export function usePlatformBranding() {
+  return useQuery({
+    queryKey: [SETTINGS_QUERY_KEY, "platform"],
+    queryFn: () => settingsService.getPlatform(),
+  });
+}
+
+export function useUpdatePlatformBranding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (values: Partial<SiteSettings>) =>
+      settingsService.updatePlatform(values),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] }),
+  });
+}
+
 export function useUpdateSettingsGroup() {
   const qc = useQueryClient();
   return useMutation({
