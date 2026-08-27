@@ -91,20 +91,26 @@ class SyncStreamVideoStatusCommand extends Command
                     continue;
                 }
 
-                // Abandoned uploads (e.g. from before the upload URL was fixed)
-                // have a Bunny video that never received bytes, so it sits in
-                // "created"/"uploaded" forever. After a day with no encode
-                // progress, stop the perpetual loader by marking it failed.
-                $encodingStatus = (string) ($status['encoding_status'] ?? '');
-                $noEncodeProgress = in_array(strtolower($encodingStatus), ['0', '1', 'created', 'uploaded'], true)
+                // Abandoned uploads (e.g. from before the upload URL was fixed,
+                // or a frontend upload that never landed bytes) have a Bunny
+                // video that sits in "created"/"uploaded" forever. A video that
+                // was created but never received any bytes for >2h is dead, and
+                // any upload with no encoding progress for >24h is also dead.
+                // Stop the perpetual loader by marking these failed.
+                $encodingStatus = strtolower((string) ($status['encoding_status'] ?? ''));
+                $noContent = in_array($encodingStatus, ['0', 'created'], true);
+                $noEncodeProgress = $noContent
+                    || in_array($encodingStatus, ['1', 'uploaded'], true)
                     || in_array($asset->processing_status, ['pending', 'uploading'], true);
-                if ($asset->created_at->lt(now()->subHours(24)) && $noEncodeProgress) {
+
+                if (($noContent && $asset->created_at->lt(now()->subHours(2)))
+                    || ($asset->created_at->lt(now()->subHours(24)) && $noEncodeProgress)) {
                     $asset->forceFill([
                         'status' => 'failed',
                         'processing_status' => 'failed',
                     ])->save();
                     $failed++;
-                    $this->warn("Old upload with no encode progress (>24h), marked failed: asset {$asset->id}");
+                    $this->warn("Abandoned upload (no encode progress), marked failed: asset {$asset->id} (bunny status={$encodingStatus})");
 
                     continue;
                 }

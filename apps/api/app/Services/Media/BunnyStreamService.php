@@ -175,8 +175,11 @@ class BunnyStreamService
             'encoding_status' => $encodingStatus ?? ($asset->metadata['encoding_status'] ?? 'Created'),
         ]));
 
+        $mappedStatus = $this->mapStatus((string) $metadata['encoding_status']);
+
         $asset->forceFill([
-            'status' => $this->mapStatus((string) $metadata['encoding_status']),
+            'status' => $mappedStatus,
+            'processing_status' => $mappedStatus,
             'metadata' => $metadata,
         ])->save();
 

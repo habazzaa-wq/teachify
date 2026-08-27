@@ -105,7 +105,9 @@ class BunnyCacheService
     public function invalidateVideo(string $videoId): void
     {
         $this->forget("video:{$videoId}");
+        $this->forget("video:status:{$videoId}");
         $this->invalidateByPrefix("video:{$videoId}:");
+        $this->invalidateByPrefix("video:status:{$videoId}:");
         $this->invalidateByPrefix('usage:');
     }
 
