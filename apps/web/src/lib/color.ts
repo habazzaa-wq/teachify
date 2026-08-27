@@ -147,6 +147,9 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     const secSat = clamp(sSat, 30, 78);
     // نص متناقض مقروء: أبيض على الألوان الغامقة، داكن على الألوان الفاتحة.
     pContrast = accentL > 62 ? "0 0% 12%" : "0 0% 100%";
+    // تفاعلية احترافية: hover/active يضيئان الأساسي تدريجياً.
+    const accentHoverL = clamp(accentL + 6, 60, 74);
+    const accentActiveL = clamp(accentL + 11, 64, 80);
 
     return {
       // — المحتوى: رمادي داكن مائل لهوى الثانوي (متناغم) —
@@ -161,6 +164,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
       // — الأساسي (أزرار/عناصر نشطة/روابط/تركيز) —
       "--tenant-accent": `${p.h} ${pSat}% ${accentL}%`,
       "--tenant-accent-fg": pContrast,
+      "--tenant-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
+      "--tenant-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
       "--tenant-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 22%`,
       "--tenant-ring": `${p.h} ${pSat}% ${accentL}%`,
       // — الثانوي (sidebar/active/hover) —
@@ -187,6 +192,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
       "--studio-fg-subtle": "215 10% 45%",
       "--studio-accent": `${p.h} ${pSat}% ${accentL}%`,
       "--studio-accent-fg": pContrast,
+      "--studio-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
+      "--studio-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
       "--studio-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 22%`,
       "--studio-accent-border": `${p.h} ${clamp(pSat - 5, 35, 75)}% 38%`,
       "--studio-ring": `${p.h} ${pSat}% ${accentL}%`,
@@ -233,13 +240,16 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
   // — Light mode —
   // الأساسي: نطاق متوسط مع نص أبيض/داكن قابل للقراءة.
   const accentL = clamp(p.l, 42, 58);
-  // الشريط العلوي: نفس الأساسي صافياً.
-  const navL = clamp(p.l, 42, 58);
+  // الشريط العلوي: نفس الأساسي صافياً مع تلميح أعمق قليلاً لإحساس احترافي.
+  const navL = clamp(p.l - 3, 38, 55);
   // الثانوي: فاتح وجذاب.
   const secL = clamp(s.l < 55 ? s.l + 16 : s.l, 55, 74);
   const secSat = clamp(sSat, 35, 80);
   // نص متناقض مقروء: داكن على الألوان الفاتحة، أبيض على الغامقة.
   pContrast = accentL > 60 ? "0 0% 12%" : "0 0% 100%";
+  // تفاعلية احترافية: hover/active يعمّقان الأساسي تدريجياً.
+  const accentHoverL = clamp(accentL - 6, 36, 52);
+  const accentActiveL = clamp(accentL - 11, 30, 46);
 
   return {
     // — المحتوى: رمادي فاتح مائل لهوى الثانوي (متناغم ونظيف) —
@@ -254,6 +264,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     // — الأساسي (أزرار/عناصر نشطة/روابط/تركيز) —
     "--tenant-accent": `${p.h} ${pSat}% ${accentL}%`,
     "--tenant-accent-fg": pContrast,
+    "--tenant-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
+    "--tenant-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
     "--tenant-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 94%`,
     "--tenant-ring": `${p.h} ${pSat}% ${accentL}%`,
     // — الثانوي (sidebar/active/hover) —
@@ -279,6 +291,8 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     "--studio-fg-subtle": "220 10% 60%",
     "--studio-accent": `${p.h} ${pSat}% ${accentL}%`,
     "--studio-accent-fg": pContrast,
+    "--studio-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
+    "--studio-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
     "--studio-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 94%`,
     "--studio-accent-border": `${p.h} ${clamp(pSat - 5, 35, 75)}% 82%`,
     "--studio-ring": `${p.h} ${pSat}% ${accentL}%`,

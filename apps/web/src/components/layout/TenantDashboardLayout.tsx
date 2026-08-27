@@ -26,8 +26,9 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const platformBranding = useTenantStore((s) => s.platformBranding);
 
   const branding = tenant?.branding;
-  const primaryColor = branding?.primary_color ?? null;
-  const secondaryColor = branding?.secondary_color ?? null;
+  const brandingRecord = branding as Record<string, string | null> | undefined;
+  const primaryColor = branding?.primary_color ?? brandingRecord?.primaryColor ?? null;
+  const secondaryColor = branding?.secondary_color ?? brandingRecord?.secondaryColor ?? null;
 
   // Apply the tenant's control-panel primary/secondary colors (sourced from the
   // server-synced tenant so they're identical on every device) across the whole

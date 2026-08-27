@@ -20,6 +20,29 @@ export type BootstrapStatus =
   | "not-found"
   | "error";
 
+/**
+ * The teacher appearance colors arrive in two different key shapes depending on
+ * the bootstrap source: `auth/me` returns snake_case (`primary_color`) while the
+ * public `by-domain` endpoint returns camelCase (`primaryColor`). Consumers
+ * (the dashboard, the tenant login page, the appearance editor) read a mix of
+ * both shapes. Normalize any branding payload into a single shape that always
+ * carries *both* keys so the control-panel theme never drops to defaults on a
+ * refresh just because one bootstrap source happened to use the other casing.
+ */
+function normalizeBranding(branding: unknown): Record<string, unknown> | null {
+  if (!branding || typeof branding !== "object") return (branding as null) ?? null;
+  const b = branding as Record<string, unknown>;
+  const primary = (b.primary_color ?? b.primaryColor ?? null) as string | null;
+  const secondary = (b.secondary_color ?? b.secondaryColor ?? null) as string | null;
+  return {
+    ...b,
+    primary_color: primary,
+    primaryColor: primary,
+    secondary_color: secondary,
+    secondaryColor: secondary,
+  };
+}
+
 interface TenantState {
   activeTenant: ActiveTenant | null;
   membership: Membership | null;
@@ -120,14 +143,14 @@ export const useTenantStore = create<TenantState>()(
           ? {
               ...state.activeTenant,
               name,
-              branding: mergedBranding,
+              branding: normalizeBranding(mergedBranding) as unknown as AuthBranding,
             }
           : null;
 
         return {
           activeTenant,
           branding: state.branding
-            ? {
+            ? (normalizeBranding({
                 ...state.branding,
                 favicon,
                 ...(logo_type !== undefined && { logoType: logo_type }),
@@ -136,14 +159,16 @@ export const useTenantStore = create<TenantState>()(
                 ...(font !== undefined && { font }),
                 ...(primary_color !== undefined && { primaryColor: primary_color }),
                 ...(secondary_color !== undefined && { secondaryColor: secondary_color }),
-              }
+              }) as unknown as TenantBranding)
             : state.branding,
         };
       }),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
       set({
-        activeTenant: tenant,
+        activeTenant: tenant
+          ? { ...tenant, branding: normalizeBranding(tenant.branding) as unknown as AuthBranding }
+          : tenant,
         membership,
         roles,
         permissions,
@@ -187,7 +212,7 @@ export const useTenantStore = create<TenantState>()(
             slug: data.slug,
             status: data.status,
             domain: data.domain,
-            branding: {
+            branding: normalizeBranding({
               logo: incoming.logo ?? prev?.logo ?? null,
               favicon: incoming.favicon ?? prev?.favicon ?? null,
               primary_color: primaryColor,
@@ -200,15 +225,15 @@ export const useTenantStore = create<TenantState>()(
               logo_icon: incoming.logoIcon ?? prev?.logo_icon ?? null,
               logo_image: incoming.logoImage ?? prev?.logo_image ?? null,
               domain: data.domain,
-            },
+            }) as unknown as AuthBranding,
           },
           domain: data.domain,
           subdomain: data.subdomain ?? null,
-          branding: {
+          branding: normalizeBranding({
             ...incoming,
             primaryColor,
             secondaryColor,
-          },
+          }) as unknown as TenantBranding,
           platformBranding: data.platformBranding ?? state.platformBranding,
           bootstrapStatus: "resolved",
           bootstrapError: null,
