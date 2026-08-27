@@ -91,6 +91,24 @@ class SyncStreamVideoStatusCommand extends Command
                     continue;
                 }
 
+                // Abandoned uploads (e.g. from before the upload URL was fixed)
+                // have a Bunny video that never received bytes, so it sits in
+                // "created"/"uploaded" forever. After a day with no encode
+                // progress, stop the perpetual loader by marking it failed.
+                $encodingStatus = (string) ($status['encoding_status'] ?? '');
+                $noEncodeProgress = in_array(strtolower($encodingStatus), ['0', '1', 'created', 'uploaded'], true)
+                    || in_array($asset->processing_status, ['pending', 'uploading'], true);
+                if ($asset->created_at->lt(now()->subHours(24)) && $noEncodeProgress) {
+                    $asset->forceFill([
+                        'status' => 'failed',
+                        'processing_status' => 'failed',
+                    ])->save();
+                    $failed++;
+                    $this->warn("Old upload with no encode progress (>24h), marked failed: asset {$asset->id}");
+
+                    continue;
+                }
+
                 try {
                     $media->syncAssetMetadata($asset, [
                         'encoding_status' => $status['encoding_status'] ?? null,
