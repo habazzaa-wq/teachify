@@ -33,7 +33,7 @@ class SyncStreamVideoStatusCommand extends Command
             ->where('provider', 'bunny')
             ->where('provider_service', 'stream')
             ->where('type', 'video')
-            ->whereIn('processing_status', ['uploading', 'processing'])
+            ->whereIn('processing_status', ['pending', 'uploading', 'processing'])
             ->where('updated_at', '>=', $since);
 
         $total = $query->count();
