@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Save, RotateCcw } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
@@ -78,6 +78,16 @@ function AppearancePage() {
   const [secondary, setSecondary] = useState(storedSecondary);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Re-sync the local pickers with the server-synced branding. On a fresh page
+  // load the tenant bootstrap completes asynchronously, so the initial state may
+  // be the default; once the saved colors arrive we must reflect them instead of
+  // leaving the inputs stuck on the default. Saving also updates the store, and
+  // this only fires when the stored value actually changes (not while typing).
+  useEffect(() => {
+    setPrimary(storedPrimary);
+    setSecondary(storedSecondary);
+  }, [storedPrimary, storedSecondary]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);

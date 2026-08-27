@@ -299,6 +299,11 @@ class TenantAuthController extends Controller
                 'slug' => $tenant->slug,
                 'status' => $tenant->status,
                 'domain' => $tenant->getDefaultDomain(),
+                // Teacher appearance (control-panel colors) — read from the
+                // `branding` settings group so the saved colors survive a reload.
+                'branding' => $this->getBranding($tenant),
+                // Platform brand colors (public-site theme).
+                'platform_branding' => $this->getPlatformBranding($tenant),
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -335,6 +340,61 @@ class TenantAuthController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    /**
+     * Teacher appearance settings (control-panel colors). Sourced from the
+     * `branding` settings group so the values saved through the appearance page
+     * (PUT /settings/site) are returned here on every bootstrap/reload.
+     *
+     * @return array<string, mixed>
+     */
+    private function getBranding(Tenant $tenant): array
+    {
+        $setting = $tenant->settings()->where('group', 'branding')->first();
+        $values = $setting?->values ?? [];
+        $domain = $tenant->getPrimaryDomain();
+
+        return [
+            'logo' => $values['logo'] ?? null,
+            'favicon' => $values['favicon'] ?? null,
+            'primary_color' => $values['primary_color'] ?? null,
+            'secondary_color' => $values['secondary_color'] ?? null,
+            'accent_color' => $values['accent_color'] ?? null,
+            'font' => $values['font'] ?? null,
+            'dark_logo' => $values['dark_logo'] ?? null,
+            'light_logo' => $values['light_logo'] ?? null,
+            'logo_type' => $values['logo_type'] ?? null,
+            'logo_icon' => $values['logo_icon'] ?? null,
+            'logo_image' => $values['logo_image'] ?? null,
+            'domain' => $domain?->domain ?? $tenant->slug . '.' . config('app.base_domain', 'localhost'),
+        ];
+    }
+
+    /**
+     * Platform-level brand colors (the "platform colors" field). Distinct from
+     * `getBranding` (tenant appearance settings) which only apply to the teacher
+     * dashboard and login.
+     *
+     * @return array<string, mixed>
+     */
+    private function getPlatformBranding(Tenant $tenant): array
+    {
+        $values = $tenant->branding ?? [];
+
+        return [
+            'logo' => $values['logo'] ?? null,
+            'favicon' => $values['favicon'] ?? null,
+            'primaryColor' => $values['primary_color'] ?? $values['primaryColor'] ?? '#6366f1',
+            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? '#8b5cf6',
+            'accentColor' => $values['accent_color'] ?? $values['accentColor'] ?? '#f59e0b',
+            'font' => $values['fonts'] ?? $values['font'] ?? null,
+            'darkLogo' => $values['dark_logo'] ?? null,
+            'lightLogo' => $values['light_logo'] ?? null,
+            'logoType' => $values['logo_type'] ?? null,
+            'logoIcon' => $values['logo_icon'] ?? null,
+            'logoImage' => $values['logo_image'] ?? null,
+        ];
     }
 
     private function getNavigation($roles, $permissions): array
