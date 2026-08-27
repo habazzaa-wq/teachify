@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\MediaAsset;
+use App\Services\Bunny\BunnyCacheService;
 use App\Services\Bunny\BunnyStreamService;
 use App\Services\Media\BunnyStreamService as MediaBunnyStreamService;
 use Illuminate\Console\Command;
@@ -71,6 +72,9 @@ class SyncStreamVideoStatusCommand extends Command
                 }
 
                 try {
+                    // Bust the 10-minute Bunny status cache so we read the
+                    // live encoding state rather than a stale "processing".
+                    app(BunnyCacheService::class)->invalidateVideo($asset->external_id);
                     $status = $bunny->getVideoStatus($asset->external_id);
                 } catch (Throwable $e) {
                     // Bunny video no longer exists — abandoned/failed upload.
