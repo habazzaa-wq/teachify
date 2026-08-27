@@ -14,8 +14,8 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
 
 const PRESET_COLORS = [
-  { primary: "#4F46E5", secondary: "#F1F5F9", label: "كحلي" },
-  { primary: "#059669", secondary: "#F0FDF4", label: "أخضر" },
+  { primary: "#4F46E5", secondary: "#EEF2FF", label: "كحلي" },
+  { primary: "#059669", secondary: "#ECFDF5", label: "أخضر" },
   { primary: "#DC2626", secondary: "#FEF2F2", label: "أحمر" },
   { primary: "#D97706", secondary: "#FFFBEB", label: "ذهبي" },
   { primary: "#7C3AED", secondary: "#F5F3FF", label: "بنفسجي" },
@@ -69,8 +69,10 @@ function AppearancePage() {
   const { tenant } = useActiveTenant();
   const setTenantSite = useTenantStore((s) => s.setTenantSite);
 
-  const storedPrimary = tenant?.branding?.primary_color ?? "#4F46E5";
-  const storedSecondary = tenant?.branding?.secondary_color ?? "#F1F5F9";
+  const brandingRecord = tenant?.branding as Record<string, string | null> | undefined;
+  const storedPrimary = tenant?.branding?.primary_color ?? brandingRecord?.primaryColor ?? "#4F46E5";
+  const storedSecondary =
+    tenant?.branding?.secondary_color ?? brandingRecord?.secondaryColor ?? "#F1F5F9";
 
   const [primary, setPrimary] = useState(storedPrimary);
   const [secondary, setSecondary] = useState(storedSecondary);
