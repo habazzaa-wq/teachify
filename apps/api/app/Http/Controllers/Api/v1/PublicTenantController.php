@@ -22,6 +22,16 @@ class PublicTenantController extends Controller
         $domain = $request->input('domain');
         $tenant = $this->tenants->findByDomain($domain);
 
+        // لو الدومين مالوش تينانت مسجّل (زي الدومين الرئيسي للمنصة
+        // the-mechanist.com اللي غالباً مش موجود في tenant_domains)، نعمل
+        // fallback للتينانت الأساسي للمنصة عشان الزائر اللي مش مسجّل دخوله
+        // يقدر يحمّل ألوان المنصة والـ SEO اللي المدرس بيعدّلها في الإعدادات.
+        // لو مفيش تينانت مهيّأ صراحةً وفي أكتر من تينانت مفعّل، منرجّعش حاجة
+        // (نفضل 404 زي ما هو) عشان منكسرش السلوك متعدد التينانتات.
+        if (! $tenant) {
+            $tenant = $this->resolvePlatformTenant();
+        }
+
         if (! $tenant) {
             return response()->json([
                 'message' => 'Tenant not found for the given domain.',
@@ -59,6 +69,26 @@ class PublicTenantController extends Controller
      *
      * @return array<string, mixed>|null
      */
+    /**
+     * Resolve the tenant that owns the platform branding when the requested
+     * domain has no tenant_domains record: first the explicitly configured
+     * platform tenant (PLATFORM_TENANT_ID), then — for single-tenant
+     * installations — the only active tenant.
+     */
+    private function resolvePlatformTenant(): ?\App\Models\Tenant
+    {
+        if ($tenantId = config('platform.tenant_id')) {
+            return $this->tenants->findById($tenantId);
+        }
+
+        $activeIds = \App\Models\Tenant::query()->where('status', 'active')->pluck('id');
+        if ($activeIds->count() === 1) {
+            return $this->tenants->findById($activeIds->first());
+        }
+
+        return null;
+    }
+
     private function resolveSeo($tenant): ?array
     {
         $settings = SeoSetting::withoutGlobalScopes()
