@@ -329,12 +329,24 @@ class ResumableUploadService
 
         if ($existingAsset) {
             $this->purgeTemporaryArtifacts($session);
+
+            // The duplicate detection matched an existing ready asset. We return
+            // that asset to the client, so the freshly-created asset for THIS
+            // session is an orphan. Repoint the session to the surviving asset
+            // and remove the orphan so it does not linger as a stuck "uploading"
+            // record in the user's library.
+            $orphan = $session->asset;
             $session->forceFill([
                 'status' => 'completed',
                 'completed' => true,
                 'final_file_hash' => $effectiveHash,
                 'expires_at' => null,
+                'media_asset_id' => $existingAsset->id,
             ])->save();
+
+            if ($orphan && $orphan->id !== $existingAsset->id) {
+                $orphan->forceDelete();
+            }
 
             return [
                 'session' => $session->fresh(),
