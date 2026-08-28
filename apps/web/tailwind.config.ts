@@ -135,6 +135,8 @@ const config: Config = {
         lg: "var(--radius)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "1.75rem",
+        "4xl": "2rem",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
@@ -182,6 +184,18 @@ const config: Config = {
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
+        },
+        "brand-glow-pulse": {
+          "0%, 100%": { opacity: "0.55" },
+          "50%": { opacity: "0.9" },
+        },
+        "brand-shimmer": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        "brand-float": {
+          "0%, 100%": { transform: "translateY(0) scale(1)" },
+          "50%": { transform: "translateY(-6px) scale(1.04)" },
         },
         "count-up": {
           from: { opacity: "0", transform: "translateY(8px)" },
@@ -237,6 +251,20 @@ const config: Config = {
         "expand-in": "expand-in 0.2s ease-out",
         "wiggle": "wiggle 0.3s ease-in-out",
         "marquee-rtl": "marquee-rtl 32s linear infinite",
+        "brand-glow-pulse": "brand-glow-pulse 2.4s ease-in-out infinite",
+        "brand-shimmer": "brand-shimmer 1.8s linear infinite",
+        "brand-float": "brand-float 5s ease-in-out infinite",
+      },
+      transitionTimingFunction: {
+        brand: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+      boxShadow: {
+        "soft-xs": "0 1px 2px rgb(0 0 0 / 0.04), 0 2px 8px -4px rgb(0 0 0 / 0.08)",
+        "soft-md": "0 2px 4px -1px rgb(0 0 0 / 0.05), 0 12px 28px -14px rgb(0 0 0 / 0.16)",
+        "soft-lg": "0 6px 12px -4px rgb(0 0 0 / 0.08), 0 24px 48px -22px rgb(0 0 0 / 0.22)",
+        "brand-sm": "0 6px 20px -10px color-mix(in srgb, var(--brand-primary) 45%, transparent)",
+        "brand-md": "0 14px 38px -14px color-mix(in srgb, var(--brand-primary) 55%, transparent)",
+        "brand-glow": "0 0 0 1px color-mix(in srgb, var(--brand-primary) 30%, transparent), 0 18px 50px -18px color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
       },
     },
   },

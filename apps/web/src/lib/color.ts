@@ -112,6 +112,96 @@ function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
 
+/**
+ * Full brand color *scale* derived programmatically from the two configured
+ * base hex colors (primary + secondary). Returns a flat record of CSS custom
+ * properties, e.g.:
+ *
+ *   --brand-primary-50 … --brand-primary-900
+ *   --brand-secondary-50 … --brand-secondary-900
+ *   --brand-primary / --brand-secondary        (the raw base colors)
+ *   --brand-primary-soft / --brand-secondary-soft
+ *   --brand-primary-deep / --brand-secondary-deep
+ *   --brand-neutral                                (warm white / soft charcoal)
+ *   --brand-gradient                               (ready-made 2-color gradient)
+ *
+ * Why derive instead of hardcoding: the tenant can change the two base colors
+ * from the admin dashboard, and every tint/shade below is recomputed from them
+ * so the whole design system re-skins itself with **zero hardcoded hex values**
+ * in components. For dark mode we flip the mixing direction — light tints
+ * become dark-tinted (so they read as "soft" on a dark surface) and the vivid
+ * stops brighten slightly, which keeps the brand colors from glowing like neon.
+ */
+export function generateBrandScale(
+  primaryHex: string,
+  secondaryHex: string,
+  isDark = false,
+): Record<string, string> {
+  const primaryStops = scaleStops(primaryHex, isDark);
+  const secondaryStops = scaleStops(secondaryHex, isDark);
+
+  const vars: Record<string, string> = {
+    "--brand-primary": primaryHex,
+    "--brand-secondary": secondaryHex,
+    "--brand-primary-soft": isDark
+      ? mixWithBlack(primaryHex, 0.86)
+      : mixWithWhite(primaryHex, 0.86),
+    "--brand-secondary-soft": isDark
+      ? mixWithBlack(secondaryHex, 0.86)
+      : mixWithWhite(secondaryHex, 0.86),
+    "--brand-primary-deep": isDark
+      ? mixWithWhite(primaryHex, 0.14)
+      : mixWithBlack(primaryHex, 0.3),
+    "--brand-secondary-deep": isDark
+      ? mixWithWhite(secondaryHex, 0.14)
+      : mixWithBlack(secondaryHex, 0.3),
+    "--brand-neutral": isDark ? "#0e0e12" : "#fbf7f3",
+    "--brand-gradient": `linear-gradient(135deg, ${primaryHex}, ${secondaryHex})`,
+  };
+
+  for (const k of [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) {
+    vars[`--brand-primary-${k}`] = primaryStops[k]!;
+    vars[`--brand-secondary-${k}`] = secondaryStops[k]!;
+  }
+
+  return vars;
+}
+
+/**
+ * Build a 10-step scale (50→900) from a single base hex.
+ * Light mode: 50 is almost-white, 500 is the base, 900 is almost-black.
+ * Dark mode: the direction flips so 50 reads as a *soft dark tint* (not a
+ * glowing light pill) and 500+ brighten toward the base for legible accents.
+ */
+function scaleStops(hex: string, isDark: boolean): Record<number, string> {
+  if (!isDark) {
+    return {
+      50: mixWithWhite(hex, 0.9),
+      100: mixWithWhite(hex, 0.8),
+      200: mixWithWhite(hex, 0.62),
+      300: mixWithWhite(hex, 0.42),
+      400: mixWithWhite(hex, 0.2),
+      500: hex,
+      600: mixWithBlack(hex, 0.12),
+      700: mixWithBlack(hex, 0.24),
+      800: mixWithBlack(hex, 0.37),
+      900: mixWithBlack(hex, 0.5),
+    };
+  }
+  return {
+    50: mixWithBlack(hex, 0.78),
+    100: mixWithBlack(hex, 0.66),
+    200: mixWithBlack(hex, 0.52),
+    300: mixWithBlack(hex, 0.4),
+    400: mixWithBlack(hex, 0.24),
+    500: hex,
+    600: mixWithWhite(hex, 0.1),
+    700: mixWithWhite(hex, 0.2),
+    800: mixWithWhite(hex, 0.32),
+    900: mixWithWhite(hex, 0.46),
+  };
+}
+
 export function generateThemeColors(primaryHex: string, secondaryHex: string, isDark = false) {
   const p = hexToHsl(primaryHex);
   const s = hexToHsl(secondaryHex);
