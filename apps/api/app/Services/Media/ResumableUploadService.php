@@ -12,6 +12,7 @@ use App\Services\Media\Providers\BunnyStorageProvider;
 use App\Services\Media\Providers\BunnyStreamProvider;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -468,6 +469,25 @@ class ResumableUploadService
                 break;
             } catch (GuzzleException $e) {
                 $lastException = $e;
+
+                // Bunny returns 400 "The video has already been uploaded" when the
+                // bytes were delivered on a previous attempt (e.g. a retried job or
+                // a duplicate finalize). That is not a failure: the content is
+                // present and Bunny will transcode it, so treat it as success
+                // instead of thrashing through the retry budget and failing the job.
+                if ($e instanceof RequestException && $e->getResponse()) {
+                    $body = (string) $e->getResponse()->getBody();
+                    if (stripos($body, 'already been uploaded') !== false
+                        || stripos($body, 'already uploaded') !== false) {
+                        Log::info('media: bunny reports video already uploaded; treating push as success', [
+                            'session_id' => $session->id,
+                            'attempt' => $attempt,
+                        ]);
+                        $lastException = null;
+                        break;
+                    }
+                }
+
                 if ($attempt < $maxRetries) {
                     $delay = min(30, 2 * pow(2, $attempt - 1));
                     sleep($delay);
@@ -551,20 +571,28 @@ class ResumableUploadService
         $guid = $asset->external_id ?: (string) Str::uuid();
         $title = $session->file_name ?: ($asset->title ?? 'Untitled Video');
 
-        $exists = false;
-        try {
-            // A 404 here means the video was never created (or was deleted).
-            $stream->getVideoStatus($guid);
-            $exists = true;
-        } catch (\Throwable) {
+        // Only (re)create the Bunny video when we don't already hold a guid for it.
+        // Re-checking an existing guid with getVideoStatus and then creating a NEW
+        // video on any thrown error (transient network blip, stale 404, etc.)
+        // orphans the asset onto a fresh, empty video while the real upload target
+        // is silently lost. Reusing the stored guid keeps a single, stable target
+        // for the byte upload and prevents duplicate/empty videos.
+        if (empty($asset->external_id)) {
             $exists = false;
-        }
+            try {
+                // A 404 here means the video was never created (or was deleted).
+                $stream->getVideoStatus($guid);
+                $exists = true;
+            } catch (\Throwable) {
+                $exists = false;
+            }
 
-        if (! $exists) {
-            $created = $stream->createVideo($title, [
-                'collection_id' => $asset->metadata['collection'] ?? null,
-            ]);
-            $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
+            if (! $exists) {
+                $created = $stream->createVideo($title, [
+                    'collection_id' => $asset->metadata['collection'] ?? null,
+                ]);
+                $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
+            }
         }
 
         // Persist the (possibly freshly created) guid back onto the asset so the
