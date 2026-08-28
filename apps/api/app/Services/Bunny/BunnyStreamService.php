@@ -21,6 +21,11 @@ class BunnyStreamService implements BunnyStreamInterface
 
         $body = ['title' => $title];
 
+        // Request the exact video id the caller reserved (if any) so the Bunny
+        // video stays in sync with the asset's external_id. Bunny ignores this
+        // field when absent and generates its own guid instead.
+        $body['guid'] = $videoId;
+
         if (isset($options['collection_id'])) {
             $body['collectionId'] = $options['collection_id'];
         }

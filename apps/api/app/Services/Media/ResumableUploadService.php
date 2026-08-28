@@ -578,28 +578,29 @@ class ResumableUploadService
         $guid = $asset->external_id ?: (string) Str::uuid();
         $title = $session->file_name ?: ($asset->title ?? 'Untitled Video');
 
-        // Only (re)create the Bunny video when we don't already hold a guid for it.
-        // Re-checking an existing guid with getVideoStatus and then creating a NEW
-        // video on any thrown error (transient network blip, stale 404, etc.)
-        // orphans the asset onto a fresh, empty video while the real upload target
-        // is silently lost. Reusing the stored guid keeps a single, stable target
-        // for the byte upload and prevents duplicate/empty videos.
-        if (empty($asset->external_id)) {
+        // The asset may already carry a reserved guid (set when the asset record
+        // was created in BunnyIntegrationService::createUploadIntent) that has NOT
+        // yet been turned into a real Bunny video object. Bunny's byte-upload
+        // endpoint (PUT /videos/{guid}) only accepts an existing video, so a guid
+        // that was reserved but never created makes the upload PUT fail with
+        // 404 "Video Not Found". Always verify the video exists on Bunny and
+        // create it (with this exact guid) when it does not, regardless of whether
+        // external_id was pre-reserved.
+        $exists = false;
+        try {
+            // A 404 here means the video was never created (or was deleted).
+            $stream->getVideoStatus($guid);
+            $exists = true;
+        } catch (\Throwable) {
             $exists = false;
-            try {
-                // A 404 here means the video was never created (or was deleted).
-                $stream->getVideoStatus($guid);
-                $exists = true;
-            } catch (\Throwable) {
-                $exists = false;
-            }
+        }
 
-            if (! $exists) {
-                $created = $stream->createVideo($title, [
-                    'collection_id' => $asset->metadata['collection'] ?? null,
-                ]);
-                $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
-            }
+        if (! $exists) {
+            $created = $stream->createVideo($title, [
+                'video_id' => $guid,
+                'collection_id' => $asset->metadata['collection'] ?? null,
+            ]);
+            $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
         }
 
         // Persist the (possibly freshly created) guid back onto the asset so the
