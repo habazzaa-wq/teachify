@@ -444,6 +444,13 @@ class ResumableUploadService
         $headers = $intent['headers'] ?? [];
         $headers['Content-Type'] = $session->mime_type ?: 'application/octet-stream';
 
+        // Bunny's Stream upload endpoint does not consume a chunked request body
+        // on PUT. Without an explicit Content-Length, Guzzle/curl sends the file
+        // as a chunked transfer and Bunny stores 0 bytes, leaving the video stuck
+        // in "Processing" forever. Pinning the length forces a fixed-length body
+        // so the bytes actually reach Bunny.
+        $headers['Content-Length'] = filesize($assembledAbs);
+
         $maxRetries = 3;
         $lastException = null;
         $lastBody = null;
