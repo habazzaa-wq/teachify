@@ -58,6 +58,34 @@
     --brand-primary-contrast: #ffffff;
     --brand-secondary-contrast: #17130d;
 
+    /* Derived brand scale (light) — kept in sync with generateBrandScale().
+       These are only the no-JS / pre-hydration fallback; BrandThemeProvider
+       recomputes them from the tenant's live colors at runtime. */
+    --brand-primary-50: #fbf2ef;
+    --brand-primary-100: #f7e5e0;
+    --brand-primary-200: #f0cdc4;
+    --brand-primary-300: #e8b2a5;
+    --brand-primary-400: #e09582;
+    --brand-primary-600: #be6c57;
+    --brand-primary-700: #a45d4b;
+    --brand-primary-800: #884d3e;
+    --brand-primary-900: #6c3d31;
+    --brand-secondary-50: #fff8e7;
+    --brand-secondary-100: #fff0cf;
+    --brand-secondary-200: #ffe3a3;
+    --brand-secondary-300: #ffd473;
+    --brand-secondary-400: #ffc43e;
+    --brand-secondary-600: #e09f0c;
+    --brand-secondary-700: #c28a0b;
+    --brand-secondary-800: #a17209;
+    --brand-secondary-900: #805b07;
+    --brand-primary-soft: #f7ddd4;
+    --brand-secondary-soft: #fff0cf;
+    --brand-primary-deep: #986247;
+    --brand-secondary-deep: #e0a10c;
+    --brand-neutral: #fbf7f3;
+    --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
+
     --chart-1: 230 65% 50%;
     --chart-2: 160 84% 39%;
     --chart-3: 35 92% 50%;
@@ -112,6 +140,32 @@
   .dark {
     --background: 225 30% 8%;
     --foreground: 210 40% 96%;
+
+    /* Derived brand scale (dark) — fallback; BrandThemeProvider overrides. */
+    --brand-primary-50: #301b16;
+    --brand-primary-100: #492a22;
+    --brand-primary-200: #683b30;
+    --brand-primary-300: #824a3b;
+    --brand-primary-400: #a45d4b;
+    --brand-primary-600: #dc8873;
+    --brand-primary-700: #e09582;
+    --brand-primary-800: #e5a595;
+    --brand-primary-900: #eab8ab;
+    --brand-secondary-50: #382803;
+    --brand-secondary-100: #573e05;
+    --brand-secondary-200: #7a5707;
+    --brand-secondary-300: #996d08;
+    --brand-secondary-400: #c28a0b;
+    --brand-secondary-600: #ffbc26;
+    --brand-secondary-700: #ffc43e;
+    --brand-secondary-800: #ffcd5b;
+    --brand-secondary-900: #ffd77d;
+    --brand-primary-soft: #1c130f;
+    --brand-secondary-soft: #1c1605;
+    --brand-primary-deep: #e7a08f;
+    --brand-secondary-deep: #ffc43e;
+    --brand-neutral: #0e0e12;
+    --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
 
     --card: 225 25% 11%;
     --card-foreground: 210 40% 96%;
