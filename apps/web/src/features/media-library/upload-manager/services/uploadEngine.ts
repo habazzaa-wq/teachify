@@ -127,6 +127,8 @@ export interface EnqueueOptions {
   folderId?: number | null;
   canUpload?: boolean;
   source?: UploadSource;
+  /** Chosen display names, parallel to `files`. Falls back to the file name. */
+  names?: string[];
 }
 
 /**
@@ -226,8 +228,10 @@ class UploadEngine {
     const built: UploadItem[] = [];
     let rejectedCount = 0;
 
-    for (const file of files) {
-      const item = buildUploadItem(file, folderId);
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i]!;
+      const name = options.names?.[i]?.trim() || file.name;
+      const item = buildUploadItem(file, folderId, name);
 
       const validation = uploadGuard.validateFile(file);
       if (!validation.ok && validation.error) {
