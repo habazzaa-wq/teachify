@@ -94,8 +94,8 @@ class CurrentUserController extends Controller
         return [
             'logo' => $values['logo'] ?? null,
             'favicon' => $values['favicon'] ?? null,
-            'primaryColor' => $values['primary_color'] ?? $values['primaryColor'] ?? '#6366f1',
-            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? '#8b5cf6',
+            'primaryColor' => $values['primary_color'] ?? $values['primaryColor'] ?? null,
+            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? null,
             'accentColor' => $values['accent_color'] ?? $values['accentColor'] ?? '#f59e0b',
             'font' => $values['fonts'] ?? $values['font'] ?? null,
             'darkLogo' => $values['dark_logo'] ?? null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   getHostname,
@@ -34,9 +34,36 @@ export function TenantBootstrapProvider({
   const bootstrapStatus = useTenantStore((s) => s.bootstrapStatus);
   const setTenantBootstrap = useTenantStore((s) => s.setTenantBootstrap);
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
+  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
+
+  // نتأكد إن ألوان المنصة اتحمّلت مرة واحدة بس عشان نمنع إعادة الطلب وفقدان
+  // الثيم (فlicker) عند التنقّل بين الصفحات.
+  const platformBrandingLoaded = useRef(false);
 
   useEffect(() => {
-    if (platform || isSuperAdmin || pathname === "/tenant-not-found") {
+    const platformOrSuper =
+      platform || isSuperAdmin || pathname === "/tenant-not-found";
+
+    // المنصة/السوبر أدمن: مفيش tenant فرعي، بس لازم نحمّل ألوان المنصة
+    // (platform_branding) ونطبّقها على كامل الموقع عبر BrandThemeProvider.
+    // من غير ده المنصة بتفضل شغالة بالألوان الافتراضية المحجوزة وما بتتأثرش
+    // بأي تعديل في إعدادات "ألوان الموقع".
+    if (platformOrSuper) {
+      if (tenantContext?.platformBranding) {
+        setPlatformBranding(tenantContext.platformBranding);
+      } else if (!tenantContext && !platformBrandingLoaded.current) {
+        // مفيش هيدر x-tenant-context → نجيب ألوان المنصة من الـ API العام.
+        platformBrandingLoaded.current = true;
+        fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.platform_branding) setPlatformBranding(data.platform_branding);
+          })
+          .catch(() => {
+            // لو فشل، نسمح بإعادة المحاولة في التنقّل الجاي.
+            platformBrandingLoaded.current = false;
+          });
+      }
       setBootstrapStatus("resolved");
       return;
     }
@@ -122,7 +149,7 @@ export function TenantBootstrapProvider({
 
       attempt(0);
     }
-  }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus]);
+  }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus, setPlatformBranding]);
 
   if (bootstrapStatus === "loading" || bootstrapStatus === "idle") {
     return <TenantLoading />;
