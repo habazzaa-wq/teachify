@@ -117,6 +117,7 @@ use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
 use App\Http\Controllers\Api\v1\StudentController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
+use App\Http\Controllers\Api\v1\HealthController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -157,6 +158,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
+    Route::get('/health/live', [HealthController::class, 'liveness']);
+    Route::get('/health/ready', [HealthController::class, 'readiness']);
     Route::post('/public/register', [PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);

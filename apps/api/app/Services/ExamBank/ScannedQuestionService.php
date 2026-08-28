@@ -241,9 +241,10 @@ class ScannedQuestionService
             ], $uploader);
         }
 
+        $media = app(\App\Services\Media\MediaStorage::class);
         $localPath = "assets/" . basename($storageKey);
-        Storage::disk('public')->put($localPath, $result->bytes);
-        $cdnUrl = Storage::disk('public')->url($localPath);
+        $media->put($localPath, $result->bytes);
+        $cdnUrl = $media->url($localPath);
 
         return $this->mediaLibrary->createAsset($tenant, [
             'provider' => 'local',

@@ -101,8 +101,24 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
   const [logoType, setLogoType] = useState<string | null>(initial.logoType ?? null);
   const [logoIcon, setLogoIcon] = useState<string | null>(initial.logoIcon ?? null);
   const [logoImage, setLogoImage] = useState<string | null>(initial.logoImage ?? null);
-  const [primaryColor, setPrimaryColor] = useState<string>(initial.primaryColor ?? initial.primary_color ?? BRAND_PRIMARY_DEFAULT);
-  const [secondaryColor, setSecondaryColor] = useState<string>(initial.secondaryColor ?? initial.secondary_color ?? BRAND_SECONDARY_DEFAULT);
+  // افتراضياً استخدم ألوان الموقع الفعلية (#D87B63 / #FFB50E) حتى لو كانت
+  // القيم المخزّنة فارغة (null/undefined/"").
+  const [primaryColor, setPrimaryColor] = useState<string>(
+    (initial.primaryColor ?? initial.primary_color ?? "").trim() || BRAND_PRIMARY_DEFAULT,
+  );
+  const [secondaryColor, setSecondaryColor] = useState<string>(
+    (initial.secondaryColor ?? initial.secondary_color ?? "").trim() || BRAND_SECONDARY_DEFAULT,
+  );
+
+  // يطبّق اللونين فوراً على كامل المنصة (the-mechanist.com) أثناء التعديل —
+  // من غير انتظار الحفظ — عن طريق تحديث متجر platformBranding اللي بيقريء منه
+  // BrandThemeProvider ويغيّر متغيرات CSS فوراً.
+  const applyLive = useCallback(
+    (primary: string, secondary: string) => {
+      setPlatformBranding({ primaryColor: primary, secondaryColor: secondary });
+    },
+    [setPlatformBranding],
+  );
 
   const handleSave = useCallback(() => {
     const values: Partial<SiteSettings> = {
@@ -338,16 +354,24 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
             <div className="space-y-2 rounded-2xl border border-studio-border bg-studio-soft p-4">
               <Label>اللون الأساسي</Label>
               <div className="flex items-center gap-3">
-                <input
+                 <input
                   type="color"
                   value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    const v = e.target.value.toUpperCase();
+                    setPrimaryColor(v);
+                    applyLive(v, secondaryColor);
+                  }}
                   className="h-12 w-12 shrink-0 cursor-pointer rounded-xl border border-studio-border bg-transparent p-1"
                   aria-label="اللون الأساسي"
                 />
                 <AppInput
                   value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setPrimaryColor(v);
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyLive(v, secondaryColor);
+                  }}
                   placeholder="#D87B63"
                   maxLength={7}
                   dir="ltr"
@@ -362,16 +386,24 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
             <div className="space-y-2 rounded-2xl border border-studio-border bg-studio-soft p-4">
               <Label>اللون الثانوي</Label>
               <div className="flex items-center gap-3">
-                <input
+                 <input
                   type="color"
                   value={secondaryColor}
-                  onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    const v = e.target.value.toUpperCase();
+                    setSecondaryColor(v);
+                    applyLive(primaryColor, v);
+                  }}
                   className="h-12 w-12 shrink-0 cursor-pointer rounded-xl border border-studio-border bg-transparent p-1"
                   aria-label="اللون الثانوي"
                 />
                 <AppInput
                   value={secondaryColor}
-                  onChange={(e) => setSecondaryColor(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSecondaryColor(v);
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) applyLive(primaryColor, v);
+                  }}
                   placeholder="#FFB50E"
                   maxLength={7}
                   dir="ltr"
@@ -394,9 +426,9 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
                 style={{ backgroundColor: secondaryColor }}
               />
             </div>
-            <div className="text-sm text-studio-fg-muted">
-              معاينة اللونين الجاري استخدامهما في كامل الموقع. احفظ لتطبيقها فوراً.
-            </div>
+           <div className="text-sm text-studio-fg-muted">
+               اللونان يُطبَّقان فوراً على كامل المنصة (the-mechanist.com) أثناء التعديل. احفظ لإبقائهما.
+             </div>
           </div>
         </AppCardContent>
       </AppCard>
@@ -423,9 +455,9 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
 
       {/* Actions */}
       <div className="flex justify-end">
-        <AppButton onClick={handleSave} loading={updatePlatform.isPending} disabled={!canSave}>
-          <Save className="h-4 w-4 ml-1" /> حفظ الشعار والاسم
-        </AppButton>
+          <AppButton onClick={handleSave} loading={updatePlatform.isPending} disabled={!canSave}>
+           <Save className="h-4 w-4 ml-1" /> حفظ الشعار والاسم والألوان
+         </AppButton>
       </div>
     </div>
   );

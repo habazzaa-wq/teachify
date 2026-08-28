@@ -91,6 +91,10 @@ class IdentifyTenant
             || str_ends_with($path, '/tenant/auth/reset-password')
             || str_ends_with($path, '/tenant/by-domain')
             || str_ends_with($path, '/auth/refresh')
-            || str_ends_with($path, '/auth/login');
+            || str_ends_with($path, '/auth/login')
+            // Liveness / readiness are unauthenticated infrastructure probes.
+            || $request->is('api/v1/health/ready')
+            || $request->is('api/v1/health/live')
+            || $request->is('api/v1/health/*');
     }
 }
