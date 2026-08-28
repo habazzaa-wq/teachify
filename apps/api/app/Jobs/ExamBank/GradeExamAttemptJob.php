@@ -3,6 +3,7 @@
 namespace App\Jobs\ExamBank;
 
 use App\Models\ExamAttempt;
+use App\Queue\Middleware\SetCorrelationContext;
 use App\Queue\Middleware\SetTenantContext;
 use App\Services\ExamBank\ExamGradingService;
 use Illuminate\Bus\Queueable;
@@ -52,7 +53,7 @@ class GradeExamAttemptJob implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new SetTenantContext($this->tenantId)];
+        return [new SetTenantContext($this->tenantId), new SetCorrelationContext()];
     }
 
     public function handle(ExamGradingService $grading): void

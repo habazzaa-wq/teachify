@@ -336,8 +336,9 @@ class MediaLibraryUploadController extends Controller
             $storageKey = "tenants/{$tenant->id}/courses/" . \Illuminate\Support\Str::random(12) . '.' . ($file->getClientOriginalExtension() ?: 'bin');
             $localPath = "courses/" . basename($storageKey);
 
-            \Illuminate\Support\Facades\Storage::disk('public')->put($localPath, $file->getContent());
-            $cdnUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($localPath);
+            $media = app(\App\Services\Media\MediaStorage::class);
+            $media->put($localPath, $file->getContent());
+            $cdnUrl = $media->url($localPath);
 
             $asset = \App\Models\MediaAsset::create([
                 'tenant_id' => $tenant->id,

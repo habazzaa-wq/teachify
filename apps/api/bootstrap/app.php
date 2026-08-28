@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
         AuthServiceProvider::class,
+        \App\Providers\ObservabilityServiceProvider::class,
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->throttleApi();
         $middleware->api(prepend: [
+            \App\Http\Middleware\RequestCorrelation::class,
             \App\Http\Middleware\IdentifyTenant::class,
         ]);
         $middleware->alias([

@@ -3,6 +3,7 @@
 namespace App\Jobs\ExamBank;
 
 use App\Models\QuestionImport;
+use App\Queue\Middleware\SetCorrelationContext;
 use App\Queue\Middleware\SetTenantContext;
 use App\Services\ExamBank\Import\ImportExtractionPipeline;
 use Illuminate\Bus\Queueable;
@@ -46,7 +47,7 @@ class ProcessQuestionImportJob implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new SetTenantContext($this->tenantId)];
+        return [new SetTenantContext($this->tenantId), new SetCorrelationContext()];
     }
 
     public function handle(ImportExtractionPipeline $pipeline): void
