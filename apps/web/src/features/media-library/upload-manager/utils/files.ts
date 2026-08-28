@@ -50,15 +50,24 @@ export function buildUploadWarnings(file: File): UploadWarning | null {
   return null;
 }
 
-export function buildUploadItem(file: File, folderId: number | null): UploadItem {
+export function buildUploadItem(file: File, folderId: number | null, nameOverride?: string): UploadItem {
+  const effectiveName = (nameOverride ?? "").trim() || file.name;
+  // Wrapping the file in a renamed File keeps both the displayed name and the
+  // underlying blob name in sync (the direct-upload path sends the File as-is),
+  // so the chosen name reaches the backend for every transport. Browsers wrap
+  // the bytes without copying them, so this is cheap even for large files.
+  const effectiveFile =
+    effectiveName !== file.name
+      ? new File([file], effectiveName, { type: file.type || "application/octet-stream" })
+      : file;
   return {
     id: generateUploadId(),
-    file,
-    preview: createFilePreview(file),
-    filename: file.name,
-    size: file.size,
-    mime: file.type || "application/octet-stream",
-    category: getFileCategory(file.type, file.name),
+    file: effectiveFile,
+    preview: createFilePreview(effectiveFile),
+    filename: effectiveName,
+    size: effectiveFile.size,
+    mime: effectiveFile.type || "application/octet-stream",
+    category: getFileCategory(effectiveFile.type, effectiveFile.name),
     progress: 0,
     speed: 0,
     eta: null,

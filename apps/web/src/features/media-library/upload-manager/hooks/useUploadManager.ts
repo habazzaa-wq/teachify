@@ -10,7 +10,7 @@ export function useUploadManager() {
   const canUpload = useCan(UPLOAD_PERMISSION);
 
   const enqueueFiles = useCallback(
-    (files: File[], opts?: { folderId?: number | null; source?: UploadSource }) => {
+    (files: File[], opts?: { folderId?: number | null; source?: UploadSource; names?: string[] }) => {
       uploadEngine.enqueue(files, { ...opts, canUpload });
     },
     [canUpload],

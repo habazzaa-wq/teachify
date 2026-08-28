@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCan } from "@/hooks/useCan";
 import { useUploadManagerStore } from "../store";
-import { uploadEngine, UPLOAD_PERMISSION } from "../services";
 import { extractFilesFromDataTransfer, hasFilesInDataTransfer } from "../utils/files";
 
 /**
@@ -12,7 +10,6 @@ import { extractFilesFromDataTransfer, hasFilesInDataTransfer } from "../utils/f
  * workspace without modifying the workspace itself.
  */
 export function useUploadDragDrop() {
-  const canUpload = useCan(UPLOAD_PERMISSION);
   const setDragDepth = useUploadManagerStore((s) => s.setDragDepth);
 
   useEffect(() => {
@@ -46,7 +43,7 @@ export function useUploadDragDrop() {
       setDragDepth(0);
       const files = extractFilesFromDataTransfer(e.dataTransfer as DataTransfer);
       if (files.length > 0) {
-        uploadEngine.enqueue(files, { canUpload, source: "drag-drop" });
+        useUploadManagerStore.getState().openRename(files, { source: "drag-drop" });
       }
     };
 
@@ -61,5 +58,5 @@ export function useUploadDragDrop() {
       window.removeEventListener("dragleave", onDragLeave);
       window.removeEventListener("drop", onDrop);
     };
-  }, [canUpload, setDragDepth]);
+  }, [setDragDepth]);
 }

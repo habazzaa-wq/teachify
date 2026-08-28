@@ -1,8 +1,19 @@
 "use client";
 
 import { create } from "zustand";
-import type { UploadItem, UploadBulkAction } from "../types";
-import { revokeFilePreview } from "../utils/files";
+import type { MediaType } from "../../types";
+import type { UploadItem, UploadBulkAction, UploadSource } from "../types";
+import { revokeFilePreview, getFileCategory } from "../utils/files";
+
+/** A file awaiting a name before it is enqueued for upload. */
+export interface RenameDraftFile {
+  id: string;
+  file: File;
+  defaultName: string;
+  size: number;
+  mime: string;
+  category: MediaType;
+}
 
 export interface UploadManagerState {
   items: Record<string, UploadItem>;
@@ -11,6 +22,12 @@ export interface UploadManagerState {
   isDragActive: boolean;
   /** Reference counter so nested dragenter/leave pairs don't flicker the overlay. */
   dragDepth: number;
+
+  /** Files staged in the "name before upload" dialog. */
+  renameDraft: RenameDraftFile[];
+  renameFolderId: number | null;
+  renameSource: UploadSource | null;
+  isRenameOpen: boolean;
 
   enqueue: (items: UploadItem[]) => void;
   patchItem: (id: string, patch: Partial<UploadItem>) => void;
@@ -24,6 +41,11 @@ export interface UploadManagerState {
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
   setDragDepth: (depth: number) => void;
+
+  /** Stage files so the teacher can rename them before they are uploaded. */
+  openRename: (files: File[], opts?: { folderId?: number | null; source?: UploadSource }) => void;
+  /** Discard the staged files without enqueuing anything. */
+  closeRename: () => void;
 }
 
 export const useUploadManagerStore = create<UploadManagerState>((set) => ({
@@ -32,6 +54,10 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
   isOpen: false,
   isDragActive: false,
   dragDepth: 0,
+  renameDraft: [],
+  renameFolderId: null,
+  renameSource: null,
+  isRenameOpen: false,
 
   enqueue: (incoming) =>
     set((state) => {
@@ -195,6 +221,23 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
   toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
   setDragDepth: (depth) =>
     set({ dragDepth: Math.max(0, depth), isDragActive: depth > 0 }),
+
+  openRename: (files, opts) =>
+    set({
+      renameDraft: files.map((file) => ({
+        id: `rn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        defaultName: file.name,
+        size: file.size,
+        mime: file.type || "application/octet-stream",
+        category: getFileCategory(file.type, file.name),
+      })),
+      renameFolderId: opts?.folderId ?? null,
+      renameSource: opts?.source ?? null,
+      isRenameOpen: files.length > 0,
+    }),
+
+  closeRename: () => set({ isRenameOpen: false }),
 }));
 
 /** Stable selector for a single upload item (keeps memoized cards cheap). */

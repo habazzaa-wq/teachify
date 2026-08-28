@@ -10,11 +10,12 @@ import { routes } from "@/constants/routes";
 import { useUploadManagerStore } from "../store";
 import { uploadEngine } from "../services";
 import { hashPool } from "../services/hashPool";
-import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManager, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
+import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
 import { MEDIA_QUERY_KEY } from "../../constants";
 import { BUNNY_CENTER_QUERY_KEY } from "../../../bunny-center/constants";
 import { UploadManagerPanel } from "./UploadManagerPanel";
 import { UploadDragOverlay } from "./UploadDragOverlay";
+import { PrepareUploadDialog } from "./PrepareUploadDialog";
 import { UPLOAD_LAUNCHER_COUNT_CAP } from "../constants";
 
 const folderInputProps = { webkitdirectory: "", directory: "", multiple: true } as Record<string, string | boolean>;
@@ -23,7 +24,6 @@ export function UploadManager() {
   const isOpen = useUploadManagerStore((s) => s.isOpen);
   const setOpen = useUploadManagerStore((s) => s.setOpen);
   const toggleOpen = useUploadManagerStore((s) => s.toggleOpen);
-  const { enqueueFiles } = useUploadManager();
   const stats = useUploadManagerStats();
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -67,13 +67,17 @@ export function UploadManager() {
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) enqueueFiles(files, { source: "file-input" });
+    if (files.length > 0) {
+      useUploadManagerStore.getState().openRename(files, { source: "file-input" });
+    }
     e.target.value = "";
   };
 
   const handleFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) enqueueFiles(files, { source: "folder-input" });
+    if (files.length > 0) {
+      useUploadManagerStore.getState().openRename(files, { source: "folder-input" });
+    }
     e.target.value = "";
   };
 
@@ -83,6 +87,7 @@ export function UploadManager() {
   return (
     <>
       <UploadDragOverlay />
+      <PrepareUploadDialog />
 
       {/* Hidden pickers */}
       <input ref={fileRef} type="file" multiple hidden onChange={handleFiles} aria-hidden />
