@@ -139,8 +139,13 @@ export function StageCard({
             <StagePlaceholder icon={stage.icon} accentClass={accentClass(accent)} />
           )}
 
-          {/* legibility scrim (neutral, never a brand mix) */}
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
+          {/* brand-tone overlay — blends the stage's own hue into the photo for
+              depth while a darkened base keeps the floating badge legible. No
+              flat neutral scrim, no washed-out image. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-[color-mix(in_srgb,var(--stage-color-deep)_55%,black)] via-[color-mix(in_srgb,var(--stage-color)_24%,transparent)] to-[color-mix(in_srgb,var(--stage-color-soft)_38%,transparent)]"
+          />
 
           {/* floating icon badge — this stage's single accent color */}
           <div className="absolute start-4 top-4 z-20">
