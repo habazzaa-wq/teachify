@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { StageIcon } from "./stageIcons";
-import { toneClass, toneForProgress, type EducationalStage } from "./types";
+import { accentClass, accentForProgress, type EducationalStage } from "./types";
 import type { StageStats } from "@/features/homepage/educational-stages/types";
 import { tapFeedback } from "./feedback";
 
@@ -27,31 +27,28 @@ interface StageCardProps {
   onActivate?: () => void;
 }
 
-/* Branded fallback when a stage has no image — a soft gradient + dot mesh
-   tinted with the two brand colors, never a broken-image glyph. */
-function StagePlaceholder({ icon }: { icon: EducationalStage["icon"] }) {
+/* Branded fallback when a stage has no image — a soft single-hue gradient +
+   dot mesh tinted with the stage's own accent color, never a broken glyph. */
+function StagePlaceholder({ icon, accentClass: ac }: { icon: EducationalStage["icon"]; accentClass: string }) {
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+      className={cn("absolute inset-0 flex items-center justify-center overflow-hidden", ac)}
+      aria-hidden="true"
       style={{
         backgroundImage:
-          "linear-gradient(135deg, color-mix(in srgb, var(--brand-primary-100) 85%, transparent), color-mix(in srgb, var(--brand-secondary-100) 80%, transparent))",
+          "linear-gradient(135deg, color-mix(in srgb, var(--stage-color-soft) 90%, transparent), color-mix(in srgb, var(--stage-color-deep) 78%, transparent))",
       }}
-      aria-hidden="true"
     >
       <div
-        className="absolute inset-0 opacity-[0.5]"
+        className="absolute inset-0 opacity-50"
         style={{
-          backgroundImage: "radial-gradient(color-mix(in srgb, var(--brand-primary-300) 40%, transparent) 1.4px, transparent 1.4px)",
+          backgroundImage: "radial-gradient(color-mix(in srgb, var(--stage-color) 38%, transparent) 1.4px, transparent 1.4px)",
           backgroundSize: "18px 18px",
         }}
       />
       <div
-        className="relative flex h-20 w-20 items-center justify-center rounded-3xl shadow-soft-xs"
-        style={{
-          background: "var(--brand-gradient)",
-          color: "#ffffff",
-        }}
+        className="relative flex h-20 w-20 items-center justify-center rounded-3xl shadow-soft-md"
+        style={{ background: "linear-gradient(135deg, var(--stage-color-soft), var(--stage-color-deep))", color: "var(--stage-fg)" }}
       >
         <StageIcon name={icon ?? "auto"} className="h-10 w-10" />
       </div>
@@ -71,7 +68,7 @@ export function StageCard({
   const reduce = useReducedMotion();
   const [failed, setFailed] = useState(false);
   const hasImage = Boolean(stage.image) && !failed;
-  const tone = toneForProgress(total > 1 ? index / (total - 1) : 0);
+  const accent = accentForProgress(total > 1 ? index / (total - 1) : 0);
   const href = stage.href ?? `/stages/${stage.id}`;
 
   return (
@@ -84,7 +81,7 @@ export function StageCard({
       }}
       className={cn(
         "group relative block rounded-3xl outline-none",
-        "focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_45%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--stage-color)_45%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       )}
     >
       <motion.article
@@ -99,28 +96,28 @@ export function StageCard({
         whileHover={reduce ? undefined : { y: -8 }}
         whileTap={reduce ? undefined : { scale: 0.98 }}
         className={cn(
+          accentClass(accent),
           "relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card",
-          "shadow-soft-md transition-shadow duration-300",
-          "group-hover:shadow-soft-lg",
+          "shadow-soft-md transition-[transform,box-shadow,border-color] duration-300 ease-brand",
+          "group-hover:border-[color-mix(in_srgb,var(--stage-color)_45%,transparent)]",
+          "group-hover:shadow-[0_22px_48px_-22px_color-mix(in_srgb,var(--stage-color)_55%,transparent)]",
         )}
       >
-        {/* animated gradient-border glow (pulses gently on hover) */}
+        {/* animated gradient-border glow (single hue, pulses gently on hover) */}
         <span
           aria-hidden="true"
           className={cn(
             "pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition-opacity duration-500",
             "group-hover:opacity-100 group-hover:animate-brand-glow-pulse",
-            "[background:linear-gradient(135deg,var(--brand-primary-500),var(--brand-secondary-500))]",
+            "[background:var(--stage-color)]",
             "[mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [mask-composite:exclude] [-webkit-mask-composite:xor] [padding:1.5px]",
-            "dark:[background:linear-gradient(135deg,var(--brand-primary-400),var(--brand-secondary-400))]",
           )}
-          style={{ backgroundImage: "linear-gradient(135deg, var(--brand-primary-500), var(--brand-secondary-500))" }}
         />
 
         {/* top accent bar */}
         <span
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 z-20 h-[3px] origin-start scale-x-0 [background-image:var(--brand-gradient)] transition-transform duration-500 ease-brand group-hover:scale-x-100"
+          className="absolute inset-x-0 top-0 z-20 h-[3px] origin-start scale-x-0 bg-[var(--stage-color)] transition-transform duration-500 ease-brand group-hover:scale-x-100"
         />
 
         {/* cover */}
@@ -135,37 +132,24 @@ export function StageCard({
               loading={priority ? undefined : "lazy"}
               placeholder="blur"
               blurDataURL={BRAND_BLUR_DATA_URL}
-              className="object-cover transition-transform duration-700 ease-brand group-hover:scale-[1.07]"
+              className="object-cover transition-transform duration-700 ease-brand group-hover:scale-[1.06]"
               onError={() => setFailed(true)}
             />
           ) : (
-            <StagePlaceholder icon={stage.icon} />
+            <StagePlaceholder icon={stage.icon} accentClass={accentClass(accent)} />
           )}
 
-          {/* legibility scrim + brand tint blend */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 opacity-70 mix-blend-soft-light"
-            style={{
-              backgroundImage:
-                "linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 55%, transparent), color-mix(in srgb, var(--brand-secondary) 45%, transparent))",
-            }}
-          />
+          {/* legibility scrim (neutral, never a brand mix) */}
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
 
-          {/* floating icon badge — tonal progression (soft → deep) */}
-          <div className={cn("absolute start-4 top-4 z-20", toneClass(tone))}>
+          {/* floating icon badge — this stage's single accent color */}
+          <div className="absolute start-4 top-4 z-20">
             <span
               className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--tone-fg)] shadow-soft-md",
+                "flex h-12 w-12 items-center justify-center rounded-2xl text-[var(--stage-fg)] shadow-soft-md",
                 !reduce && "animate-brand-float",
               )}
-              style={{
-                backgroundImage: "linear-gradient(135deg, var(--tone-p), var(--tone-s))",
-              }}
+              style={{ backgroundImage: "linear-gradient(135deg, var(--stage-color-soft), var(--stage-color-deep))" }}
             >
               <StageIcon name={stage.icon ?? "auto"} className="h-6 w-6" />
             </span>
@@ -175,20 +159,16 @@ export function StageCard({
         {/* body */}
         <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div>
-            <h3 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">
-              {stage.name}
-            </h3>
+            <h3 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">{stage.name}</h3>
             {stage.meta ? (
-              <p className="mt-1 text-xs font-semibold text-[color-mix(in_srgb,var(--brand-primary)_85%,black)] dark:text-[color-mix(in_srgb,var(--brand-primary-200)_90%,white)]">
+              <p className="mt-1 text-xs font-semibold text-[color-mix(in_srgb,var(--stage-color)_85%,black)] dark:text-[color-mix(in_srgb,var(--stage-color)_80%,white)]">
                 {stage.meta}
               </p>
             ) : null}
           </div>
 
           {stage.description ? (
-            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-              {stage.description}
-            </p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{stage.description}</p>
           ) : null}
 
           {/* trust stats (real per-stage counts) */}
@@ -217,11 +197,10 @@ export function StageCard({
             <span
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold",
-                "border-[color-mix(in_srgb,var(--brand-primary)_35%,transparent)] text-[color-mix(in_srgb,var(--brand-primary)_90%,black)]",
+                "border-[color-mix(in_srgb,var(--stage-color)_40%,transparent)] text-[var(--stage-color)]",
                 "transition-all duration-300 ease-brand",
-                "group-hover:border-transparent group-hover:text-white group-hover:[background-image:var(--brand-gradient)]",
-                "group-hover:shadow-brand-sm",
-                "dark:text-[color-mix(in_srgb,var(--brand-primary-200)_90%,white)]",
+                "group-hover:border-[var(--stage-color)] group-hover:bg-[var(--stage-color)] group-hover:text-white",
+                "group-hover:shadow-[0_12px_30px_-14px_var(--stage-color)]",
               )}
             >
               <span>استكشف المرحلة</span>

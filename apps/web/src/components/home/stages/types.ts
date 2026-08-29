@@ -37,56 +37,71 @@ export interface EducationalStage {
 }
 
 /**
- * Tonal progression (soft → deep) so a parent senses the age/maturity
- * journey at a glance from color weight alone. Each preset installs a pair of
- * `--tone-*` custom properties (light + dark variants) that the badge uses for
- * its gradient + foreground. The class strings are written out **literally**
- * (never built from template literals) so Tailwind can statically scan and
- * generate the arbitrary `--tone-*` properties.
+ * Per-stage accent system. Each stage owns **one** brand color (never a blend
+ * of the two), so the section reads as "warm terracotta → achievement gold"
+ * journey where every card is clearly its own color. The progression also moves
+ * soft → deep within that single hue.
+ *
+ * Each preset installs four CSS custom properties (light + dark variants):
+ *   --stage-color        main accent (theme-aware stop)
+ *   --stage-color-soft   lighter same-hue stop (badge gradient start)
+ *   --stage-color-deep   deeper same-hue stop (badge gradient end)
+ *   --stage-fg           legible foreground for the badge
+ *
+ * The class strings are written out **literally** (never from template
+ * literals) so Tailwind can statically scan and generate the arbitrary
+ * `--stage-*` properties.
  */
-export interface StageTonePreset {
+export interface StageAccentPreset {
   className: string;
 }
 
-export const STAGE_TONE_PRESETS: StageTonePreset[] = [
-  {
-    // softest — kindergarten (pale pastel badge, dark text)
-    className:
-      "[--tone-p:var(--brand-primary-200)] [--tone-s:var(--brand-secondary-200)] [--tone-fg:var(--brand-primary-900)] " +
-      "dark:[--tone-p:var(--brand-primary-800)] dark:[--tone-s:var(--brand-secondary-800)] dark:[--tone-fg:var(--brand-primary-200)]",
-  },
-  {
-    className:
-      "[--tone-p:var(--brand-primary-300)] [--tone-s:var(--brand-secondary-300)] [--tone-fg:var(--brand-primary-900)] " +
-      "dark:[--tone-p:var(--brand-primary-700)] dark:[--tone-s:var(--brand-secondary-800)] dark:[--tone-fg:var(--brand-primary-100)]",
-  },
-  {
-    className:
-      "[--tone-p:var(--brand-primary-400)] [--tone-s:var(--brand-secondary-400)] [--tone-fg:#ffffff] " +
-      "dark:[--tone-p:var(--brand-primary-600)] dark:[--tone-s:var(--brand-secondary-700)] dark:[--tone-fg:var(--brand-primary-100)]",
-  },
-  {
-    className:
-      "[--tone-p:var(--brand-primary-500)] [--tone-s:var(--brand-secondary-500)] [--tone-fg:#ffffff] " +
-      "dark:[--tone-p:var(--brand-primary-500)] dark:[--tone-s:var(--brand-secondary-600)] dark:[--tone-fg:#17130d]",
-  },
-  {
-    // deepest — secondary / graduation (vivid badge, near-black text on dark)
-    className:
-      "[--tone-p:var(--brand-primary-600)] [--tone-s:var(--brand-secondary-700)] [--tone-fg:#ffffff] " +
-      "dark:[--tone-p:var(--brand-primary-400)] dark:[--tone-s:var(--brand-secondary-500)] dark:[--tone-fg:#17130d]",
-  },
+/* warm family (primary / terracotta) */
+const ACCENT_PRIMARY_SOFT: StageAccentPreset = {
+  className:
+    "[--stage-color:var(--brand-primary-300)] [--stage-color-soft:var(--brand-primary-200)] [--stage-color-deep:var(--brand-primary-500)] [--stage-fg:var(--brand-primary-900)] " +
+    "dark:[--stage-color:var(--brand-primary-500)] dark:[--stage-color-soft:var(--brand-primary-400)] dark:[--stage-color-deep:var(--brand-primary-700)] dark:[--stage-fg:var(--brand-primary-100)]",
+};
+const ACCENT_PRIMARY: StageAccentPreset = {
+  className:
+    "[--stage-color:var(--brand-primary-500)] [--stage-color-soft:var(--brand-primary-300)] [--stage-color-deep:var(--brand-primary-700)] [--stage-fg:#ffffff] " +
+    "dark:[--stage-color:var(--brand-primary-400)] dark:[--stage-color-soft:var(--brand-primary-300)] dark:[--stage-color-deep:var(--brand-primary-600)] dark:[--stage-fg:#17130d]",
+};
+/* gold family (secondary) */
+const ACCENT_GOLD_SOFT: StageAccentPreset = {
+  className:
+    "[--stage-color:var(--brand-secondary-300)] [--stage-color-soft:var(--brand-secondary-200)] [--stage-color-deep:var(--brand-secondary-500)] [--stage-fg:var(--brand-secondary-900)] " +
+    "dark:[--stage-color:var(--brand-secondary-500)] dark:[--stage-color-soft:var(--brand-secondary-400)] dark:[--stage-color-deep:var(--brand-secondary-700)] dark:[--stage-fg:var(--brand-secondary-100)]",
+};
+const ACCENT_GOLD: StageAccentPreset = {
+  className:
+    "[--stage-color:var(--brand-secondary-500)] [--stage-color-soft:var(--brand-secondary-300)] [--stage-color-deep:var(--brand-secondary-700)] [--stage-fg:#17130d] " +
+    "dark:[--stage-color:var(--brand-secondary-400)] dark:[--stage-color-soft:var(--brand-secondary-300)] dark:[--stage-color-deep:var(--brand-secondary-600)] dark:[--stage-fg:#17130d]",
+};
+const ACCENT_GOLD_DEEP: StageAccentPreset = {
+  className:
+    "[--stage-color:var(--brand-secondary-700)] [--stage-color-soft:var(--brand-secondary-500)] [--stage-color-deep:var(--brand-secondary-900)] [--stage-fg:#ffffff] " +
+    "dark:[--stage-color:var(--brand-secondary-300)] dark:[--stage-color-soft:var(--brand-secondary-200)] dark:[--stage-color-deep:var(--brand-secondary-500)] dark:[--stage-fg:#17130d]",
+};
+
+/** Ordered journey: warm-soft → warm → gold-soft → gold → gold-deep. */
+export const STAGE_ACCENT_ORDER: StageAccentPreset[] = [
+  ACCENT_PRIMARY_SOFT,
+  ACCENT_PRIMARY,
+  ACCENT_GOLD_SOFT,
+  ACCENT_GOLD,
+  ACCENT_GOLD_DEEP,
 ];
 
-/** Map a 0..1 progression value to a concrete tone preset (clamped). */
-export function toneForProgress(t: number): StageTonePreset {
+/** Map a 0..1 progression value to a concrete single-color accent preset. */
+export function accentForProgress(t: number): StageAccentPreset {
   const clamped = Math.max(0, Math.min(1, t));
-  const idx = Math.round(clamped * (STAGE_TONE_PRESETS.length - 1));
-  return STAGE_TONE_PRESETS[idx]!;
+  const idx = Math.round(clamped * (STAGE_ACCENT_ORDER.length - 1));
+  return STAGE_ACCENT_ORDER[idx]!;
 }
 
-/** Literal Tailwind class string that installs a tone's CSS vars. */
-export function toneClass(preset: StageTonePreset): string {
+/** Literal Tailwind class string that installs a stage's CSS vars. */
+export function accentClass(preset: StageAccentPreset): string {
   return preset.className;
 }
 
