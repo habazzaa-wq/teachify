@@ -4,9 +4,6 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 import { HeroSection } from "./hero-section";
 import { LoginCard } from "./login-card";
-import { useTenantStore } from "@/stores/tenant.store";
-import { useUiStore } from "@/stores/ui.store";
-import { useTenantTheme } from "@/hooks/useTenantTheme";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -17,22 +14,8 @@ const containerVariants = {
 };
 
 const PageContent = memo(function PageContent() {
-  const platformBranding = useTenantStore((state) => state.platformBranding);
-  const theme = useUiStore((state) => state.theme);
-
-  // صفحة الدخول بتستخدم ألوان المنصة العالمية (platformBranding) عشان تكون
-  // موحّدة مع الموقع العام ولوحة التحكم (نفس الألوان للمسجّل وغير المسجّل).
-  const primaryColor = platformBranding?.primaryColor ?? null;
-  const secondaryColor = platformBranding?.secondaryColor ?? null;
-
-  useTenantTheme({
-    primaryColor,
-    secondaryColor,
-    isDark: theme === "dark",
-    fallbackPrimary: platformBranding?.primaryColor ?? null,
-    fallbackSecondary: platformBranding?.secondaryColor ?? null,
-  });
-
+  // صفحة الدخول بتستخدم ألوان المنصة العالمية (platformBranding) اللي بتطبّقها
+  // BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
   return (
     <motion.div
       variants={containerVariants}

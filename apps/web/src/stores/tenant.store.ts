@@ -174,10 +174,9 @@ export const useTenantStore = create<TenantState>()(
         permissions,
         abilities,
         navigation,
-        platformBranding:
-          (tenant.platformBranding as TenantBranding | null) ??
-          ((tenant as unknown as Record<string, unknown>).platform_branding as TenantBranding | null) ??
-          null,
+        // ملاحظة: ألوان المنصة (platformBranding) بتدار بالكامل من BrandThemeProvider
+        // ومستقلة عن بيانات الـ tenant/تسجيل الدخول — فمبنغيّرش قيمتها هنا عشان
+        // متتلغش ولا تتسرّب ألوان مظهر المدرس للمنصة كلها.
       }),
 
     setTenantBootstrap: (data) =>
@@ -234,7 +233,6 @@ export const useTenantStore = create<TenantState>()(
             primaryColor,
             secondaryColor,
           }) as unknown as TenantBranding,
-          platformBranding: data.platformBranding ?? state.platformBranding,
           bootstrapStatus: "resolved",
           bootstrapError: null,
         };
@@ -275,7 +273,8 @@ export const useTenantStore = create<TenantState>()(
         domain: null,
         subdomain: null,
         branding: null,
-        platformBranding: null,
+        // نحافظ على platformBranding بعد تسجيل الخروج عشان الموقع العام يفضل
+        // بلونه الصح فوراً من غير flicker (BrandThemeProvider بيعيد تحميله لو احتاج).
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),

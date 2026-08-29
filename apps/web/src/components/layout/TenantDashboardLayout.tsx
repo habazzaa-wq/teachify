@@ -3,9 +3,6 @@
 import { useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "@/stores/workspace.store";
-import { useUiStore } from "@/stores/ui.store";
-import { useTenantTheme } from "@/hooks/useTenantTheme";
-import { useTenantStore } from "@/stores/tenant.store";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
 import { WorkspaceRightInspector } from "./WorkspaceRightInspector";
@@ -20,21 +17,8 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
-  const theme = useUiStore((s) => s.theme);
-  const platformBranding = useTenantStore((s) => s.platformBranding);
-
-  // لوحة التحكم كلها بتستخدم ألوان المنصة العالمية (platformBranding) عشان
-  // تكون موحّدة تماماً مع الموقع العام (الزائر والمسجّل دخول يشوفوا نفس الألوان).
-  const primaryColor = platformBranding?.primaryColor ?? null;
-  const secondaryColor = platformBranding?.secondaryColor ?? null;
-
-  useTenantTheme({
-    primaryColor,
-    secondaryColor,
-    isDark: theme === "dark",
-    fallbackPrimary: platformBranding?.primaryColor ?? null,
-    fallbackSecondary: platformBranding?.secondaryColor ?? null,
-  });
+  // لوحة تحكم المدرس بتستخدم ألوان المنصة العالمية (platformBranding) اللي
+  // بتطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);

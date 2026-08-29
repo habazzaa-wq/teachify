@@ -1,65 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { NewsTicker } from "@/components/home/NewsTicker";
 import { PublicNavbar } from "@/components/home/PublicNavbar";
 import { MobileSecondaryNav } from "@/components/home/MobileSecondaryNav";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
-import { useTenantStore } from "@/stores/tenant.store";
-import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
-import { generateThemeColors } from "@/lib/color";
-import { resolveBrandHexColors } from "@/lib/brand";
 
 interface StudentDashboardShellProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function StudentDashboardShell({ children }: StudentDashboardShellProps) {
   const { tenant } = useActiveTenant();
-  const { setColors } = useDashboardThemeStore();
-  const platformBranding = useTenantStore((s) => s.platformBranding);
   const theme = useUiStore((s) => s.theme);
-  const rootRef = useRef<HTMLDivElement>(null);
 
-  // لوحة الطالب بتستخدم ألوان المنصة العالمية (platformBranding) عشان تكون
-  // موحّدة تماماً مع باقي المنصة (الموقع العام + لوحة المدرس) سواء المسجّل
-  // دخول أو غير المسجّل.
-  useEffect(() => {
-    if (!platformBranding) return;
-    const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
-    setColors(primary, secondary);
-  }, [platformBranding, setColors]);
-
-  // نحقن سمة ألوان المنصة على لوحة الطالب (نفس ألوان الموقع العام بالظبط).
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el || !platformBranding) return;
-    const styleId = "student-custom-theme";
-    let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
-    const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
-    const colors = generateThemeColors(primary, secondary, theme === "dark");
-    if (!styleTag) {
-      styleTag = document.createElement("style");
-      styleTag.id = styleId;
-      document.head.appendChild(styleTag);
-    }
-    const vars = Object.entries(colors)
-      .map(([k, v]) => `${k}: ${v};`)
-      .join("");
-    styleTag.textContent = `.student-theme { ${vars} }`;
-  }, [platformBranding, theme]);
-
-  // ملاحظة: ألوان "مظهر لوحة التحكم" الخاصة بالمدرس تُطبَّق على لوحة المدرس
-  // وصفحة تسجيل الدخول فقط. لوحة الطالب (والمنصة عموماً) تستخدم ألوان المنصة
-  // المستقلة، لذا لا نرث ألوان مظهر المدرس هنا حتى لا تتسرّب إلى باقي المنصة.
+  // لوحة الطالب بتستخدم ألوان المنصة العالمية (platformBranding) اللي بتطبّقها
+  // BrandThemeProvider على .student-theme — فمفيش حاجة نحقنها هنا، وده بيضمن
+  // اتحاد الألوان مع باقي المنصة (الموقع العام + لوحة المدرس) سواء المسجّل
+  // دخول أو غير المسجّل، ومن غير أي اعتماد على localStorage أو مظهر المدرس.
 
   const isDark = theme === "dark";
 
   return (
     <ProtectedRoute>
-      <div ref={rootRef} className="student-theme flex min-h-screen flex-col bg-background">
+      <div className="student-theme flex min-h-screen flex-col bg-background">
         {/* Home page chrome — same news bar, navbar and mobile nav as the main site */}
         <NewsTicker />
         <PublicNavbar />
