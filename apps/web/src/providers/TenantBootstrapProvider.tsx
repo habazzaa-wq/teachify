@@ -44,26 +44,31 @@ export function TenantBootstrapProvider({
     const platformOrSuper =
       platform || isSuperAdmin || pathname === "/tenant-not-found";
 
-    // المنصة/السوبر أدمن: مفيش tenant فرعي، بس لازم نحمّل ألوان المنصة
-    // (platform_branding) ونطبّقها على كامل الموقع عبر BrandThemeProvider.
-    // من غير ده المنصة بتفضل شغالة بالألوان الافتراضية المحجوزة وما بتتأثرش
-    // بأي تعديل في إعدادات "ألوان الموقع".
+    // نأكد دايماً إن ألوان المنصة (platform_branding) متحمّلة، لأنها المصدر
+    // الموحّد لألوان كامل المنصة (الموقع العام + كل اللوحات + صفحة الدخول)
+    // سواء الزائر أو المسجّل دخول، وعلى الدومين الأساسي أو أي سب-دومين. الألوان
+    // دي مستقلة تماماً عن مظهر المدرس فمفيش خطر إنها تتداخل مع ثيم اللوحة.
+    if (tenantContext?.platformBranding) {
+      setPlatformBranding(tenantContext.platformBranding);
+    } else if (
+      !platformBrandingLoaded.current &&
+      (platformOrSuper || useTenantStore.getState().activeTenant)
+    ) {
+      // مفيش هيدر x-tenant-context → نجيب ألوان المنصة من الـ API العام.
+      platformBrandingLoaded.current = true;
+      fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.platform_branding) setPlatformBranding(data.platform_branding);
+        })
+        .catch(() => {
+          // لو فشل، نسمح بإعادة المحاولة في التنقّل الجاي.
+          platformBrandingLoaded.current = false;
+        });
+    }
+
+    // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي بتحميل ألوان المنصة.
     if (platformOrSuper) {
-      if (tenantContext?.platformBranding) {
-        setPlatformBranding(tenantContext.platformBranding);
-      } else if (!tenantContext && !platformBrandingLoaded.current) {
-        // مفيش هيدر x-tenant-context → نجيب ألوان المنصة من الـ API العام.
-        platformBrandingLoaded.current = true;
-        fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.platform_branding) setPlatformBranding(data.platform_branding);
-          })
-          .catch(() => {
-            // لو فشل، نسمح بإعادة المحاولة في التنقّل الجاي.
-            platformBrandingLoaded.current = false;
-          });
-      }
       setBootstrapStatus("resolved");
       return;
     }

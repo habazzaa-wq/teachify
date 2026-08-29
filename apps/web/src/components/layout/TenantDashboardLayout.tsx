@@ -4,7 +4,6 @@ import { useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useUiStore } from "@/stores/ui.store";
-import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useTenantTheme } from "@/hooks/useTenantTheme";
 import { useTenantStore } from "@/stores/tenant.store";
 import { WorkspaceHeader } from "./WorkspaceHeader";
@@ -22,18 +21,13 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
   const theme = useUiStore((s) => s.theme);
-  const { tenant } = useActiveTenant();
   const platformBranding = useTenantStore((s) => s.platformBranding);
 
-  const branding = tenant?.branding;
-  const brandingRecord = branding as Record<string, string | null> | undefined;
-  const primaryColor = branding?.primary_color ?? brandingRecord?.primaryColor ?? null;
-  const secondaryColor = branding?.secondary_color ?? brandingRecord?.secondaryColor ?? null;
+  // لوحة التحكم كلها بتستخدم ألوان المنصة العالمية (platformBranding) عشان
+  // تكون موحّدة تماماً مع الموقع العام (الزائر والمسجّل دخول يشوفوا نفس الألوان).
+  const primaryColor = platformBranding?.primaryColor ?? null;
+  const secondaryColor = platformBranding?.secondaryColor ?? null;
 
-  // Apply the tenant's control-panel primary/secondary colors (sourced from the
-  // server-synced tenant so they're identical on every device) across the whole
-  // control panel, with dark-mode support. Falls back to the platform brand so
-  // the panel never shows the unrelated default studio palette.
   useTenantTheme({
     primaryColor,
     secondaryColor,

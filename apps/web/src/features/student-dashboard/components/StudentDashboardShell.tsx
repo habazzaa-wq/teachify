@@ -18,33 +18,28 @@ interface StudentDashboardShellProps {
 
 function StudentDashboardShell({ children }: StudentDashboardShellProps) {
   const { tenant } = useActiveTenant();
-  const { primaryColor, secondaryColor, isActive, setColors } = useDashboardThemeStore();
+  const { setColors } = useDashboardThemeStore();
   const platformBranding = useTenantStore((s) => s.platformBranding);
   const theme = useUiStore((s) => s.theme);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // لوحة الطالب تستخدم "ألوان المنصة" (platformBranding) المستقلة عن مظهر
-  // المدرس. نزامن ألوان السمة منها فقط عندما لا يكون المستخدم قد خصّص السمة
-  // يدوياً (isActive=false). نمرّر null كـ activeTenant حتى لا تُسحب ألوان مظهر
-  // المدرس من tenant.branding عن طريق الخطأ.
+  // لوحة الطالب بتستخدم ألوان المنصة العالمية (platformBranding) عشان تكون
+  // موحّدة تماماً مع باقي المنصة (الموقع العام + لوحة المدرس) سواء المسجّل
+  // دخول أو غير المسجّل.
   useEffect(() => {
-    if (!platformBranding || isActive) return;
+    if (!platformBranding) return;
     const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
     setColors(primary, secondary);
-  }, [platformBranding, isActive, setColors]);
+  }, [platformBranding, setColors]);
 
-  // Inject the tenant-themed palette for the shared neutral tokens still used
-  // by some of the child UI (drawers, modals, loading states).
+  // نحقن سمة ألوان المنصة على لوحة الطالب (نفس ألوان الموقع العام بالظبط).
   useEffect(() => {
     const el = rootRef.current;
-    if (!el) return;
+    if (!el || !platformBranding) return;
     const styleId = "student-custom-theme";
     let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
-    if (!isActive) {
-      if (styleTag) styleTag.remove();
-      return;
-    }
-    const colors = generateThemeColors(primaryColor, secondaryColor, theme === "dark");
+    const { primary, secondary } = resolveBrandHexColors(null, platformBranding);
+    const colors = generateThemeColors(primary, secondary, theme === "dark");
     if (!styleTag) {
       styleTag = document.createElement("style");
       styleTag.id = styleId;
@@ -54,7 +49,7 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
       .map(([k, v]) => `${k}: ${v};`)
       .join("");
     styleTag.textContent = `.student-theme { ${vars} }`;
-  }, [primaryColor, secondaryColor, isActive, theme]);
+  }, [platformBranding, theme]);
 
   // ملاحظة: ألوان "مظهر لوحة التحكم" الخاصة بالمدرس تُطبَّق على لوحة المدرس
   // وصفحة تسجيل الدخول فقط. لوحة الطالب (والمنصة عموماً) تستخدم ألوان المنصة
