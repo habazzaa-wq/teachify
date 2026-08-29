@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   getHostname,
@@ -36,38 +36,18 @@ export function TenantBootstrapProvider({
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
-  // نتأكد إن ألوان المنصة اتحمّلت مرة واحدة بس عشان نمنع إعادة الطلب وفقدان
-  // الثيم (فlicker) عند التنقّل بين الصفحات.
-  const platformBrandingLoaded = useRef(false);
-
   useEffect(() => {
     const platformOrSuper =
       platform || isSuperAdmin || pathname === "/tenant-not-found";
 
-    // نأكد دايماً إن ألوان المنصة (platform_branding) متحمّلة، لأنها المصدر
-    // الموحّد لألوان كامل المنصة (الموقع العام + كل اللوحات + صفحة الدخول)
-    // سواء الزائر أو المسجّل دخول، وعلى الدومين الأساسي أو أي سب-دومين. الألوان
-    // دي مستقلة تماماً عن مظهر المدرس فمفيش خطر إنها تتداخل مع ثيم اللوحة.
+    // ألوان المنصة (platformBranding) بتتم إدارتها بالكامل من BrandThemeProvider
+    // (تحميل ذاتي مستقل عن البوتستراب/تسجيل الدخول). هنا بنكتفي ببذرها من سياق
+    // السيرفر (SSR) لو موجودة عشان أول رسمية تكون صح من غير وميض.
     if (tenantContext?.platformBranding) {
       setPlatformBranding(tenantContext.platformBranding);
-    } else if (
-      !platformBrandingLoaded.current &&
-      (platformOrSuper || useTenantStore.getState().activeTenant)
-    ) {
-      // مفيش هيدر x-tenant-context → نجيب ألوان المنصة من الـ API العام.
-      platformBrandingLoaded.current = true;
-      fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data?.platform_branding) setPlatformBranding(data.platform_branding);
-        })
-        .catch(() => {
-          // لو فشل، نسمح بإعادة المحاولة في التنقّل الجاي.
-          platformBrandingLoaded.current = false;
-        });
     }
 
-    // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي بتحميل ألوان المنصة.
+    // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي ببذر ألوان المنصة.
     if (platformOrSuper) {
       setBootstrapStatus("resolved");
       return;
