@@ -46,32 +46,13 @@ class TenantSettingController extends Controller
             'font' => ['sometimes', 'nullable', 'string', 'max:200'],
         ]);
 
-        $tenant = currentTenant();
-        $values = $tenant->branding ?? [];
-
-        $map = [
-            'logo' => 'logo',
-            'favicon' => 'favicon',
-            'primary_color' => 'primary_color',
-            'secondary_color' => 'secondary_color',
-            'logo_type' => 'logo_type',
-            'logo_icon' => 'logo_icon',
-            'logo_image' => 'logo_image',
-            'font' => 'font',
-        ];
-
-        foreach ($map as $input => $key) {
-            if (array_key_exists($input, $validated)) {
-                $values[$key] = $validated[$input];
-            }
-        }
-
-        $tenant->update(['branding' => $values]);
-        $tenant->refresh();
+        // Platform branding is GLOBAL (not per-tenant) so the anonymous public
+        // site shows the exact colors the teacher configures.
+        $branding = (new \App\Services\Platform\PlatformBrandingService())->update($validated);
 
         return response()->json([
             'message' => 'Platform branding updated.',
-            'branding' => $this->resolvePlatformBranding($tenant),
+            'branding' => $branding,
         ]);
     }
 
@@ -175,19 +156,7 @@ class TenantSettingController extends Controller
      */
     private function resolvePlatformBranding(\App\Models\Tenant $tenant): array
     {
-        $values = $tenant->branding ?? [];
-
-        return [
-            'name' => $tenant->name,
-            'logo' => $values['logo'] ?? null,
-            'favicon' => $values['favicon'] ?? null,
-            'primary_color' => $values['primary_color'] ?? $values['primaryColor'] ?? null,
-            'secondary_color' => $values['secondary_color'] ?? $values['secondaryColor'] ?? null,
-            'logo_type' => $values['logo_type'] ?? null,
-            'logo_icon' => $values['logo_icon'] ?? null,
-            'logo_image' => $values['logo_image'] ?? null,
-            'font' => $values['fonts'] ?? $values['font'] ?? null,
-        ];
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
     }
 
     public function index(): JsonResponse

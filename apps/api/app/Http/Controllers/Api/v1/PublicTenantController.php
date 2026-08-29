@@ -120,29 +120,16 @@ class PublicTenantController extends Controller
     }
 
     /**
-     * Platform-level brand colors (the "platform colors" field managed by the
-     * platform admin). These are distinct from the tenant's appearance settings
-     * (`branding` group) which only apply to the teacher dashboard and login.
+     * Platform-level brand colors (the "platform colors" field). These are
+     * GLOBAL to the platform, not per-tenant, so anonymous visitors always see
+     * the same colors the teacher configured — independent of which tenant the
+     * requested domain resolves to.
      *
      * @return array<string, mixed>
      */
     private function resolvePlatformBranding($tenant): array
     {
-        $values = $tenant->branding ?? [];
-
-        return [
-            'logo' => $values['logo'] ?? null,
-            'favicon' => $values['favicon'] ?? null,
-            'primaryColor' => $values['primaryColor'] ?? $values['primary_color'] ?? null,
-            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? null,
-            'accentColor' => $values['accent_color'] ?? $values['accentColor'] ?? null,
-            'font' => $values['fonts'] ?? $values['font'] ?? null,
-            'darkLogo' => $values['dark_logo'] ?? null,
-            'lightLogo' => $values['light_logo'] ?? null,
-            'logoType' => $values['logo_type'] ?? null,
-            'logoIcon' => $values['logo_icon'] ?? null,
-            'logoImage' => $values['logo_image'] ?? null,
-        ];
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
     }
 
     private function assetFor(?int $assetId, int $tenantId): ?MediaAsset

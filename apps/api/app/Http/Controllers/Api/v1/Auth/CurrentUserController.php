@@ -89,21 +89,7 @@ class CurrentUserController extends Controller
      */
     private function getPlatformBranding(\App\Models\Tenant $tenant): array
     {
-        $values = $tenant->branding ?? [];
-
-        return [
-            'logo' => $values['logo'] ?? null,
-            'favicon' => $values['favicon'] ?? null,
-            'primaryColor' => $values['primary_color'] ?? $values['primaryColor'] ?? null,
-            'secondaryColor' => $values['secondary_color'] ?? $values['secondaryColor'] ?? null,
-            'accentColor' => $values['accent_color'] ?? $values['accentColor'] ?? '#f59e0b',
-            'font' => $values['fonts'] ?? $values['font'] ?? null,
-            'darkLogo' => $values['dark_logo'] ?? null,
-            'lightLogo' => $values['light_logo'] ?? null,
-            'logoType' => $values['logo_type'] ?? null,
-            'logoIcon' => $values['logo_icon'] ?? null,
-            'logoImage' => $values['logo_image'] ?? null,
-        ];
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
     }
 
     private function getNavigation($roles, $permissions): array
