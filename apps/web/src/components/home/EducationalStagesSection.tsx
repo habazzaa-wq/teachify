@@ -10,6 +10,8 @@ import { StageCardSkeleton } from "./stages/StageCardSkeleton";
 import { JourneyLine } from "./stages/JourneyLine";
 import {
   toEducationalStage,
+  accentClass,
+  accentForProgress,
   type EducationalStage,
 } from "./stages/types";
 import { triggerHaptic } from "./stages/feedback";
@@ -50,6 +52,13 @@ export function EducationalStagesSection({
   );
   const stages = stagesProp ?? fetched;
   const count = stages.length;
+
+  // Per-stage single-color accent (warm → gold journey), reused for the journey
+  // milestones + mobile indicators so the whole section shares one color system.
+  const accents = useMemo(
+    () => stages.map((_, i) => accentClass(accentForProgress(count > 1 ? i / (count - 1) : 0))),
+    [stages, count],
+  );
 
   const allIds = useMemo(() => stages.map((s) => Number(s.id)).filter(Number.isFinite), [stages]);
   const { statsById, loadingIds } = useStageStatsState(allIds, stagesProp ? false : true);
@@ -135,7 +144,7 @@ export function EducationalStagesSection({
             className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
           >
             {titleLead}{" "}
-            <span className="bg-gradient-to-r from-[var(--brand-primary-500)] via-[var(--brand-primary-600)] to-[var(--brand-secondary-500)] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--brand-primary-400)] via-[var(--brand-primary-500)] to-[var(--brand-primary-700)] bg-clip-text text-transparent">
               {titleEmphasis}
             </span>
           </h2>
@@ -145,12 +154,15 @@ export function EducationalStagesSection({
           </p>
         </header>
 
-        {/* grid / mobile carousel + decorative journey thread */}
+        {/* grid / mobile carousel + decorative journey thread (measured, aligned) */}
         <div className="relative mt-12">
-          <JourneyLine
-            count={count || 1}
-            className="pointer-events-none absolute inset-x-0 top-[44%] z-0 hidden h-28 md:block"
-          />
+          {!showSkeleton && count > 0 ? (
+            <JourneyLine
+              gridRef={scrollerRef}
+              accents={accents}
+              className="absolute inset-0 z-0 hidden md:block"
+            />
+          ) : null}
 
           <div
             ref={scrollerRef}
@@ -189,7 +201,10 @@ export function EducationalStagesSection({
           <div className="mt-6 md:hidden">
             <div className="h-1 w-full overflow-hidden rounded-full bg-border/60" aria-hidden="true">
               <div
-                className="h-full rounded-full [background-image:var(--brand-gradient)] transition-[width] duration-150 ease-brand"
+                className={cn(
+                  "h-full rounded-full bg-[var(--stage-color)] transition-[width] duration-150 ease-brand",
+                  accents[activeMobile],
+                )}
                 style={{ width: `${Math.max(scrollProgress * 100, (activeMobile + 1) / count * 100)}%` }}
               />
             </div>
@@ -203,10 +218,11 @@ export function EducationalStagesSection({
                   aria-label={stage.name}
                   onClick={() => scrollToIndex(i)}
                   className={cn(
-                    "h-2 rounded-full outline-none transition-all duration-300 ease-brand focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_45%,transparent)]",
+                    "h-2 rounded-full outline-none transition-all duration-300 ease-brand focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--stage-color)_45%,transparent)]",
+                    accents[i],
                     i === activeMobile
-                      ? "w-6 [background-image:var(--brand-gradient)]"
-                      : "w-2 bg-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_50%,transparent)]",
+                      ? "w-6 bg-[var(--stage-color)]"
+                      : "w-2 bg-[color-mix(in_srgb,var(--stage-color)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--stage-color)_55%,transparent)]",
                   )}
                 />
               ))}
