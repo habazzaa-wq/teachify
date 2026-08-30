@@ -1,4 +1,4 @@
 export { EducationalStagesSection } from "./EducationalStagesSection";
-export { StageMilestone } from "./StageMilestone";
-export { StageMilestoneSkeleton } from "./StageMilestoneSkeleton";
-export type { EducationalStage } from "./types";
+export { StageCard } from "./StageCard";
+export { StageCardSkeleton } from "./StageCardSkeleton";
+export type { EducationalStage, StageStatsLike } from "./types";
