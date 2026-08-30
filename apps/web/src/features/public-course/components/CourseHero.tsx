@@ -183,18 +183,6 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
       />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8 lg:pb-24">
-        {/* top editorial rule */}
-        <div
-          className="mb-10 flex items-center justify-between border-b pb-3 text-[10px] font-black uppercase tracking-[0.24em] sm:mb-14"
-          style={{ borderColor: line, color: faint }}
-        >
-          <span>الأكاديمية الرقمية</span>
-          <span className="hidden sm:inline">كتالوج الدورات</span>
-          <span className="tabular-nums" dir="ltr">
-            {String(course.lessonsCount).padStart(2, "0")} دروس
-          </span>
-        </div>
-
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
           {/* ── Text column ── */}
           <div className="relative flex flex-col gap-6">
