@@ -30,8 +30,8 @@ const WhyChooseUsOrbit = dynamic(
   { ssr: true }
 );
 
-const FeaturedStagesSection = dynamic(
-  () => import("@/components/home/featured-stages/FeaturedStagesSection").then((m) => m.FeaturedStagesSection),
+const StagesCardFileSection = dynamic(
+  () => import("@/components/home/stages-cardfile/StagesCardFileSection").then((m) => m.StagesCardFileSection),
   { ssr: true }
 );
 
@@ -113,7 +113,7 @@ async function HomePage() {
       </LazyMount>
       <LazyMount minHeight="720px">
         <Suspense fallback={<SectionFallback />}>
-          <FeaturedStagesSection />
+          <StagesCardFileSection />
         </Suspense>
       </LazyMount>
       <LazyMount minHeight="520px">

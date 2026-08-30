@@ -34,8 +34,8 @@ export interface EducationalStage {
   accentColor?: string;
   /** Short age-range / key-benefit line shown under the name. */
   meta?: string;
-  /** Editorial hero flag — a flagged stage (or the first by default) gets the
-   *  larger featured treatment in `FeaturedStagesSection`. */
+  /** Editorial hero flag — a flagged stage (or the first by default) opens
+   *  as the front card in `StagesCardFileSection`. */
   featured?: boolean;
 }
 
