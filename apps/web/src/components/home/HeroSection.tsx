@@ -406,7 +406,7 @@ export function HeroSection() {
         {/* ── Floating badge pills ── */}
         {hero?.badge2Text && (
           <div
-            className="home-enter-badge-top absolute top-3 start-3 z-20 sm:top-4 sm:start-4 lg:top-5 lg:start-6"
+            className="home-enter-badge-top relative top-auto start-auto z-20 mb-2.5 sm:mb-0 sm:absolute sm:top-4 sm:start-4 lg:top-5 lg:start-6"
             style={{ animationDelay: "0.1s" }}
           >
             <div
@@ -437,7 +437,7 @@ export function HeroSection() {
 
         {hero?.badge1Text && (
           <div
-            className="home-enter-badge-bottom absolute bottom-3 end-3 z-20 sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6"
+            className="home-enter-badge-bottom relative bottom-auto end-auto z-20 mt-2.5 sm:mt-0 sm:absolute sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6"
             style={{ animationDelay: "0.2s" }}
           >
             <div
