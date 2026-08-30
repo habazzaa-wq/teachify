@@ -64,31 +64,27 @@ export function PublicFooter() {
   };
 
   return (
-    <footer className="community-theme relative isolate overflow-hidden text-white">
-      {/* Brand-colored base (primary → secondary) */}
+    <footer className="community-theme relative isolate overflow-hidden">
+      {/* Solid secondary base — the footer carries ONE brand color, no blending */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
-        style={{ background: `linear-gradient(125deg, ${primary}, ${secondary})` }}
+        style={{ background: secondary }}
       />
-      {/* Scrim for readable white text while keeping the brand tint */}
+      {/* Gentle depth overlay for a professional, even surface */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
-        style={{ background: "rgba(17, 13, 10, 0.58)" }}
+        style={{ background: "rgba(10, 10, 12, 0.45)" }}
       />
-      {/* Subtle dotted texture + corner glow */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-dot opacity-[0.10]" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -end-16 h-64 w-64 rounded-full blur-3xl opacity-30"
-        style={{ background: `radial-gradient(circle, ${secondary}, transparent 70%)` }}
-      />
+      {/* Subtle dotted texture */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-dot opacity-[0.06]" />
 
-      {/* Top hairline */}
+      {/* Primary accent bar across the top edge — color used on its own */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{ background: `linear-gradient(to left, transparent, ${secondary}, ${primary}, transparent)` }}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-1.5 -z-10"
+        style={{ background: primary }}
       />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -143,7 +139,7 @@ export function PublicFooter() {
               <h3 className="relative mb-4 ps-3 text-sm font-bold text-white">
                 <span
                   className="absolute inset-y-1 start-0 w-1 rounded-full"
-                  style={{ background: secondary }}
+                  style={{ background: primary }}
                 />
                 {group.title}
               </h3>
@@ -184,7 +180,7 @@ export function PublicFooter() {
               Mahmoud Habazza
               <MessageCircle className="h-3.5 w-3.5" style={{ color: "#25D366" }} />
             </a>
-            <Heart className="h-3.5 w-3.5 fill-current" style={{ color: secondary }} />
+            <Heart className="h-3.5 w-3.5 fill-current" style={{ color: primary }} />
           </p>
 
           <button
