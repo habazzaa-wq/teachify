@@ -403,69 +403,6 @@ export function HeroSection() {
       {/* ── Content ── */}
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-2 pb-12 sm:pt-4 sm:pb-20 lg:pt-4 lg:pb-24">
 
-        {/* ── Floating badge pills ── */}
-        {hero?.badge2Text && (
-          <div
-            className="home-enter-badge-top relative top-auto start-auto z-20 mb-2.5 sm:mb-0 sm:absolute sm:top-4 sm:start-4 lg:top-5 lg:start-6"
-            style={{ animationDelay: "0.1s" }}
-          >
-            <div
-              className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                isDark
-                  ? "border-white/10 bg-white/10"
-                  : "border-white/50 bg-white/80"
-              }`}
-              style={{
-                boxShadow: isDark
-                  ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-              }}
-            >
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
-                style={{
-                  background: "var(--brand-secondary)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                }}
-              >
-                <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-              </div>
-              <span style={{ color: "var(--brand-secondary)" }}>{hero.badge2Text}</span>
-            </div>
-          </div>
-        )}
-
-        {hero?.badge1Text && (
-          <div
-            className="home-enter-badge-bottom relative bottom-auto end-auto z-20 mt-2.5 sm:mt-0 sm:absolute sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6"
-            style={{ animationDelay: "0.2s" }}
-          >
-            <div
-              className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                isDark
-                  ? "border-white/10 bg-white/10"
-                  : "border-white/50 bg-white/80"
-              }`}
-              style={{
-                boxShadow: isDark
-                  ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-              }}
-            >
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
-                style={{
-                  background: "var(--brand-primary)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                }}
-              >
-                <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-              </div>
-              <span style={{ color: "var(--brand-primary)" }}>{hero.badge1Text}</span>
-            </div>
-          </div>
-        )}
-
         {/* ── Title ── */}
         <h1
           className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
@@ -633,7 +570,68 @@ export function HeroSection() {
           {icons?.phone?.visible !== false && <PhoneIconWithTooltip social={social} icons={icons} />}
           </div>
          </div>
-       </div>
+
+        {/* ── Badge pills: mobile sits under the profile image (one right, one left); desktop floats in the corners ── */}
+        {(hero?.badge2Text || hero?.badge1Text) && (
+          <div className="mt-4 flex w-full items-center justify-between gap-3 sm:contents">
+            {hero?.badge2Text && (
+              <div className="home-enter-badge-top z-20 sm:absolute sm:top-4 sm:start-4 lg:top-5 lg:start-6" style={{ animationDelay: "0.1s" }}>
+                <div
+                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                    isDark
+                      ? "border-white/10 bg-white/10"
+                      : "border-white/50 bg-white/80"
+                  }`}
+                  style={{
+                    boxShadow: isDark
+                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
+                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  }}
+                >
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
+                    style={{
+                      background: "var(--brand-secondary)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                    }}
+                  >
+                    <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
+                  </div>
+                  <span style={{ color: "var(--brand-secondary)" }}>{hero.badge2Text}</span>
+                </div>
+              </div>
+            )}
+
+            {hero?.badge1Text && (
+              <div className="home-enter-badge-bottom z-20 sm:absolute sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6" style={{ animationDelay: "0.2s" }}>
+                <div
+                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                    isDark
+                      ? "border-white/10 bg-white/10"
+                      : "border-white/50 bg-white/80"
+                  }`}
+                  style={{
+                    boxShadow: isDark
+                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
+                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+                  }}
+                >
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
+                    style={{
+                      background: "var(--brand-primary)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                    }}
+                  >
+                    <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
+                  </div>
+                  <span style={{ color: "var(--brand-primary)" }}>{hero.badge1Text}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        </div>
 
      </section>
   );
