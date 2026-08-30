@@ -78,32 +78,40 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
   واتساب: MessageCircle,
 };
 
-/* ── Shared hover-fill style: neutral box → gold background ────── */
-const goldFill =
-  "block w-full rounded-md px-3.5 py-2.5 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]";
+/* ── Card border + overlay (gold border, darkened body) ─────────── */
+const cardSurface: React.CSSProperties = {
+  backgroundColor: "rgb(0 0 0 / 0.12)",
+  border: "1px solid color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
+};
 
 /* ── Sub-component: one nav card ───────────────────────────────── */
 function FooterNavCard({ section }: { section: FooterNavSection }) {
   return (
-    <section
-      className="rounded-xl p-5"
-      style={{
-        backgroundColor: "rgb(0 0 0 / 0.12)",
-        border: "1px solid color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
-      }}
-      aria-label={section.heading}
-    >
+    <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label={section.heading}>
       <h3
         className="text-sm font-semibold"
         style={{ color: "var(--brand-secondary)" }}
       >
         {section.heading}
       </h3>
-      <ul className="mt-3 space-y-1">
+      <div
+        className="mt-3 h-px w-full"
+        style={{ backgroundColor: "color-mix(in srgb, var(--brand-secondary) 25%, transparent)" }}
+      />
+      <ul className="mt-4 space-y-2">
         {section.links.map((link) => (
           <li key={link.label}>
-            <Link href={link.href} className={goldFill}>
-              {link.label}
+            <Link
+              href={link.href}
+              className="group flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+            >
+              <span>{link.label}</span>
+              <span
+                aria-hidden="true"
+                className="text-white/40 transition-transform duration-150 group-hover:translate-x-[-2px] group-hover:text-[var(--brand-secondary-contrast)]"
+              >
+                ‹
+              </span>
             </Link>
           </li>
         ))}
@@ -129,7 +137,7 @@ export function PublicFooter() {
 
   return (
     <footer style={{ backgroundColor: "var(--brand-primary)" }}>
-      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
         {/* ── Header: brand + description + CTAs ── */}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-md">
@@ -155,10 +163,10 @@ export function PublicFooter() {
           </div>
 
           {/* CTAs — gold fills, hover flips to a defined contrast fill */}
-          <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Link
               href="/student/dashboard"
-              className="inline-flex items-center justify-center rounded-md bg-[var(--brand-secondary)] px-5 py-2.5 text-sm font-semibold text-[var(--brand-secondary-contrast)] transition-colors duration-150 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+              className="inline-flex w-full items-center justify-center rounded-md bg-[var(--brand-secondary)] px-6 py-3 text-sm font-semibold text-[var(--brand-secondary-contrast)] transition-colors duration-150 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
             >
               سجّل الآن
             </Link>
@@ -167,7 +175,7 @@ export function PublicFooter() {
               href={DEVELOPER_WHATSAPP}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/40 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] hover:ring-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+              className="inline-flex w-full items-center justify-center rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/40 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] hover:ring-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
             >
               تواصل معنا
             </a>
@@ -175,44 +183,41 @@ export function PublicFooter() {
         </div>
 
         {/* ── Middle: nav cards + contact card ── */}
-        <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {footerNavSections.map((section) => (
             <FooterNavCard key={section.heading} section={section} />
           ))}
 
           {/* Contact card */}
-          <section
-            className="rounded-xl p-5"
-            aria-label="التواصل"
-            style={{
-              backgroundColor: "rgb(0 0 0 / 0.12)",
-              border: "1px solid color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
-            }}
-          >
+          <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label="التواصل">
             <h3 className="text-sm font-semibold" style={{ color: "var(--brand-secondary)" }}>
               التواصل
             </h3>
-            <ul className="mt-3 space-y-1">
+            <div
+              className="mt-3 h-px w-full"
+              style={{ backgroundColor: "color-mix(in srgb, var(--brand-secondary) 25%, transparent)" }}
+            />
+            <ul className="mt-4 space-y-2">
               <li>
                 <a
                   href={footerContact.phoneHref}
-                  className="flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)]"
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
                 >
                   <Phone className="h-4 w-4 shrink-0" />
-                  {footerContact.phone}
+                  <span className="truncate">{footerContact.phone}</span>
                 </a>
               </li>
               <li>
                 <a
                   href={footerContact.emailHref}
-                  className="flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)]"
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
                 >
                   <Mail className="h-4 w-4 shrink-0" />
-                  {footerContact.email}
+                  <span className="truncate">{footerContact.email}</span>
                 </a>
               </li>
-              <li className="flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm text-white/90">
-                <Clock className="h-4 w-4 shrink-0" />
+              <li className="flex items-start gap-3 rounded-md px-3 py-2 text-sm leading-relaxed text-white/90">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{footerContact.hours}</span>
               </li>
             </ul>
@@ -220,15 +225,21 @@ export function PublicFooter() {
         </div>
 
         {/* ── Bottom bar: hairline divider, muted legal + social ── */}
-        <div className="mt-12 flex flex-col gap-5 border-t border-white/15 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/75">
+        <div className="mt-10 flex flex-col gap-5 border-t border-white/15 pt-6 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-relaxed text-white/75">
             © {year} {tenantName}. جميع الحقوق محفوظة.
-            <span className="mx-2 opacity-50">|</span>
-            <Link href="/marketing/privacy" className="transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4">
+            <span className="mx-2 text-white/30">|</span>
+            <Link
+              href="/marketing/privacy"
+              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4 focus-visible:text-[var(--brand-secondary)] focus-visible:underline"
+            >
               سياسة الخصوصية
             </Link>
-            <span className="mx-2 opacity-50">|</span>
-            <Link href="/marketing/terms" className="transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4">
+            <span className="mx-2 text-white/30">|</span>
+            <Link
+              href="/marketing/terms"
+              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4 focus-visible:text-[var(--brand-secondary)] focus-visible:underline"
+            >
               شروط الاستخدام
             </Link>
           </p>
