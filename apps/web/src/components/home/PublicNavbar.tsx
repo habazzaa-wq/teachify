@@ -279,6 +279,13 @@ export function PublicNavbar() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Allow the mobile secondary nav's search button to open the same dialog.
+  useEffect(() => {
+    const onSearchRequest = () => setSearchOpen(true);
+    window.addEventListener("public-search-request", onSearchRequest);
+    return () => window.removeEventListener("public-search-request", onSearchRequest);
+  }, []);
+
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
   const authUser = useAuthStore((s) => s.user);
@@ -556,29 +563,32 @@ export function PublicNavbar() {
 
             {/* ── Right actions ── */}
             <div className="relative z-10 flex items-center gap-1 sm:gap-1.5 lg:gap-2">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                title="بحث عن كورس (Ctrl+K)"
-                aria-label="بحث عن كورس"
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
-              >
-                <span
-                  className="absolute inset-0 rounded-xl"
-                  style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
-                />
-                <span
-                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
-                  style={{
-                    backgroundColor: secondary,
-                    border: `3px solid var(--brand-primary)`,
-                    boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
-                  }}
-                />
-                <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300" />
-              </button>
+              {/* Search + theme move to the mobile secondary nav on small screens */}
+              <div className="hidden items-center gap-1 sm:gap-1.5 lg:gap-2 md:flex">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  title="بحث عن كورس (Ctrl+K)"
+                  aria-label="بحث عن كورس"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
+                >
+                  <span
+                    className="absolute inset-0 rounded-xl"
+                    style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
+                  />
+                  <span
+                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+                    style={{
+                      backgroundColor: secondary,
+                      border: `3px solid var(--brand-primary)`,
+                      boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
+                    }}
+                  />
+                  <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300" />
+                </button>
 
-              <ThemeBtn />
+                <ThemeBtn />
+              </div>
 
               {/* Desktop auth */}
               <div className="flex items-center gap-1 sm:gap-2">
@@ -817,7 +827,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2 py-1 text-[11px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:px-3 sm:py-1.5 sm:text-xs md:text-sm"
+                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3 md:py-1.5 md:text-sm"
                         style={{
                           color: "hsl(var(--foreground))",
                           border: `1px solid hsl(var(--border))`,
@@ -825,7 +835,7 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl"
+                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl md:rounded-2xl"
                           style={{
                             backgroundColor: secondary,
                             border: `3px solid var(--brand-primary)`,
@@ -833,7 +843,7 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
+                        <LogIn className="h-4 w-4 sm:h-4 sm:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
                         <span className="relative z-10 whitespace-nowrap group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
@@ -842,18 +852,18 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2.5 py-1 text-[11px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:px-3.5 sm:py-1.5 sm:text-xs md:text-sm"
+                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3.5 md:py-1.5 md:text-sm"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.271)`,
                         }}
                       >
                         <span
-                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-[18px]"
+                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-2xl md:rounded-[18px]"
                           style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 relative z-10" />
+                        <Sparkles className="h-4 w-4 sm:h-4 sm:w-4 relative z-10" />
                         <span className="relative z-10 whitespace-nowrap">إنشاء حساب</span>
                         <ChevronLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
                       </button>

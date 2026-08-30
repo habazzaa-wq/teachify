@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
+  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useUiStore } from "@/stores/ui.store";
@@ -142,6 +142,44 @@ export function MobileSecondaryNav() {
                 </Link>
               );
             })}
+          </div>
+
+          {/* ── Search + theme (freed up from the main navbar on mobile) ── */}
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("public-search-request"))}
+              aria-label="بحث عن كورس"
+              title="بحث عن كورس"
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
+              style={{
+                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                color: primary,
+                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
+                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
+              }}
+            >
+              <Search className="h-[17px] w-[17px]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => useUiStore.getState().toggleTheme()}
+              aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
+              title={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
+              style={{
+                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                color: "var(--brand-secondary)",
+                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
+                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
+              }}
+            >
+              {theme === "light" ? (
+                <Moon className="h-[17px] w-[17px]" />
+              ) : (
+                <Sun className="h-[17px] w-[17px]" />
+              )}
+            </button>
           </div>
         </div>
 
