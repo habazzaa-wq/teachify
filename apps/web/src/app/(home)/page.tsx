@@ -30,8 +30,8 @@ const WhyChooseUsOrbit = dynamic(
   { ssr: true }
 );
 
-const LearningJourneySection = dynamic(
-  () => import("@/components/home/journey/LearningJourneySection").then((m) => m.LearningJourneySection),
+const FeaturedStagesSection = dynamic(
+  () => import("@/components/home/featured-stages/FeaturedStagesSection").then((m) => m.FeaturedStagesSection),
   { ssr: true }
 );
 
@@ -111,9 +111,9 @@ async function HomePage() {
           <WhyChooseUsOrbit />
         </Suspense>
       </LazyMount>
-      <LazyMount minHeight="660px">
+      <LazyMount minHeight="720px">
         <Suspense fallback={<SectionFallback />}>
-          <LearningJourneySection />
+          <FeaturedStagesSection />
         </Suspense>
       </LazyMount>
       <LazyMount minHeight="520px">
