@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   darkMode: ["class"],
@@ -230,10 +231,6 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(50%)" },
         },
-        "journey-ring": {
-          from: { transform: "rotate(0deg)" },
-          to: { transform: "rotate(360deg)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -258,7 +255,6 @@ const config: Config = {
         "brand-glow-pulse": "brand-glow-pulse 2.4s ease-in-out infinite",
         "brand-shimmer": "brand-shimmer 1.8s linear infinite",
         "brand-float": "brand-float 5s ease-in-out infinite",
-        "journey-ring": "journey-ring 16s linear infinite",
       },
       transitionTimingFunction: {
         brand: "cubic-bezier(0.22, 1, 0.36, 1)",
@@ -273,7 +269,14 @@ const config: Config = {
       },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    plugin(({ addVariant }) => {
+      // Hover effects only on devices that can actually hover — prevents
+      // "stuck hover" states on touch screens.
+      addVariant("hoverable", "@media (hover: hover) and (pointer: fine)");
+    }),
+  ],
 };
 
 export default config;

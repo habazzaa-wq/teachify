@@ -34,6 +34,9 @@ export interface EducationalStage {
   accentColor?: string;
   /** Short age-range / key-benefit line shown under the name. */
   meta?: string;
+  /** Editorial hero flag — a flagged stage (or the first by default) gets the
+   *  larger featured treatment in `FeaturedStagesSection`. */
+  featured?: boolean;
 }
 
 /**
@@ -135,5 +138,6 @@ export function toEducationalStage(item: StageItem): EducationalStage {
     href: item.link ?? `/stages/${item.id}`,
     accentColor: (item as Partial<EducationalStage>).accentColor,
     meta: (item as Partial<EducationalStage>).meta,
+    featured: (item as Partial<EducationalStage>).featured,
   };
 }
