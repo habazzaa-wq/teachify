@@ -230,6 +230,10 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(50%)" },
         },
+        "journey-ring": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -254,6 +258,7 @@ const config: Config = {
         "brand-glow-pulse": "brand-glow-pulse 2.4s ease-in-out infinite",
         "brand-shimmer": "brand-shimmer 1.8s linear infinite",
         "brand-float": "brand-float 5s ease-in-out infinite",
+        "journey-ring": "journey-ring 16s linear infinite",
       },
       transitionTimingFunction: {
         brand: "cubic-bezier(0.22, 1, 0.36, 1)",
