@@ -270,11 +270,17 @@
 
   html {
     @apply scroll-smooth;
+    /* Prevent any element wider than the viewport (e.g. a stray absolutely
+       positioned decoration) from creating page-wide horizontal scroll on
+       mobile. Internal carousels keep scrolling because they are their own
+       `overflow-x-auto` containers, unaffected by this guard. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
   }
 
   [dir="rtl"] {
