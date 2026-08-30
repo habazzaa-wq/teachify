@@ -64,50 +64,39 @@ export function PublicFooter() {
   };
 
   return (
-    <footer className="community-theme relative isolate overflow-hidden">
-      {/* Solid secondary base — the footer carries ONE brand color, no blending */}
+    <footer className="relative isolate overflow-hidden">
+      {/* ── Main zone: solid PRIMARY alone ── */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{ background: secondary }}
-      />
-      {/* Gentle depth overlay for a professional, even surface */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{ background: "rgba(10, 10, 12, 0.45)" }}
-      />
-      {/* Subtle dotted texture */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-dot opacity-[0.06]" />
-
-      {/* Primary accent bar across the top edge — color used on its own */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-1.5 -z-10"
+        className="pointer-events-none absolute inset-x-0 top-0 bottom-16 -z-10"
         style={{ background: primary }}
       />
+      {/* ── Bottom strip: solid SECONDARY alone ── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-16 -z-10"
+        style={{ background: secondary }}
+      />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* ── Main ── */}
         <div className="grid grid-cols-1 gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-6">
             <Link href="/" className="group inline-flex items-center gap-2.5">
               {logo ? (
-                <span className="flex h-10 items-center rounded-xl bg-white/95 px-2.5 shadow-sm backdrop-blur transition-transform duration-300 group-hover:scale-[1.04]">
+                <span className="flex h-10 items-center rounded-xl bg-white px-2.5 shadow-sm transition-transform duration-300 group-hover:scale-[1.04]">
                   <Image src={logo} alt={tenantName} width={120} height={28} className="h-7 w-auto" />
                 </span>
               ) : (
-                <span
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/95 shadow-sm transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
-                >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
                   <GraduationCap className="h-5 w-5" style={{ color: primary }} />
                 </span>
               )}
               <span className="text-xl font-extrabold tracking-tight text-white">{tenantName}</span>
             </Link>
 
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80">
               منصة تعليمية متكاملة تقدّم رحلة تعلّم هادفة عبر مراحل دراسية منظّمة
               وكورسات احترافية مع متابعة أكاديمية تواكب احتياج كل طالب.
             </p>
@@ -124,7 +113,7 @@ export function PublicFooter() {
                     rel="noopener noreferrer"
                     aria-label={s.label}
                     title={s.label}
-                    className="group relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:border-white hover:bg-white hover:text-[var(--brand-primary)]"
+                    className="group relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/40 text-white transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:border-white hover:bg-white hover:text-primary"
                   >
                     <Icon className="relative z-10 h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110" />
                   </a>
@@ -137,10 +126,7 @@ export function PublicFooter() {
           {linkGroups.map((group) => (
             <nav key={group.title} className="lg:col-span-3" aria-label={group.title}>
               <h3 className="relative mb-4 ps-3 text-sm font-bold text-white">
-                <span
-                  className="absolute inset-y-1 start-0 w-1 rounded-full"
-                  style={{ background: primary }}
-                />
+                <span className="absolute inset-y-1 start-0 w-1 rounded-full bg-white/70" />
                 {group.title}
               </h3>
               <ul className="space-y-1">
@@ -150,9 +136,9 @@ export function PublicFooter() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white/70 transition-all duration-300 hover:bg-white/10 hover:ps-3 hover:text-white"
+                        className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-white/80 transition-all duration-300 hover:bg-white/15 hover:ps-3 hover:text-white"
                       >
-                        <Icon className="h-4 w-4 shrink-0 text-white/40 transition-colors duration-300 group-hover:text-[var(--brand-secondary)]" />
+                        <Icon className="h-4 w-4 shrink-0 text-white/50 transition-colors duration-300 group-hover:text-white" />
                         <span>{link.label}</span>
                       </Link>
                     </li>
@@ -162,32 +148,34 @@ export function PublicFooter() {
             </nav>
           ))}
         </div>
+      </div>
 
-        {/* ── Bottom bar ── */}
-        <div className="flex flex-col items-center gap-4 border-t border-white/15 py-5 sm:flex-row sm:justify-between">
-          <p className="text-xs text-white/60">
+      {/* ── Bottom bar: SECONDARY strip ── */}
+      <div className="text-foreground">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-5 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
+          <p className="text-xs opacity-80">
             © {year} {tenantName}. جميع الحقوق محفوظة.
           </p>
 
-          <p className="flex items-center gap-1.5 text-xs text-white/70">
+          <p className="flex items-center gap-1.5 text-xs opacity-80">
             <span>طُوّر بكل شغف بواسطة</span>
             <a
               href={DEVELOPER_WHATSAPP}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-bold text-white transition-opacity duration-300 hover:opacity-80"
+              className="inline-flex items-center gap-1 font-bold transition-opacity duration-300 hover:opacity-60"
             >
               Mahmoud Habazza
               <MessageCircle className="h-3.5 w-3.5" style={{ color: "#25D366" }} />
             </a>
-            <Heart className="h-3.5 w-3.5 fill-current" style={{ color: primary }} />
+            <Heart className="h-3.5 w-3.5 fill-current text-foreground" />
           </p>
 
           <button
             type="button"
             onClick={scrollToTop}
             aria-label="العودة إلى الأعلى"
-            className="group inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:border-white hover:bg-white hover:text-[var(--brand-primary)]"
+            className="group inline-flex h-9 w-9 items-center justify-center rounded-full border border-foreground/30 text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:scale-110 hover:bg-foreground hover:text-background"
           >
             <ArrowUp className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
           </button>
