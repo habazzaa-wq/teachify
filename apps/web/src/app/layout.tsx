@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
+import { Cairo, Aref_Ruqaa } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { headers } from "next/headers";
@@ -23,6 +23,15 @@ import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/goo
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+// Distinctive Arabic calligraphy face used for the homepage footer's closing
+// statement — the "handwritten last line" of the site's workbook metaphor.
+const arefRuqaa = Aref_Ruqaa({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -101,7 +110,7 @@ export default async function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${cairo.variable} h-full`}
+      className={`${cairo.variable} ${arefRuqaa.variable} h-full`}
       style={fontStack ? ({ "--font-sans": fontStack } as React.CSSProperties) : undefined}
       suppressHydrationWarning
     >
