@@ -86,6 +86,25 @@
     --brand-neutral: #fbf7f3;
     --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
 
+    /* ───────── "Split Profile" Educational Stages section tokens ─────────
+       Follow the stage-section design spec. Tints/deeps are derived once with
+       `color-mix` from the live brand colors (updated from the admin dashboard
+       via BrandThemeProvider) so they re-skin automatically. They source from
+       `--brand-primary`/`--brand-secondary` rather than the bare `--primary`/
+       `--secondary` shadcn tokens, which the `.dark` block redefines as HSL for
+       the dashboard — keeping these section tokens always-valid brand hexes.
+       `--ink`/`--paper` are fixed warm neutrals (non-brand). */
+    --primary-tint: color-mix(in srgb, var(--brand-primary) 12%, white);
+    --primary-deep: color-mix(in srgb, var(--brand-primary) 100%, black 20%);
+    --secondary-tint: color-mix(in srgb, var(--brand-secondary) 12%, white);
+    --secondary-deep: color-mix(in srgb, var(--brand-secondary) 100%, black 20%);
+    /* Mode-swapped logical pair: `--ink`/`--paper` hold the active theme's
+       text/background; `.dark` repoints them to the dark values below. */
+    --ink: #241c1a;
+    --paper: #fbf7f2;
+    --paper-dark: #1c1614;
+    --ink-dark: #f3ece6;
+
     --chart-1: 230 65% 50%;
     --chart-2: 160 84% 39%;
     --chart-3: 35 92% 50%;
@@ -166,6 +185,16 @@
     --brand-secondary-deep: #ffc43e;
     --brand-neutral: #0e0e12;
     --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
+
+    /* "Split Profile" section tokens — dark: tints deepen/destaurate against
+       the dark paper; deeps lift toward white for legible accents. */
+    --primary-tint: color-mix(in srgb, var(--brand-primary) 14%, var(--paper-dark));
+    --primary-deep: color-mix(in srgb, var(--brand-primary) 100%, white 20%);
+    --secondary-tint: color-mix(in srgb, var(--brand-secondary) 14%, var(--paper-dark));
+    --secondary-deep: color-mix(in srgb, var(--brand-secondary) 100%, white 20%);
+    /* Swap the ink/paper logical pair for dark mode. */
+    --ink: var(--ink-dark);
+    --paper: var(--paper-dark);
 
     --card: 225 25% 11%;
     --card-foreground: 210 40% 96%;
