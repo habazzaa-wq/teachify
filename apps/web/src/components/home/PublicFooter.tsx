@@ -78,26 +78,41 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
   واتساب: MessageCircle,
 };
 
-/* ── Card border + overlay (gold border, darkened body) ─────────── */
+/* ── Card surface: soft neutral overlay + gold border + gentle depth ── */
 const cardSurface: React.CSSProperties = {
-  backgroundColor: "rgb(0 0 0 / 0.12)",
+  backgroundImage:
+    "linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.14))",
   border: "1px solid color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
+  boxShadow:
+    "0 1px 2px rgb(0 0 0 / 0.08), 0 8px 24px -12px rgb(0 0 0 / 0.35)",
 };
+
+/* ── Card title: gold accents with a soft underline rule ────────── */
+function CardTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <h3
+        className="text-sm font-bold tracking-wide"
+        style={{ color: "var(--brand-secondary)" }}
+      >
+        {children}
+      </h3>
+      <div
+        className="mt-2.5 h-px w-full"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, color-mix(in srgb, var(--brand-secondary) 60%, transparent), transparent)",
+        }}
+      />
+    </div>
+  );
+}
 
 /* ── Sub-component: one nav card ───────────────────────────────── */
 function FooterNavCard({ section }: { section: FooterNavSection }) {
   return (
     <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label={section.heading}>
-      <h3
-        className="text-sm font-semibold"
-        style={{ color: "var(--brand-secondary)" }}
-      >
-        {section.heading}
-      </h3>
-      <div
-        className="mt-3 h-px w-full"
-        style={{ backgroundColor: "color-mix(in srgb, var(--brand-secondary) 25%, transparent)" }}
-      />
+      <CardTitle>{section.heading}</CardTitle>
       <ul className="mt-4 space-y-2">
         {section.links.map((link) => (
           <li key={link.label}>
@@ -139,24 +154,24 @@ export function PublicFooter() {
     <footer style={{ backgroundColor: "var(--brand-primary)" }}>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
         {/* ── Header: brand + description + CTAs ── */}
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-8 border-b border-white/10 pb-10 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-md">
             <div className="flex items-center gap-3">
               {logo ? (
-                <span className="flex h-10 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                  <Image src={logo} alt={tenantName} width={104} height={24} className="h-6 w-auto" />
+                <span className="flex h-11 items-center rounded-lg bg-white px-2.5 shadow-sm">
+                  <Image src={logo} alt={tenantName} width={116} height={28} className="h-7 w-auto" />
                 </span>
               ) : (
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-[var(--brand-primary)]">
-                  <GraduationCap className="h-5 w-5" />
+                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[var(--brand-primary)] shadow-sm">
+                  <GraduationCap className="h-6 w-6" />
                 </span>
               )}
-              <span className="text-lg font-extrabold tracking-tight text-white">
+              <span className="text-xl font-extrabold tracking-tight text-white">
                 {tenantName}
               </span>
             </div>
 
-            <p className="mt-4 text-sm leading-relaxed text-white/85">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/85">
               منصة تعليمية عربية متكاملة تضم الطلاب والمعلمين وأولياء الأمور، وتقدّم محتوى
               دراسيًا منظّمًا لكل المراحل الدراسية.
             </p>
@@ -183,20 +198,14 @@ export function PublicFooter() {
         </div>
 
         {/* ── Middle: nav cards + contact card ── */}
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {footerNavSections.map((section) => (
             <FooterNavCard key={section.heading} section={section} />
           ))}
 
           {/* Contact card */}
           <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label="التواصل">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--brand-secondary)" }}>
-              التواصل
-            </h3>
-            <div
-              className="mt-3 h-px w-full"
-              style={{ backgroundColor: "color-mix(in srgb, var(--brand-secondary) 25%, transparent)" }}
-            />
+            <CardTitle>التواصل</CardTitle>
             <ul className="mt-4 space-y-2">
               <li>
                 <a
@@ -225,7 +234,7 @@ export function PublicFooter() {
         </div>
 
         {/* ── Bottom bar: hairline divider, muted legal + social ── */}
-        <div className="mt-10 flex flex-col gap-5 border-t border-white/15 pt-6 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-5 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs leading-relaxed text-white/75">
             © {year} {tenantName}. جميع الحقوق محفوظة.
             <span className="mx-2 text-white/30">|</span>
@@ -244,7 +253,7 @@ export function PublicFooter() {
             </Link>
           </p>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {footerSocials.map((social) => {
               const Icon = SOCIAL_ICONS[social.label];
               if (!Icon) return null;
@@ -254,7 +263,12 @@ export function PublicFooter() {
                   href={social.href}
                   aria-label={social.label}
                   title={social.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-white/75 transition-colors duration-150 hover:text-[var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white/80 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+                  style={{
+                    border:
+                      "1px solid color-mix(in srgb, var(--brand-secondary) 40%, transparent)",
+                    backgroundColor: "rgb(0 0 0 / 0.12)",
+                  }}
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
