@@ -283,7 +283,8 @@ export function NewsTicker({
         )}
       </div>
 
-      {/* Collapsed re-open handle: slim pull-down chevron tab */}
+      {/* Collapsed re-open handle: slim pull-down chevron tab, in normal flow
+          so it sits above the sticky navbar instead of overlapping it */}
       {collapsible && collapsed && (
         <button
           type="button"
@@ -294,7 +295,7 @@ export function NewsTicker({
           onPointerCancel={onHandlePointerUp}
           aria-label="إظهار شريط الأخبار"
           className={cn(
-            "fixed inset-x-0 top-0 z-[60] mx-auto flex h-6 w-12 cursor-pointer items-center justify-center rounded-b-xl border border-t-0 border-white/25 text-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.25)] outline-none transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing active:scale-95",
+            "relative z-[60] mx-auto flex h-6 w-14 cursor-pointer items-center justify-center rounded-b-xl border border-t-0 border-white/25 text-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.2)] outline-none transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing active:scale-95",
             pulling && "translate-y-0.5",
           )}
           style={{ background: gradient, color: text }}
