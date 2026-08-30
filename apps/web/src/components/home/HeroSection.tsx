@@ -503,7 +503,7 @@ export function HeroSection() {
         )}
 
         {/* ── Profile circle wrapper: 340×340 ── */}
-          <div className="home-enter-pop-soft relative mx-auto mt-4 h-[340px] w-[340px] sm:mt-6" style={{ animationDelay: "0.25s" }}>
+          <div className="home-enter-pop-soft relative mx-auto mt-4 h-[340px] w-[340px] max-w-full sm:mt-6" style={{ animationDelay: "0.25s" }}>
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
             {heroImage ? (
