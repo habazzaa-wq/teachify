@@ -1,5 +1,4 @@
 import { api } from "@/services/api";
-import type { QuestionImportStatus } from "./import-types";
 import type {
   Exam,
   ExamAnalytics,
@@ -234,51 +233,6 @@ export const examBankService = {
     return data.data as Question;
   },
 
-  // ---- Structured question imports (photo → editable document) ----
-  async createQuestionImport(file: File, mode: string = "auto"): Promise<QuestionImportStatus> {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", mode);
-    const { data } = await api.post("/exam-bank/question-imports", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data.data as QuestionImportStatus;
-  },
-  async getQuestionImport(uuid: string): Promise<QuestionImportStatus> {
-    const { data } = await api.get(`/exam-bank/question-imports/${uuid}`);
-    return data.data as QuestionImportStatus;
-  },
-  async retryQuestionImport(uuid: string): Promise<QuestionImportStatus> {
-    const { data } = await api.post(`/exam-bank/question-imports/${uuid}/retry`);
-    return data.data as QuestionImportStatus;
-  },
-  async deleteQuestionImport(uuid: string): Promise<void> {
-    await api.delete(`/exam-bank/question-imports/${uuid}`);
-  },
-  async questionImportHealth(): Promise<{
-    enabled: boolean;
-    configured: boolean;
-    available: boolean;
-    model: string;
-    endpointHost: string | null;
-    reason: string | null;
-  }> {
-    const { data } = await api.get("/exam-bank/question-imports/health");
-    return (data.data ?? {}) as {
-      enabled: boolean;
-      configured: boolean;
-      available: boolean;
-      model: string;
-      endpointHost: string | null;
-      reason: string | null;
-    };
-  },
-  async validateQuestionDocument(documentJson: string): Promise<{ valid: boolean; errors: string[] }> {
-    const { data } = await api.post("/exam-bank/question-imports/validate-document", {
-      document: documentJson,
-    });
-    return (data.data ?? {}) as { valid: boolean; errors: string[] };
-  },
   async questionMetrics(): Promise<{ total: number; published: number; draft: number; archived: number; byType: Record<string, number> }> {
     const { data } = await api.get("/exam-bank/questions/metrics");
     return (data.data ?? { byType: {} }) as { total: number; published: number; draft: number; archived: number; byType: Record<string, number> };

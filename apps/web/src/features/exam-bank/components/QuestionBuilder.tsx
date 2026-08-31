@@ -28,12 +28,14 @@ interface QuestionBuilderProps {
   examQuestionLink?: ExamQuestion | null;
   onChange?: (payload: Record<string, unknown>) => void;
   onScanUploaded?: (payload: { scanUrl: string; scanAssetId: string }) => void;
+  onScanRemoved?: () => void;
 }
 
 export function QuestionBuilder({
   question,
   onChange,
   onScanUploaded,
+  onScanRemoved,
 }: QuestionBuilderProps) {
   const [title, setTitle] = useState(question.title);
   const [description, setDescription] = useState(question.description ?? "");
@@ -164,6 +166,7 @@ export function QuestionBuilder({
             questionId={question.id}
             scanUrl={question.scanUrl}
             onScanUploaded={onScanUploaded}
+            onScanRemoved={onScanRemoved}
             disabled={false}
           />
         ) : (

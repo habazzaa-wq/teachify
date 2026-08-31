@@ -306,7 +306,7 @@ class ExamSessionService
                 answered: $saved !== null,
                 isCorrect: $isCorrect,
                 questionFormat: $item['questionFormat'],
-                scanUrl: null,
+                scanUrl: $item['scanUrl'] ?? null,
             );
         }
 
@@ -338,6 +338,9 @@ class ExamSessionService
             'content' => $this->sanitizeContent($question, $revealCorrect),
             'contentDocument' => $question->question_format === 'structured' ? $question->content_document : null,
             'questionFormat' => $question->question_format ?? 'text',
+            'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
+                ? ($question->loadMissing('mediaAsset')->mediaAsset?->cdn_url ?? null)
+                : null,
         ];
     }
 

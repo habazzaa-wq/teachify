@@ -18,8 +18,7 @@ import {
   type QuestionFormValues,
 } from "./CreateQuestionDialog";
 import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
-import { DocumentReviewEditor } from "./import/DocumentReviewEditor";
-import { parseQuestionDocument } from "@/components/structured-question";
+import { StructuredQuestionContent } from "@/components/structured-question";
 import type { Question, QuestionContent, QuestionFormat } from "@/features/exam-bank/types";
 import { Skeleton } from "@/components/ui";
 
@@ -68,7 +67,7 @@ export function EditQuestionDialog({
       visibility: q.visibility,
       shuffleOptions: q.shuffleOptions,
       content,
-      contentDocument: parseQuestionDocument(q.contentDocument),
+      contentDocument: (q.contentDocument ?? null) as Question["contentDocument"],
     });
     setError(null);
     setEditScanUrl(q.scanUrl ?? null);
@@ -100,9 +99,18 @@ export function EditQuestionDialog({
     setError(null);
     setIsSubmitting(true);
     try {
+      const payload = buildQuestionPayload(values, {
+        mediaAssetId: isImageFormat ? editScanMediaAssetId : undefined,
+      });
+      // Removing the scan leaves an image question with no asset. The server
+      // normalizes this to text on remove; mirror it here so saving an edited
+      // question never re-persists an empty image question.
+      if (isImageFormat && !editScanMediaAssetId) {
+        payload.question_format = "text";
+      }
       const saved = (await updateMutation.mutateAsync({
         id: questionId,
-        payload: buildQuestionPayload(values, { mediaAssetId: isImageFormat ? editScanMediaAssetId : undefined }),
+        payload,
       })) as Question;
       onOpenChange(false);
       onSaved?.(saved);
@@ -160,12 +168,8 @@ export function EditQuestionDialog({
               {isStructuredFormat && values.contentDocument && (
                 <div className="mb-4 space-y-4">
                   <div className="rounded-xl border border-studio-border bg-studio-soft p-4">
-                    <p className="mb-3 text-sm font-semibold text-studio-fg">المحتوى المستخرج</p>
-                    <DocumentReviewEditor
-                      document={values.contentDocument}
-                      onChange={(next) => handlePatch({ contentDocument: next })}
-                      disabled={updateMutation.isPending}
-                    />
+                    <p className="mb-3 text-sm font-semibold text-studio-fg">المحتوى المُهيكل</p>
+                    <StructuredQuestionContent document={values.contentDocument} />
                   </div>
                 </div>
               )}

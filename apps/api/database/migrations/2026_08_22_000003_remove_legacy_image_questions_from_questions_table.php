@@ -5,76 +5,35 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Retires the legacy scanned-question architecture:
+ * Image-question architecture decision (reversed 2026-08-30):
  *
- *  - questions that were stored as `question_format = 'image'` keep their
- *    content visible by being converted into structured documents holding a
- *    single `legacy_image` block (the old asset CDN URL is preserved inside
- *    the document; the underlying MediaAsset row/file is NOT deleted here).
- *  - rows marked image without a usable asset degrade to plain text.
- *  - the questions table no longer references media_assets at all.
+ * The original version of this migration retired the `image` question format
+ * and converted every image question into a reconstructed `structured`
+ * document. That OCR/Vision extraction approach was abandoned: teachers now
+ * upload the question image exactly as-is and the platform stores + renders it
+ * directly.
  *
- * New questions are never created in image format; imports produce
- * reconstructed structured documents only.
+ * Therefore this migration no longer drops `media_asset_id` and no longer
+ * converts `image` questions. The `media_asset_id` + `question_format = image`
+ * pair is the canonical image-question representation and must be preserved.
+ *
+ * Historical `structured` questions keep rendering through the structured
+ * renderer; historical `image` questions keep rendering through the image
+ * renderer. Nothing is destroyed here.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasColumn('questions', 'media_asset_id')) {
-            $imageRows = $this->legacyImageRows();
-
-            foreach ($imageRows as $row) {
-                $document = null;
-
-                if (! empty($row->cdn_url)) {
-                    $document = [
-                        'version' => 1,
-                        'direction' => 'rtl',
-                        'language' => 'ar',
-                        'meta' => ['legacy' => 'image'],
-                        'blocks' => [[
-                            'type' => 'legacy_image',
-                            'url' => (string) $row->cdn_url,
-                        ]],
-                    ];
-                }
-
-                \Illuminate\Support\Facades\DB::table('questions')
-                    ->where('id', $row->id)
-                    ->update([
-                        'content_document' => $document !== null ? json_encode($document, JSON_UNESCAPED_UNICODE) : null,
-                        'question_format' => $document !== null ? 'structured' : 'text',
-                        'updated_at' => now(),
-                    ]);
-            }
-
-            // Drop FK when present (older installs may lack it).
-            $fkExists = collect(Schema::getForeignKeys('questions'))
-                ->contains(fn (array $foreignKey): bool => in_array('media_asset_id', $foreignKey['columns'], true));
-
-            Schema::table('questions', function (Blueprint $table) use ($fkExists): void {
-                if ($fkExists) {
-                    $table->dropForeign(['media_asset_id']);
-                }
-
-                $table->dropColumn('media_asset_id');
-            });
-        }
+        // Intentionally a no-op. The scanned/image question path is supported
+        // again, so the previously-planned column removal is skipped. See
+        // 2026_08_30_000001_restore_image_question_media_asset.php for the
+        // safety migration that re-adds the column on installs where the old
+        // behaviour had already run.
     }
 
     public function down(): void
     {
-        // Legacy conversion is one-way on purpose: reconstructing which rows
-        // were originally image-format from structured documents would risk
-        // corrupting genuine import-based questions.
-    }
-
-    private function legacyImageRows(): iterable
-    {
-        return \Illuminate\Support\Facades\DB::table('questions as q')
-            ->leftJoin('media_assets as m', 'm.id', '=', 'q.media_asset_id')
-            ->where('q.question_format', 'image')
-            ->get(['q.id', 'm.cdn_url']);
+        //
     }
 };

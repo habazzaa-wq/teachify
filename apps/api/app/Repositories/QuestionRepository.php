@@ -35,7 +35,9 @@ class QuestionRepository
         $query = $this->applyFavoritesFilter($query, $params['favorites'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query
+            ->with('mediaAsset')
+            ->paginate((int) ($params['per_page'] ?? 25));
     }
 
     public function listAll(array $params = []): Collection
@@ -46,7 +48,10 @@ class QuestionRepository
         $query = $this->applyTypeFilter($query, $params['type'] ?? null);
         $query = $this->applyStatusFilter($query, $params['status'] ?? null);
 
-        return $query->orderBy('title')->get();
+        return $query
+            ->with('mediaAsset')
+            ->orderBy('title')
+            ->get();
     }
 
     public function findById(int $id): ?Question

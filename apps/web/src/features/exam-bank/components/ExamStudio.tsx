@@ -14,7 +14,6 @@ import {
   Star,
   Trash2,
   FilePlus2,
-  ScanLine,
 } from "lucide-react";
 import { ChevronStartIcon } from "@/components/ui/icons";
 import { PermissionGuard } from "@/components/ui";
@@ -50,7 +49,6 @@ import { ExamStudioInspector } from "./ExamStudioInspector";
 import { ExamSettingsDialog } from "./ExamSettingsDialog";
 import { AddQuestionDialog } from "./AddQuestionDialog";
 import { CreateQuestionDialog } from "./CreateQuestionDialog";
-import { QuestionImportDialog } from "./import/QuestionImportDialog";
 
 type StudioMode = "loading" | "empty" | "ready";
 
@@ -360,14 +358,6 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
             <StudioButton
               variant="ghost"
               size="sm"
-              icon={<ScanLine className="h-4 w-4" />}
-              onClick={() => store.openImportQuestion()}
-            >
-              استيراد من صورة
-            </StudioButton>
-            <StudioButton
-              variant="ghost"
-              size="sm"
               icon={<FilePlus2 className="h-4 w-4" />}
               onClick={() => store.openCreateQuestion()}
             >
@@ -405,7 +395,6 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
                   onSelectQuestion={store.selectQuestion}
                   onAddQuestion={store.openQuestionPicker}
                   onCreateQuestion={store.openCreateQuestion}
-                  onImportQuestion={store.openImportQuestion}
                   onRemoveQuestion={(questionId) =>
                     removeQuestion.mutate(
                       { id: exam.id, questionId },
@@ -494,12 +483,6 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
         examId={examId}
         open={store.createQuestionOpen}
         onOpenChange={(open) => (open ? store.openCreateQuestion() : store.closeCreateQuestion())}
-      />
-      <QuestionImportDialog
-        examId={examId}
-        open={store.importQuestionOpen}
-        onOpenChange={(open) => (open ? store.openImportQuestion() : store.closeImportQuestion())}
-        onCreated={(question) => store.selectQuestion(question.id)}
       />
     </motion.div>
   );

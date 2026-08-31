@@ -8,7 +8,7 @@ import {
   DIFFICULTY_CONFIG,
 } from "@/features/exam-bank/constants";
 import type { Question, QuestionStatus } from "@/features/exam-bank/types";
-import { ScanImageViewer } from "./ScanImageViewer";
+import { ImageQuestionContent } from "./ImageQuestionContent";
 
 type StudioStatus = "active" | "pending" | "archived";
 
@@ -70,7 +70,7 @@ export function QuestionPreview({ question }: { question: Question }) {
           <StructuredQuestionContent document={structuredDoc} />
         ) : isScanned && question.scanUrl ? (
           <div className="space-y-2">
-            <ScanImageViewer
+            <ImageQuestionContent
               src={question.scanUrl}
               alt="السؤال المصوّر"
               maxHeight={300}

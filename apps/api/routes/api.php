@@ -61,7 +61,7 @@ use App\Http\Controllers\Api\v1\ExamBank\ExamSessionController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionImportController;
+use App\Http\Controllers\Api\v1\ExamBank\ScannedQuestionController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
@@ -86,7 +86,6 @@ use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
-use App\Http\Controllers\Api\v1\Platform\PlatformTenantQuestionImportController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
@@ -642,18 +641,14 @@ Route::prefix('v1')->group(function () {
         Route::prefix('exam-bank')->name('exam-bank.')->group(function () {
             Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
             Route::apiResource('questions', QuestionController::class);
+            // Image question: teacher uploads the question image as-is (no OCR/Vision).
+            Route::post('/questions/{question}/scan', [ScannedQuestionController::class, 'store']);
+            Route::delete('/questions/{question}/scan', [ScannedQuestionController::class, 'destroy']);
             Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
             Route::post('/questions/bulk/restore', [QuestionController::class, 'bulkRestore']);
             Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
             Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
             Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
-            // Structured question import (photo → editable document)
-            Route::post('/question-imports', [QuestionImportController::class, 'store']);
-            Route::get('/question-imports/health', [QuestionImportController::class, 'health']);
-            Route::post('/question-imports/validate-document', [QuestionImportController::class, 'validateDocument']);
-            Route::get('/question-imports/{import}', [QuestionImportController::class, 'show'])->whereUuid('import');
-            Route::post('/question-imports/{import}/retry', [QuestionImportController::class, 'retry'])->whereUuid('import');
-            Route::delete('/question-imports/{import}', [QuestionImportController::class, 'destroy'])->whereUuid('import');
 
             Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
             Route::apiResource('categories', QuestionCategoryController::class);
@@ -764,12 +759,6 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
             Route::post('/{tenantDomain}/refresh-status', [PlatformDomainController::class, 'refreshStatus']);
             Route::post('/{tenantDomain}/renew-ssl', [PlatformDomainController::class, 'renewSsl']);
             Route::post('/bulk/delete', [PlatformDomainController::class, 'bulkDelete']);
-        });
-
-        Route::prefix('tenants/{tenant}')->group(function () {
-            Route::get('/question-import/settings', [PlatformTenantQuestionImportController::class, 'settings']);
-            Route::put('/question-import/settings', [PlatformTenantQuestionImportController::class, 'updateSettings']);
-            Route::get('/question-import/health', [PlatformTenantQuestionImportController::class, 'health']);
         });
     });
 

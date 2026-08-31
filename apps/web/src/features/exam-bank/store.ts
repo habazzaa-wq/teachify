@@ -19,7 +19,6 @@ interface ExamStudioState {
   createQuestionOpen: boolean;
   editQuestionId: string | null;
   questionPickerOpen: boolean;
-  importQuestionOpen: boolean;
   examSettingsOpen: boolean;
 
   setNavigatorOpen: (open: boolean) => void;
@@ -41,8 +40,6 @@ interface ExamStudioState {
   closeEditQuestion: () => void;
   openQuestionPicker: () => void;
   closeQuestionPicker: () => void;
-  openImportQuestion: () => void;
-  closeImportQuestion: () => void;
   openExamSettings: () => void;
   closeExamSettings: () => void;
   reset: () => void;
@@ -62,7 +59,6 @@ export const useExamStudioStore = create<ExamStudioState>()((set) => ({
   createQuestionOpen: false,
   editQuestionId: null,
   questionPickerOpen: false,
-  importQuestionOpen: false,
   examSettingsOpen: false,
 
   setNavigatorOpen: (navigatorOpen) => set({ navigatorOpen }),
@@ -91,8 +87,6 @@ export const useExamStudioStore = create<ExamStudioState>()((set) => ({
   closeEditQuestion: () => set({ editQuestionId: null }),
   openQuestionPicker: () => set({ questionPickerOpen: true }),
   closeQuestionPicker: () => set({ questionPickerOpen: false }),
-  openImportQuestion: () => set({ importQuestionOpen: true }),
-  closeImportQuestion: () => set({ importQuestionOpen: false }),
   openExamSettings: () => set({ examSettingsOpen: true }),
   closeExamSettings: () => set({ examSettingsOpen: false }),
   reset: () =>
@@ -110,7 +104,6 @@ export const useExamStudioStore = create<ExamStudioState>()((set) => ({
       createQuestionOpen: false,
       editQuestionId: null,
       questionPickerOpen: false,
-      importQuestionOpen: false,
       examSettingsOpen: false,
     }),
 }));

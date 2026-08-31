@@ -33,7 +33,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="MEDIA_STORAGE_DISK" value="public"/>
-        <env name="QUESTION_IMPORT_STORAGE_DISK" value="local"/>
         <!-- Keep noisy slow-operation logging off during the suite; the
              dedicated slow-logging tests override these explicitly. -->
         <env name="SLOW_REQUEST_THRESHOLD_MS" value="100000"/>

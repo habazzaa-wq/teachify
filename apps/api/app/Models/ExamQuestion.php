@@ -35,8 +35,13 @@ class ExamQuestion extends Model
         return $this->belongsTo(Exam::class);
     }
 
+    /**
+     * Includes soft-deleted questions: an exam session/review that started
+     * before a question was removed must keep rendering (and grading) the
+     * already-frozen payload instead of failing on the deleted row.
+     */
     public function question(): BelongsTo
     {
-        return $this->belongsTo(Question::class);
+        return $this->belongsTo(Question::class)->withTrashed();
     }
 }

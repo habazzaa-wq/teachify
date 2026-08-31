@@ -161,6 +161,17 @@ export function ExamStudioBuilder({
     );
   }, [selectedQuestionId, qc]);
 
+  const handleScanRemoved = useCallback(() => {
+    if (!selectedQuestionId) return;
+    qc.setQueryData(
+      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
+      (old: unknown) => {
+        if (!old || typeof old !== "object") return old;
+        return { ...old, scanUrl: null, scanAssetId: null };
+      },
+    );
+  }, [selectedQuestionId, qc]);
+
   return (
     <div className="h-full overflow-y-auto studio-scrollbar bg-studio-bg">
       <AnimatePresence mode="popLayout">
@@ -184,6 +195,7 @@ export function ExamStudioBuilder({
                   examQuestionLink={link ?? null}
                   onChange={(payload: Record<string, unknown>) => onUpdateQuestion?.(question.id, payload)}
                   onScanUploaded={handleScanUploaded}
+                  onScanRemoved={handleScanRemoved}
                 />
                 <StudioSurfaceCard variant="outline" padding="md">
                   <h3 className="mb-3 text-sm font-semibold text-studio-fg">معاينة السؤال</h3>
