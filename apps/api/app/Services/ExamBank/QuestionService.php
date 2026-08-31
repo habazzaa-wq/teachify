@@ -4,16 +4,18 @@ namespace App\Services\ExamBank;
 
 use App\Models\ExamQuestion;
 use App\Models\Question;
+use App\Models\QuestionBank;
 use App\Models\QuestionCategory;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class QuestionService
 {
     public function __construct(
-        private readonly ExamCacheService $cache = new ExamCacheService(),
+        private readonly ExamCacheService $cache = new ExamCacheService,
     ) {}
 
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
@@ -38,13 +40,13 @@ class QuestionService
             $slugSource = trim((string) ($data['slug'] ?? ''));
             if ($slugSource === '') {
                 $slugSource = in_array($format, ['image', 'structured'], true)
-                    ? $title.'-'.strtolower(\Illuminate\Support\Str::random(6))
+                    ? $title.'-'.strtolower(Str::random(6))
                     : $title;
             }
             $question = Question::create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
-                'uuid' => \Illuminate\Support\Str::uuid(),
+                'uuid' => Str::uuid(),
                 'category_id' => $data['category_id'] ?? null,
                 'bank_id' => $data['bank_id'] ?? null,
                 'title' => $title,
@@ -108,6 +110,13 @@ class QuestionService
                 }
             }
 
+            // An image question always carries a scan asset. If a payload
+            // requests image format without one, demote to text instead of
+            // persisting an image question with a null asset (Phase 7 guard).
+            if (($question->question_format ?? 'text') === 'image' && $question->media_asset_id === null) {
+                $question->question_format = 'text';
+            }
+
             $question->save();
 
             $this->bumpExamsForQuestion($question);
@@ -160,8 +169,11 @@ class QuestionService
      * Invalidate every exam cache that references this question. Only published
      * exams actually serve cached question content, but bumping all referenced
      * exams is harmless and keeps the version counter authoritative.
+     *
+     * @internal Call from mutating paths that must invalidate the published
+     *           exam question set (scan mutations, soft-delete/restore).
      */
-    private function bumpExamsForQuestion(Question $question): void
+    public function bumpExamsForQuestion(Question $question): void
     {
         $examIds = ExamQuestion::query()
             ->where('tenant_id', $question->tenant_id)
@@ -231,7 +243,7 @@ class QuestionService
 
     private function uniqueCategorySlug(string $value, ?QuestionCategory $ignore = null): string
     {
-        $slug = \Illuminate\Support\Str::slug($value);
+        $slug = Str::slug($value);
 
         if ($slug === '') {
             throw ValidationException::withMessages([
@@ -246,7 +258,7 @@ class QuestionService
         }
 
         if ($query->exists()) {
-            $slug .= '-' . substr((string) \Illuminate\Support\Str::uuid(), 0, 8);
+            $slug .= '-'.substr((string) Str::uuid(), 0, 8);
         }
 
         return $slug;
@@ -257,8 +269,8 @@ class QuestionService
         return DB::transaction(function () use ($question, $creator): Question {
             $copy = $question->replicate();
             $copy->created_by_tenant_user_id = $creator->id;
-            $copy->uuid = (string) \Illuminate\Support\Str::uuid();
-            $copy->slug = $this->uniqueSlug($question->title . '-copy');
+            $copy->uuid = (string) Str::uuid();
+            $copy->slug = $this->uniqueSlug($question->title.'-copy');
             $copy->status = 'draft';
             $copy->save();
 
@@ -282,7 +294,7 @@ class QuestionService
 
     private function assertBank(Tenant $tenant, int $bankId): void
     {
-        $exists = \App\Models\QuestionBank::query()
+        $exists = QuestionBank::query()
             ->where('tenant_id', $tenant->id)
             ->where('id', $bankId)
             ->exists();
@@ -296,7 +308,7 @@ class QuestionService
 
     private function uniqueSlug(string $value, ?Question $ignore = null): string
     {
-        $slug = \Illuminate\Support\Str::slug($value);
+        $slug = Str::slug($value);
 
         if ($slug === '') {
             throw ValidationException::withMessages([
@@ -311,7 +323,7 @@ class QuestionService
         }
 
         if ($query->exists()) {
-            $slug .= '-' . substr((string) \Illuminate\Support\Str::uuid(), 0, 8);
+            $slug .= '-'.substr((string) Str::uuid(), 0, 8);
         }
 
         return $slug;

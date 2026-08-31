@@ -67,15 +67,116 @@ final class DocumentScanProcessor
             ? $mode
             : self::MODE_AUTO;
 
+        $sourceFormat = $this->formatFromBytes($bytes);
+
+        if ($mode === self::MODE_PRESERVE) {
+            $preserved = $this->tryOriginalPreserve($bytes);
+            if ($preserved !== null) {
+                return $preserved;
+            }
+            $this->record('preserve', 'الحفاظ على الصورة الأصلية', 'done', 'يتم إعادة ترميز آمنة بسبب أبعاد كبيرة');
+        }
+
         try {
-            return $this->runPipeline($bytes, $mode, $exifOrientation);
+            return $this->runPipeline($bytes, $mode, $exifOrientation, $sourceFormat);
         } catch (\Throwable $e) {
             report($e);
             return $this->safeFallback($bytes, $mode, $exifOrientation, $e->getMessage());
         }
     }
 
-    private function runPipeline(string $bytes, string $mode, ?int $exifOrientation): ScanResult
+    /**
+     * @return array{extension: string}|null
+     */
+    private function formatFromBytes(string $bytes): ?array
+    {
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false) {
+            return null;
+        }
+
+        return $this->formatForMime($info['mime'] ?? null);
+    }
+
+    /**
+     * True pass-through of the original upload: PNG stays PNG, WebP stays WebP,
+     * JPEG stays JPEG, and transparency/quality are never lost to a pointless
+     * lossy re-encode. Only returns a result when the source is decodable and
+     * already fits within the configured dimension bounds (so no resize is
+     * needed). Returns null otherwise so the caller can fall back to a safe
+     * re-encode.
+     */
+    private function tryOriginalPreserve(string $bytes): ?ScanResult
+    {
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false) {
+            return null;
+        }
+
+        $mime = $info['mime'] ?? null;
+        $format = $this->formatForMime($mime);
+        if ($format === null) {
+            return null;
+        }
+
+        [$width, $height] = $info;
+
+        if ($width <= 0 || $height <= 0) {
+            return null;
+        }
+
+        if ($width > $this->maxDimension || $height > $this->maxDimension || min($width, $height) < $this->minOutputDimension) {
+            return null;
+        }
+
+        $this->stages = [];
+
+        $this->record('preserve', 'الحفاظ على الصورة الأصلية', 'done', 'بدون إعادة ترميز — الصيغة والحجم محفوظان');
+
+        return new ScanResult(
+            bytes: $bytes,
+            width: $width,
+            height: $height,
+            mode: self::MODE_PRESERVE,
+            stages: $this->stages,
+            quality: [
+                'brightness' => round($this->sampleBrightness($bytes)),
+                'saturation' => 0.0,
+                'sharpness' => 0.0,
+                'level' => 'original',
+            ],
+            mimeType: $mime,
+            extension: $format['extension'],
+            originalPreserved: true,
+        );
+    }
+
+    /**
+     * @return array{extension: string}|null
+     */
+    private function formatForMime(?string $mime): ?array
+    {
+        return match ($mime) {
+            'image/jpeg' => ['extension' => 'jpg'],
+            'image/png' => ['extension' => 'png'],
+            'image/webp' => ['extension' => 'webp'],
+            default => null,
+        };
+    }
+
+    private function sampleBrightness(string $bytes): float
+    {
+        $img = @imagecreatefromstring($bytes);
+        if ($img === false) {
+            return 0.0;
+        }
+        $analysis = $this->analyze($img);
+        imagedestroy($img);
+
+        return $analysis->brightnessMean;
+    }
+
+    private function runPipeline(string $bytes, string $mode, ?int $exifOrientation, ?array $sourceFormat = null): ScanResult
     {
         $oriented = $this->decodeAndOrient($bytes, $exifOrientation);
         $this->observe('oriented', $oriented, ['exifOrientation' => $exifOrientation]);
@@ -222,7 +323,7 @@ final class DocumentScanProcessor
 
         if (! $validation['ok']) {
             imagedestroy($work);
-            return $this->safeFallbackFromImage($oriented, $bytes, $mode, $exifOrientation, 'فشل فحص الجودة: ' . $validation['reason']);
+            return $this->safeFallbackFromImage($oriented, $bytes, $mode, $exifOrientation, 'فشل فحص الجودة: ' . $validation['reason'], $sourceFormat);
         }
         $this->record('validate', 'التحقق من الجودة', 'done');
         $this->observe('validated', $work);
@@ -231,7 +332,8 @@ final class DocumentScanProcessor
             imagedestroy($preToneImage);
         }
 
-        $encoded = $this->encodeJpeg($work);
+        $encodeFormat = $this->encodeFormatFor($mode, $sourceFormat);
+        $encoded = $this->encodeImage($work, $encodeFormat);
         imagedestroy($work);
         imagedestroy($oriented);
         $this->observe('encoded', null, ['bytes' => strlen($encoded)]);
@@ -239,7 +341,7 @@ final class DocumentScanProcessor
         $finalAnalysis = $this->analyzeFromBytes($encoded);
         $qualityLevel = $binarized ? 'excellent' : $this->qualityLevel($enhanced || $sharpened || $warped || $deskewed || $cropped, $mode);
 
-        $this->record('encode', 'ترميز الصورة النهائية', 'done', sprintf('JPEG q%d', $this->jpegQuality));
+        $this->record('encode', 'ترميز الصورة النهائية', 'done', sprintf('%s', strtoupper($encodeFormat['extension'])));
 
         return new ScanResult(
             bytes: $encoded,
@@ -253,11 +355,66 @@ final class DocumentScanProcessor
                 'sharpness' => round($finalAnalysis->sharpness),
                 'level' => $qualityLevel,
             ],
+            mimeType: $encodeFormat['mime'],
+            extension: $encodeFormat['extension'],
             documentDetected: $detected,
             perspectiveCorrected: $warped,
             deskewed: $deskewed,
             enhanced: $enhanced || $sharpened || $cropped,
         );
+    }
+
+    /**
+     * In preservation mode we keep the source container (PNG stays PNG, etc.)
+     * even when a resize forces a re-encode. Explicit processing modes always
+     * produce JPEG because that is their documented output contract.
+     *
+     * @param array{extension: string}|null $sourceFormat
+     * @return array{mime: string, extension: string}
+     */
+    private function encodeFormatFor(string $mode, ?array $sourceFormat): array
+    {
+        if ($mode === self::MODE_PRESERVE && $sourceFormat !== null) {
+            $mime = match ($sourceFormat['extension']) {
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                default => 'image/jpeg',
+            };
+
+            return ['mime' => $mime, 'extension' => $sourceFormat['extension']];
+        }
+
+        return ['mime' => 'image/jpeg', 'extension' => 'jpg'];
+    }
+
+    /**
+     * @param array{mime: string, extension: string} $format
+     */
+    private function encodeImage(\GdImage $image, array $format): string
+    {
+        if ($format['extension'] === 'png') {
+            ob_start();
+            $ok = imagepng($image, null, 6);
+            $data = ob_get_clean();
+            if (! $ok || $data === false || strlen($data) < 1024) {
+                throw new \RuntimeException('PNG encoding failed.');
+            }
+
+            return $data;
+        }
+
+        if ($format['extension'] === 'webp') {
+            ob_start();
+            $ok = imagewebp($image, null, 92);
+            $data = ob_get_clean();
+            if (! $ok || $data === false || strlen($data) < 1024) {
+                throw new \RuntimeException('WebP encoding failed.');
+            }
+
+            return $data;
+        }
+
+        return $this->encodeJpeg($image);
     }
 
     // ════════════════════════════════════════════════════════════
@@ -1768,10 +1925,10 @@ final class DocumentScanProcessor
     //  Fallback / Encode
     // ════════════════════════════════════════════════════════════
 
-    private function safeFallback(string $bytes, string $mode, ?int $exifOrientation, string $reason): ScanResult
+    private function safeFallback(string $bytes, string $mode, ?int $exifOrientation, string $reason, ?array $sourceFormat = null): ScanResult
     {
         try {
-            return $this->safeFallbackFromImage(null, $bytes, $mode, $exifOrientation, $reason);
+            return $this->safeFallbackFromImage(null, $bytes, $mode, $exifOrientation, $reason, $sourceFormat);
         } catch (\Throwable $e) {
             report($e);
             $tiny = @imagecreate(1, 1);
@@ -1782,14 +1939,14 @@ final class DocumentScanProcessor
         }
     }
 
-    private function safeFallbackFromImage(?\GdImage $oriented, string $bytes, string $mode, ?int $exifOrientation, string $reason): ScanResult
+    private function safeFallbackFromImage(?\GdImage $oriented, string $bytes, string $mode, ?int $exifOrientation, string $reason, ?array $sourceFormat = null): ScanResult
     {
         if ($oriented === null) {
             $oriented = $this->decodeAndOrient($bytes, $exifOrientation);
         }
 
         $safe = $this->resizeWithinBounds($oriented);
-        $encoded = $this->encodeJpeg($safe);
+        $encoded = $this->encodeImage($safe, $this->encodeFormatFor($mode, $sourceFormat));
 
         $metrics = $this->analyze($safe);
         imagedestroy($safe);
@@ -1809,9 +1966,26 @@ final class DocumentScanProcessor
                 'sharpness' => round($metrics->sharpness),
                 'level' => 'original',
             ],
+            mimeType: $this->mimeForExtension($encoded, $sourceFormat),
+            extension: $sourceFormat['extension'] ?? 'jpg',
             fallbackUsed: true,
             fallbackReason: $reason,
         );
+    }
+
+    private function mimeForExtension(string $encoded, ?array $sourceFormat): string
+    {
+        if ($sourceFormat !== null) {
+            return match ($sourceFormat['extension']) {
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                default => 'image/jpeg',
+            };
+        }
+
+        $info = @getimagesizefromstring($encoded);
+
+        return $info['mime'] ?? 'image/jpeg';
     }
 
     private function encodeJpeg(\GdImage $image): string

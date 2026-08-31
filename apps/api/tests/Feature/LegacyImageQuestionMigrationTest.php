@@ -13,7 +13,7 @@ class LegacyImageQuestionMigrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_image_rows_convert_to_structured_legacy_documents_and_column_is_dropped(): void
+    public function test_image_rows_are_preserved_and_media_column_is_retained(): void
     {
         $this->simulateLegacySchema();
 
@@ -40,30 +40,29 @@ class LegacyImageQuestionMigrationTest extends TestCase
         );
         $migration->up();
 
-        $converted = $this->questionRow($withUrl);
-        $this->assertSame('structured', $converted->question_format);
+        // Image questions keep their format and media reference.
+        $this->assertSame('image', $this->questionRow($withUrl)->question_format);
+        $this->assertSame($assetId, (int) $this->questionRow($withUrl)->media_asset_id);
 
-        $document = json_decode((string) $converted->content_document, true);
-        $this->assertSame('image', $document['meta']['legacy']);
-        $this->assertSame('legacy_image', $document['blocks'][0]['type']);
-        $this->assertSame('https://cdn.example.com/legacy/scan.png', $document['blocks'][0]['url']);
+        $this->assertSame('image', $this->questionRow($withoutUrl)->question_format);
+        $this->assertSame('image', $this->questionRow($noAsset)->question_format);
 
-        foreach ([$withoutUrl, $noAsset] as $degraded) {
-            $row = $this->questionRow($degraded);
-            $this->assertSame('text', $row->question_format);
-            $this->assertNull($row->content_document);
-        }
-
+        // Other formats are untouched.
         $this->assertSame('structured', $this->questionRow($structured)->question_format);
         $this->assertSame('نص أصلي', json_decode((string) $this->questionRow($structured)->content_document, true)['blocks'][0]['runs'][0]['text']);
         $this->assertSame('text', $this->questionRow($plain)->question_format);
 
-        $this->assertFalse(Schema::hasColumn('questions', 'media_asset_id'));
+        // The canonical image-question column is preserved.
+        $this->assertTrue(Schema::hasColumn('questions', 'media_asset_id'));
         $this->assertDatabaseHas('media_assets', ['id' => $assetId]);
     }
 
     private function simulateLegacySchema(): void
     {
+        if (Schema::hasColumn('questions', 'media_asset_id')) {
+            return;
+        }
+
         Schema::table('questions', function (Blueprint $table): void {
             $table->unsignedBigInteger('media_asset_id')->nullable();
         });

@@ -15,6 +15,11 @@ return [
 
     'max_dimension' => (int) env('SCAN_MAX_DIMENSION', 3200),
 
+    // Upper bound on decoded pixels (width * height) for uploaded scans. Used as
+    // a pre-decode budget so a single oversized upload can never force the GD
+    // pipeline to decode a decompression bomb. A value of 0 disables the check.
+    'max_pixels' => (int) env('SCAN_MAX_PIXELS', 25000000),
+
     'jpeg_quality' => (int) env('SCAN_JPEG_QUALITY', 92),
 
     'min_jpeg_quality' => 88,

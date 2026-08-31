@@ -47,32 +47,7 @@ module.exports = {
       merge_logs: true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       exp_backoff_restart_delay: 100,
-      max_restarts: 10,
-      min_uptime: "5s",
-    },
-    {
-      // Long-running question-import extraction (OCR/Vision, timeout 300s).
-      name: "teachify-queue-imports",
-      script: "artisan",
-      interpreter: "php",
-      args:
-        "queue:work --queue=imports --sleep=1 --tries=2 --timeout=300 --max-time=3600 --max-jobs=200",
-      cwd: "./apps/api",
-      instances: 2,
-      exec_mode: "fork",
-      autorestart: true,
-      watch: false,
-      max_memory_restart: "512M",
-      env: {
-        APP_ENV: "production",
-        APP_DEBUG: "false",
-      },
-      error_file: "./logs/queue-imports-error.log",
-      out_file: "./logs/queue-imports-out.log",
-      merge_logs: true,
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      exp_backoff_restart_delay: 100,
-      max_restarts: 10,
+       max_restarts: 10,
       min_uptime: "5s",
     },
     {

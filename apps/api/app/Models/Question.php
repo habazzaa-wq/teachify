@@ -72,6 +72,11 @@ class Question extends Model
         return $this->belongsTo(QuestionBank::class, 'bank_id');
     }
 
+    public function mediaAsset(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class, 'media_asset_id');
+    }
+
     public function examQuestions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ExamQuestion::class);

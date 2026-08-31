@@ -57,6 +57,8 @@ class ExamResultService
         $answers = $attempt->answers()->get()->keyBy('exam_question_id');
         $revealCorrect = $exam->show_correct_answers;
 
+        $examQuestions->load('question.mediaAsset');
+
         $review = [];
         $correctCount = 0;
         $wrongCount = 0;
@@ -107,7 +109,9 @@ class ExamResultService
                 'status' => $answered ? ($isCorrect ? 'correct' : 'wrong') : 'skipped',
                 'earnedPoints' => $isCorrect ? $points : 0,
                 'questionFormat' => $question->question_format ?? 'text',
-                'scanUrl' => null,
+                'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
+                    ? ($question->mediaAsset?->cdn_url ?? null)
+                    : null,
             ];
         }
 

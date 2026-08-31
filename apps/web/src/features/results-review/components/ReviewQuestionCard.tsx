@@ -16,7 +16,8 @@ import { cn } from "@/lib/cn";
 import { DIFFICULTY_LABELS, REVIEW_STATUS_LABELS } from "../constants";
 import type { ResultReviewItem } from "../types";
 import type { ExamSessionQuestionType } from "@/features/exam-session/types";
-import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
+import { ImageQuestionContent } from 
+"@/features/exam-bank/components/ImageQuestionContent";
 import {
   StructuredQuestionContent,
   parseQuestionDocument,
@@ -128,7 +129,7 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
                 </div>
               ) : item.questionFormat === "image" && item.scanUrl ? (
                 <div className="mb-4">
-                  <ScanImageViewer
+                  <ImageQuestionContent
                     src={item.scanUrl}
                     alt={`صورة السؤال ${index + 1}`}
                     maxHeight={300}

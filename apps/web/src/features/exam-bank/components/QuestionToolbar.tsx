@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Grid3X3, ImagePlus, List, Plus } from "lucide-react";
+import { Search, Grid3X3, List, Plus } from "lucide-react";
 import {
   AppInput,
   AppSelect,
@@ -42,7 +42,6 @@ interface QuestionToolbarProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   onCreate: () => void;
-  onImport?: () => void;
   totalCount?: number;
 }
 
@@ -62,7 +61,6 @@ export function QuestionToolbar({
   viewMode,
   onViewModeChange,
   onCreate,
-  onImport,
   totalCount,
 }: QuestionToolbarProps) {
   return (
@@ -171,13 +169,6 @@ export function QuestionToolbar({
             <List className="h-4 w-4" />
           </button>
         </div>
-
-        {onImport && (
-          <StudioButton onClick={onImport} variant="secondary" className="gap-2">
-            <ImagePlus className="h-4 w-4" />
-            استيراد من صورة
-          </StudioButton>
-        )}
 
         <StudioButton onClick={onCreate} className="gap-2">
           <Plus className="h-4 w-4" />

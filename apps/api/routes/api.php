@@ -61,8 +61,7 @@ use App\Http\Controllers\Api\v1\ExamBank\ExamSessionController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
-use App\Http\Controllers\Api\v1\ExamBank\QuestionImportController;
-use App\Http\Controllers\Api\v1\HealthController;
+use App\Http\Controllers\Api\v1\ExamBank\ScannedQuestionController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
@@ -87,7 +86,6 @@ use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
-use App\Http\Controllers\Api\v1\Platform\PlatformTenantQuestionImportController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
@@ -97,8 +95,8 @@ use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
-use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSeoContentController;
@@ -118,6 +116,7 @@ use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
 use App\Http\Controllers\Api\v1\StudentController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
+use App\Http\Controllers\Api\v1\HealthController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -237,11 +236,6 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/courses/metrics', [CourseController::class, 'metrics']);
         Route::get('/courses/export', [CourseController::class, 'export']);
-        Route::post('/courses/bulk/publish', [CourseController::class, 'bulkPublish']);
-        Route::post('/courses/bulk/archive', [CourseController::class, 'bulkArchive']);
-        Route::post('/courses/bulk/restore', [CourseController::class, 'bulkRestore']);
-        Route::post('/courses/bulk/delete', [CourseController::class, 'bulkDelete']);
-        Route::post('/courses/bulk/feature', [CourseController::class, 'bulkFeature']);
         Route::patch('/courses/{course}/status', [CourseController::class, 'updateStatus']);
         Route::patch('/courses/{course}/publish', [CourseController::class, 'publish']);
         Route::patch('/courses/{course}/archive', [CourseController::class, 'archive']);
@@ -647,18 +641,14 @@ Route::prefix('v1')->group(function () {
         Route::prefix('exam-bank')->name('exam-bank.')->group(function () {
             Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
             Route::apiResource('questions', QuestionController::class);
+            // Image question: teacher uploads the question image as-is (no OCR/Vision).
+            Route::post('/questions/{question}/scan', [ScannedQuestionController::class, 'store']);
+            Route::delete('/questions/{question}/scan', [ScannedQuestionController::class, 'destroy']);
             Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
             Route::post('/questions/bulk/restore', [QuestionController::class, 'bulkRestore']);
             Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
             Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
             Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
-            // Structured question import (photo → editable document)
-            Route::post('/question-imports', [QuestionImportController::class, 'store']);
-            Route::get('/question-imports/health', [QuestionImportController::class, 'health']);
-            Route::post('/question-imports/validate-document', [QuestionImportController::class, 'validateDocument']);
-            Route::get('/question-imports/{import}', [QuestionImportController::class, 'show'])->whereUuid('import');
-            Route::post('/question-imports/{import}/retry', [QuestionImportController::class, 'retry'])->whereUuid('import');
-            Route::delete('/question-imports/{import}', [QuestionImportController::class, 'destroy'])->whereUuid('import');
 
             Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
             Route::apiResource('categories', QuestionCategoryController::class);
@@ -769,12 +759,6 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
             Route::post('/{tenantDomain}/refresh-status', [PlatformDomainController::class, 'refreshStatus']);
             Route::post('/{tenantDomain}/renew-ssl', [PlatformDomainController::class, 'renewSsl']);
             Route::post('/bulk/delete', [PlatformDomainController::class, 'bulkDelete']);
-        });
-
-        Route::prefix('tenants/{tenant}')->group(function () {
-            Route::get('/question-import/settings', [PlatformTenantQuestionImportController::class, 'settings']);
-            Route::put('/question-import/settings', [PlatformTenantQuestionImportController::class, 'updateSettings']);
-            Route::get('/question-import/health', [PlatformTenantQuestionImportController::class, 'health']);
         });
     });
 

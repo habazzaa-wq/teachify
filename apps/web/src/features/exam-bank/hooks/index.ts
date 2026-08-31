@@ -507,26 +507,3 @@ export type {
   QuestionBank,
   QuestionCategory,
 };
-
-// ---- Structured question imports ----
-
-export function useCreateQuestionImport() {
-  return useMutation({
-    mutationFn: ({ file, mode }: { file: File; mode?: string }) =>
-      examBankService.createQuestionImport(file, mode ?? "auto"),
-  });
-}
-
-export function useRetryQuestionImport() {
-  return useMutation({
-    mutationFn: (uuid: string) => examBankService.retryQuestionImport(uuid),
-  });
-}
-
-export function useDeleteQuestionImport() {
-  return useMutation({
-    mutationFn: (uuid: string) => examBankService.deleteQuestionImport(uuid),
-  });
-}
-
-export { useQuestionImportPolling } from "./useQuestionImportPolling";

@@ -667,7 +667,7 @@ export function CreateQuestionDialog({
 
   const dialogDescription = (() => {
     if (isImageFormat) {
-      if (imagePhase === "scan") return "التقط أو ارفع صورة السؤال لمعالجتها.";
+      if (imagePhase === "scan") return "التقط أو ارفع صورة السؤال، وسيتم حفظها كما هي.";
       if (imagePhase === "metadata") return "أكمل إعداد الإجابة والنقاط.";
       return "التقط أو ارفع صورة السؤال، ثم أكمل تفاصيل الإجابة.";
     }
@@ -784,7 +784,7 @@ export function CreateQuestionDialog({
               {scanMediaAssetId && (
                 <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
-                  تم المسح بنجاح
+                  تم حفظ صورة السؤال بنجاح
                 </span>
               )}
               <StudioButton

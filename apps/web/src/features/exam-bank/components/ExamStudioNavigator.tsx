@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GripVertical, Plus, FilePlus2, Trash2, ScanLine } from "lucide-react";
+import { GripVertical, Plus, FilePlus2, Trash2 } from "lucide-react";
 import { AppInput, AppSelect, AppSelectTrigger, AppSelectValue, AppSelectContent, AppSelectItem } from "@/components/ui";
 import {
   StudioButton,
@@ -22,7 +22,6 @@ interface ExamStudioNavigatorProps {
   onSelectQuestion: (id: string) => void;
   onAddQuestion: () => void;
   onCreateQuestion: () => void;
-  onImportQuestion: () => void;
   onRemoveQuestion: (questionId: string) => void;
   onReorder: (order: string[]) => void;
   onTogglePin?: (questionId: string) => void;
@@ -33,7 +32,6 @@ export function ExamStudioNavigator({
   onSelectQuestion,
   onAddQuestion,
   onCreateQuestion,
-  onImportQuestion,
   onRemoveQuestion,
   onReorder,
   onTogglePin,
@@ -151,15 +149,6 @@ export function ExamStudioNavigator({
             سؤال جديد
           </StudioButton>
         </div>
-        <StudioButton
-          variant="soft"
-          size="sm"
-          className="w-full"
-          icon={<ScanLine className="h-4 w-4" />}
-          onClick={onImportQuestion}
-        >
-          استيراد من صورة
-        </StudioButton>
       </div>
 
       <div

@@ -9,7 +9,8 @@ import type {
 } from "../types";
 import { QUESTION_TYPE_LABELS } from "../constants";
 import { toggleMultiOption } from "../utils";
-import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
+import { ImageQuestionContent } from 
+"@/features/exam-bank/components/ImageQuestionContent";
 import {
   StructuredQuestionContent,
   parseQuestionDocument,
@@ -84,7 +85,7 @@ function ExamQuestionViewInner({
           </div>
         ) : question.questionFormat === "image" && question.scanUrl ? (
           <div className="mt-4">
-            <ScanImageViewer
+            <ImageQuestionContent
               src={question.scanUrl}
               alt={`صورة السؤال ${index + 1}`}
               maxHeight={500}

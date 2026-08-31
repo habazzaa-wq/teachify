@@ -8,10 +8,8 @@ use Illuminate\Support\Str;
  * Validates structured question documents (content_document JSON) against the
  * version-1 contract shared with the frontend renderer.
  *
- * Used by:
- *  - the import pipeline right after DocumentComposer
- *  - QuestionController store/update when content_document is present
- *  - the review workspace "validate" action
+ * Used by QuestionController store/update whenever content_document is present
+ * so historical structured questions remain valid to persist and render.
  */
 final class QuestionDocumentValidator
 {

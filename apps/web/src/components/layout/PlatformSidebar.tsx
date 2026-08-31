@@ -20,7 +20,6 @@ import {
   Globe,
   Rabbit,
   BarChart3,
-  ScanLine,
   type LucideIcon,
 } from "lucide-react";
 import { usePlatformAuth } from "@/providers/PlatformAuthProvider";
@@ -50,7 +49,6 @@ const platformNav: NavItem[] = [
   { label: "إدارة النطاقات", href: "/superadmin/dashboard/domains", icon: Globe },
   { label: "تخزين Bunny", href: "/superadmin/dashboard/bunny-settings", icon: Rabbit },
   { label: "مركز Bunny", href: "/superadmin/dashboard/bunny-center", icon: BarChart3 },
-  { label: "استيراد الذكاء البصري", href: "/superadmin/dashboard/question-import", icon: ScanLine },
 ];
 
 const systemNav: NavItem[] = [

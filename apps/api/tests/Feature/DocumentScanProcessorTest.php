@@ -95,6 +95,54 @@ class DocumentScanProcessorTest extends TestCase
         imagedestroy($processed);
     }
 
+    public function test_original_preserve_returns_exact_original_bytes_for_png(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD extension required');
+        }
+
+        $png = $this->renderPng(500, 400, alpha: true);
+        $result = (new DocumentScanProcessor())->process($png, 'original_preserve');
+
+        $this->assertTrue($result->originalPreserved);
+        $this->assertSame('image/png', $result->mimeType);
+        $this->assertSame('png', $result->extension);
+        $this->assertSame($png, $result->bytes, 'Original PNG bytes must be passed through unmodified');
+
+        // Transparency survives because no flatten/re-encode happened.
+        $img = @imagecreatefromstring($result->bytes);
+        $this->assertNotFalse($img);
+        $alpha = null;
+        for ($y = 0; $y < imagesy($img); $y += 16) {
+            for ($x = 0; $x < imagesx($img); $x += 16) {
+                $rgba = imagecolorat($img, $x, $y);
+                $alpha = (($rgba >> 24) & 0x7F);
+                if ($alpha > 8) {
+                    break 2;
+                }
+            }
+        }
+        $this->assertGreaterThan(8, (int) $alpha, 'PNG transparency must be preserved');
+        imagedestroy($img);
+    }
+
+    public function test_original_preserve_large_image_keeps_source_format_when_resized(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD extension required');
+        }
+
+        config(['scanner.max_dimension' => 1200]);
+        $webp = $this->renderWebp(1500, 1200);
+        $result = (new DocumentScanProcessor())->process($webp, 'original_preserve');
+
+        $this->assertFalse($result->originalPreserved);
+        $this->assertSame('image/webp', $result->mimeType);
+        $this->assertSame('webp', $result->extension);
+        $this->assertTrue($result->width <= 1200 && $result->height <= 1200);
+        $this->assertNotFalse(@imagecreatefromstring($result->bytes));
+    }
+
     public function test_grayscale_mode_outputs_neutral_gray(): void
     {
         $bytes = $this->renderTextbookPage(1000, 1400, brightness: 1.0);
@@ -292,6 +340,44 @@ class DocumentScanProcessorTest extends TestCase
             $bytes = ob_get_clean();
             imagedestroy($img);
         }
+
+        return $bytes;
+    }
+
+    private function renderPng(int $w, int $h, bool $alpha = false): string
+    {
+        $im = imagecreatetruecolor($w, $h);
+        if ($alpha) {
+            imagealphablending($im, false);
+            imagesavealpha($im, true);
+            $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+            imagefill($im, 0, 0, $transparent);
+        } else {
+            imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+        }
+        $text = imagecolorallocate($im, 25, 25, 25);
+        imagestring($im, 5, 30, 30, 'sample question png', $text);
+        ob_start();
+        imagepng($im, null, 6);
+        $bytes = ob_get_clean();
+        imagedestroy($im);
+
+        return $bytes;
+    }
+
+    private function renderWebp(int $w, int $h): string
+    {
+        if (! function_exists('imagewebp')) {
+            $this->markTestSkipped('GD WebP support required');
+        }
+        $im = imagecreatetruecolor($w, $h);
+        imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255));
+        $text = imagecolorallocate($im, 25, 25, 25);
+        imagestring($im, 5, 30, 30, 'sample question webp', $text);
+        ob_start();
+        imagewebp($im, null, 90);
+        $bytes = ob_get_clean();
+        imagedestroy($im);
 
         return $bytes;
     }
