@@ -84,6 +84,8 @@ import type {
   UpdateCoursePayload,
   CourseFilterParams,
 } from "@/features/courses/types";
+import type { BulkActionResult } from "@/features/courses/services";
+import { normalizeApiError } from "@/services/api";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -105,6 +107,23 @@ const fadeUpItem = {
 type SortValue = "newest" | "oldest" | "most_students" | "most_revenue" | "title";
 
 const COURSES_PER_PAGE = 12;
+
+function describeBulkResult(
+  result: BulkActionResult,
+  verb: string,
+  noneMessage: string,
+): string {
+  const { count, requested } = result;
+  if (count === 0) {
+    return noneMessage;
+  }
+
+  const noun = requested === 1 ? "دورة" : "دورات";
+  if (count < requested) {
+    return `تم ${verb} ${count} من ${requested} ${noun}`;
+  }
+  return `تم ${verb} ${requested} ${noun} بنجاح`;
+}
 
 interface FilterState {
   status: CourseStatus | null;
@@ -470,12 +489,15 @@ function CoursesHomeContent() {
     (action: "publish" | "archive" | "restore" | "toggle_feature" | "delete") => {
       const ids = [...selectedCourseIds];
       if (ids.length === 0) return;
-      const onError = () => toast.error("حدث خطأ أثناء تنفيذ الإجراء");
+      const onError = (err: unknown) =>
+        toast.error(normalizeApiError(err).message);
       switch (action) {
         case "publish":
           bulkPublish.mutate(ids, {
-            onSuccess: () => {
-              toast.success(`تم نشر ${ids.length} دورة بنجاح`);
+            onSuccess: (result) => {
+              toast.success(
+                describeBulkResult(result, "نشر", "تعذّر نشر الدورات المحددة"),
+              );
               clearSelection();
             },
             onError,
@@ -483,8 +505,10 @@ function CoursesHomeContent() {
           break;
         case "archive":
           bulkArchive.mutate(ids, {
-            onSuccess: () => {
-              toast.success(`تمت أرشفة ${ids.length} دورة بنجاح`);
+            onSuccess: (result) => {
+              toast.success(
+                describeBulkResult(result, "أرشفة", "تعذّرت أرشفة الدورات المحددة"),
+              );
               clearSelection();
             },
             onError,
@@ -492,8 +516,10 @@ function CoursesHomeContent() {
           break;
         case "restore":
           bulkRestore.mutate(ids, {
-            onSuccess: () => {
-              toast.success(`تمت استعادة ${ids.length} دورة بنجاح`);
+            onSuccess: (result) => {
+              toast.success(
+                describeBulkResult(result, "استعادة", "لا توجد دورات محذوفة لاستعادتها"),
+              );
               clearSelection();
             },
             onError,
@@ -501,8 +527,10 @@ function CoursesHomeContent() {
           break;
         case "toggle_feature":
           bulkToggleFeature.mutate(ids, {
-            onSuccess: () => {
-              toast.success(`تم تحديث التميز لـ ${ids.length} دورة`);
+            onSuccess: (result) => {
+              toast.success(
+                describeBulkResult(result, "تحديث التميز لـ", "تعذّر تحديث التميز للدورات المحددة"),
+              );
               clearSelection();
             },
             onError,
@@ -520,13 +548,15 @@ function CoursesHomeContent() {
     const ids = [...selectedCourseIds];
     if (ids.length === 0) return;
     bulkDelete.mutate(ids, {
-      onSuccess: () => {
-        toast.success(`تم حذف ${ids.length} دورة بنجاح`);
+      onSuccess: (result) => {
+        toast.success(
+          describeBulkResult(result, "حذف", "تعذّر حذف الدورات المحددة"),
+        );
         setBulkDeleteOpen(false);
         clearSelection();
       },
-      onError: () => {
-        toast.error("فشل حذف الدورات المحددة");
+      onError: (err) => {
+        toast.error(normalizeApiError(err).message);
         setBulkDeleteOpen(false);
       },
     });
@@ -1294,15 +1324,13 @@ function CoursesHomeContent() {
                             تمييز / إلغاء التميز
                           </AppDropdownMenuItem>
                           <AppDropdownMenuSeparator />
-                          <PermissionGuard permission="courses.delete">
-                            <AppDropdownMenuItem
-                              onClick={() => handleBulkAction("delete")}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="ms-2 h-4 w-4" />
-                              حذف
-                            </AppDropdownMenuItem>
-                          </PermissionGuard>
+                          <AppDropdownMenuItem
+                            onClick={() => handleBulkAction("delete")}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="ms-2 h-4 w-4" />
+                            حذف
+                          </AppDropdownMenuItem>
                         </AppDropdownMenuContent>
                       </AppDropdownMenu>
                     </PermissionGuard>
