@@ -74,7 +74,15 @@ function statusOf(id: string): UploadStatus | undefined {
 
 class UploadExecutorError extends Error {
   constructor(
-    public kind: "network" | "timeout" | "server" | "abort" | "offline" | "checksum" | "unknown",
+    public kind:
+      | "network"
+      | "timeout"
+      | "server"
+      | "abort"
+      | "offline"
+      | "checksum"
+      | "session"
+      | "unknown",
     public status?: number,
     message?: string,
   ) {
@@ -369,10 +377,19 @@ class UploadEngine {
       return;
     }
 
+    // Preserve any already-uploaded progress when re-running (retry/recovery)
+    // instead of hard-resetting to 0 — the backend still holds uploaded chunks.
+    const priorProgress = Math.min(
+      100,
+      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) /
+        (runtime.session.size || 1) *
+        100,
+    );
+
     this.setItem(id, {
       status: "preparing",
       startedAt: runtime.session.startedAt > 0 ? runtime.session.startedAt : Date.now(),
-      progress: 0,
+      progress: priorProgress,
       speed: 0,
       eta: null,
       error: null,
@@ -559,6 +576,14 @@ class UploadEngine {
           // Stop everything; the engine will pause the item.
           throw execErr;
         }
+        if (execErr.kind === "session") {
+          // The backend session no longer exists. Drop the stale remote session
+          // handle so the next run() opens a fresh backend intent and we only
+          // re-upload chunks the new session is missing, instead of hammering a
+          // dead session until the whole upload fails.
+          runtime.session.remoteSessionId = null;
+          runtime.session.uploadUrl = null;
+        }
         attempt += 1;
         chunk.retryCount = attempt;
         this.updateChunk(runtime, chunk, { status: "failed", retryCount: attempt });
@@ -611,6 +636,12 @@ class UploadEngine {
           reject(new UploadExecutorError("network"));
         } else if (xhr.status === 413) {
           reject(new UploadExecutorError("server", xhr.status, "Chunk too large"));
+        } else if (xhr.status === 404) {
+          // The backend session (and its asset) no longer exists — most likely
+          // a concurrent cleanup/asset-delete reclaim removed it, or the session
+          // expired. This is distinct from a generic server error: we must start
+          // a fresh backend intent on retry instead of hammering a dead one.
+          reject(new UploadExecutorError("session", xhr.status));
         } else {
           reject(new UploadExecutorError("server", xhr.status));
         }
@@ -847,7 +878,7 @@ class UploadEngine {
           this.setItem(id, { status: "paused", retryAt: null });
           return;
         }
-        this.setItem(id, { status: "queued", retryAt: null, progress: 0, error: null });
+        this.setItem(id, { status: "queued", retryAt: null, error: null });
         if (this.runtimes.get(id)) {
           this.runtimes.get(id)!.session.status = "active";
         }

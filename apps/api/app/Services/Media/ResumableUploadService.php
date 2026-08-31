@@ -165,6 +165,11 @@ class ResumableUploadService
             ]);
         }
 
+        // Persist within a transaction that retries transient MySQL deadlocks /
+        // lock-wait timeouts (which can occur when parallel chunks contend on the
+        // session row while the scheduled Bunny-sync job is hammering the DB).
+        // Laravel only re-runs the callback when it detects a deadlock or a
+        // lock-timeout QueryException, so the retry is safe and bounded.
         DB::transaction(function () use ($session, $chunkIndex, $computedHash, $absPath, $contentRange, $receivedBytes) {
             $relative = $this->chunkRelativePath($session, $chunkIndex);
             $offset = $contentRange['start'] ?? 0;
@@ -185,7 +190,7 @@ class ResumableUploadService
 
             $session->markChunkUploaded($chunkIndex);
             $session->forceFill(['status' => 'active'])->save();
-        });
+        }, 4);
 
         $session->refresh();
 
