@@ -131,7 +131,6 @@ function CourseBlock({
   const hasCover = course.coverImage || course.thumbnail;
   const gradient = difficultyGradients[course.difficulty] ?? difficultyGradients.all_levels;
   const completion = useMemo(() => getCompletionPercent(course), [course]);
-  const contentCount = useMemo(() => getContentCount(course), [course]);
 
   const revenueDisplay = useMemo(() => {
     if (course.pricingType === "free") return "مجاني";
@@ -170,7 +169,7 @@ function CourseBlock({
       role="button"
       tabIndex={0}
       aria-label={`فتح ${course.title}`}
-      className="group cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tenant-ring focus-visible:ring-offset-2 focus-visible:ring-offset-tenant-bg"
+      className="group h-full cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tenant-ring focus-visible:ring-offset-2 focus-visible:ring-offset-tenant-bg"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       whileHover={{
@@ -180,7 +179,7 @@ function CourseBlock({
     >
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70",
+          "flex h-full flex-col overflow-hidden rounded-2xl border bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70",
           selected
             ? "border-tenant-accent/60 ring-2 ring-tenant-accent/60 ring-offset-2 ring-offset-tenant-bg"
             : "border-tenant-border/40",
@@ -190,8 +189,14 @@ function CourseBlock({
         <div className="relative overflow-hidden bg-gradient-to-br from-tenant-soft to-tenant-surface">
           <div
             className={cn(
+              "pointer-events-none absolute inset-0 bg-gradient-to-br",
+              gradient,
+            )}
+          />
+          <div
+            className={cn(
               "relative overflow-hidden",
-              "aspect-[16/10] sm:aspect-[16/9]",
+              "aspect-[16/10]",
             )}
           >
             {hasCover ? (
@@ -434,50 +439,54 @@ function CourseBlock({
               </AppTooltipProvider>
             </div>
           </div>
-
-          {/* Info overlay at bottom of cover */}
-          <div className="absolute bottom-0 start-0 end-0 z-10 p-4 pt-12 bg-gradient-to-t from-tenant-surface via-tenant-surface/80 to-transparent">
-            {course.category && (
-              <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-tenant-soft/80 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-medium text-tenant-fg-muted border border-tenant-border/40 shadow-sm">
-                {course.category.name}
-              </span>
-            )}
-            <h3 className="line-clamp-2 text-base font-bold leading-snug text-tenant-fg transition-colors duration-300 group-hover:text-tenant-accent">
-              {course.title}
-            </h3>
-            <div className="mt-1.5 flex items-center justify-between">
-              {course.instructor ? (
-                <div className="flex items-center gap-1.5">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[8px] font-medium text-tenant-accent">
-                    {course.instructor.avatar ? (
-                      <img
-                        src={course.instructor.avatar}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      course.instructor.name.charAt(0)
-                    )}
-                  </div>
-                  <span className="truncate text-[11px] text-tenant-fg-muted/70">
-                    {course.instructor.name}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-[11px] text-tenant-fg-muted/30">
-                  بدون مدرب
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-[10px] text-tenant-fg-muted/40">
-                <Clock className="h-3 w-3" />
-                {formatDate(course.updatedAt)}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Details */}
-        <div className="px-4 pb-4 pt-2 space-y-2.5">
+        <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
+          {/* Title block */}
+          <div className="space-y-2">
+            {course.category && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-tenant-soft/80 px-2.5 py-0.5 text-[10px] font-medium text-tenant-fg-muted border border-tenant-border/40">
+                {course.category.name}
+              </span>
+            )}
+            <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-tenant-fg transition-colors duration-300 group-hover:text-tenant-accent">
+              {course.title}
+            </h3>
+          </div>
+
+          {/* Instructor + date */}
+          <div className="flex items-center justify-between gap-2">
+            {course.instructor ? (
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[9px] font-medium text-tenant-accent">
+                  {course.instructor.avatar ? (
+                    <img
+                      src={course.instructor.avatar}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    course.instructor.name.charAt(0)
+                  )}
+                </div>
+                <span className="truncate text-xs font-medium text-tenant-fg-muted/70">
+                  {course.instructor.name}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs text-tenant-fg-muted/30">
+                بدون مدرب
+              </span>
+            )}
+            <span className="flex shrink-0 items-center gap-1 text-[10px] text-tenant-fg-muted/40">
+              <Clock className="h-3 w-3" />
+              {formatDate(course.updatedAt)}
+            </span>
+          </div>
+
+          <div className="border-t border-dashed border-tenant-border/30" />
+
           {/* Meta pills */}
           <div className="flex flex-wrap items-center gap-1.5">
             {visibilityConfig && (
@@ -565,23 +574,25 @@ function CourseBlock({
           )}
 
           {/* Price/Discount row */}
-          {course.pricingType !== "free" && course.price != null && (
-            <div className="flex items-center gap-2 pt-0.5">
-              <span className="text-sm font-bold text-tenant-fg">
-                {formatNumber(course.price)} {course.currency ?? "ر.س"}
-              </span>
-              {hasDiscount && course.discountPrice != null && (
-                <span className="text-[11px] text-tenant-fg-muted/50 line-through">
-                  {formatNumber(course.discountPrice)} {course.currency ?? "ر.س"}
+          <div className="mt-auto pt-1">
+            {course.pricingType !== "free" && course.price != null && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-tenant-fg">
+                  {formatNumber(course.price)} {course.currency ?? "ر.س"}
                 </span>
-              )}
-            </div>
-          )}
-          {course.pricingType === "free" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-              مجاني
-            </span>
-          )}
+                {hasDiscount && course.discountPrice != null && (
+                  <span className="text-[11px] text-tenant-fg-muted/50 line-through">
+                    {formatNumber(course.discountPrice)} {course.currency ?? "ر.س"}
+                  </span>
+                )}
+              </div>
+            )}
+            {course.pricingType === "free" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                مجاني
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
