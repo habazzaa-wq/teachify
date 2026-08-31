@@ -8,7 +8,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen, Users } from "lucide-react";
 import {
@@ -23,13 +22,21 @@ import type { EducationalStage } from "../stages/types";
 import { StageIcon } from "../stages/stageIcons";
 import type { StageStatsLike, StageVariant } from "./types";
 
-/** Brand-tinted blur placeholder (no broken-image flash on slow networks). */
-const BRAND_BLUR_DATA_URL = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#f0cdc4'/><stop offset='1' stop-color='#ffe3a3'/></linearGradient></defs><rect width='8' height='8' fill='url(#g)'/></svg>`,
-)}`;
-
 /** Arabic-Indic numerals, e.g. 1 → "١". */
 const arabicNumber = (n: number) => new Intl.NumberFormat("ar-EG").format(n);
+
+/**
+ * Normalize a stage media URL into a browser-safe `src`. The tenant CMS stores
+ * images as either absolute URLs (e.g. `https://picsum.photos/...`) or domain-
+ * relative paths served by this Next app (`/storage/...`). Guard against a
+ * missing leading slash so `<img>` never resolves against the current route.
+ */
+function resolveImageSrc(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const value = raw.trim();
+  if (!value) return null;
+  return value.startsWith("/") || /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `/${value}`;
+}
 
 /** Whether the device reports a fine pointer + hover — gates 3D tilt. */
 function supportsHover(): boolean {
@@ -157,7 +164,8 @@ export function StageWorld({
   const href = stage.href ?? `/stages/${stage.id}`;
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
-  const hasImage = Boolean(stage.image) && !failed;
+  const src = resolveImageSrc(stage.image);
+  const hasImage = Boolean(src) && !failed;
 
   const hoverCapable = useMemo(() => supportsHover(), []);
 
@@ -219,23 +227,20 @@ export function StageWorld({
                 "relative z-[2] overflow-hidden bg-muted",
                 isHero ? "m-3 h-44 sm:h-56 lg:h-64" : "m-2.5 h-40 sm:h-44 lg:h-48",
               )}
-              style={{ transformStyle: "preserve-3d" }}
             >
-              {hasImage ? (
-                <Image
-                  src={stage.image as string}
-                  fill
-                  sizes="(min-width: 1280px) 34vw, (min-width: 1024px) 44vw, (min-width: 640px) 60vw, 100vw"
-                  priority={priority}
-                  loading={priority ? undefined : "lazy"}
-                  placeholder="blur"
-                  blurDataURL={BRAND_BLUR_DATA_URL}
+              {hasImage && src ? (
+                // eslint-disable-next-line @next/next/no-img-element -- stage images are arbitrary dynamic CMS/media URLs (tenant domains + dev http) that next/image optimization can fail to resolve; a plain lazy-loaded <img> is the resilient, fast choice here.
+                <img
+                  src={src}
                   alt={stage.name}
+                  loading={priority ? "eager" : "lazy"}
+                  decoding="async"
+                  fetchPriority={priority ? "high" : "auto"}
+                  draggable={false}
                   className={cn(
-                    "object-cover transition-transform duration-[1.2s] ease-brand hoverable:group-hover:scale-[1.06]",
+                    "absolute inset-0 h-full w-full object-cover transition-transform duration-[1.2s] ease-brand hoverable:group-hover:scale-[1.06]",
                     isHero && priority && "animate-slow-zoom",
                   )}
-                  style={{ transform: "translateZ(24px)" }}
                   onError={() => setFailed(true)}
                 />
               ) : (
