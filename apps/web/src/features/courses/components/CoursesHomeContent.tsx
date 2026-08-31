@@ -125,6 +125,18 @@ function describeBulkResult(
   return `تم ${verb} ${requested} ${noun} بنجاح`;
 }
 
+function showBulkToast(
+  result: BulkActionResult,
+  verb: string,
+  noneMessage: string,
+): void {
+  if (result.count === 0) {
+    toast.error(noneMessage);
+  } else {
+    toast.success(describeBulkResult(result, verb, noneMessage));
+  }
+}
+
 interface FilterState {
   status: CourseStatus | null;
   visibility: CourseVisibility | null;
@@ -495,9 +507,7 @@ function CoursesHomeContent() {
         case "publish":
           bulkPublish.mutate(ids, {
             onSuccess: (result) => {
-              toast.success(
-                describeBulkResult(result, "نشر", "تعذّر نشر الدورات المحددة"),
-              );
+              showBulkToast(result, "نشر", "تعذّر نشر الدورات المحددة");
               clearSelection();
             },
             onError,
@@ -506,9 +516,7 @@ function CoursesHomeContent() {
         case "archive":
           bulkArchive.mutate(ids, {
             onSuccess: (result) => {
-              toast.success(
-                describeBulkResult(result, "أرشفة", "تعذّرت أرشفة الدورات المحددة"),
-              );
+              showBulkToast(result, "أرشفة", "تعذّرت أرشفة الدورات المحددة");
               clearSelection();
             },
             onError,
@@ -517,9 +525,7 @@ function CoursesHomeContent() {
         case "restore":
           bulkRestore.mutate(ids, {
             onSuccess: (result) => {
-              toast.success(
-                describeBulkResult(result, "استعادة", "لا توجد دورات محذوفة لاستعادتها"),
-              );
+              showBulkToast(result, "استعادة", "لا توجد دورات محذوفة لاستعادتها");
               clearSelection();
             },
             onError,
@@ -528,9 +534,7 @@ function CoursesHomeContent() {
         case "toggle_feature":
           bulkToggleFeature.mutate(ids, {
             onSuccess: (result) => {
-              toast.success(
-                describeBulkResult(result, "تحديث التميز لـ", "تعذّر تحديث التميز للدورات المحددة"),
-              );
+              showBulkToast(result, "تحديث التميز لـ", "تعذّر تحديث التميز للدورات المحددة");
               clearSelection();
             },
             onError,
@@ -549,9 +553,7 @@ function CoursesHomeContent() {
     if (ids.length === 0) return;
     bulkDelete.mutate(ids, {
       onSuccess: (result) => {
-        toast.success(
-          describeBulkResult(result, "حذف", "تعذّر حذف الدورات المحددة"),
-        );
+        showBulkToast(result, "حذف", "تعذّر حذف الدورات المحددة");
         setBulkDeleteOpen(false);
         clearSelection();
       },
