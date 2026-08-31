@@ -64,8 +64,16 @@ class CoursePolicy
 
     public function delete(User $user, Course $course): bool
     {
-        return $course->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'courses.delete');
+        if ($course->tenant_id !== currentTenant()->id) {
+            return false;
+        }
+
+        if ($this->isTenantOperator($user, currentTenant())) {
+            return $this->auth()->hasPermission($user, currentTenant(), 'courses.delete');
+        }
+
+        return $this->isAssignedInstructor($user, $course)
+            && $this->auth()->hasPermission($user, currentTenant(), 'courses.update');
     }
 
     public function archive(User $user, Course $course): bool
