@@ -23,6 +23,12 @@ import {
   CHUNK_PARALLEL_DEFAULT,
 } from "../constants";
 import { buildChunks, contentRange, selectChunkSize, shouldChunk, sliceChunk } from "../utils/chunking";
+import {
+  currentUploadedBytes,
+  foldCompletedBytes,
+  progressPercent,
+  setInFlight,
+} from "./progressAccounting";
 import type {
   NetworkStatus,
   PersistedUploadRecord,
@@ -64,6 +70,12 @@ interface ItemRuntime {
   uploadStartedAt: number | null;
   /** Last known total uploaded bytes (for delta calculation). */
   lastUploadedBytes: number;
+  /**
+   * Monotonic count of fully-uploaded bytes for this item. Only ever grows
+   * (reconciled against completed chunks), so retries/recovery can never make
+   * the reported progress move backward.
+   */
+  uploadedBytes: number;
   /** AbortController for the finalize request, so cancellation works during processing. */
   finalizeAbort: AbortController | null;
 }
@@ -81,7 +93,6 @@ class UploadExecutorError extends Error {
       | "abort"
       | "offline"
       | "checksum"
-      | "session"
       | "unknown",
     public status?: number,
     message?: string,
@@ -332,6 +343,7 @@ class UploadEngine {
       speedSamples: [],
       uploadStartedAt: null,
       lastUploadedBytes: 0,
+      uploadedBytes: 0,
       finalizeAbort: null,
     };
     this.runtimes.set(item.id, runtime);
@@ -377,13 +389,13 @@ class UploadEngine {
       return;
     }
 
-    // Preserve any already-uploaded progress when re-running (retry/recovery)
-    // instead of hard-resetting to 0 — the backend still holds uploaded chunks.
+    // Preserve already-uploaded progress when re-running (retry/recovery). The
+    // progress is derived from the runtime's monotonic byte accumulator so it
+    // can never go backward even after a transient failure.
+    this.trackCompletedBytes(runtime);
     const priorProgress = Math.min(
       100,
-      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) /
-        (runtime.session.size || 1) *
-        100,
+      (runtime.uploadedBytes / (runtime.session.size || 1)) * 100,
     );
 
     this.setItem(id, {
@@ -566,6 +578,8 @@ class UploadEngine {
           uploadedAt: chunk.uploadedAt,
           retryCount: chunk.retryCount,
         });
+        // Fold the completed chunk into the monotonic byte accumulator and drop
+        // its in-flight entry so it is not double-counted.
         runtime.chunkLoaded.delete(chunk.index);
         this.updateProgress(id, runtime);
         return;
@@ -575,14 +589,6 @@ class UploadEngine {
         if (execErr.kind === "offline") {
           // Stop everything; the engine will pause the item.
           throw execErr;
-        }
-        if (execErr.kind === "session") {
-          // The backend session no longer exists. Drop the stale remote session
-          // handle so the next run() opens a fresh backend intent and we only
-          // re-upload chunks the new session is missing, instead of hammering a
-          // dead session until the whole upload fails.
-          runtime.session.remoteSessionId = null;
-          runtime.session.uploadUrl = null;
         }
         attempt += 1;
         chunk.retryCount = attempt;
@@ -637,11 +643,11 @@ class UploadEngine {
         } else if (xhr.status === 413) {
           reject(new UploadExecutorError("server", xhr.status, "Chunk too large"));
         } else if (xhr.status === 404) {
-          // The backend session (and its asset) no longer exists — most likely
-          // a concurrent cleanup/asset-delete reclaim removed it, or the session
-          // expired. This is distinct from a generic server error: we must start
-          // a fresh backend intent on retry instead of hammering a dead one.
-          reject(new UploadExecutorError("session", xhr.status));
+          // A 404 is treated as a normal retryable server error: the engine
+          // retries the SAME chunk against the SAME session (idempotent chunk
+          // writes) rather than silently dropping the session and recreating a
+          // brand-new backend asset, which would duplicate the media record.
+          reject(new UploadExecutorError("server", xhr.status));
         } else {
           reject(new UploadExecutorError("server", xhr.status));
         }
@@ -698,16 +704,19 @@ class UploadEngine {
   }
 
   private updateChunkProgress(id: string, runtime: ItemRuntime, chunkIndex: number, loaded: number): void {
-    runtime.chunkLoaded.set(chunkIndex, loaded);
+    // Per-chunk in-flight bytes are monotonic: a retry of the same chunk must
+    // never report less than what it had already transferred, so global
+    // progress can never dip while a chunk is being re-uploaded.
+    const { state } = this.progressState(runtime);
+    const next = setInFlight(state, chunkIndex, loaded);
+    runtime.chunkLoaded = next.inFlight;
 
     const now = Date.now();
     if (!runtime.uploadStartedAt) {
       runtime.uploadStartedAt = now;
     }
 
-    const uploadedBytes =
-      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
-      Array.from(runtime.chunkLoaded.values()).reduce((a, b) => a + b, 0);
+    const uploadedBytes = this.currentUploadedBytes(runtime);
 
     const deltaBytes = uploadedBytes - runtime.lastUploadedBytes;
     runtime.lastUploadedBytes = uploadedBytes;
@@ -754,14 +763,51 @@ class UploadEngine {
     this.patchSession(runtime.session);
   }
 
+  /**
+   * Build the pure progress state backing this runtime so accounting delegates
+   * to the testable monotonic model in progressAccounting.ts.
+   */
+  private progressState(runtime: ItemRuntime): {
+    state: { completedBytes: number; inFlight: Map<number, number>; totalBytes: number };
+    chunks: { index: number; size: number; status: "pending" | "hashing" | "uploading" | "uploaded" | "failed" }[];
+  } {
+    return {
+      state: {
+        completedBytes: runtime.uploadedBytes,
+        inFlight: runtime.chunkLoaded,
+        totalBytes: runtime.session.size || 0,
+      },
+      chunks: runtime.chunks as { index: number; size: number; status: "pending" | "hashing" | "uploading" | "uploaded" | "failed" }[],
+    };
+  }
+
+  /**
+   * Fold any chunks that are now marked "uploaded" into the monotonic byte
+   * accumulator. Never subtracts: the accumulator only grows and is reconciled
+   * with the completed-chunk set after recovery/retry.
+   */
+  private trackCompletedBytes(runtime: ItemRuntime): void {
+    const { state, chunks } = this.progressState(runtime);
+    runtime.uploadedBytes = foldCompletedBytes(state, chunks).completedBytes;
+  }
+
+  /**
+   * Aggregate uploaded bytes = monotonic completed bytes + in-flight bytes of
+   * chunks that are not yet complete. This is the single source of truth for
+   * progress/speed so parallel chunks never overwrite each other and retries
+   * never subtract already-counted bytes.
+   */
+  private currentUploadedBytes(runtime: ItemRuntime): number {
+    const { state, chunks } = this.progressState(runtime);
+    return currentUploadedBytes(state, chunks);
+  }
+
   private updateProgress(id: string, runtime: ItemRuntime): void {
     const session = runtime.session;
-    const uploadedBytes =
-      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
-      Array.from(runtime.chunkLoaded.values()).reduce((a, b) => a + b, 0);
+    const uploadedBytes = this.currentUploadedBytes(runtime);
 
     const total = session.size || 1;
-    const progress = Math.min(100, (uploadedBytes / total) * 100);
+    const progress = progressPercent(uploadedBytes, total);
     const completedChunks = session.completedChunks;
     const item = useUploadManagerStore.getState().items[id];
 
@@ -1111,6 +1157,7 @@ class UploadEngine {
       speedSamples: [],
       uploadStartedAt: null,
       lastUploadedBytes: 0,
+      uploadedBytes: 0,
       finalizeAbort: null,
     };
     this.runtimes.set(session.sessionId, runtime);

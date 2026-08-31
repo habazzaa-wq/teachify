@@ -170,6 +170,14 @@ class ResumableUploadService
         // session row while the scheduled Bunny-sync job is hammering the DB).
         // Laravel only re-runs the callback when it detects a deadlock or a
         // lock-timeout QueryException, so the retry is safe and bounded.
+        //
+        // The single source of truth for "which chunks are uploaded" is the
+        // per-chunk row written below (finalize/resume both read from it). The
+        // session's `uploaded_chunks` JSON column is NOT touched here: with
+        // parallel chunk PUTs a read-modify-write of that column causes lost
+        // updates and row-lock contention on the shared session row, which made
+        // large uploads stall/fail. We only bump `updated_at`/`status` so the
+        // GC never reclaims an in-progress session.
         DB::transaction(function () use ($session, $chunkIndex, $computedHash, $absPath, $contentRange, $receivedBytes) {
             $relative = $this->chunkRelativePath($session, $chunkIndex);
             $offset = $contentRange['start'] ?? 0;
@@ -188,17 +196,29 @@ class ResumableUploadService
                 ],
             );
 
-            $session->markChunkUploaded($chunkIndex);
-            $session->forceFill(['status' => 'active'])->save();
+            // Lightweight touch of the session row (no JSON read-modify-write).
+            MediaUploadSession::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                ->where('id', $session->id)
+                ->update([
+                    'status' => 'active',
+                    'updated_at' => now(),
+                ]);
         }, 4);
 
         $session->refresh();
+
+        // Authoritative bitmap derived from the chunk rows (parallel-safe).
+        $uploaded = $session->chunks()
+            ->where('status', 'uploaded')
+            ->orderBy('chunk_index')
+            ->pluck('chunk_index')
+            ->all();
 
         return [
             'ok' => true,
             'chunk_index' => $chunkIndex,
             'received_bytes' => $receivedBytes,
-            'uploaded_chunks' => $session->uploaded_chunks ?? [],
+            'uploaded_chunks' => $uploaded,
         ];
     }
 
