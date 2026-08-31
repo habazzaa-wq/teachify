@@ -9,6 +9,12 @@ export interface CourseListResponse {
   lastPage: number;
 }
 
+export interface BulkActionResult {
+  message: string;
+  count: number;
+  requested: number;
+}
+
 function formatCourse(raw: any): Course {
   return {
     id: String(raw.id),
@@ -202,24 +208,29 @@ export const coursesService = {
     return data.data ? formatCourse(data.data) : null;
   },
 
-  async bulkPublish(ids: string[]): Promise<void> {
-    await api.post("/courses/bulk/publish", { ids: ids.map(Number) });
+  async bulkPublish(ids: string[]): Promise<BulkActionResult> {
+    const { data } = await api.post("/courses/bulk/publish", { ids: ids.map(Number) });
+    return data as BulkActionResult;
   },
 
-  async bulkArchive(ids: string[]): Promise<void> {
-    await api.post("/courses/bulk/archive", { ids: ids.map(Number) });
+  async bulkArchive(ids: string[]): Promise<BulkActionResult> {
+    const { data } = await api.post("/courses/bulk/archive", { ids: ids.map(Number) });
+    return data as BulkActionResult;
   },
 
-  async bulkRestore(ids: string[]): Promise<void> {
-    await api.post("/courses/bulk/restore", { ids: ids.map(Number) });
+  async bulkRestore(ids: string[]): Promise<BulkActionResult> {
+    const { data } = await api.post("/courses/bulk/restore", { ids: ids.map(Number) });
+    return data as BulkActionResult;
   },
 
-  async bulkDelete(ids: string[]): Promise<void> {
-    await api.post("/courses/bulk/delete", { ids: ids.map(Number) });
+  async bulkDelete(ids: string[]): Promise<BulkActionResult> {
+    const { data } = await api.post("/courses/bulk/delete", { ids: ids.map(Number) });
+    return data as BulkActionResult;
   },
 
-  async bulkToggleFeature(ids: string[]): Promise<void> {
-    await api.post("/courses/bulk/feature", { ids: ids.map(Number) });
+  async bulkToggleFeature(ids: string[]): Promise<BulkActionResult> {
+    const { data } = await api.post("/courses/bulk/feature", { ids: ids.map(Number) });
+    return data as BulkActionResult;
   },
 
   async exportCsv(): Promise<Blob> {
