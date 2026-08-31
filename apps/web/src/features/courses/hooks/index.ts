@@ -127,6 +127,52 @@ export function useToggleFeatureCourse() {
   });
 }
 
+function invalidateCourseQueries(qc: ReturnType<typeof useQueryClient>): void {
+  qc.invalidateQueries({ queryKey: [COURSES_QUERY_KEY] });
+  qc.invalidateQueries({ queryKey: [SECTIONS_QUERY_KEY] });
+  qc.invalidateQueries({ queryKey: [LESSONS_QUERY_KEY] });
+}
+
+export function useBulkPublishCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => coursesService.bulkPublish(ids),
+    onSuccess: () => invalidateCourseQueries(qc),
+  });
+}
+
+export function useBulkArchiveCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => coursesService.bulkArchive(ids),
+    onSuccess: () => invalidateCourseQueries(qc),
+  });
+}
+
+export function useBulkRestoreCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => coursesService.bulkRestore(ids),
+    onSuccess: () => invalidateCourseQueries(qc),
+  });
+}
+
+export function useBulkDeleteCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => coursesService.bulkDelete(ids),
+    onSuccess: () => invalidateCourseQueries(qc),
+  });
+}
+
+export function useBulkToggleFeatureCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => coursesService.bulkToggleFeature(ids),
+    onSuccess: () => invalidateCourseQueries(qc),
+  });
+}
+
 export function useExportCourses() {
   return useMutation({
     mutationFn: () => coursesService.exportCsv(),

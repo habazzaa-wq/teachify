@@ -1,6 +1,14 @@
 import { api } from "@/services/api";
 import type { Course, CourseFilterParams, CourseMetricData, CreateCoursePayload, UpdateCoursePayload, CourseActivity } from "../types";
 
+export interface CourseListResponse {
+  data: Course[];
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+}
+
 function formatCourse(raw: any): Course {
   return {
     id: String(raw.id),
@@ -72,11 +80,14 @@ function buildListParams(params?: CourseFilterParams): Record<string, string> {
 }
 
 export const coursesService = {
-  async list(params?: CourseFilterParams): Promise<{ data: Course[]; total: number }> {
+  async list(params?: CourseFilterParams): Promise<CourseListResponse> {
     const { data } = await api.get("/courses", { params: buildListParams(params) });
     return {
       data: (data.data ?? []).map(formatCourse),
       total: data.total ?? 0,
+      perPage: data.per_page ?? 25,
+      currentPage: data.current_page ?? 1,
+      lastPage: data.last_page ?? 1,
     };
   },
 
@@ -189,6 +200,26 @@ export const coursesService = {
   async toggleFeature(id: string): Promise<Course | null> {
     const { data } = await api.post(`/courses/${id}/feature`);
     return data.data ? formatCourse(data.data) : null;
+  },
+
+  async bulkPublish(ids: string[]): Promise<void> {
+    await api.post("/courses/bulk/publish", { ids: ids.map(Number) });
+  },
+
+  async bulkArchive(ids: string[]): Promise<void> {
+    await api.post("/courses/bulk/archive", { ids: ids.map(Number) });
+  },
+
+  async bulkRestore(ids: string[]): Promise<void> {
+    await api.post("/courses/bulk/restore", { ids: ids.map(Number) });
+  },
+
+  async bulkDelete(ids: string[]): Promise<void> {
+    await api.post("/courses/bulk/delete", { ids: ids.map(Number) });
+  },
+
+  async bulkToggleFeature(ids: string[]): Promise<void> {
+    await api.post("/courses/bulk/feature", { ids: ids.map(Number) });
   },
 
   async exportCsv(): Promise<Blob> {

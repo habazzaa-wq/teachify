@@ -25,6 +25,7 @@ import {
   Signal,
   MapPin,
   Send,
+  Check,
 } from "lucide-react";
 import {
   AppDropdownMenu,
@@ -55,6 +56,8 @@ interface CourseBlockProps {
   onToggleFeature?: (course: Course) => void;
   onTogglePin?: (courseId: string) => void;
   isPinned?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (course: Course) => void;
 }
 
 const languageLabels: Record<string, string> = {
@@ -115,6 +118,8 @@ function CourseBlock({
   onToggleFeature,
   onTogglePin,
   isPinned,
+  selected,
+  onToggleSelect,
 }: CourseBlockProps) {
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -173,7 +178,14 @@ function CourseBlock({
         transition: { type: "spring", stiffness: 200, damping: 20 },
       }}
     >
-      <div className="overflow-hidden rounded-2xl border border-tenant-border/40 bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70">
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70",
+          selected
+            ? "border-tenant-accent/60 ring-2 ring-tenant-accent/60 ring-offset-2 ring-offset-tenant-bg"
+            : "border-tenant-border/40",
+        )}
+      >
         {/* Cover */}
         <div className="relative overflow-hidden bg-gradient-to-br from-tenant-soft to-tenant-surface">
           <div
@@ -216,8 +228,39 @@ function CourseBlock({
               </div>
             )}
 
+            {/* Selection checkbox */}
+            {onToggleSelect && (
+              <div className="absolute start-3 top-3 z-30">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect(course);
+                  }}
+                  aria-label={selected ? "إلغاء التحديد" : "تحديد"}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-xl border shadow-sm backdrop-blur-xl transition-all duration-200",
+                    selected
+                      ? "border-tenant-accent bg-tenant-accent text-tenant-accent-fg"
+                      : "border-tenant-border/50 bg-tenant-surface/80 text-tenant-fg-muted/50 hover:border-tenant-accent/40 hover:text-tenant-accent",
+                  )}
+                >
+                  {selected ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <span className="h-2.5 w-2.5 rounded-[3px] border border-current opacity-70" />
+                  )}
+                </button>
+              </div>
+            )}
+
             {/* Badges */}
-            <div className="absolute start-3 top-3 z-10 flex flex-wrap gap-1.5">
+            <div
+              className={cn(
+                "absolute start-3 z-10 flex flex-wrap gap-1.5",
+                onToggleSelect ? "top-14" : "top-3",
+              )}
+            >
               {course.featured && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0.9 }}
