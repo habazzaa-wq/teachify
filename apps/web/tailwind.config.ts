@@ -232,6 +232,17 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(50%)" },
         },
+        /* slow Ken-Burns zoom for the hero stage photo — adds life without
+           layout cost (transform-only, GPU friendly) */
+        "slow-zoom": {
+          from: { transform: "scale(1.12)" },
+          to: { transform: "scale(1)" },
+        },
+        /* gentle radial drift for the decorative ghost numeral / watermark */
+        "drift": {
+          "0%, 100%": { transform: "translate3d(0, 0, 0) rotate(var(--drift-rot, 0deg))" },
+          "50%": { transform: "translate3d(0, -8px, 0) rotate(var(--drift-rot, 0deg))" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -256,6 +267,8 @@ const config: Config = {
         "brand-glow-pulse": "brand-glow-pulse 2.4s ease-in-out infinite",
         "brand-shimmer": "brand-shimmer 1.8s linear infinite",
         "brand-float": "brand-float 5s ease-in-out infinite",
+        "slow-zoom": "slow-zoom 9s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "drift": "drift 6s ease-in-out infinite",
       },
       transitionTimingFunction: {
         brand: "cubic-bezier(0.22, 1, 0.36, 1)",

@@ -1,40 +1,88 @@
 "use client";
 
-import { useMemo } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { useMemo, useRef } from "react";
+import Link from "next/link";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  type Variants,
+} from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
 import { toEducationalStage, type EducationalStage } from "../stages/types";
-import { StageCard } from "./StageCard";
-import { StageCardSkeleton } from "./StageCardSkeleton";
+import { StageWorld } from "./StageWorld";
+import { StageWorldSkeleton } from "./StageWorldSkeleton";
+import type { StageVariant } from "./types";
+
+/*
+ * Typography: this section only ever uses the site's dynamic font.
+ * `font-sans` maps to `--font-sans` in tailwind.config (theme.extend.fontFamily.sans
+ * → "var(--font-sans)"), which the root layout injects per-tenant via
+ * next/font + buildFontStack(). We never reference a concrete typeface; the
+ * hierarchy (size/weight/tracking/leading) is built on this single token so it
+ * inherits whatever font the platform sets globally.
+ */
 
 const DEFAULT_KICKER = "مراحل التعلّم";
-const DEFAULT_TITLE = "خطوتك على طريق النجاح";
-const DEFAULT_TITLE_EMPHASIS = "مرحلة بمرحلة";
+const DEFAULT_TITLE = "اختر مرحلتك";
+const DEFAULT_TITLE_EMPHASIS = "وانطلق نحو القمّة";
 const DEFAULT_SUBTITLE =
-  "قسمنا الرحلة إلى مراحل واضحة ومترابطة — من الروضة حتى الثانوية — بمناهج وأدوات صمّمها مختصّون لكل مرحلة، ليمرّ الطالب من خطوة لأخرى بثقة وسلاسة.";
+  "من الروّضة إلى الثانوية — مسار متّصل صمّمه مختصّون لكل مرحلة، بمناهج تفاعلية ومعلّمين متخصصين. اعرف مرحلة طفلك الآن في لمحة.";
 
-const FOOTER_NOTE = "تعرّف على مرحلة طفلك الآن، وابدأ من حيث يناسب سِنّه";
+const FOOTER_NOTE = "ابدأ الرحلة من حيث يناسب سِنّه";
+
+const arabicNumber = (n: number) => new Intl.NumberFormat("ar-EG").format(n);
 
 const containerVariants: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.08 } },
 };
 
 /**
- * "Educational Stages" homepage section — a responsive mosaic of premium,
- * student-facing stage tiles. Each tile is its own brand-accented "world"
- * (chapter number badge, icon seal, matted photo, live course/teacher metrics)
- * so the grid reads as a warm terracotta → gold journey of distinct cards.
+ * Deterministic bento span for a stage, so the mosaic stays intentional and
+ * hole-free for ANY number of stages:
+ *  · stage 0 = hero (spans 2 columns on sm+; the "lead" of the composition),
+ *  · followers alternate standard ↔ wide on the widest breakpoint for rhythm.
+ *  · `grid-auto-flow-dense` back-fills any gap, so odd totals pack cleanly.
+ */
+function spanClass(index: number, variant: StageVariant): string {
+  if (variant === "hero") return "col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-2";
+  if (variant === "wide") return "xl:col-span-2";
+  return "";
+}
+
+function variantFor(index: number): StageVariant {
+  if (index === 0) return "hero";
+  if (index % 4 === 3) return "wide";
+  return "standard";
+}
+
+/**
+ * "Educational Stages" homepage section — a dimensional bento "world map".
  *
- *  · Desktop (≥1280px) — 4-column mosaic.
- *  · Laptop (≥1024px)  — 3-column.
- *  · Tablet (≥640px)   — 2-column.
- *  · Mobile (<640px)   — single column, full-width.
+ * Creative concept: each stage is its own glassy, brand-accented world arranged
+ * in an asymmetric mosaic (hero lead + varied-width satellites). The image is a
+ * design material — an arch aperture with an accent reveal layer that slides up
+ * behind it, a ghost Arabic numeral, an icon seal — and every card tilts in 3D,
+ * with the photo parallaxing one layer deeper than the card (desktop). On touch
+ * the same depth is revealed by tapping. Live course/teacher counts count up.
+ * A contents-style stage index in the header gives it a confident, crafted
+ * editorial voice that reads as trustworthy to a parent.
  *
- * Scroll-triggered staggered entrance, zero-layout-shift skeletons, image
- * optimization + priority loading, and `prefers-reduced-motion` respected.
+ * Architecture (Server/Client boundary):
+ *  · Static stage data is already fetched **server-side** in `(home)/page.tsx`
+ *    (stagesServerService.getPublicStages) and hydrated into React Query. This
+ *    section (a Client Component) reads that cache — no client round-trip — and
+ *    adds a Client boundary only where interactivity requires it (Framer Motion,
+ *    pointer/touch state, count-up). `LazyMount` in the page defers hydration
+ *    until the section nears the viewport.
+ *
+ * Responsiveness: the composition is re-architected per breakpoint, not merely
+ * scaled — hero collapses from a wide lead (xl/lg/sm) to the top full-width card
+ * on mobile; the index hides below lg; sizes/margins tighten on small screens.
  */
 export function EducationalStagesSection({
   stages: stagesProp,
@@ -44,20 +92,29 @@ export function EducationalStagesSection({
   subtitle = DEFAULT_SUBTITLE,
   priorityCount = 0,
 }: {
-  /** Optional explicit stage list (used in tests / preview). */
   stages?: EducationalStage[];
   kicker?: string;
   titleLead?: string;
   titleEmphasis?: string;
   subtitle?: string;
-  /** Number of tiles that eager-load their image too. */
   priorityCount?: number;
 }) {
   const reduce = useReducedMotion();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
 
-  const { ref, inView } = useInViewOnce<HTMLElement>({ rootMargin: "0px 0px -15% 0px" });
+  const ref = useRef<HTMLElement | null>(null);
+  const { ref: inViewRef, inView } = useInViewOnce<HTMLElement>({
+    rootMargin: "0px 0px -15% 0px",
+  });
+
+  // Scroll-linked parallax for the section's ambient depth (light mode only
+  // animation tunnel). Reduced-motion users get a static, calm background.
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const glowY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
 
   const { data, isLoading } = usePublicStages();
   const fetched = useMemo<EducationalStage[]>(
@@ -80,86 +137,147 @@ export function EducationalStagesSection({
 
   return (
     <section
-      ref={ref}
+      ref={(node) => {
+        ref.current = node;
+        inViewRef.current = node;
+      }}
       dir="rtl"
       aria-labelledby="stages-title"
       className="relative w-full overflow-hidden py-16 sm:py-20 lg:py-24"
       style={{
         background: isDark
-          ? "linear-gradient(170deg, #0e0c14 0%, #16121c 55%, #0e0c14 100%)"
-          : "linear-gradient(170deg, #fdfbf7 0%, #f7f1e7 55%, #fdfbf7 100%)",
+          ? "linear-gradient(170deg, #0e0c14 0%, #17121c 55%, #0e0c14 100%)"
+          : "linear-gradient(170deg, #fdfbf7 0%, #f6efe3 55%, #fdfbf7 100%)",
       }}
     >
-      {/* ruled-paper + dot texture */}
+      {/* ruled-paper + fine dot texture */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage: isDark
-            ? `repeating-linear-gradient(to bottom, rgba(255,255,255,0.022) 0, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(255,255,255,0.035) 0.6px, transparent 0.6px)`
+            ? `repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(255,255,255,0.04) 0.6px, transparent 0.6px)`
             : `repeating-linear-gradient(to bottom, rgba(120,80,40,0.03) 0, rgba(120,80,40,0.03) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(120,80,40,0.05) 0.6px, transparent 0.6px)`,
           backgroundSize: "100% 100%, 26px 26px",
         }}
       />
 
-      {/* decorative brand depth layer */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
-        <div className="absolute -top-24 end-0 h-80 w-80 rounded-full bg-[var(--brand-primary)] opacity-[0.1] blur-3xl" />
-        <div className="absolute -bottom-24 start-0 h-96 w-96 rounded-full bg-[var(--brand-secondary)] opacity-[0.09] blur-3xl" />
-      </div>
+      {/* ambient brand glows — parallax against scroll (gated by reduced-motion) */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0"
+        style={reduce ? undefined : { y: glowY }}
+      >
+        <div className="absolute -top-24 end-[4%] h-[26rem] w-[26rem] rounded-full bg-[var(--brand-primary)] opacity-[0.14] blur-3xl" />
+        <div className="absolute -bottom-28 start-[2%] h-[30rem] w-[30rem] rounded-full bg-[var(--brand-secondary)] opacity-[0.12] blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[24rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--brand-primary)] opacity-[0.05] blur-3xl" />
+      </motion.div>
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* ── editorial header ── */}
-        <header className="relative max-w-2xl text-start">
-          <motion.span
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-center gap-2.5"
-          >
-            <span aria-hidden="true" className="h-[3px] w-7 rounded-full bg-[var(--brand-secondary)]" />
-            <span
-              className="text-xs font-bold tracking-[0.18em]"
-              style={{ color: isDark ? "#F2C879" : "var(--brand-primary)" }}
+        {/* ─────────────────────────  header  ───────────────────────── */}
+        <header className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-14">
+          <div className="max-w-2xl text-start">
+            <motion.span
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="inline-flex items-center gap-2.5"
             >
-              {kicker}
-            </span>
-          </motion.span>
+              <span aria-hidden="true" className="h-[3px] w-9 rounded-full bg-[var(--brand-secondary)]" />
+              <span
+                className="font-sans text-xs font-extrabold uppercase tracking-[0.22em]"
+                style={{ color: isDark ? "#F2C879" : "var(--brand-primary)" }}
+              >
+                {kicker}
+              </span>
+            </motion.span>
 
-          <motion.h2
-            id="stages-title"
-            initial={reduce ? false : { opacity: 0, y: 14 }}
-            whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-            className="mt-4 text-balance text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl"
-            style={{ color: ink }}
-          >
-            {titleLead}{" "}
-            <span className="bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-primary-400)] to-[var(--brand-secondary)] bg-clip-text text-transparent">
-              {titleEmphasis}
-            </span>
-          </motion.h2>
+            <motion.h2
+              id="stages-title"
+              initial={reduce ? false : { opacity: 0, y: 18 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
+              className="font-sans mt-5 text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
+              style={{ color: ink }}
+            >
+              {titleLead}
+              <span className="block bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-primary-400)] to-[var(--brand-secondary)] bg-clip-text text-transparent">
+                {titleEmphasis}
+              </span>
+            </motion.h2>
 
-          <motion.p
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="mt-6 border-s-2 ps-5 text-sm leading-loose sm:text-base lg:text-lg"
-            style={{ color: muted, borderColor: "var(--brand-primary)" }}
-          >
-            {subtitle}
-          </motion.p>
+            <motion.p
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+              className="font-sans mt-6 max-w-xl border-s-2 ps-5 text-sm leading-loose sm:text-base lg:text-lg"
+              style={{ color: muted, borderColor: "var(--brand-primary)" }}
+            >
+              {subtitle}
+            </motion.p>
+          </div>
+
+          {/* editorial "contents" index — mobile-hidden, lends crafted structure */}
+          {!showSkeleton && stages.length > 0 ? (
+            <motion.nav
+              aria-label="فهرس المراحل"
+              initial={reduce ? false : { opacity: 0, y: 16 }}
+              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
+              className="hidden w-full max-w-sm border-s-2 ps-5 lg:block"
+              style={{ borderColor: "color-mix(in srgb, var(--brand-secondary) 40%, transparent)" }}
+            >
+              <p
+                className="font-sans mb-4 text-[11px] font-extrabold uppercase tracking-[0.24em]"
+                style={{ color: muted }}
+              >
+                فهرس المراحل
+              </p>
+              <ol className="space-y-1">
+                {stages.slice(0, 5).map((s, i) => (
+                  <li key={String(s.id)}>
+                    <Link
+                      href={s.href ?? `/stages/${s.id}`}
+                      className="font-sans group flex items-baseline gap-3 py-1.5 text-sm transition-colors outline-none focus-visible:text-[var(--brand-primary)]"
+                      style={{ color: i === 0 ? ink : muted }}
+                    >
+                      <span
+                        className="font-sans text-xs font-extrabold tabular-nums"
+                        style={{ color: i === 0 ? "var(--brand-primary)" : "var(--brand-secondary)" }}
+                      >
+                        {arabicNumber(i + 1)}
+                      </span>
+                      <span className="truncate font-semibold transition-transform duration-300 ease-brand group-hover:translate-x-1">
+                        {s.name}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className="ms-auto h-px w-6 flex-shrink-0 transition-all duration-300 group-hover:w-10"
+                        style={{ background: "color-mix(in srgb, var(--brand-secondary) 55%, transparent)" }}
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </motion.nav>
+          ) : null}
         </header>
 
-        {/* ── the mosaic ── */}
+        {/* ─────────────────────────  bento mosaic  ───────────────────────── */}
         <div className="mt-12 sm:mt-16">
           {showSkeleton ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <StageCardSkeleton key={i} />
+              <div className="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-2">
+                <StageWorldSkeleton variant="hero" />
+              </div>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className={i === 2 ? "xl:col-span-2" : ""}>
+                  <StageWorldSkeleton variant="standard" />
+                </div>
               ))}
             </div>
           ) : (
@@ -168,36 +286,41 @@ export function EducationalStagesSection({
               initial={reduce ? false : "hidden"}
               whileInView={reduce ? undefined : "show"}
               viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-              className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4"
+              className="grid grid-flow-dense grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4"
             >
-              {stages.map((stage, i) => (
-                <StageCard
-                  key={String(stage.id)}
-                  stage={stage}
-                  index={i}
-                  total={stages.length}
-                  priority={i < priorityCount}
-                  stats={statsById.get(Number(stage.id)) ?? null}
-                  active={inView}
-                />
-              ))}
+              {stages.map((stage, i) => {
+                const variant = variantFor(i);
+                return (
+                  <StageWorld
+                    key={String(stage.id)}
+                    stage={stage}
+                    index={i}
+                    total={stages.length}
+                    variant={variant}
+                    priority={i < priorityCount}
+                    stats={statsById.get(Number(stage.id)) ?? null}
+                    active={inView}
+                    className={spanClass(i, variant)}
+                  />
+                );
+              })}
             </motion.div>
           )}
         </div>
 
-        {/* ── closing note ── */}
+        {/* ─────────────────────────  closing note  ───────────────────────── */}
         <motion.div
           initial={reduce ? false : { opacity: 0 }}
           whileInView={reduce ? undefined : { opacity: 1 }}
           viewport={{ once: true, margin: "0px 0px -10% 0px" }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 flex items-center justify-center gap-3 sm:mt-16"
+          className="mt-12 flex flex-wrap items-center justify-center gap-3 sm:mt-16"
         >
-          <span className="h-px w-8 bg-[var(--brand-secondary)]" aria-hidden="true" />
-          <span className="text-xs font-extrabold tracking-[0.22em] sm:text-sm" style={{ color: muted }}>
+          <span className="h-px w-10 bg-[var(--brand-secondary)]" aria-hidden="true" />
+          <span className="font-sans text-xs font-extrabold tracking-[0.22em] sm:text-sm" style={{ color: muted }}>
             {FOOTER_NOTE}
           </span>
-          <span className="h-px w-8 bg-[var(--brand-primary)]" aria-hidden="true" />
+          <span className="h-px w-10 bg-[var(--brand-primary)]" aria-hidden="true" />
         </motion.div>
       </div>
     </section>
