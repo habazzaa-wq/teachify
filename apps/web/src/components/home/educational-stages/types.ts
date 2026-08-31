@@ -1,14 +1,27 @@
 /**
- * Data contract for the "Educational Stages" homepage section.
+ * Data contract for the "Educational Stages" homepage section — a dimensional,
+ * bento-style "world map" of stage cards.
  *
  * The section is fully data-driven and reuses the platform's established
- * `EducationalStage` model (see `@/components/home/stages/types`) — the same
- * shape used by the homepage everywhere else — so every stage carries its own
- * accent color, icon, key-benefit line and navigation target.
- *
- * Each stage is rendered as a premium tile in the responsive mosaic and can
- * also surface live per-stage stats (courses / teachers counts) fetched in
- * parallel, so the section feels alive rather than static.
+ * `EducationalStage` model (the same shape used across the public site), so
+ * every stage carries its own name, copy, photo, accent color, icon and
+ * navigation target. Nothing is hardcoded inside the components.
  */
+
 export type { EducationalStage } from "../stages/types";
-export type { StageStatsLike } from "./StageCard";
+
+/** Live per-stage metrics surfaced on each card (from the public API). */
+export interface StageStatsLike {
+  coursesCount: number;
+  teachersCount: number;
+}
+
+/**
+ * Composition slot for a stage inside the bento mosaic.
+ *
+ * `variant` tunes how much visual weight the card carries: the "hero" stage
+ * opens the composition large and tall; "standard" cards fill the mosaic; an
+ * optional "wide" variant adds horizontal rhythm so the mosaic never reads as
+ * four identical boxes regardless of how many stages exist.
+ */
+export type StageVariant = "hero" | "standard" | "wide";
