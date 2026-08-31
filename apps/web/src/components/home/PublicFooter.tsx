@@ -8,16 +8,15 @@ import { useUiStore } from "@/stores/ui.store";
 import { useTenantStore } from "@/stores/tenant.store";
 
 /**
- * Platform footer — a warm terracotta (brand primary) close.
+ * Platform footer — a warm, flat terracotta (brand primary) close.
  *
  * Colour logic — the two brand colours never blend:
- *   - Primary (#D87B63): the footer's solid background.
- *   - Secondary (#FFB50E): the card borders, column accents, and the
- *     hover fill that flips each interactive element's background to gold.
+ *   - Primary (#D87B63): the footer's flat solid background.
+ *   - Secondary (#FFB50E): column headings and the hover accent colour
+ *     that warms every interactive element (links, icons, buttons).
  *
- * Hover rule: every interactive element is a defined box with a border;
- * on hover its background flips to the opposite brand colour (gold),
- * and its text flips to dark for contrast.
+ * Layout is flat and quiet: text columns separated by hairline rules,
+ * no cards, no shadows, no gradients. Hover only recolours text.
  */
 
 const DEVELOPER_WHATSAPP = "https://wa.me/201011245565";
@@ -78,55 +77,32 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
   واتساب: MessageCircle,
 };
 
-/* ── Card surface: soft neutral overlay + gold border + gentle depth ── */
-const cardSurface: React.CSSProperties = {
-  backgroundImage:
-    "linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(0 0 0 / 0.14))",
-  border: "1px solid color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
-  boxShadow:
-    "0 1px 2px rgb(0 0 0 / 0.08), 0 8px 24px -12px rgb(0 0 0 / 0.35)",
-};
-
-/* ── Card title: gold accents with a soft underline rule ────────── */
-function CardTitle({ children }: { children: React.ReactNode }) {
+/* ── Column heading: quiet gold uppercase label ─────────────────── */
+function ColumnHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative">
-      <h3
-        className="text-sm font-bold tracking-wide"
-        style={{ color: "var(--brand-secondary)" }}
-      >
-        {children}
-      </h3>
-      <div
-        className="mt-2.5 h-px w-full"
-        style={{
-          backgroundImage:
-            "linear-gradient(90deg, color-mix(in srgb, var(--brand-secondary) 60%, transparent), transparent)",
-        }}
-      />
-    </div>
+    <h3
+      className="text-sm font-semibold tracking-wide"
+      style={{ color: "var(--brand-secondary)" }}
+    >
+      {children}
+    </h3>
   );
 }
 
-/* ── Sub-component: one nav card ───────────────────────────────── */
-function FooterNavCard({ section }: { section: FooterNavSection }) {
+/* ── Column link: text that warms to gold on hover ──────────────── */
+const columnLink =
+  "inline-flex rounded-sm py-1 text-sm text-white/85 transition-colors duration-150 hover:text-[var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]";
+
+/* ── Sub-component: one text column of links ────────────────────── */
+function FooterLinkColumn({ section }: { section: FooterNavSection }) {
   return (
-    <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label={section.heading}>
-      <CardTitle>{section.heading}</CardTitle>
-      <ul className="mt-4 space-y-2">
+    <section aria-label={section.heading}>
+      <ColumnHeading>{section.heading}</ColumnHeading>
+      <ul className="mt-3 space-y-1.5">
         {section.links.map((link) => (
           <li key={link.label}>
-            <Link
-              href={link.href}
-              className="group flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-            >
-              <span>{link.label}</span>
-              <span
-                aria-hidden="true"
-                className="text-white/40 transition-transform duration-150 group-hover:translate-x-[-2px] group-hover:text-[var(--brand-secondary-contrast)]"
-              >
-                ‹
-              </span>
+            <Link href={link.href} className={columnLink}>
+              {link.label}
             </Link>
           </li>
         ))}
@@ -153,107 +129,112 @@ export function PublicFooter() {
   return (
     <footer style={{ backgroundColor: "var(--brand-primary)" }}>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-        {/* ── Header: brand + description + CTAs ── */}
-        <div className="flex flex-col gap-8 border-b border-white/10 pb-10 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-md">
-            <div className="flex items-center gap-3">
-              {logo ? (
-                <span className="flex h-11 items-center rounded-lg bg-white px-2.5 shadow-sm">
-                  <Image src={logo} alt={tenantName} width={116} height={28} className="h-7 w-auto" />
-                </span>
-              ) : (
-                <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[var(--brand-primary)] shadow-sm">
-                  <GraduationCap className="h-6 w-6" />
-                </span>
-              )}
-              <span className="text-xl font-extrabold tracking-tight text-white">
-                {tenantName}
+        {/* ── Bar: brand identity + primary actions ── */}
+        <div className="flex flex-col gap-6 border-b border-white/10 pb-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            {logo ? (
+              <span className="flex h-12 items-center rounded-xl bg-white px-3">
+                <Image src={logo} alt={tenantName} width={116} height={28} className="h-7 w-auto" />
               </span>
+            ) : (
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[var(--brand-primary)]">
+                <GraduationCap className="h-6 w-6" />
+              </span>
+            )}
+            <div>
+              <p className="text-lg font-bold text-white">{tenantName}</p>
+              <p className="text-xs text-white/70">منصة تعليمية عربية متكاملة</p>
             </div>
-
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/85">
-              منصة تعليمية عربية متكاملة تضم الطلاب والمعلمين وأولياء الأمور، وتقدّم محتوى
-              دراسيًا منظّمًا لكل المراحل الدراسية.
-            </p>
           </div>
 
-          {/* CTAs — gold fills, hover flips to a defined contrast fill */}
-          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/student/dashboard"
-              className="inline-flex w-full items-center justify-center rounded-md bg-[var(--brand-secondary)] px-6 py-3 text-sm font-semibold text-[var(--brand-secondary-contrast)] transition-colors duration-150 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--brand-secondary)] px-6 py-2.5 text-sm font-semibold text-[var(--brand-secondary-contrast)] transition-colors duration-150 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
             >
               سجّل الآن
             </Link>
-
             <a
               href={DEVELOPER_WHATSAPP}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center rounded-md bg-white/10 px-6 py-3 text-sm font-semibold text-white ring-1 ring-white/40 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] hover:ring-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-white/10 px-6 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 transition-colors duration-150 hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)] sm:w-auto"
             >
               تواصل معنا
             </a>
           </div>
         </div>
 
-        {/* ── Middle: nav cards + contact card ── */}
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+        {/* ── Columns: brand blurb + link nav + contact ── */}
+        <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-10 sm:grid-cols-2 lg:grid-cols-6 lg:gap-0">
+          {/* Brand blurb */}
+          <div className="sm:col-span-2 lg:col-span-2 lg:pe-10">
+            <ColumnHeading>عن المنصة</ColumnHeading>
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
+              منصة تعليمية عربية متكاملة تضم الطلاب والمعلمين وأولياء الأمور، وتقدّم محتوى
+              دراسيًا منظّمًا لكل المراحل الدراسية.
+            </p>
+          </div>
+
+          {/* Link nav columns — one per section */}
           {footerNavSections.map((section) => (
-            <FooterNavCard key={section.heading} section={section} />
+            <div
+              key={section.heading}
+              className="lg:col-span-1 lg:border-s lg:border-white/10 lg:pe-10 lg:ps-8"
+            >
+              <FooterLinkColumn section={section} />
+            </div>
           ))}
 
-          {/* Contact card */}
-          <section className="rounded-xl p-4 sm:p-5" style={cardSurface} aria-label="التواصل">
-            <CardTitle>التواصل</CardTitle>
-            <ul className="mt-4 space-y-2">
+          {/* Contact */}
+          <div className="sm:col-span-2 lg:col-span-1 lg:border-s lg:border-white/10 lg:ps-8">
+            <ColumnHeading>التواصل</ColumnHeading>
+            <ul className="mt-3 space-y-1.5">
               <li>
-                <a
-                  href={footerContact.phoneHref}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-                >
-                  <Phone className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{footerContact.phone}</span>
+                <a href={footerContact.phoneHref} className={columnLink}>
+                  <span className="inline-flex items-center gap-2">
+                    <Phone className="h-4 w-4 shrink-0 opacity-80" />
+                    {footerContact.phone}
+                  </span>
                 </a>
               </li>
               <li>
-                <a
-                  href={footerContact.emailHref}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/90 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-                >
-                  <Mail className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{footerContact.email}</span>
+                <a href={footerContact.emailHref} className={columnLink}>
+                  <span className="inline-flex items-center gap-2">
+                    <Mail className="h-4 w-4 shrink-0 opacity-80" />
+                    {footerContact.email}
+                  </span>
                 </a>
               </li>
-              <li className="flex items-start gap-3 rounded-md px-3 py-2 text-sm leading-relaxed text-white/90">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+              <li className="inline-flex items-start gap-2 py-1 text-sm text-white/85">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 opacity-80" />
                 <span>{footerContact.hours}</span>
               </li>
             </ul>
-          </section>
+          </div>
         </div>
 
-        {/* ── Bottom bar: hairline divider, muted legal + social ── */}
-        <div className="mt-10 flex flex-col gap-5 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-relaxed text-white/75">
+        {/* ── Bottom bar: legal + socials ── */}
+        <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-relaxed text-white/70">
             © {year} {tenantName}. جميع الحقوق محفوظة.
-            <span className="mx-2 text-white/30">|</span>
+            <span className="mx-2 text-white/25">|</span>
             <Link
               href="/marketing/privacy"
-              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4 focus-visible:text-[var(--brand-secondary)] focus-visible:underline"
+              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] focus-visible:text-[var(--brand-secondary)]"
             >
               سياسة الخصوصية
             </Link>
-            <span className="mx-2 text-white/30">|</span>
+            <span className="mx-2 text-white/25">|</span>
             <Link
               href="/marketing/terms"
-              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] hover:underline underline-offset-4 focus-visible:text-[var(--brand-secondary)] focus-visible:underline"
+              className="inline-flex py-1 transition-colors duration-150 hover:text-[var(--brand-secondary)] focus-visible:text-[var(--brand-secondary)]"
             >
               شروط الاستخدام
             </Link>
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {footerSocials.map((social) => {
               const Icon = SOCIAL_ICONS[social.label];
               if (!Icon) return null;
@@ -263,12 +244,7 @@ export function PublicFooter() {
                   href={social.href}
                   aria-label={social.label}
                   title={social.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white/80 transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-                  style={{
-                    border:
-                      "1px solid color-mix(in srgb, var(--brand-secondary) 40%, transparent)",
-                    backgroundColor: "rgb(0 0 0 / 0.12)",
-                  }}
+                  className="inline-flex p-2 text-white/75 transition-colors duration-150 hover:text-[var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
