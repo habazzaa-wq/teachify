@@ -236,6 +236,11 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/courses/metrics', [CourseController::class, 'metrics']);
         Route::get('/courses/export', [CourseController::class, 'export']);
+        Route::post('/courses/bulk/publish', [CourseController::class, 'bulkPublish']);
+        Route::post('/courses/bulk/archive', [CourseController::class, 'bulkArchive']);
+        Route::post('/courses/bulk/restore', [CourseController::class, 'bulkRestore']);
+        Route::post('/courses/bulk/delete', [CourseController::class, 'bulkDelete']);
+        Route::post('/courses/bulk/feature', [CourseController::class, 'bulkFeature']);
         Route::patch('/courses/{course}/status', [CourseController::class, 'updateStatus']);
         Route::patch('/courses/{course}/publish', [CourseController::class, 'publish']);
         Route::patch('/courses/{course}/archive', [CourseController::class, 'archive']);
