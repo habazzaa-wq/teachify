@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use App\Repositories\CourseRepository;
+use App\Repositories\CourseSectionRepository;
 use App\Services\Courses\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class CourseController extends Controller
         Gate::authorize('view', $course);
 
         return response()->json([
-                'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections', 'lessons'])),
+            'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections', 'lessons'])),
         ]);
     }
 
@@ -171,6 +172,83 @@ class CourseController extends Controller
         ]);
     }
 
+    /**
+     * @return array<int, int>
+     */
+    private function validatedBulkIds(Request $request): array
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer', 'distinct'],
+        ]);
+
+        return array_map('intval', array_values($validated['ids']));
+    }
+
+    public function bulkPublish(Request $request): JsonResponse
+    {
+        $count = 0;
+        foreach ($this->repository->findByIds($this->validatedBulkIds($request)) as $course) {
+            if (Gate::allows('publish', $course)) {
+                $this->service->publish($course);
+                $count++;
+            }
+        }
+
+        return response()->json(['message' => "{$count} course(s) published."]);
+    }
+
+    public function bulkArchive(Request $request): JsonResponse
+    {
+        $count = 0;
+        foreach ($this->repository->findByIds($this->validatedBulkIds($request)) as $course) {
+            if (Gate::allows('archive', $course)) {
+                $this->service->archive($course);
+                $count++;
+            }
+        }
+
+        return response()->json(['message' => "{$count} course(s) archived."]);
+    }
+
+    public function bulkRestore(Request $request): JsonResponse
+    {
+        $count = 0;
+        foreach ($this->validatedBulkIds($request) as $id) {
+            if ($this->repository->restore($id)) {
+                $count++;
+            }
+        }
+
+        return response()->json(['message' => "{$count} course(s) restored."]);
+    }
+
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $count = 0;
+        foreach ($this->repository->findByIds($this->validatedBulkIds($request)) as $course) {
+            if (Gate::allows('delete', $course)) {
+                $this->repository->delete($course);
+                $count++;
+            }
+        }
+
+        return response()->json(['message' => "{$count} course(s) deleted."]);
+    }
+
+    public function bulkFeature(Request $request): JsonResponse
+    {
+        $count = 0;
+        foreach ($this->repository->findByIds($this->validatedBulkIds($request)) as $course) {
+            if (Gate::allows('feature', $course)) {
+                $this->service->toggleFeatured($course);
+                $count++;
+            }
+        }
+
+        return response()->json(['message' => "{$count} course(s) toggled as featured."]);
+    }
+
     public function metrics(): JsonResponse
     {
         Gate::authorize('viewAny', Course::class);
@@ -189,7 +267,7 @@ class CourseController extends Controller
                 'avgRating' => $this->repository->avgRating(),
                 'completionRate' => $this->repository->completionRate(),
                 'featured' => $this->repository->countFeatured(),
-                'totalSections' => (new \App\Repositories\CourseSectionRepository())->countTotal(),
+                'totalSections' => (new CourseSectionRepository)->countTotal(),
             ],
         ]);
     }
@@ -202,7 +280,7 @@ class CourseController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="courses_' . now()->format('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="courses_'.now()->format('Y-m-d').'.csv"',
         ];
 
         $callback = function () use ($courses): void {
