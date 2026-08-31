@@ -9,6 +9,7 @@ import {
   useTransform,
   type Variants,
 } from "framer-motion";
+import { cn } from "@/lib/cn";
 import { useUiStore } from "@/stores/ui.store";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
@@ -26,11 +27,8 @@ import type { StageVariant } from "./types";
  * inherits whatever font the platform sets globally.
  */
 
-const DEFAULT_KICKER = "مراحل التعلّم";
-const DEFAULT_TITLE = "اختر مرحلتك";
-const DEFAULT_TITLE_EMPHASIS = "وانطلق نحو القمّة";
-const DEFAULT_SUBTITLE =
-  "من الروّضة إلى الثانوية — مسار متّصل صمّمه مختصّون لكل مرحلة، بمناهج تفاعلية ومعلّمين متخصصين. اعرف مرحلة طفلك الآن في لمحة.";
+const DEFAULT_TITLE_LEAD = "المراحل";
+const DEFAULT_TITLE_EMPHASIS = "الدراسية";
 
 const FOOTER_NOTE = "ابدأ الرحلة من حيث يناسب سِنّه";
 
@@ -86,17 +84,13 @@ function variantFor(index: number): StageVariant {
  */
 export function EducationalStagesSection({
   stages: stagesProp,
-  kicker = DEFAULT_KICKER,
-  titleLead = DEFAULT_TITLE,
+  titleLead = DEFAULT_TITLE_LEAD,
   titleEmphasis = DEFAULT_TITLE_EMPHASIS,
-  subtitle = DEFAULT_SUBTITLE,
   priorityCount = 0,
 }: {
   stages?: EducationalStage[];
-  kicker?: string;
   titleLead?: string;
   titleEmphasis?: string;
-  subtitle?: string;
   priorityCount?: number;
 }) {
   const reduce = useReducedMotion();
@@ -177,47 +171,17 @@ export function EducationalStagesSection({
         {/* ─────────────────────────  header  ───────────────────────── */}
         <header className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-14">
           <div className="max-w-2xl text-start">
-            <motion.span
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-flex items-center gap-2.5"
-            >
-              <span aria-hidden="true" className="h-[3px] w-9 rounded-full bg-[var(--brand-secondary)]" />
-              <span
-                className="font-sans text-xs font-extrabold uppercase tracking-[0.22em]"
-                style={{ color: isDark ? "#F2C879" : "var(--brand-primary)" }}
-              >
-                {kicker}
-              </span>
-            </motion.span>
-
             <motion.h2
               id="stages-title"
               initial={reduce ? false : { opacity: 0, y: 18 }}
               whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
-              className="font-sans mt-5 text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
-              style={{ color: ink }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="font-sans text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
             >
-              {titleLead}
-              <span className="block bg-gradient-to-r from-[var(--brand-primary)] via-[var(--brand-primary-400)] to-[var(--brand-secondary)] bg-clip-text text-transparent">
-                {titleEmphasis}
-              </span>
+              <span style={{ color: "var(--brand-primary)" }}>{titleLead}</span>{" "}
+              <span style={{ color: "var(--brand-secondary)" }}>{titleEmphasis}</span>
             </motion.h2>
-
-            <motion.p
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
-              className="font-sans mt-6 max-w-xl border-s-2 ps-5 text-sm leading-loose sm:text-base lg:text-lg"
-              style={{ color: muted, borderColor: "var(--brand-primary)" }}
-            >
-              {subtitle}
-            </motion.p>
           </div>
 
           {/* editorial "contents" index — mobile-hidden, lends crafted structure */}
@@ -270,12 +234,18 @@ export function EducationalStagesSection({
         {/* ─────────────────────────  bento mosaic  ───────────────────────── */}
         <div className="mt-12 sm:mt-16">
           {showSkeleton ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
-              <div className="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-2">
+            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
+              <div className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:max-w-none sm:shrink xl:col-span-2">
                 <StageWorldSkeleton variant="hero" />
               </div>
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className={i === 2 ? "xl:col-span-2" : ""}>
+                <div
+                  key={i}
+                  className={cn(
+                    "w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink",
+                    i === 2 ? "xl:col-span-2" : "",
+                  )}
+                >
                   <StageWorldSkeleton variant="standard" />
                 </div>
               ))}
@@ -286,7 +256,7 @@ export function EducationalStagesSection({
               initial={reduce ? false : "hidden"}
               whileInView={reduce ? undefined : "show"}
               viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-              className="grid grid-flow-dense grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4"
+              className="[-ms-overflow-style:none] -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-flow-dense sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 sm:items-stretch [&::-webkit-scrollbar]:hidden lg:grid-cols-3 lg:gap-7 xl:grid-cols-4"
             >
               {stages.map((stage, i) => {
                 const variant = variantFor(i);
@@ -300,7 +270,10 @@ export function EducationalStagesSection({
                     priority={i < priorityCount}
                     stats={statsById.get(Number(stage.id)) ?? null}
                     active={inView}
-                    className={spanClass(i, variant)}
+                    className={cn(
+                      "w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink",
+                      spanClass(i, variant),
+                    )}
                   />
                 );
               })}
