@@ -6,10 +6,24 @@ import { mediaLibraryService } from "../services";
 import { MEDIA_QUERY_KEY } from "../constants";
 import type { MediaAsset, MediaFilterParams } from "../types";
 
+const PROCESSING_POLL_INTERVAL_MS = 15_000;
+
+// While any video/image is still being processed (Bunny transcoding), keep the
+// list auto-refreshing so the "processing" badge clears as soon as the backend
+// flips the asset to `ready` — the backend does this via the Bunny webhook or
+// the `media:sync-stream-status` poller. Polling stops once every asset in the
+// current page/view is terminal. The function form lets us inspect the latest
+// state to decide whether to continue polling.
+function shouldPollForProcessing(data: { data: MediaAsset[] } | undefined) {
+  return (data?.data ?? []).some((a) => a.isProcessing);
+}
+
 export function useMediaAssets(params?: MediaFilterParams) {
   return useQuery({
     queryKey: [MEDIA_QUERY_KEY, "assets", "list", params],
     queryFn: () => mediaLibraryService.listAssets(params),
+    refetchInterval: (query) =>
+      shouldPollForProcessing(query.state.data) ? PROCESSING_POLL_INTERVAL_MS : false,
   });
 }
 
