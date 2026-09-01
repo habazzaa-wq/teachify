@@ -451,6 +451,12 @@ export const mediaLibraryService = {
       headers,
       body: form,
       credentials: "include",
+      // A network blackhole must never leave this promise pending forever. Use
+      // a generous bounded timeout: the server-side endpoint is capped at 10MB,
+      // so this is plenty for the entire request. On expiry fetch rejects with
+      // an AbortError, which the caller surfaces as a normal failure instead of
+      // an upload that silently hangs.
+      signal: AbortSignal.timeout(300_000),
     });
 
     if (!res.ok) {

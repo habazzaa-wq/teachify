@@ -812,12 +812,19 @@ class UploadEngine {
     const item = useUploadManagerStore.getState().items[id];
 
     const rawSpeed = this.computeSpeed(runtime);
-    // Smooth the speed to avoid jittery display.
+    // Smooth the speed to avoid a jittery display. Critically, when there is no
+    // recent throughput (rawSpeed === 0, e.g. during hashing / backoff / a
+    // transient network stall) we do NOT keep decaying the previously smoothed
+    // value toward zero. Decaying on zero-byte progress events drove the
+    // displayed speed to ~0, which made `eta = remaining / speed` explode to
+    // astronomically large (effectively infinite) estimates. Instead we report
+    // zero speed and an unknown ETA so the UI never shows a fake, ballooning
+    // countdown.
     const prevSpeed = item?.speed ?? 0;
     const smoothing = UPLOAD_SPEED_SMOOTHING;
-    const speed = prevSpeed
-      ? prevSpeed * (1 - smoothing) + rawSpeed * smoothing
-      : rawSpeed;
+    const speed = rawSpeed > 0
+      ? (prevSpeed > 0 ? prevSpeed * (1 - smoothing) + rawSpeed * smoothing : rawSpeed)
+      : 0;
 
     if (speed > 0) networkMonitor.reportSpeed(speed);
 
