@@ -342,43 +342,12 @@ class ResumableUploadService
             ]);
         }
 
-        // Duplicate detection: if an existing active asset for this tenant has
-        // the same SHA-256 checksum, reuse it instead of assembling + pushing.
-        $effectiveHash = $fileHash ? strtolower((string) $fileHash) : $combined;
-        $existingAsset = MediaAsset::query()
-            ->where('tenant_id', $session->tenant_id)
-            ->where('checksum', $effectiveHash)
-            ->where('status', 'ready')
-            ->whereNull('deleted_at')
-            ->first();
-
-        if ($existingAsset) {
-            $this->purgeTemporaryArtifacts($session);
-
-            // The duplicate detection matched an existing ready asset. We return
-            // that asset to the client, so the freshly-created asset for THIS
-            // session is an orphan. Repoint the session to the surviving asset
-            // and remove the orphan so it does not linger as a stuck "uploading"
-            // record in the user's library.
-            $orphan = $session->asset;
-            $session->forceFill([
-                'status' => 'completed',
-                'completed' => true,
-                'final_file_hash' => $effectiveHash,
-                'expires_at' => null,
-                'media_asset_id' => $existingAsset->id,
-            ])->save();
-
-            if ($orphan && $orphan->id !== $existingAsset->id) {
-                $orphan->forceDelete();
-            }
-
-            return [
-                'session' => $session->fresh(),
-                'asset' => $existingAsset,
-            ];
-        }
-
+        // Every completed upload gets its own distinct library entry. Do NOT
+        // deduplicate by checksum here: silently replacing the freshly-created
+        // asset with an older matching asset made re-uploaded files "disappear"
+        // from the library (the new asset was force-deleted and the session was
+        // repointed to the old row). The session's own asset is always kept and
+        // pushed so the upload is visible.
         $assembledAbs = $this->assembledPath($session);
         File::ensureDirectoryExists(dirname($assembledAbs));
 
