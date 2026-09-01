@@ -68,6 +68,24 @@ export const CHUNK_PARALLEL_BY_QUALITY: Record<ConnectionQuality, number> = {
 /** Max retries for an individual chunk before the whole item fails. */
 export const CHUNK_MAX_RETRIES = 5;
 
+/** Idle-watchdog window (ms) used per chunk instead of an absolute wall-clock
+ * deadline. A chunk is aborted ONLY when the upload makes no forward progress
+ * for this long. On a slow-but-working link a large chunk may legitimately
+ * take far longer than a fixed 2-minute deadline to transfer; because we keep
+ * resetting the watchdog on every `onprogress`, the transfer is never killed
+ * mid-flight as long as bytes are still flowing. This eliminates the
+ * progress-jump-back + repeated-timeout + eventual-hard-fail spiral our users
+ * saw over slow/flaky VPNs.
+ */
+export const CHUNK_IDLE_TIMEOUT_MS = 30_000;
+
+/**
+ * ETA horizon (seconds). Estimates longer than this are effectively unknown on
+ * an active but slow link and are reported as null so the UI never shows a
+ * fabricated multi-hour/day countdown ("المدة زادت جداً" complaint).
+ */
+export const UPLOAD_ETA_SHOW_MAX_SECONDS = 6 * 3_600;
+
 /** IndexedDB database + store names for session persistence. */
 export const UPLOAD_DB_NAME = "upload-engine";
 export const UPLOAD_DB_VERSION = 1;

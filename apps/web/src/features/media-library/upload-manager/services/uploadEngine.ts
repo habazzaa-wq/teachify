@@ -16,14 +16,17 @@ import {
   UPLOAD_RETRY_MAX_DELAY,
   UPLOAD_SPEED_SMOOTHING,
   UPLOAD_SLOW_THRESHOLD,
+  UPLOAD_ETA_SHOW_MAX_SECONDS,
   UPLOAD_PERMISSION,
   UPLOAD_SESSION_TTL,
   UPLOAD_SYNC_TAG,
   CHUNK_MAX_RETRIES,
   CHUNK_PARALLEL_DEFAULT,
+  CHUNK_IDLE_TIMEOUT_MS,
 } from "../constants";
 import { buildChunks, contentRange, selectChunkSize, shouldChunk, sliceChunk } from "../utils/chunking";
 import {
+  boundEta,
   currentUploadedBytes,
   foldCompletedBytes,
   progressPercent,
@@ -47,6 +50,8 @@ interface ActiveXhr {
   abortReason: "pause" | "cancel" | null;
   loaded: number;
   total: number;
+  /** Last observed uploaded byte offset, for the idle watchdog. */
+  lastProgressAt: number;
 }
 
 interface SpeedSample {
@@ -626,16 +631,58 @@ class UploadEngine {
 
       const blob = sliceChunk(runtime.blob, chunk);
       const xhr = new XMLHttpRequest();
-      const handle: ActiveXhr = { xhr, abortReason: null, loaded: 0, total: chunk.size };
+      const handle: ActiveXhr = { xhr, abortReason: null, loaded: 0, total: chunk.size, lastProgressAt: 0 };
       runtime.items.set(chunk.chunkId, handle);
+
+      // Distinguish an idle-stall abort (retryable, like a timeout) from a
+      // user-initiated pause/cancel abort (terminal).
+      let idleStalled = false;
+
+      // Idle watchdog: unlike XMLHttpRequest.timeout (which is an absolute
+      // deadline from send() and fires even when bytes are still streaming), we
+      // only abort a chunk that has made NO forward progress for the idle
+      // window. Slow-but-active links therefore keep uploading instead of being
+      // killed mid-transfer, which stopped the progress-jump-back / repeated
+      // timeout / hard-failure spiral over slow VPNs.
+      let watchdog: ReturnType<typeof setInterval> | null = null;
+      const disposeWatchdog = () => {
+        if (watchdog) {
+          clearInterval(watchdog);
+          watchdog = null;
+        }
+      };
+      const armWatchdog = () => {
+        if (watchdog) clearInterval(watchdog);
+        watchdog = setInterval(() => {
+          const cur = handle.loaded;
+          if (cur <= handle.lastProgressAt) {
+            // No forward progress since the last tick -> treat as stalled and
+            // surface a retryable error (the engine retries the SAME chunk with
+            // its monotonic in-flight bytes preserved, so progress never jumps
+            // backwards).
+            idleStalled = true;
+            xhr.abort();
+          } else {
+            handle.lastProgressAt = cur;
+          }
+        }, CHUNK_IDLE_TIMEOUT_MS);
+      };
 
       xhr.upload.onprogress = (e: ProgressEvent) => {
         if (!e.lengthComputable) return;
+        handle.loaded = e.loaded;
+        handle.lastProgressAt = e.loaded;
         this.updateChunkProgress(id, runtime, chunk.index, e.loaded);
+        armWatchdog();
+      };
+      xhr.upload.onloadstart = () => {
+        handle.lastProgressAt = 0;
+        armWatchdog();
       };
 
       xhr.onload = () => {
         runtime.items.delete(chunk.chunkId);
+        disposeWatchdog();
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else if (xhr.status === 0) {
@@ -654,15 +701,20 @@ class UploadEngine {
       };
       xhr.onerror = () => {
         runtime.items.delete(chunk.chunkId);
+        disposeWatchdog();
         reject(new UploadExecutorError("network"));
       };
       xhr.ontimeout = () => {
         runtime.items.delete(chunk.chunkId);
+        disposeWatchdog();
         reject(new UploadExecutorError("timeout"));
       };
       xhr.onabort = () => {
         runtime.items.delete(chunk.chunkId);
-        reject(new UploadExecutorError("abort"));
+        disposeWatchdog();
+        // Idle-stall aborts are retryable (like timeouts); user pause/cancel
+        // aborts are terminal.
+        reject(new UploadExecutorError(idleStalled ? "timeout" : "abort"));
       };
 
       try {
@@ -684,7 +736,6 @@ class UploadEngine {
         })();
 
         xhr.open(session.uploadMethod || "PUT", url, true);
-        xhr.timeout = 120_000; // 2 minutes per chunk
         xhr.withCredentials = true;
         if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         if (tenantId) xhr.setRequestHeader("X-Tenant-ID", tenantId);
@@ -698,6 +749,7 @@ class UploadEngine {
         xhr.send(blob);
       } catch (e) {
         runtime.items.delete(chunk.chunkId);
+        disposeWatchdog();
         reject(e instanceof Error ? (e as UploadExecutorError) : new UploadExecutorError("unknown"));
       }
     });
@@ -829,7 +881,12 @@ class UploadEngine {
     if (speed > 0) networkMonitor.reportSpeed(speed);
 
     const remaining = session.size - uploadedBytes;
-    const eta = speed > 0 ? remaining / speed : null;
+    // A stable ETA never fabricates a ballooning countdown: estimates beyond
+    // the sane horizon (an actively-progressing but very slow link) are
+    // reported as unknown instead of a multi-hour/day figure that only alarms
+    // the user. The UI renders null as "—".
+    const rawEta = speed > 0 && remaining > 0 ? remaining / speed : null;
+    const eta = boundEta(rawEta, UPLOAD_ETA_SHOW_MAX_SECONDS);
 
     let warning = item?.warning ?? null;
     if (speed > 0 && speed < UPLOAD_SLOW_THRESHOLD && item?.warning?.type !== "large") {
