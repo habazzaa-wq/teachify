@@ -87,7 +87,9 @@ pm2 reload "$NEXT_PROC" --update-env || pm2 restart "$NEXT_PROC" --update-env
 pm2 save >/dev/null 2>&1 || true
 
 echo "==> Verifying the running Next process is online..."
-NEXT_ONLINE="$(pm2 jlist 2>/dev/null | grep -o "\"name\":\"$NEXT_PROC\",\"pm2_env\":[^}]*\"status\":\"[a-z]*\"" | grep -o '"status":"[a-z]*"' | head -n1 | cut -d'"' -f4 || true)"
+# Parse the process status from pm2 jlist with node (robust vs JSON field order).
+sleep 2
+NEXT_ONLINE="$(pm2 jlist 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const a=JSON.parse(s);const p=a.find(x=>x.name===process.argv[1]);console.log(p?p.pm2_env.status:"")}catch(e){console.log("jlist-parse-error")}})' "$NEXT_PROC" || true)"
 if [ "$NEXT_ONLINE" != "online" ]; then
   echo "error: $NEXT_PROC is not online after reload (status='$NEXT_ONLINE')." >&2
   exit 1
