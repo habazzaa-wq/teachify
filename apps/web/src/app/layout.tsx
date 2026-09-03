@@ -18,6 +18,7 @@ import {
 } from "@/lib/seo/metadata";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
+import { buildPwaMetadata } from "@/lib/pwa/metadata";
 import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
 
 const cairo = Cairo({
@@ -79,6 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       ...(twitterImage ? { images: [twitterImage] } : {}),
     },
+    ...buildPwaMetadata(tenant, origin),
   };
 }
 
