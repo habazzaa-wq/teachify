@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { TenantSeoContext } from "@/lib/seo/tenant-context";
 import { resolveAssetUrl } from "@/lib/seo/url";
 import { getSiteName } from "@/lib/seo/metadata";
-import { resolveManifestColor, pickTenantIconUrl } from "@/lib/pwa/manifest";
+import { pickTenantIconUrl } from "@/lib/pwa/manifest";
 
 /**
  * Server-rendered PWA / iOS install metadata, merged into the root layout's
@@ -12,19 +12,19 @@ import { resolveManifestColor, pickTenantIconUrl } from "@/lib/pwa/manifest";
  *
  * The existing `TenantDocumentMeta` component continues to manage the tenant
  * favicon client-side; we only add the install-focused metadata here (manifest,
- * theme-color, apple touch icon, iOS web-app tags), avoiding a conflicting
- * duplicate favicon declaration.
+ * apple touch icon, iOS web-app tags), avoiding a conflicting duplicate favicon
+ * declaration. theme-color is emitted via the layout's `generateViewport`
+ * (moved out of Metadata in Next 16), still resolved by `resolveManifestColor`.
  */
 export function buildPwaMetadata(
   tenant: TenantSeoContext | null,
   origin: string,
-): Pick<Metadata, "manifest" | "themeColor" | "appleWebApp" | "icons"> {
+): Pick<Metadata, "manifest" | "appleWebApp" | "icons"> {
   const siteName = getSiteName(tenant);
   const appleIcon = resolveAssetUrl(pickTenantIconUrl(tenant), origin);
 
   return {
     manifest: "/manifest.webmanifest",
-    themeColor: resolveManifestColor(tenant?.branding?.primaryColor),
     appleWebApp: {
       capable: true,
       title: siteName,
