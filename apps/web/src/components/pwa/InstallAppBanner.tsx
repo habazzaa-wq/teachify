@@ -22,13 +22,14 @@ const HINT_FIRST_DELAY_MS = 900;
  * discoverable without permanently occupying page space.
  *
  * Behavior:
- *  - hides automatically when already running as an installed PWA
- *    (standalone display mode), after `appinstalled`, or when the app was
- *    installed on this browser before (persisted flag);
- *  - triggers the real `beforeinstallprompt` dialog when the browser captured
- *    the event (Chrome / Edge / Android);
- *  - shows manual "add to home screen" instructions when no native event
- *    exists (notably iOS Safari);
+ *  - renders ONLY when the browser can do a native install (`native` variant:
+ *    Chrome / Edge / Android with a captured event) — every click is therefore
+ *    always a direct install prompt, never instructions;
+ *  - hides by default when already running as an installed PWA (standalone),
+ *    after `appinstalled`, when the app was installed on this browser before
+ *    (persisted flag), or when the browser exposes no native install event at
+ *    all (iOS Safari, Firefox, installed Chrome/Edge origins) — no icon and no
+ *    manual-instructions dialog ever appear in those cases;
  *  - the hint loop pauses while hovered / focused, and the button hides for
  *    the rest of the page load once dismissed (session-only — it returns on
  *    the next visit).
@@ -70,7 +71,8 @@ export function InstallAppBanner() {
     };
   }, [hintPaused]);
 
-  const isHidden = !clientReady || variant === "hidden";
+  const isHidden =
+    !clientReady || variant === "hidden" || variant === "manual";
 
   const { primary } = resolveBrandHexColors(tenant, platformBranding);
   const iconOn = brandContrast(primary);
