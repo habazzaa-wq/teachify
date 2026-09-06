@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useInstallPromptStore } from "@/stores/install-prompt.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import {
@@ -74,6 +74,18 @@ export function useInstallPrompt() {
       hasInstallCompletion(window.localStorage, fallbackScope)
     );
   });
+
+  // When a `beforeinstallprompt` is captured, the origin is NOT currently
+  // installed (Chrome/Edge re-fire it after the user uninstalls), so any
+  // previously-persisted tenant-scoped "installed" flag is stale. The bridge
+  // clears the host-scoped key at event time; here we also clear the
+  // tenant-scoped key once the tenant slug is known, so a lingering flag can
+  // never keep the icon hidden after a reinstall on the same browser.
+  useEffect(() => {
+    if (deferredPrompt && isClient()) {
+      clearInstallCompletion(window.localStorage, scope);
+    }
+  }, [deferredPrompt, scope]);
 
   const variant = resolveInstallPromptVariant({
     standalone,

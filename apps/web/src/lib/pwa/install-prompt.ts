@@ -39,7 +39,10 @@ export interface ResolveInstallPromptVariantInput {
   standalone: boolean;
   /** Fired any time after load (the `appinstalled` event). */
   installCompleted: boolean;
-  /** Persisted "already installed on this browser" flag. */
+  /** Persisted "already installed on this browser" flag. A fresh
+   *  `beforeinstallprompt` (captured as `deferredPrompt`) means the user has
+   *  uninstalled since then, so the hook treats it as stale before this flag
+   *  hides the banner again. */
   installCompletedPersisted?: boolean;
   /** Captured `beforeinstallprompt` event, if any. */
   deferredPrompt: BeforeInstallPromptEvent | null;
@@ -54,15 +57,20 @@ export function resolveInstallPromptVariant({
   deferredPrompt,
   dismissed,
 }: ResolveInstallPromptVariantInput): InstallPromptVariant {
-  if (
-    standalone ||
-    installCompleted ||
-    installCompletedPersisted ||
-    dismissed
-  ) {
+  if (standalone || installCompleted || dismissed) {
     return "hidden";
   }
-  return deferredPrompt ? "native" : "manual";
+  // A fresh `beforeinstallprompt` only fires while the origin is NOT installed:
+  // Chrome/Edge stop firing it once the app is on the device and start firing
+  // it again right after the user uninstalls. A captured prompt is therefore
+  // authoritative over any stale "installed" flag — without this, uninstalling
+  // the app leaves the icon hidden forever because the persisted flag survives
+  // in localStorage (desktop Chromium keeps origin storage in the browser
+  // profile, so removing the app does not clear it).
+  if (deferredPrompt) {
+    return "native";
+  }
+  return installCompletedPersisted ? "hidden" : "manual";
 }
 
 export interface CheckStandaloneInput {

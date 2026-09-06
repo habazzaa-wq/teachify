@@ -69,6 +69,16 @@ describe("resolveInstallPromptVariant", () => {
     ).toBe("hidden");
   });
 
+  it("re-shows the native prompt when a stale persisted flag exists but a fresh beforeinstallprompt fired (app was uninstalled)", () => {
+    expect(
+      resolveInstallPromptVariant({
+        ...base,
+        installCompletedPersisted: true,
+        deferredPrompt: makePrompt(),
+      }),
+    ).toBe("native");
+  });
+
   it("shows the native-prompt path when a beforeinstallprompt event was captured", () => {
     expect(
       resolveInstallPromptVariant({

@@ -1,7 +1,9 @@
 "use client";
 
 import { useInstallPromptStore } from "@/stores/install-prompt.store";
+import { useTenantStore } from "@/stores/tenant.store";
 import {
+  clearInstallCompletion,
   markInstallCompleted,
   resolveInstallScope,
   type BeforeInstallPromptEvent,
@@ -24,11 +26,30 @@ import {
 if (typeof window !== "undefined") {
   const hostScope = resolveInstallScope(null, window.location.host);
 
+  // The "installed" flag set by `appinstalled` survives an uninstall in some
+  // browsers (desktop Chromium keeps origin localStorage in the browser
+  // profile), so it must be cleared explicitly. The reliable "not installed
+  // anymore" signal is `beforeinstallprompt` re-firing: Chrome/Edge only fire
+  // it while the origin is installable, i.e. AFTER the user removes the app.
+  const clearStaleInstallCompletion = () => {
+    try {
+      const tenantSlug = useTenantStore.getState().activeTenant?.slug;
+      clearInstallCompletion(
+        window.localStorage,
+        resolveInstallScope(tenantSlug, window.location.host),
+      );
+      clearInstallCompletion(window.localStorage, hostScope);
+    } catch {
+      // best-effort (private/blocked contexts)
+    }
+  };
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     useInstallPromptStore.getState().setDeferredPrompt(
       event as unknown as BeforeInstallPromptEvent,
     );
+    clearStaleInstallCompletion();
   });
   window.addEventListener("appinstalled", () => {
     useInstallPromptStore.getState().markAppInstalled();
