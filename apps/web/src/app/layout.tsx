@@ -7,6 +7,7 @@ import "./globals.css";
 import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
+import { BrandThemeSSR } from "@/components/layout/BrandThemeSSR";
 import { TenantDocumentMeta } from "@/components/layout/TenantDocumentMeta";
 import {
   getRobotsPolicy,
@@ -135,6 +136,9 @@ export default async function RootLayout({
           </>
         )}
         <ThemeScript />
+        {/* Brand colors server-rendered so the first paint is already correct
+            (kills the ~1s flash of the globals.css fallback colors). */}
+        <BrandThemeSSR />
       </head>
       <body className="min-h-full bg-background font-sans antialiased" suppressHydrationWarning>
         <ErrorBoundary>
