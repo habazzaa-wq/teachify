@@ -365,7 +365,6 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
       alt={alt}
       fill
       priority
-      unoptimized
       sizes="340px"
       referrerPolicy="no-referrer"
       className="object-cover"
