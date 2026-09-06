@@ -28,8 +28,9 @@ export interface AuthTenant {
   branding?: AuthBranding;
   /** Platform-level brand colors (the "platform colors" field). Distinct from
    *  `branding`, which is the teacher appearance and only applies to the teacher
-   *  dashboard and login. */
+   *  dashboard and login. The API returns this as `platform_branding`. */
   platformBranding?: TenantBranding | null;
+  platform_branding?: TenantBranding | null;
 }
 
 export interface AuthBranding {

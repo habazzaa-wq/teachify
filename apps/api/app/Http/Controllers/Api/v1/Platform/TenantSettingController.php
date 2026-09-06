@@ -12,11 +12,11 @@ class TenantSettingController extends Controller
 {
     /**
      * Platform-level brand colors (the "platform colors" field managed through
-     * the platform branding editor). These live on the tenant's `branding`
-     * attribute and drive the public site (via BrandThemeProvider). They are
-     * intentionally separate from the teacher appearance settings stored in the
-     * `branding` settings group (which only apply to the teacher dashboard and
-     * tenant login).
+     * the platform branding editor). These drive the public site (via
+     * BrandThemeProvider) and are stored per-tenant. They are intentionally
+     * separate from the teacher appearance settings stored in the `branding`
+     * settings group (which only apply to the teacher dashboard and tenant
+     * login).
      */
     public function platform(): JsonResponse
     {
@@ -28,9 +28,10 @@ class TenantSettingController extends Controller
     }
 
     /**
-     * Persist the platform-level brand colors onto the tenant's `branding`
-     * attribute. This is distinct from `updateSite`, which writes the teacher
-     * appearance settings group (used only by the teacher dashboard + login).
+     * Persist the platform-level brand colors onto the current tenant's own
+     * `platform_branding` row. This is distinct from `updateSite`, which writes
+     * the teacher appearance settings group (used only by the teacher dashboard
+     * + login).
      */
     public function updatePlatformBranding(Request $request): JsonResponse
     {
@@ -46,9 +47,8 @@ class TenantSettingController extends Controller
             'font' => ['sometimes', 'nullable', 'string', 'max:200'],
         ]);
 
-        // Platform branding is GLOBAL (not per-tenant) so the anonymous public
-        // site shows the exact colors the teacher configures.
-        $branding = (new \App\Services\Platform\PlatformBrandingService())->update($validated);
+        $tenant = currentTenant();
+        $branding = (new \App\Services\Platform\PlatformBrandingService())->update($tenant->id, $validated);
 
         return response()->json([
             'message' => 'Platform branding updated.',
@@ -156,7 +156,7 @@ class TenantSettingController extends Controller
      */
     private function resolvePlatformBranding(\App\Models\Tenant $tenant): array
     {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve($tenant->id);
     }
 
     public function index(): JsonResponse

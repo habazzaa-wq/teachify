@@ -43,8 +43,9 @@ export function TenantBootstrapProvider({
     // ألوان المنصة (platformBranding) بتتم إدارتها بالكامل من BrandThemeProvider
     // (تحميل ذاتي مستقل عن البوتستراب/تسجيل الدخول). هنا بنكتفي ببذرها من سياق
     // السيرفر (SSR) لو موجودة عشان أول رسمية تكون صح من غير وميض.
-    if (tenantContext?.platformBranding) {
-      setPlatformBranding(tenantContext.platformBranding);
+    const platformBranding = tenantContext?.platform_branding ?? tenantContext?.platformBranding ?? null;
+    if (platformBranding) {
+      setPlatformBranding(platformBranding);
     }
 
     // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي ببذر ألوان المنصة.
@@ -70,7 +71,7 @@ export function TenantBootstrapProvider({
         domain: tenantContext.domain,
         status: tenantContext.status,
         branding: tenantContext.branding,
-        platformBranding: tenantContext.platformBranding ?? null,
+        platformBranding: tenantContext.platform_branding ?? tenantContext.platformBranding ?? null,
         subdomain: getTenantSubdomain(hostname),
       });
       return;
@@ -116,7 +117,7 @@ export function TenantBootstrapProvider({
                 domain: data.domain,
                 status: data.status,
                 branding: data.branding,
-                platformBranding: data.platformBranding ?? null,
+                platformBranding: data.platform_branding ?? data.platformBranding ?? null,
                 subdomain: getTenantSubdomain(hostname),
               });
             } else {

@@ -62,7 +62,9 @@ export interface TenantByDomainResponse {
   branding: TenantBranding;
   /** Platform-level brand colors (the "platform colors" field). Distinct from
    *  `branding`, which is the teacher appearance applied only to the teacher
-   *  dashboard and login. */
+   *  dashboard and login. The API returns this key as snake_case. */
+  platform_branding?: TenantBranding | null;
+  /** Defensive camelCase alias; the API currently sends `platform_branding`. */
   platformBranding?: TenantBranding | null;
   /** Present only when the proxy/API supplies tenant-specific SEO settings. */
   seo?: TenantSeoConfig | null;

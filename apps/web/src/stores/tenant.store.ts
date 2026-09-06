@@ -165,18 +165,37 @@ export const useTenantStore = create<TenantState>()(
       }),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
-      set({
-        activeTenant: tenant
+      set(() => {
+        const activeTenant = tenant
           ? { ...tenant, branding: normalizeBranding(tenant.branding) as unknown as AuthBranding }
-          : tenant,
-        membership,
-        roles,
-        permissions,
-        abilities,
-        navigation,
-        // ملاحظة: ألوان المنصة (platformBranding) بتدار بالكامل من BrandThemeProvider
-        // ومستقلة عن بيانات الـ tenant/تسجيل الدخول — فمبنغيّرش قيمتها هنا عشان
-        // متتلغش ولا تتسرّب ألوان مظهر المدرس للمنصة كلها.
+          : tenant;
+
+        // Per-tenant platform branding from the login/auth response. After the
+        // multi-tenancy fix each tenant has its OWN branding, so when a teacher
+        // logs into their tenant we must apply that tenant's platform branding
+        // and never keep a previously-loaded tenant's colors. `platform_branding`
+        // on the tenant object is the public-site theme; `branding` is the
+        // teacher appearance and is intentionally NOT used here.
+        const tenantPlatformBranding =
+          (activeTenant as Record<string, unknown> | null)?.["platform_branding"] ??
+          (activeTenant as Record<string, unknown> | null)?.["platformBranding"] ??
+          null;
+
+        return {
+          activeTenant,
+          membership,
+          roles,
+          permissions,
+          abilities,
+          navigation,
+          ...(tenantPlatformBranding
+            ? {
+                platformBranding: normalizeBranding(
+                  tenantPlatformBranding,
+                ) as unknown as TenantBranding,
+              }
+            : {}),
+        };
       }),
 
     setTenantBootstrap: (data) =>

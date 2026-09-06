@@ -161,15 +161,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Platform-level brand colors (the "platform colors" field). Distinct from
-     * `getBranding` (tenant appearance settings) which only apply to the teacher
-     * dashboard and login.
+     * Platform-level brand colors (the "platform colors" field). Resolved
+     * per-tenant and distinct from `getBranding` (tenant appearance settings)
+     * which only apply to the teacher dashboard and login.
      *
      * @return array<string, mixed>
      */
     private function getPlatformBranding(Tenant $tenant): array
     {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve($tenant->id);
     }
 
     private function getNavigation($roles, $permissions): array

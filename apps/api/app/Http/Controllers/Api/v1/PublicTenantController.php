@@ -120,16 +120,15 @@ class PublicTenantController extends Controller
     }
 
     /**
-     * Platform-level brand colors (the "platform colors" field). These are
-     * GLOBAL to the platform, not per-tenant, so anonymous visitors always see
-     * the same colors the teacher configured — independent of which tenant the
-     * requested domain resolves to.
+     * Platform-level brand colors (the "platform colors" field). Resolved
+     * per-tenant so anonymous visitors of a tenant's domain see that tenant's
+     * own branding — never another tenant's.
      *
      * @return array<string, mixed>
      */
     private function resolvePlatformBranding($tenant): array
     {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
+        return (new \App\Services\Platform\PlatformBrandingService())->resolve($tenant->id);
     }
 
     private function assetFor(?int $assetId, int $tenantId): ?MediaAsset

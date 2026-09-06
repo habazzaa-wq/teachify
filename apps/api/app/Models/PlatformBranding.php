@@ -9,6 +9,7 @@ class PlatformBranding extends Model
     protected $table = 'platform_branding';
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'logo',
         'favicon',
