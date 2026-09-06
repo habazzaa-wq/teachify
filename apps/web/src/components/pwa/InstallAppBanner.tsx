@@ -28,8 +28,9 @@ const HINT_FIRST_DELAY_MS = 900;
  *    the event (Chrome / Edge / Android);
  *  - shows manual "add to home screen" instructions when no native event
  *    exists (notably iOS Safari);
- *  - the hint loop pauses while hovered / focused, and never restarts once
- *    the user dismisses it (localStorage, tenant-scoped).
+ *  - the hint loop pauses while hovered / focused, and the button hides for
+ *    the rest of the page load once dismissed (session-only — it returns on
+ *    the next visit).
  */
 export function InstallAppBanner() {
   const { tenant } = useActiveTenant();

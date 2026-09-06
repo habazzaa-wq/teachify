@@ -1,14 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useInstallPromptStore } from "@/stores/install-prompt.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import {
   checkStandalone,
-  clearInstallDismissal,
-  hasInstallDismissal,
   isIosSafari,
-  markInstallDismissed,
   resolveInstallPromptVariant,
   resolveInstallScope,
   type InstallPromptVariant,
@@ -62,17 +59,6 @@ export function useInstallPrompt() {
   const host = isClient() ? window.location.host : null;
   const scope = resolveInstallScope(activeTenantSlug, host);
 
-  // Keep the store's `dismissed` flag in sync with persistence whenever the
-  // tenant identity settles (bootstrap may resolve the slug after mount).
-  const seedDismissedFromStorage = useCallback(() => {
-    if (!clientReady) return;
-    setDismissed(hasInstallDismissal(window.localStorage, scope));
-  }, [clientReady, scope, setDismissed]);
-
-  useEffect(() => {
-    seedDismissedFromStorage();
-  }, [seedDismissedFromStorage]);
-
   const variant = resolveInstallPromptVariant({
     standalone,
     installCompleted: appInstalled,
@@ -101,19 +87,15 @@ export function useInstallPrompt() {
     return "dismissed";
   }, []);
 
-  /** Persist the dismissal (scoped to this tenant) and hide the banner. */
+  /** Hide the banner for the rest of this page load; it returns next visit. */
   const dismiss = useCallback(() => {
-    if (!isClient()) return;
-    markInstallDismissed(window.localStorage, scope);
     setDismissed(true);
-  }, [scope, setDismissed]);
+  }, [setDismissed]);
 
-  /** Clear a previously persisted dismissal (used by tests / debugging). */
+  /** Re-show the banner for this page load (used by tests / debugging). */
   const resetDismissal = useCallback(() => {
-    if (!isClient()) return;
-    clearInstallDismissal(window.localStorage, scope);
     setDismissed(false);
-  }, [scope, setDismissed]);
+  }, [setDismissed]);
 
   return {
     variant,
@@ -121,7 +103,6 @@ export function useInstallPrompt() {
     deferredPrompt,
     isIos,
     scope,
-    seedDismissedFromStorage,
     promptToInstall,
     dismiss,
     resetDismissal,
