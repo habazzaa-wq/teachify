@@ -35,10 +35,7 @@ class ExamResultService
 
         if ($attempt->status === 'in_progress') {
             if ($this->isExpired($attempt)) {
-                // Claim-once + queue grading so the read path never scores
-                // synchronously under load. On the sync queue (tests) the
-                // attempt is already "submitted" when this returns.
-                $attempt = $this->grading->reconcileExpiredAttempt($attempt);
+                $attempt = $this->grading->grade($attempt);
             } else {
                 throw ValidationException::withMessages([
                     'attempt' => ['This attempt has not been submitted yet.'],
@@ -46,18 +43,10 @@ class ExamResultService
             }
         }
 
-        // An attempt still being graded (async queue) is finalized inline so
-        // this explicit review request returns complete results.
-        if ($attempt->status === 'grading') {
-            $attempt = $this->grading->grade($attempt);
-        }
-
         $exam = $attempt->exam()->firstOrFail();
         $examQuestions = $this->grading->questionsForAttempt($attempt, $exam);
         $answers = $attempt->answers()->get()->keyBy('exam_question_id');
         $revealCorrect = $exam->show_correct_answers;
-
-        $examQuestions->load('question.mediaAsset');
 
         $review = [];
         $correctCount = 0;
@@ -73,12 +62,7 @@ class ExamResultService
             $points = max(0, (int) ($examQuestion->points ?? $question?->points ?? 0));
             $totalPoints += $points;
 
-            // Reuse the correctness already persisted on the answer row instead
-            // of re-grading on every review request. The grader is only a
-            // fallback for answers that were never scored (defensive).
-            $isCorrect = $answered
-                ? (bool) ($saved->is_correct ?? $this->grader->grade($question, $saved->answer))
-                : false;
+            $isCorrect = $answered && $this->grader->grade($question, $saved->answer);
 
             if ($isCorrect) {
                 $correctCount++;
@@ -108,10 +92,6 @@ class ExamResultService
                 'answered' => $answered,
                 'status' => $answered ? ($isCorrect ? 'correct' : 'wrong') : 'skipped',
                 'earnedPoints' => $isCorrect ? $points : 0,
-                'questionFormat' => $question->question_format ?? 'text',
-                'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
-                    ? ($question->mediaAsset?->cdn_url ?? null)
-                    : null,
             ];
         }
 
@@ -313,11 +293,6 @@ class ExamResultService
             'true_false' => $revealCorrect && isset($content['correct'])
                 ? ['correct' => (string) $content['correct']]
                 : [],
-            'numeric' => array_filter([
-                'tolerance' => (int) ($content['tolerance'] ?? 0),
-                'correct' => $revealCorrect ? $this->numericCorrectValue($content) : null,
-            ], fn (mixed $value): bool => $value !== null),
-            'essay', 'short_answer' => [],
             default => [],
         };
     }
@@ -337,23 +312,8 @@ class ExamResultService
                 ->values()
                 ->all(),
             'true_false' => isset($content['correct']) ? (string) $content['correct'] : null,
-            'numeric' => $this->numericCorrectValue($content),
-            'essay', 'short_answer' => null,
             default => null,
         };
-    }
-
-    /**
-     * Numeric questions store their expected value under `answer` (teacher UI)
-     * or `correct` (seed data).
-     *
-     * @param  array<string, mixed>  $content
-     */
-    private function numericCorrectValue(array $content): ?string
-    {
-        $value = $content['answer'] ?? $content['correct'] ?? null;
-
-        return is_numeric($value) ? (string) $value : null;
     }
 
     private function percent(int $part, int $total): float

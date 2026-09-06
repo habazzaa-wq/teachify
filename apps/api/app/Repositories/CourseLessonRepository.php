@@ -107,7 +107,7 @@ class CourseLessonRepository
 
     public function restore(int $id, ?Course $course = null, ?CourseSection $section = null): ?CourseLesson
     {
-        $query = CourseLesson::withTrashed()
+        $query = CourseLesson::onlyTrashed()
             ->where('tenant_id', currentTenant()->id)
             ->where('id', $id);
 
@@ -123,12 +123,7 @@ class CourseLessonRepository
 
         if ($lesson) {
             $lesson->restore();
-            $lesson->forceFill([
-                'status' => 'published',
-                'published_at' => now(),
-            ])->save();
-
-            return $lesson->refresh()->load($this->defaultEagerLoads());
+            return $lesson->load($this->defaultEagerLoads());
         }
 
         return null;

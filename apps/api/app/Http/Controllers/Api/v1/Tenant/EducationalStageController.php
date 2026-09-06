@@ -42,7 +42,7 @@ class EducationalStageController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'image' => $this->imageRules(),
+            'image' => ['nullable', 'string', 'max:2048', 'url'],
             'link' => ['nullable', 'string', 'max:2048', 'url'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
@@ -77,7 +77,7 @@ class EducationalStageController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'image' => $this->imageRules(),
+            'image' => ['nullable', 'string', 'max:2048', 'url'],
             'link' => ['nullable', 'string', 'max:2048', 'url'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
@@ -119,32 +119,5 @@ class EducationalStageController extends Controller
         }
 
         return response()->json(['message' => 'Educational stages order updated successfully.']);
-    }
-
-    /**
-     * The image may be either an absolute URL or a same-origin media proxy path
-     * (e.g. /api/v1/media/serve/...) returned by the media library for Bunny
-     * Storage assets. Laravel's built-in `url` rule rejects relative paths, so
-     * accept them explicitly while still requiring a valid URL otherwise.
-     */
-    private function imageRules(): array
-    {
-        return [
-            'nullable',
-            'string',
-            'max:2048',
-            function (string $attribute, mixed $value, \Closure $fail): void {
-                if (! is_string($value) || trim($value) === '') {
-                    return;
-                }
-                $value = trim($value);
-                if (str_starts_with($value, '/')) {
-                    return;
-                }
-                if (filter_var($value, FILTER_VALIDATE_URL) === false) {
-                    $fail('The :attribute must be a valid URL.');
-                }
-            },
-        ];
     }
 }

@@ -101,15 +101,3 @@ export function progressPercent(uploadedBytes: number, totalBytes: number): numb
   if (totalBytes <= 0) return 0;
   return Math.min(100, (uploadedBytes / totalBytes) * 100);
 }
-
-/**
- * Bound an estimated seconds-remaining figure so a slow-but-active link never
- * fabricates a ballooning multi-hour/day countdown. Estimates beyond `maxSeconds`
- * (or undefined/negative/non-finite) are reported as null ("unknown"), which the
- * UI renders as "—".
- */
-export function boundEta(rawEtaSeconds: number | null, maxSeconds: number): number | null {
-  if (rawEtaSeconds === null || !Number.isFinite(rawEtaSeconds) || rawEtaSeconds < 0) return null;
-  if (rawEtaSeconds > maxSeconds) return null;
-  return rawEtaSeconds;
-}

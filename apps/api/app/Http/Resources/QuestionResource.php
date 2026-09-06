@@ -9,10 +9,6 @@ class QuestionResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $isImage = ($this->question_format ?? 'text') === 'image';
-        $media = $this->relationLoaded('mediaAsset') ? $this->mediaAsset : null;
-        $scanAsset = ($isImage && $media instanceof \App\Models\MediaAsset) ? $media : null;
-
         return [
             'id' => (string) $this->id,
             'uuid' => $this->uuid,
@@ -33,16 +29,7 @@ class QuestionResource extends JsonResource
             'explanation' => $this->explanation,
             'hint' => $this->hint,
             'content' => $this->content ?? new \stdClass(),
-            'contentDocument' => $this->content_document,
             'metadata' => $this->metadata ?? new \stdClass(),
-            'questionFormat' => $this->question_format ?? 'text',
-            'scanAssetId' => $scanAsset ? (string) $scanAsset->id : null,
-            'scanUrl' => $scanAsset ? ($scanAsset->cdn_url ?? null) : null,
-            'scanProcessing' => $scanAsset ? [
-                'mode' => $scanAsset->metadata['scan_mode'] ?? null,
-                'fallbackUsed' => (bool) ($scanAsset->metadata['scan_fallback_used'] ?? false),
-                'qualityLevel' => $scanAsset->metadata['scan_quality_level'] ?? null,
-            ] : null,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => (string) $this->category->id,
                 'name' => $this->category->name,

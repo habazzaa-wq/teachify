@@ -1,18 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
-import {
-  MANIFEST_CACHE_CONTROL,
-  MANIFEST_DIR,
-  MANIFEST_DISPLAY,
-  MANIFEST_LANG,
-  MANIFEST_SCOPE,
-  MANIFEST_START_URL,
-  buildManifest,
-  getManifestId,
-  getManifestShortName,
-  manifestResponseHeaders,
-  pickTenantIconUrl,
-} from "./manifest";
 
 function tenant(
   id: number,
@@ -30,208 +17,182 @@ function tenant(
     branding: {
       logo: null,
       favicon: null,
-      logoImage: null,
-      darkLogo: null,
-      lightLogo: null,
       primaryColor: null,
       secondaryColor: null,
       accentColor: null,
       font: null,
+      darkLogo: null,
+      lightLogo: null,
       ...branding,
     },
   };
 }
 
-const TENANT_A = tenant(1, "The Mechanist", "mechanist", "the-mechanist.com", {
-  favicon: "/uploads/mechanist-favicon.ico",
-  logo: "/uploads/mechanist-logo.png",
-  primaryColor: "#123456",
-});
+const TENANT_A = tenant(
+  1,
+  "The Mechanist",
+  "the-mechanist",
+  "the-mechanist.com",
+  {
+    favicon: "https://cdn.the-mechanist.com/icon.ico",
+    primaryColor: "#b91c1c",
+    lightLogo: "https://cdn.the-mechanist.com/logo-light.svg",
+  },
+);
 
-const TENANT_B = tenant(2, "Client B", "client-b", "client-b.com", {
-  favicon: "/uploads/client-b-favicon.ico",
-  logo: "/uploads/client-b-logo.png",
-  primaryColor: "#ABCDEF",
-});
+const TENANT_B = tenant(
+  2,
+  "Client B Academy",
+  "client-b",
+  "client-b.com",
+  {
+    favicon: "https://cdn.client-b.com/favicon.ico",
+    primaryColor: "#2563eb",
+    darkLogo: "https://cdn.client-b.com/logo-dark.svg",
+  },
+);
 
-function manifestFor(t: TenantByDomainResponse | null, origin: string) {
-  return buildManifest({ tenant: t, origin });
+async function manifestFor(t: TenantByDomainResponse | null) {
+  vi.resetModules();
+  vi.doMock("@/lib/seo/tenant-context", () => ({
+    getTenantSeoContext: vi.fn().mockResolvedValue(t),
+  }));
+  const { buildTenantManifest } = await import("@/lib/pwa/manifest");
+  return buildTenantManifest();
 }
 
-describe("buildManifest — Tenant A (the-mechanist.com)", () => {
-  const m = manifestFor(TENANT_A, "https://the-mechanist.com");
-
-  it("uses the tenant name", () => {
-    expect(m.name).toBe("The Mechanist");
-  });
-
-  it("uses a tenant-unique slug-based id", () => {
-    expect(m.id).toBe("/?tenant=mechanist");
-    expect(getManifestId(TENANT_A)).toBe("/?tenant=mechanist");
-  });
-
-  it("uses tenant branding (theme color)", () => {
-    expect(m.theme_color).toBe("#123456");
-    expect(m.background_color).toBe("#123456");
-  });
-
-  it("uses the tenant favicon icon, resolved against the origin", () => {
-    expect(m.icons).toEqual([
-      { src: "https://the-mechanist.com/uploads/mechanist-favicon.ico", sizes: "any" },
-    ]);
-  });
-
-  it("keeps start_url, scope, display, lang and dir on the tenant origin", () => {
-    expect(m.start_url).toBe("/");
-    expect(m.scope).toBe("/");
-    expect(m.display).toBe("standalone");
-    expect(m.lang).toBe("ar");
-    expect(m.dir).toBe("rtl");
-  });
+beforeEach(() => {
+  vi.resetModules();
+  vi.doUnmock("@/lib/seo/tenant-context");
 });
 
-describe("buildManifest — Tenant B (client-b.com)", () => {
-  const m = manifestFor(TENANT_B, "https://client-b.com");
+describe("buildTenantManifest", () => {
+  it("Tenant A manifest carries the correct identity and branding", async () => {
+    const manifest = await manifestFor(TENANT_A);
 
-  it("uses the tenant name with a distinct identity", () => {
-    expect(m.name).toBe("Client B");
-    expect(m.id).toBe("/?tenant=client-b");
-    expect(m.id).not.toBe("/?tenant=mechanist");
+    expect(manifest).not.toBeNull();
+    expect(manifest?.name).toBe("The Mechanist");
+    expect(manifest?.short_name).toBe("The Mechanis");
+    expect(manifest?.id).toBe("/?tenant=the-mechanist");
+    expect(manifest?.start_url).toBe("/");
+    expect(manifest?.scope).toBe("/");
+    expect(manifest?.display).toBe("standalone");
+    expect(manifest?.lang).toBe("ar");
+    expect(manifest?.dir).toBe("rtl");
+    expect(manifest?.theme_color).toBe("#b91c1c");
+    expect(manifest?.background_color).toBe("#b91c1c");
+    expect(manifest?.icons[0]?.src).toBe("https://cdn.the-mechanist.com/icon.ico");
   });
 
-  it("uses Tenant B branding and icon", () => {
-    expect(m.theme_color).toBe("#ABCDEF");
-    expect(m.icons).toEqual([
-      { src: "https://client-b.com/uploads/client-b-favicon.ico", sizes: "any" },
-    ]);
-  });
-});
+  it("Tenant B manifest carries a distinct identity and branding", async () => {
+    const manifest = await manifestFor(TENANT_B);
 
-describe("tenant isolation (manifest)", () => {
-  it("Tenant A manifest carries no Tenant B identity", () => {
-    const m = manifestFor(TENANT_A, "https://the-mechanist.com");
-    const json = JSON.stringify(m);
-    expect(json).toContain("The Mechanist");
-    expect(json).toContain("mechanist");
-    expect(json).toContain("#123456");
-    expect(json).toContain("mechanist-favicon.ico");
-    expect(json).not.toContain("Client B");
-    expect(json).not.toContain("client-b");
-    expect(json).not.toContain("#ABCDEF");
-    expect(json).not.toContain("client-b-favicon.ico");
+    expect(manifest).not.toBeNull();
+    expect(manifest?.name).toBe("Client B Academy");
+    expect(manifest?.id).toBe("/?tenant=client-b");
+    expect(manifest?.theme_color).toBe("#2563eb");
+    expect(manifest?.icons[0]?.src).toBe("https://cdn.client-b.com/favicon.ico");
+
+    expect(manifest?.id).not.toBe("/?tenant=the-mechanist");
+    expect(manifest?.name).not.toBe("The Mechanist");
   });
 
-  it("Tenant B manifest carries no Tenant A identity", () => {
-    const m = manifestFor(TENANT_B, "https://client-b.com");
-    const json = JSON.stringify(m);
-    expect(json).toContain("Client B");
-    expect(json).toContain("client-b");
-    expect(json).toContain("#ABCDEF");
-    expect(json).toContain("client-b-favicon.ico");
-    expect(json).not.toContain("The Mechanist");
-    expect(json).not.toContain("mechanist");
-    expect(json).not.toContain("#123456");
-    expect(json).not.toContain("mechanist-favicon.ico");
+  it("Tenant A manifest never contains Tenant B identity, icon, or colors", async () => {
+    const manifest = await manifestFor(TENANT_A);
+    const serialized = JSON.stringify(manifest);
+
+    expect(serialized).not.toContain("Client B");
+    expect(serialized).not.toContain("client-b");
+    expect(serialized).not.toContain("cdn.client-b.com");
+    expect(serialized).not.toContain("#2563eb");
   });
 
-  it("no tenant context degrades to platform identity (never another tenant)", () => {
-    const m = manifestFor(null, "https://academy.test");
-    const json = JSON.stringify(m);
-    expect(json).not.toContain("The Mechanist");
-    expect(json).not.toContain("Client B");
-    expect(json).not.toContain("mechanist");
-    expect(json).not.toContain("client-b");
-  });
-});
+  it("Tenant B manifest never contains Tenant A identity, icon, or colors", async () => {
+    const manifest = await manifestFor(TENANT_B);
+    const serialized = JSON.stringify(manifest);
 
-describe("custom-domain resolution", () => {
-  it("resolves the correct tenant for a real custom domain, driven only by the tenant context", () => {
-    // The manifest is derived purely from the resolved tenant — never from URL
-    // paths or global branding. Different custom domains => different manifests.
-    const a = manifestFor(TENANT_A, "https://the-mechanist.com");
-    const b = manifestFor(TENANT_B, "https://client-b.com");
-    expect(a.name).toBe("The Mechanist");
-    expect(b.name).toBe("Client B");
-    expect(a.id).not.toBe(b.id);
-    expect(a.icons).not.toEqual(b.icons);
+    expect(serialized).not.toContain("The Mechanist");
+    expect(serialized).not.toContain("the-mechanist");
+    expect(serialized).not.toContain("cdn.the-mechanist.com");
+    expect(serialized).not.toContain("#b91c1c");
   });
 
-  it("start_url and scope never point at a central platform domain", () => {
-    for (const origin of ["https://the-mechanist.com", "https://client-b.com"]) {
-      const m = manifestFor(origin === "https://the-mechanist.com" ? TENANT_A : TENANT_B, origin);
-      expect(m.start_url).toBe("/");
-      expect(m.scope).toBe("/");
-    }
-  });
-});
-
-describe("icon fallback", () => {
-  it("prefers favicon over the wide logo", () => {
-    expect(pickTenantIconUrl(TENANT_A)).toBe("/uploads/mechanist-favicon.ico");
-  });
-
-  it("falls back to logoImage then logo when no favicon exists", () => {
-    const t = tenant(3, "No Favicon", "no-fav", "nofav.test", {
-      favicon: null,
-      logoImage: "/uploads/image.png",
-      logo: "/uploads/logo.png",
+  it("prefers the favicon over a wide logo for the PWA icon", async () => {
+    const t = tenant(3, "Favicon Tenant", "fav-tenant", "fav.example.com", {
+      favicon: "https://cdn.fav.example.com/favicon.ico",
+      logo: "https://cdn.fav.example.com/wide-logo.svg",
     });
-    expect(pickTenantIconUrl(t)).toBe("/uploads/image.png");
+    const manifest = await manifestFor(t);
+    expect(manifest?.icons[0]?.src).toBe("https://cdn.fav.example.com/favicon.ico");
+  });
 
-    const t2 = tenant(4, "Logo Only", "logo-only", "logo.test", {
-      logo: "/uploads/logo.png",
+  it("falls back to a branding logo when no favicon is available", async () => {
+    const t = tenant(4, "Fallback Tenant", "fallback", "fallback.example.com", {
+      logo: "https://cdn.fallback.example.com/logo.svg",
     });
-    expect(pickTenantIconUrl(t2)).toBe("/uploads/logo.png");
+    const manifest = await manifestFor(t);
+    expect(manifest?.icons[0]?.src).toBe("https://cdn.fallback.example.com/logo.svg");
+    expect(manifest?.theme_color).toBe("#ffffff");
   });
 
-  it("returns null when no icon is configured (safe fallback)", () => {
-    expect(pickTenantIconUrl(tenant(5, "Empty", "empty", "empty.test"))).toBeNull();
-    const m = manifestFor(tenant(5, "Empty", "empty", "empty.test"), "https://empty.test");
-    expect(m.icons).toEqual([]);
-  });
-});
-
-describe("short_name", () => {
-  it("keeps short names as-is", () => {
-    expect(getManifestShortName("Client B")).toBe("Client B");
+  it("shortens long names for short_name", async () => {
+    const t = tenant(5, "A Very Long Tenant Name Indeed", "long", "long.example.com");
+    const manifest = await manifestFor(t);
+    expect(manifest?.short_name).toBe("A Very Long");
   });
 
-  it("truncates long names to a bounded length", () => {
-    const long = "أكاديمية العلوم والتقنية المتقدمة";
-    expect(getManifestShortName(long).length).toBeLessThanOrEqual(12);
-  });
-});
-
-describe("cache policy", () => {
-  it("explicitly sets Cache-Control: no-store on the manifest response", () => {
-    const headers = manifestResponseHeaders();
-    expect(headers["cache-control"]).toBe("no-store");
-    expect(headers["cache-control"]).toBe(MANIFEST_CACHE_CONTROL);
+  it("returns null for platform hosts (no tenant)", async () => {
+    const manifest = await manifestFor(null);
+    expect(manifest).toBeNull();
   });
 
-  it("serves the correct manifest content type", () => {
-    const headers = manifestResponseHeaders();
-    expect(headers["content-type"]).toBe("application/manifest+json");
+  it("keeps start_url and scope on the tenant origin (root)", async () => {
+    const manifest = await manifestFor(TENANT_A);
+    expect(manifest?.start_url).toBe("/");
+    expect(manifest?.scope).toBe("/");
   });
 });
 
-describe("global invariants", () => {
-  it("start_url, scope, display, lang and dir are constant across tenants", () => {
-    const a = manifestFor(TENANT_A, "https://the-mechanist.com");
-    const b = manifestFor(TENANT_B, "https://client-b.com");
-    expect(a.start_url).toBe(MANIFEST_START_URL);
-    expect(b.start_url).toBe(MANIFEST_START_URL);
-    expect(a.scope).toBe(MANIFEST_SCOPE);
-    expect(b.scope).toBe(MANIFEST_SCOPE);
-    expect(a.display).toBe(MANIFEST_DISPLAY);
-    expect(b.display).toBe(MANIFEST_DISPLAY);
-    expect(a.lang).toBe(MANIFEST_LANG);
-    expect(b.lang).toBe(MANIFEST_LANG);
-    expect(a.dir).toBe(MANIFEST_DIR);
-    expect(b.dir).toBe(MANIFEST_DIR);
+describe("buildManifestResponse cache policy", () => {
+  it("explicitly sets Cache-Control: no-store", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/seo/tenant-context", () => ({
+      getTenantSeoContext: vi.fn().mockResolvedValue(TENANT_A),
+    }));
+    const { buildManifestResponse, MANIFEST_CACHE_CONTROL } = await import(
+      "@/lib/pwa/manifest"
+    );
+    const res = await buildManifestResponse();
+
+    expect(res.headers["Cache-Control"]).toBe(MANIFEST_CACHE_CONTROL);
+    expect(res.headers["Cache-Control"]).toBe("no-store");
   });
 
-  it("serializes to valid JSON", () => {
-    expect(() => JSON.parse(JSON.stringify(manifestFor(TENANT_A, "https://the-mechanist.com")))).not.toThrow();
+  it("serves the tenant manifest body alongside no-store cache policy", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/seo/tenant-context", () => ({
+      getTenantSeoContext: vi.fn().mockResolvedValue(TENANT_B),
+    }));
+    const { buildManifestResponse } = await import("@/lib/pwa/manifest");
+    const res = await buildManifestResponse();
+
+    expect(res.body.name).toBe("Client B Academy");
+    expect(res.body.id).toBe("/?tenant=client-b");
+    expect(res.headers["Cache-Control"]).toBe("no-store");
+  });
+
+  it("falls back to platform identity (never a customer tenant) with no-store", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/seo/tenant-context", () => ({
+      getTenantSeoContext: vi.fn().mockResolvedValue(null),
+    }));
+    const { buildManifestResponse } = await import("@/lib/pwa/manifest");
+    const res = await buildManifestResponse();
+    const serialized = JSON.stringify(res.body);
+
+    expect(res.headers["Cache-Control"]).toBe("no-store");
+    expect(serialized).not.toContain("The Mechanist");
+    expect(serialized).not.toContain("Client B");
+    expect(res.body.id).toBe("/?tenant=platform");
   });
 });

@@ -156,7 +156,7 @@ export function CourseDetailPage({ slug }: CourseDetailPageProps) {
                   >
                     {tab.label}
                     {activeTab === tab.id && (
-                      <span className="absolute bottom-0 inset-x-0 h-0.5 rounded-full bg-[var(--brand-primary)]" />
+                      <span className="absolute bottom-0 inset-x-0 h-0.5 rounded-full bg-[#D87B63]" />
                     )}
                   </button>
                 ))}

@@ -30,7 +30,7 @@ class CoursesModuleTest extends TestCase
             'slug' => 'leadership',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('category.id');
 
         $tagId = $this->postJson('/api/v1/tags', [
             'name' => 'Management',
@@ -52,9 +52,9 @@ class CoursesModuleTest extends TestCase
 
         $response
             ->assertCreated()
-            ->assertJsonPath('data.title', 'Leadership Essentials')
-            ->assertJsonPath('data.status', 'draft')
-            ->assertJsonPath('data.instructor.id', (string) $instructor->id);
+            ->assertJsonPath('course.title', 'Leadership Essentials')
+            ->assertJsonPath('course.status', 'draft')
+            ->assertJsonPath('course.primary_instructor_tenant_user_id', $instructor->id);
 
         $course = Course::withoutGlobalScopes()->where('tenant_id', $tenant->id)->firstOrFail();
 
@@ -93,13 +93,18 @@ class CoursesModuleTest extends TestCase
             'slug' => 'instructor-draft',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
 
         $this->patchJson("/api/v1/courses/{$courseId}/status", [
             'status' => 'review',
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('data.status', 'review');
+            ->assertJsonPath('course.status', 'review');
+
+        $this->patchJson("/api/v1/courses/{$courseId}/status", [
+            'status' => 'published',
+        ], $this->tenantHeader($tenant))
+            ->assertForbidden();
 
         Sanctum::actingAs($admin->user);
 
@@ -107,7 +112,7 @@ class CoursesModuleTest extends TestCase
             'status' => 'published',
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('data.status', 'published');
+            ->assertJsonPath('course.status', 'published');
     }
 
     public function test_student_cannot_create_or_manage_courses(): void
@@ -124,7 +129,7 @@ class CoursesModuleTest extends TestCase
             'visibility' => 'private',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
 
         Sanctum::actingAs($student->user);
 
@@ -139,9 +144,9 @@ class CoursesModuleTest extends TestCase
         ], $this->tenantHeader($tenant))
             ->assertForbidden();
 
-        $this->getJson('/api/v1/courses?visibility=public&status=published', $this->tenantHeader($tenant))
+        $this->getJson('/api/v1/courses', $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonMissing(['id' => (string) $courseId]);
+            ->assertJsonMissing(['id' => $courseId]);
     }
 
     public function test_course_routes_are_tenant_isolated(): void
@@ -158,14 +163,14 @@ class CoursesModuleTest extends TestCase
             'slug' => 'tenant-one-category',
         ], $this->tenantHeader($firstTenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('category.id');
 
         $courseId = $this->postJson('/api/v1/courses', [
             'title' => 'Tenant One Course',
             'slug' => 'tenant-one-course',
         ], $this->tenantHeader($firstTenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
 
         Sanctum::actingAs($secondAdmin->user);
 
@@ -194,7 +199,7 @@ class CoursesModuleTest extends TestCase
             'slug' => 'settings-course',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
 
         $this->postJson("/api/v1/courses/{$courseId}/instructors", [
             'tenant_user_id' => $instructor->id,

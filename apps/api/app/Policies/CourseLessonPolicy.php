@@ -62,9 +62,10 @@ class CourseLessonPolicy
         return $this->auth()->hasPermission($user, currentTenant(), 'lessons.reorder');
     }
 
-    public function restore(User $user): bool
+    public function restore(User $user, CourseLesson $lesson): bool
     {
-        return $this->auth()->hasPermission($user, currentTenant(), 'lessons.delete');
+        return $lesson->tenant_id === currentTenant()->id
+            && $this->auth()->hasPermission($user, currentTenant(), 'lessons.delete');
     }
 
     private function auth(): TenantAuthorizationService

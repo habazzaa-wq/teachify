@@ -48,12 +48,6 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   return { h: Math.round(h * 360), s: Math.round(Math.min(s * 100, 100)), l: Math.round(Math.min(l * 100, 100)) };
 }
 
-/** "r g b" triplet for CSS `rgb(var(--x) / a)` usage. */
-export function hexToRgbTriplet(hex: string): string {
-  const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
-  return `${r} ${g} ${b}`;
-}
-
 /** Mix a hex color toward black. `amount` in 0..1 (1 = pure black). */
 export function mixWithBlack(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex) ?? { r: 0, g: 0, b: 0 };
@@ -108,6 +102,7 @@ export function generateCommunityThemeColors(primaryHex: string, secondaryHex: s
   };
 }
 
+
 function clamp(v: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, v));
 }
@@ -117,8 +112,8 @@ function clamp(v: number, min = 0, max = 100) {
  * base hex colors (primary + secondary). Returns a flat record of CSS custom
  * properties, e.g.:
  *
- *   --brand-primary-50 … --brand-primary-900
- *   --brand-secondary-50 … --brand-secondary-900
+ *   --brand-primary-50 ΓÇª --brand-primary-900
+ *   --brand-secondary-50 ΓÇª --brand-secondary-900
  *   --brand-primary / --brand-secondary        (the raw base colors)
  *   --brand-primary-soft / --brand-secondary-soft
  *   --brand-primary-deep / --brand-secondary-deep
@@ -128,7 +123,7 @@ function clamp(v: number, min = 0, max = 100) {
  * Why derive instead of hardcoding: the tenant can change the two base colors
  * from the admin dashboard, and every tint/shade below is recomputed from them
  * so the whole design system re-skins itself with **zero hardcoded hex values**
- * in components. For dark mode we flip the mixing direction — light tints
+ * in components. For dark mode we flip the mixing direction ΓÇö light tints
  * become dark-tinted (so they read as "soft" on a dark surface) and the vivid
  * stops brighten slightly, which keeps the brand colors from glowing like neon.
  */
@@ -167,8 +162,10 @@ export function generateBrandScale(
   return vars;
 }
 
+
+
 /**
- * Build a 10-step scale (50→900) from a single base hex.
+ * Build a 10-step scale (50ΓåÆ900) from a single base hex.
  * Light mode: 50 is almost-white, 500 is the base, 900 is almost-black.
  * Dark mode: the direction flips so 50 reads as a *soft dark tint* (not a
  * glowing light pill) and 500+ brighten toward the base for legible accents.
@@ -202,226 +199,194 @@ function scaleStops(hex: string, isDark: boolean): Record<number, string> {
   };
 }
 
+
 export function generateThemeColors(primaryHex: string, secondaryHex: string, isDark = false) {
   const p = hexToHsl(primaryHex);
   const s = hexToHsl(secondaryHex);
 
   /*
-    لوحة احترافية مبنية على لونين من الـ tenant، وتدعم Light + Dark:
+    لوحة احترافية مبنية على لونين من الـ tenant:
 
-    · اللون الأساسي (primary) ← شريط التنقّل (navbar) بلون صافٍ + الأزرار +
-      العناصر النشطة + الروابط + حلقات التركيز. يظهر بوضوح في كل لوحة التحكم.
-    · اللون الثانوي (secondary) ← يلوّن القائمة الجانبية (sidebar) بتلميح خفيف،
-      وخلفيات العناصر النشطة والـ hover والبادجات والأزرار الثانوية.
-    · الأسطح (المحتوى/الكاردات) ← رمادي محايد مائل قليلاً لهوى اللون الثانوي
-      لإحساس متناغم، مع تباين عالٍ للنصوص وراحة للعين.
+    - الخلفيات (المحتوى/الكاردات/القوائم) ← رمادي فاتح محايد تماماً، بدون أي تلوين.
+    - اللون الأساسي (primary) ← شريط التنقّل (navbar) + الأزرار + العناصر النشطة + حلقات التركيز.
+    - اللون الثانوي (secondary) ← لمسات احترافية فقط: تلوين خفيف عند الـ hover في الـ navbar والـ sidebar،
+      وخلفية العنصر النشط في القائمة الجانبية. لا يُلوَّn السطح بالكامل.
   */
 
-  // Primary = لون علامة تجارية واضح (أزرار/عناصر نشطة/روابط). نثبّت التشبّع
-  // والإضاءة داخل نطاق مريح للعين مع نص متناقض قابل للقراءة.
-  const pSat = clamp(p.s, 45, 88);
-  // Secondary = لون داعم (sidebar/active/hover/secondary button).
-  const sSat = clamp(s.s, 32, 82);
+  // Primary = accent قوي وواضح (أزرار/عناصر نشطة/روابط).
+  const pSat = clamp(p.s, 35, 92);
+  // Secondary = تلميح خفيف فقط، لذا نُبقى تشبعه هادئاً.
+  const sSat = clamp(s.s, 12, 55);
 
-  // لون النص المتناقض داخل عناصر اللون الأساسي يُحسب لاحقاً حسب إضاءة
-  // اللون الناتج فعلياً (accentL) حتى يبقى مقروءاً في الوضعين.
-  let pContrast: string;
+  // لون النص المتناقض داخل شريط التنقّل الأساسي.
+  const navFg = isDark ? "0 0% 100%" : p.l > 60 ? "0 0% 12%" : "0 0% 100%";
+  const navContrast = navFg;
 
   if (isDark) {
-    // الأساسي في الوضع الداكن: أكثر إضاءة ليكون حيويّاً لكن بتباين أبيض.
-    const accentL = clamp(p.l > 52 ? p.l - 4 : p.l + 16, 54, 68);
-    // الشريط العلوي: درجة أعمق قليلاً من الأساسي لأناقة.
-    const navL = clamp(p.l > 52 ? p.l - 8 : p.l + 10, 40, 58);
-    // الثانوي في الوضع الداكن.
-    const secL = clamp(s.l < 50 ? s.l + 14 : s.l, 42, 64);
-    const secSat = clamp(sSat, 30, 78);
-    // نص متناقض مقروء: أبيض على الألوان الغامقة، داكن على الألوان الفاتحة.
-    pContrast = accentL > 62 ? "0 0% 12%" : "0 0% 100%";
-    // تفاعلية احترافية: hover/active يضيئان الأساسي تدريجياً.
-    const accentHoverL = clamp(accentL + 6, 60, 74);
-    const accentActiveL = clamp(accentL + 11, 64, 80);
+    const accentL = clamp(p.l > 45 ? p.l : p.l + 22, 52, 82);
+    const navL = clamp(p.l > 45 ? p.l - 8 : p.l + 14, 24, 48);
 
     return {
-      // — المحتوى: رمادي داكن مائل لهوى الثانوي (متناغم) —
-      "--tenant-bg": `${s.h} ${clamp(sSat, 0, 10)}% 8%`,
-      "--tenant-surface": "222 20% 12%",
-      "--tenant-soft": "222 16% 15%",
-      "--tenant-border": "222 14% 20%",
-      "--tenant-muted": "222 14% 16%",
-      "--tenant-fg": "210 30% 92%",
-      "--tenant-fg-muted": "215 12% 62%",
-      "--tenant-fg-subtle": "215 10% 45%",
+      // — المحتوى: رمادي محايد داكن (بدون تلوين باللونين) —
+      "--tenant-bg": "0 0% 9%",
+      "--tenant-surface": "0 0% 12%",
+      "--tenant-soft": "0 0% 16%",
+      "--tenant-border": "0 0% 20%",
+      "--tenant-muted": "0 0% 14%",
+      "--tenant-fg": "0 0% 92%",
+      "--tenant-fg-muted": "0 0% 60%",
+      "--tenant-fg-subtle": "0 0% 44%",
       // — الأساسي (أزرار/عناصر نشطة/روابط/تركيز) —
       "--tenant-accent": `${p.h} ${pSat}% ${accentL}%`,
-      "--tenant-accent-fg": pContrast,
-      "--tenant-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
-      "--tenant-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
-      "--tenant-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 22%`,
+      "--tenant-accent-fg": "0 0% 100%",
+      "--tenant-accent-soft": `${p.h} ${pSat}% ${clamp(accentL - 26, 16, 30)}%`,
       "--tenant-ring": `${p.h} ${pSat}% ${accentL}%`,
-      // — الثانوي (sidebar/active/hover) —
-      "--tenant-secondary": `${s.h} ${secSat}% ${secL}%`,
-      "--tenant-secondary-soft": `${s.h} ${clamp(secSat - 8, 28, 70)}% 18%`,
+      // — الثانوي (تلميحات hover/active فقط) —
+      "--tenant-secondary": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 24 : s.l, 50, 68)}%`,
+      "--tenant-secondary-soft": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 18 : s.l + 6, 18, 30)}%`,
+      // — القائمة الجانبية: محايدة —
+      "--tenant-sidebar": "0 0% 11%",
+      "--tenant-sidebar-soft": "0 0% 15%",
+      "--tenant-sidebar-fg": "0 0% 92%",
+      "--tenant-sidebar-fg-muted": "0 0% 60%",
+      "--tenant-sidebar-border": "0 0% 18%",
+      "--tenant-sidebar-hover": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 16 : s.l + 4, 16, 28)}%`,
       "--tenant-header": `${p.h} ${pSat}% ${navL}%`,
-      "--tenant-header-fg": pContrast,
-      // — القائمة الجانبية: مائلة للثانوي —
-      "--tenant-sidebar": `${s.h} ${clamp(sSat, 0, 12)}% 11%`,
-      "--tenant-sidebar-soft": `${s.h} ${clamp(sSat, 0, 12)}% 14%`,
-      "--tenant-sidebar-fg": "210 30% 90%",
-      "--tenant-sidebar-fg-muted": "215 12% 60%",
-      "--tenant-sidebar-border": "222 14% 18%",
-      "--tenant-sidebar-hover": `${s.h} ${clamp(secSat - 8, 28, 70)}% 20%`,
 
-      // — Studio —
-      "--studio-bg": `${s.h} ${clamp(sSat, 0, 10)}% 8%`,
-      "--studio-surface": "222 20% 12%",
-      "--studio-soft": "222 16% 15%",
-      "--studio-border": "222 14% 20%",
-      "--studio-muted": "222 14% 16%",
-      "--studio-fg": "210 30% 92%",
-      "--studio-fg-muted": "215 12% 62%",
-      "--studio-fg-subtle": "215 10% 45%",
+      // — Studio (مشترك بين الكورس-ستوديو واللوحة) —
+      "--studio-bg": "0 0% 9%",
+      "--studio-surface": "0 0% 12%",
+      "--studio-soft": "0 0% 16%",
+      "--studio-border": "0 0% 20%",
+      "--studio-muted": "0 0% 14%",
+      "--studio-fg": "0 0% 92%",
+      "--studio-fg-muted": "0 0% 60%",
+      "--studio-fg-subtle": "0 0% 44%",
       "--studio-accent": `${p.h} ${pSat}% ${accentL}%`,
-      "--studio-accent-fg": pContrast,
-      "--studio-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
-      "--studio-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
-      "--studio-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 22%`,
-      "--studio-accent-border": `${p.h} ${clamp(pSat - 5, 35, 75)}% 38%`,
+      "--studio-accent-fg": "0 0% 100%",
+      "--studio-accent-soft": `${p.h} ${pSat}% ${clamp(accentL - 26, 16, 30)}%`,
+      "--studio-accent-border": `${p.h} ${pSat}% ${clamp(accentL - 16, 26, 44)}%`,
       "--studio-ring": `${p.h} ${pSat}% ${accentL}%`,
       // — shadcn tokens: كل الأزرار/الروابط تتبع لوني الـ tenant —
       "--primary": `${p.h} ${pSat}% ${accentL}%`,
-      "--primary-foreground": pContrast,
-      "--secondary": `${s.h} ${secSat}% ${secL}%`,
-      "--secondary-foreground": "210 30% 92%",
+      "--primary-foreground": navFg,
+      "--secondary": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 24 : s.l, 50, 68)}%`,
+      "--secondary-foreground": "0 0% 100%",
       "--accent": `${p.h} ${pSat}% ${accentL}%`,
-      "--accent-foreground": pContrast,
+      "--accent-foreground": navFg,
       "--ring": `${p.h} ${pSat}% ${accentL}%`,
-      "--studio-secondary": `${s.h} ${secSat}% ${secL}%`,
-      "--studio-secondary-soft": `${s.h} ${clamp(secSat - 8, 28, 70)}% 18%`,
-      "--studio-secondary-border": `${s.h} ${clamp(secSat - 8, 28, 70)}% 34%`,
-      // Navbar = الأساسي (صافٍ)، والعناصر الفرعية تلميح ثانوي عند الـ hover
-      "--studio-glass": "222 20% 14% / 0.7",
-      "--studio-glass-border": "222 14% 20% / 0.5",
+      "--studio-secondary": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 24 : s.l, 50, 68)}%`,
+      "--studio-secondary-soft": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 18 : s.l + 6, 18, 30)}%`,
+      "--studio-secondary-border": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 12 : s.l, 30, 44)}%`,
+      // Navbar = الأساسي (صافي)، والعناصر الفرعية تلميح ثانوي عند الـ hover
+      "--studio-glass": "0 0% 12% / 0.7",
+      "--studio-glass-border": "0 0% 22% / 0.5",
       "--studio-glass-toolbar": `${p.h} ${pSat}% ${navL}% / 1`,
-      "--studio-glass-toolbar-fg": pContrast,
-      "--studio-glass-toolbar-fg-muted": pContrast,
-      "--studio-glass-toolbar-border": `${p.h} ${clamp(pSat - 10, 30, 70)}% ${clamp(accentL + 12, 60, 80)}% / 0.5`,
-      "--studio-glass-toolbar-soft": `${s.h} ${clamp(secSat - 8, 28, 70)}% 22% / 0.7`,
-      "--studio-glass-toolbar-soft-hover": `${s.h} ${clamp(secSat - 8, 28, 70)}% 28% / 0.85`,
+      "--studio-glass-toolbar-fg": navFg,
+      "--studio-glass-toolbar-fg-muted": "0 0% 80%",
+      "--studio-glass-toolbar-border": `${p.h} ${pSat}% ${clamp(navL + 16, 34, 64)}% / 0.5`,
+      "--studio-glass-toolbar-soft": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 20 : s.l + 8, 22, 38)}% / 0.55`,
+      "--studio-glass-toolbar-soft-hover": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 24 : s.l + 12, 28, 46)}% / 0.7`,
       "--studio-navbar": `${p.h} ${pSat}% ${navL}%`,
-      "--studio-navbar-contrast": pContrast,
-      // Sidebar = مائل للثانوي، والـ hover تلميح أعمق
-      "--studio-glass-sidebar": `${s.h} ${clamp(sSat, 0, 12)}% 11% / 1`,
-      "--studio-glass-sidebar-fg": "210 30% 90%",
-      "--studio-glass-sidebar-fg-muted": "215 12% 60%",
-      "--studio-glass-sidebar-border": "222 14% 18% / 1",
-      "--studio-sidebar-hover": `${s.h} ${clamp(secSat - 8, 28, 70)}% 20%`,
-      "--studio-glass-dialog": "222 20% 14% / 0.9",
-      "--studio-glass-floating": "222 20% 14% / 0.92",
+      "--studio-navbar-contrast": navContrast,
+      // Sidebar = محايد (أبيض داكن)، والـ hover تلميح ثانوي
+      "--studio-glass-sidebar": "0 0% 11% / 1",
+      "--studio-glass-sidebar-fg": "0 0% 92%",
+      "--studio-glass-sidebar-fg-muted": "0 0% 60%",
+      "--studio-glass-sidebar-border": "0 0% 18% / 1",
+      "--studio-sidebar-hover": `${s.h} ${sSat}% ${clamp(s.l < 40 ? s.l + 16 : s.l + 4, 16, 28)}%`,
+      "--studio-glass-dialog": "0 0% 12% / 0.9",
+      "--studio-glass-floating": "0 0% 12% / 0.92",
       "--studio-overlay": "0 0% 0% / 0.55",
-      "--studio-skeleton": "222 14% 18%",
-      "--studio-skeleton-shine": "222 16% 24%",
-      "--studio-info": `${p.h} ${clamp(pSat - 5, 35, 75)}% 64%`,
-      "--studio-success": "160 65% 45%",
-      "--studio-warning": "35 90% 55%",
-      "--studio-danger": "0 72% 58%",
+      "--studio-skeleton": "0 0% 18%",
+      "--studio-skeleton-shine": "0 0% 24%",
+      "--studio-info": "210 70% 62%",
+      "--studio-success": "160 65% 50%",
+      "--studio-warning": "35 90% 58%",
+      "--studio-danger": "0 72% 60%",
     };
   }
 
   // — Light mode —
-  // الأساسي: نطاق متوسط مع نص أبيض/داكن قابل للقراءة.
-  const accentL = clamp(p.l, 42, 58);
-  // الشريط العلوي: نفس الأساسي صافياً مع تلميح أعمق قليلاً لإحساس احترافي.
-  const navL = clamp(p.l - 3, 38, 55);
-  // الثانوي: فاتح وجذاب.
-  const secL = clamp(s.l < 55 ? s.l + 16 : s.l, 55, 74);
-  const secSat = clamp(sSat, 35, 80);
-  // نص متناقض مقروء: داكن على الألوان الفاتحة، أبيض على الغامقة.
-  pContrast = accentL > 60 ? "0 0% 12%" : "0 0% 100%";
-  // تفاعلية احترافية: hover/active يعمّقان الأساسي تدريجياً.
-  const accentHoverL = clamp(accentL - 6, 36, 52);
-  const accentActiveL = clamp(accentL - 11, 30, 46);
+  const accentL = clamp(p.l < 45 ? p.l + 18 : p.l, 42, 62);
+  const navL = clamp(p.l < 55 ? p.l + 12 : p.l, 42, 64);
 
   return {
-    // — المحتوى: رمادي فاتح مائل لهوى الثانوي (متناغم ونظيف) —
-    "--tenant-bg": `${s.h} ${clamp(sSat, 0, 9)}% 98%`,
+    // — المحتوى: رمادي فاتح محايد (بدون تلوين باللونين) —
+    "--tenant-bg": "220 20% 97%",
     "--tenant-surface": "0 0% 100%",
-    "--tenant-soft": `${s.h} ${clamp(sSat, 0, 11)}% 96%`,
-    "--tenant-border": `${s.h} ${clamp(sSat, 0, 13)}% 90%`,
-    "--tenant-muted": `${s.h} ${clamp(sSat, 0, 9)}% 95%`,
-    "--tenant-fg": "222 30% 14%",
-    "--tenant-fg-muted": "220 12% 42%",
-    "--tenant-fg-subtle": "220 10% 60%",
+    "--tenant-soft": "220 16% 94%",
+    "--tenant-border": "220 14% 89%",
+    "--tenant-muted": "220 16% 96%",
+    "--tenant-fg": "222 24% 18%",
+    "--tenant-fg-muted": "220 12% 46%",
+    "--tenant-fg-subtle": "220 10% 62%",
     // — الأساسي (أزرار/عناصر نشطة/روابط/تركيز) —
     "--tenant-accent": `${p.h} ${pSat}% ${accentL}%`,
-    "--tenant-accent-fg": pContrast,
-    "--tenant-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
-    "--tenant-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
-    "--tenant-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 94%`,
+    "--tenant-accent-fg": "0 0% 100%",
+    "--tenant-accent-soft": `${p.h} ${pSat}% ${clamp(accentL + 34, 92, 97)}%`,
     "--tenant-ring": `${p.h} ${pSat}% ${accentL}%`,
-    // — الثانوي (sidebar/active/hover) —
-    "--tenant-secondary": `${s.h} ${secSat}% ${secL}%`,
-    "--tenant-secondary-soft": `${s.h} ${clamp(secSat - 10, 25, 70)}% 95%`,
+    // — الثانوي (تلميحات hover/active فقط) —
+    "--tenant-secondary": `${s.h} ${sSat}% ${clamp(s.l < 45 ? s.l + 22 : s.l, 45, 62)}%`,
+    "--tenant-secondary-soft": `${s.h} ${sSat}% ${clamp(s.l + 30, 92, 97)}%`,
+    // — القائمة الجانبية: محايدة (أبيض) —
+    "--tenant-sidebar": "0 0% 100%",
+    "--tenant-sidebar-soft": "220 16% 96%",
+    "--tenant-sidebar-fg": "222 24% 22%",
+    "--tenant-sidebar-fg-muted": "220 12% 48%",
+    "--tenant-sidebar-border": "220 14% 90%",
+    "--tenant-sidebar-hover": `${s.h} ${sSat}% ${clamp(s.l + 28, 90, 96)}%`,
     "--tenant-header": `${p.h} ${pSat}% ${navL}%`,
-    "--tenant-header-fg": pContrast,
-    // — القائمة الجانبية: مائلة للثانوي (فاتح) —
-    "--tenant-sidebar": `${s.h} ${clamp(sSat, 0, 15)}% 99%`,
-    "--tenant-sidebar-soft": `${s.h} ${clamp(sSat, 0, 13)}% 96%`,
-    "--tenant-sidebar-fg": "222 30% 18%",
-    "--tenant-sidebar-fg-muted": "220 12% 46%",
-    "--tenant-sidebar-border": `${s.h} ${clamp(sSat, 0, 13)}% 92%`,
-    "--tenant-sidebar-hover": `${s.h} ${clamp(secSat - 10, 25, 70)}% 93%`,
 
-    "--studio-bg": `${s.h} ${clamp(sSat, 0, 9)}% 98%`,
+    "--studio-bg": "220 20% 97%",
     "--studio-surface": "0 0% 100%",
-    "--studio-soft": `${s.h} ${clamp(sSat, 0, 11)}% 96%`,
-    "--studio-border": `${s.h} ${clamp(sSat, 0, 13)}% 90%`,
-    "--studio-muted": `${s.h} ${clamp(sSat, 0, 9)}% 95%`,
-    "--studio-fg": "222 30% 14%",
-    "--studio-fg-muted": "220 12% 42%",
-    "--studio-fg-subtle": "220 10% 60%",
+    "--studio-soft": "220 16% 94%",
+    "--studio-border": "220 14% 89%",
+    "--studio-muted": "220 16% 96%",
+    "--studio-fg": "222 24% 18%",
+    "--studio-fg-muted": "220 12% 46%",
+    "--studio-fg-subtle": "220 10% 62%",
     "--studio-accent": `${p.h} ${pSat}% ${accentL}%`,
-    "--studio-accent-fg": pContrast,
-    "--studio-accent-hover": `${p.h} ${pSat}% ${accentHoverL}%`,
-    "--studio-accent-active": `${p.h} ${pSat}% ${accentActiveL}%`,
-    "--studio-accent-soft": `${p.h} ${clamp(pSat - 10, 30, 70)}% 94%`,
-    "--studio-accent-border": `${p.h} ${clamp(pSat - 5, 35, 75)}% 82%`,
+    "--studio-accent-fg": "0 0% 100%",
+    "--studio-accent-soft": `${p.h} ${pSat}% ${clamp(accentL + 34, 92, 97)}%`,
+    "--studio-accent-border": `${p.h} ${pSat}% ${clamp(accentL + 18, 66, 84)}%`,
     "--studio-ring": `${p.h} ${pSat}% ${accentL}%`,
     // — shadcn tokens: كل الأزرار/الروابط تتبع لوني الـ tenant —
     "--primary": `${p.h} ${pSat}% ${accentL}%`,
-    "--primary-foreground": pContrast,
-    "--secondary": `${s.h} ${secSat}% ${secL}%`,
-    "--secondary-foreground": "222 30% 18%",
+    "--primary-foreground": navFg,
+    "--secondary": `${s.h} ${sSat}% ${clamp(s.l < 45 ? s.l + 22 : s.l, 45, 62)}%`,
+    "--secondary-foreground": "222 24% 18%",
     "--accent": `${p.h} ${pSat}% ${accentL}%`,
-    "--accent-foreground": pContrast,
+    "--accent-foreground": navFg,
     "--ring": `${p.h} ${pSat}% ${accentL}%`,
-    "--studio-secondary": `${s.h} ${secSat}% ${secL}%`,
-    "--studio-secondary-soft": `${s.h} ${clamp(secSat - 10, 25, 70)}% 95%`,
-    "--studio-secondary-border": `${s.h} ${clamp(secSat - 8, 30, 70)}% 84%`,
-    // Navbar = الأساسي (صافٍ)، والعناصر الفرعية تلميح ثانوي عند الـ hover
+    "--studio-secondary": `${s.h} ${sSat}% ${clamp(s.l < 45 ? s.l + 22 : s.l, 45, 62)}%`,
+    "--studio-secondary-soft": `${s.h} ${sSat}% ${clamp(s.l + 30, 92, 97)}%`,
+    "--studio-secondary-border": `${s.h} ${sSat}% ${clamp(s.l + 12, 78, 90)}%`,
+    // Navbar = الأساسي (صافي)، والعناصر الفرعية تلميح ثانوي عند الـ hover
     "--studio-glass": "0 0% 100% / 0.7",
-    "--studio-glass-border": `${s.h} ${clamp(sSat, 0, 13)}% 90% / 0.6`,
+    "--studio-glass-border": "220 14% 89% / 0.5",
     "--studio-glass-toolbar": `${p.h} ${pSat}% ${navL}% / 1`,
-    "--studio-glass-toolbar-fg": pContrast,
-    "--studio-glass-toolbar-fg-muted": pContrast,
-    "--studio-glass-toolbar-border": `${p.h} ${clamp(pSat - 10, 30, 70)}% ${clamp(accentL + 20, 70, 90)}% / 0.55`,
-    "--studio-glass-toolbar-soft": `${s.h} ${clamp(secSat - 10, 25, 70)}% 94% / 0.7`,
-    "--studio-glass-toolbar-soft-hover": `${s.h} ${clamp(secSat - 8, 30, 70)}% 90% / 0.85`,
+    "--studio-glass-toolbar-fg": navFg,
+    "--studio-glass-toolbar-fg-muted": navFg,
+    "--studio-glass-toolbar-border": `${p.h} ${pSat}% ${clamp(navL + 16, 58, 78)}% / 0.6`,
+    "--studio-glass-toolbar-soft": `${s.h} ${sSat}% ${clamp(s.l + 26, 90, 96)}% / 0.55`,
+    "--studio-glass-toolbar-soft-hover": `${s.h} ${sSat}% ${clamp(s.l + 30, 92, 97)}% / 0.7`,
     "--studio-navbar": `${p.h} ${pSat}% ${navL}%`,
-    "--studio-navbar-contrast": pContrast,
-    // Sidebar = مائل للثانوي (فاتح)، والـ hover تلميح أعمق
-    "--studio-glass-sidebar": `${s.h} ${clamp(sSat, 0, 15)}% 99% / 1`,
-    "--studio-glass-sidebar-fg": "222 30% 18%",
-    "--studio-glass-sidebar-fg-muted": "220 12% 46%",
-    "--studio-glass-sidebar-border": `${s.h} ${clamp(sSat, 0, 13)}% 92% / 1`,
-    "--studio-sidebar-hover": `${s.h} ${clamp(secSat - 10, 25, 70)}% 93%`,
+    "--studio-navbar-contrast": navContrast,
+    // Sidebar = محايد (أبيض)، والـ hover تلميح ثانوي
+    "--studio-glass-sidebar": "0 0% 100% / 1",
+    "--studio-glass-sidebar-fg": "222 24% 22%",
+    "--studio-glass-sidebar-fg-muted": "220 12% 48%",
+    "--studio-glass-sidebar-border": "220 14% 90% / 1",
+    "--studio-sidebar-hover": `${s.h} ${sSat}% ${clamp(s.l + 28, 90, 96)}%`,
     "--studio-glass-dialog": "0 0% 100% / 0.9",
     "--studio-glass-floating": "0 0% 100% / 0.92",
     "--studio-overlay": "0 0% 0% / 0.12",
-    "--studio-skeleton": `${s.h} ${clamp(sSat, 0, 11)}% 92%`,
-    "--studio-skeleton-shine": `${s.h} ${clamp(sSat, 0, 11)}% 96%`,
-    "--studio-info": `${p.h} ${clamp(pSat - 5, 35, 75)}% 52%`,
-    "--studio-success": "160 65% 38%",
-    "--studio-warning": "35 90% 48%",
-    "--studio-danger": "0 72% 50%",
+    "--studio-skeleton": "220 16% 90%",
+    "--studio-skeleton-shine": "220 20% 95%",
+    "--studio-info": "210 70% 50%",
+    "--studio-success": "160 65% 40%",
+    "--studio-warning": "35 90% 50%",
+    "--studio-danger": "0 72% 52%",
   };
 }

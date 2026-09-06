@@ -56,11 +56,16 @@ function StartExamDialogInner({
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-[var(--brand-primary)] p-0 sm:max-w-md">
+      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-[#BF6D58]/20 p-0 sm:max-w-md">
         {/* Accent header */}
-        <div className="flex flex-col items-center gap-3 px-6 py-7 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--brand-primary)] bg-[var(--brand-primary)] shadow-lg shadow-[rgba(0,0,0,0.1)]">
-            <ClipboardCheck className="h-8 w-8 text-[var(--brand-primary-contrast)]" strokeWidth={1.8} />
+        <div
+          className="flex flex-col items-center gap-3 px-6 py-7 text-center"
+          style={{
+            background: `linear-gradient(135deg, rgba(191,109,88,0.14), rgba(255,181,14,0.07))`,
+          }}
+        >
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#BF6D58]/25 bg-gradient-to-br from-[#BF6D58]/20 to-[#FFB50E]/10 shadow-lg shadow-[#BF6D58]/10">
+            <ClipboardCheck className="h-8 w-8 text-[#BF6D58]" strokeWidth={1.8} />
           </div>
           <AppDialogHeader>
             <AppDialogTitle className="text-xl font-extrabold text-foreground">
@@ -75,12 +80,12 @@ function StartExamDialogInner({
         {/* Summary */}
         <div className="flex items-center justify-center gap-3 border-b border-border/40 px-6 py-4">
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-card px-3 py-2 text-xs font-bold text-foreground/80 ring-1 ring-border/50">
-            <Clock className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
+            <Clock className="h-3.5 w-3.5 text-[#BF6D58]" />
             {duration}
           </span>
           {attempts !== null && (
             <span className="inline-flex items-center gap-1.5 rounded-xl bg-card px-3 py-2 text-xs font-bold text-foreground/80 ring-1 ring-border/50">
-              <Repeat className="h-3.5 w-3.5 text-[var(--brand-primary)]" />
+              <Repeat className="h-3.5 w-3.5 text-[#BF6D58]" />
               {attempts === 1
                 ? "محاولة واحدة متبقية"
                 : `${attempts} محاولات متبقية`}
@@ -100,7 +105,7 @@ function StartExamDialogInner({
                 key={warning}
                 className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground"
               >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]" />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#BF6D58]/50" />
                 {warning}
               </li>
             ))}
@@ -126,7 +131,7 @@ function StartExamDialogInner({
           <AppButton
             onClick={handleStart}
             loading={startExam.isPending}
-            className="flex-1 border-0 text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
+            className="flex-1 border-0 text-white shadow-lg shadow-[#BF6D58]/30"
             style={{ background: CTA_GRADIENT }}
           >
             {startExam.isPending ? (

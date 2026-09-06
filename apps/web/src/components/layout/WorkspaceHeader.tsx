@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -10,13 +10,14 @@ import {
   Moon,
   Menu,
   GraduationCap,
+  CreditCard,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
 import { useUiStore } from "@/stores/ui.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useLogout } from "@/hooks/useAuthMutations";
+import { OnlineRechargeModal } from "@/features/wallet/components/OnlineRechargeModal";
 import { useRouter } from "next/navigation";
 
 const headerMotion = {
@@ -29,11 +30,10 @@ export function WorkspaceHeader() {
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
   const setGlobalSearchOpen = useWorkspaceStore((s) => s.setGlobalSearchOpen);
-  const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
   const { tenant } = useActiveTenant();
   const router = useRouter();
-  const logout = useLogout();
+  const [rechargeOpen, setRechargeOpen] = useState(false);
 
   const tenantName = tenant?.name ?? "مساحة العمل";
 
@@ -42,13 +42,13 @@ export function WorkspaceHeader() {
   }, [setGlobalSearchOpen]);
 
   const handleMobileMenuToggle = useCallback(() => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  }, [mobileMenuOpen, setMobileMenuOpen]);
+    setMobileMenuOpen(true);
+  }, [setMobileMenuOpen]);
 
   return (
     <motion.header
       {...headerMotion}
-      className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-studio-border bg-studio-glass-toolbar text-studio-glass-toolbar-fg px-4 backdrop-blur-xl md:px-6"
+      className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-studio-border bg-studio-glass-toolbar text-studio-glass-toolbar-fg px-4 backdrop-blur-xl md:px-6"
       role="banner"
     >
       {/* Left: Logo + Title */}
@@ -138,22 +138,24 @@ export function WorkspaceHeader() {
               router.push("/teacher/profile");
             } else if (item.value === "settings") {
               router.push("/teacher/settings");
-            } else if (item.value === "dashboard") {
-              router.push("/student/dashboard");
+            } else if (item.value === "recharge") {
+              setRechargeOpen(true);
             } else if (item.value === "logout") {
-              logout.mutate();
+              // Logout handled by the auth store/route logic elsewhere.
             }
           }}
           items={[
             { value: "profile", label: "الملف الشخصي", icon: <Search className="h-4 w-4" /> },
             { value: "settings", label: "الإعدادات", icon: <Search className="h-4 w-4" /> },
             { separator: true },
-            { value: "dashboard", label: "لوحة التحكم", icon: <GraduationCap className="h-4 w-4" /> },
+            { value: "recharge", label: "شحن المحفظة أونلاين", icon: <CreditCard className="h-4 w-4" /> },
             { separator: true },
             { value: "logout", label: "تسجيل الخروج", danger: true, icon: <Search className="h-4 w-4" /> },
           ]}
           align="end"
         />
+
+        <OnlineRechargeModal open={rechargeOpen} onClose={() => setRechargeOpen(false)} />
 
         {/* Mobile menu toggle */}
         <StudioButton

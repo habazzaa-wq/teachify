@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Check, X, CheckCircle2, CircleX, ScanLine } from "lucide-react";
+import { Check, X, CheckCircle2, CircleX } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type {
   ExamSessionAnswer,
@@ -9,12 +9,6 @@ import type {
 } from "../types";
 import { QUESTION_TYPE_LABELS } from "../constants";
 import { toggleMultiOption } from "../utils";
-import { ImageQuestionContent } from 
-"@/features/exam-bank/components/ImageQuestionContent";
-import {
-  StructuredQuestionContent,
-  parseQuestionDocument,
-} from "@/components/structured-question";
 
 interface ExamQuestionViewProps {
   question: ExamSessionQuestion;
@@ -34,10 +28,6 @@ function ExamQuestionViewInner({
   readOnly = false,
 }: ExamQuestionViewProps) {
   const options = question.content.options ?? [];
-  const structuredDoc =
-    question.questionFormat === "structured"
-      ? parseQuestionDocument(question.contentDocument)
-      : null;
 
   const selectable = !readOnly && onAnswerChange;
 
@@ -62,7 +52,7 @@ function ExamQuestionViewInner({
       {/* Question header */}
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-[var(--brand-primary)] px-3 py-1 text-xs font-extrabold text-[var(--brand-primary-contrast)] ring-1 ring-[var(--brand-primary)]">
+          <span className="inline-flex items-center rounded-full bg-[#BF6D58]/10 px-3 py-1 text-xs font-extrabold text-[#BF6D58] ring-1 ring-[#BF6D58]/20">
             سؤال {index + 1} من {total}
           </span>
           <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
@@ -71,40 +61,16 @@ function ExamQuestionViewInner({
           <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold tabular-nums text-muted-foreground">
             {question.points} درجة
           </span>
-          {question.questionFormat === "image" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
-              <ScanLine className="h-3 w-3" />
-              سؤال مصوّر
-            </span>
-          )}
         </div>
 
-        {structuredDoc ? (
-          <div className="mt-4 rounded-xl border border-border/60 bg-background/40 p-4">
-            <StructuredQuestionContent document={structuredDoc} />
-          </div>
-        ) : question.questionFormat === "image" && question.scanUrl ? (
-          <div className="mt-4">
-            <ImageQuestionContent
-              src={question.scanUrl}
-              alt={`صورة السؤال ${index + 1}`}
-              maxHeight={500}
-              showControls={true}
-            />
-          </div>
-        ) : (
-          <>
-            {question.title && (
-              <h2 className="mt-4 text-lg font-extrabold leading-relaxed text-foreground">
-                {question.title}
-              </h2>
-            )}
-            {question.description && (
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {question.description}
-              </p>
-            )}
-          </>
+        <h2 className="mt-4 text-lg font-extrabold leading-relaxed text-foreground">
+          {question.title}
+        </h2>
+
+        {question.description && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {question.description}
+          </p>
         )}
       </div>
 
@@ -127,8 +93,8 @@ function ExamQuestionViewInner({
                   "flex h-24 items-center justify-center gap-2 rounded-2xl border-2 text-base font-extrabold transition-all duration-200",
                   selectable && "cursor-pointer hover:-translate-y-0.5",
                   selected
-                    ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-lg shadow-[rgba(0,0,0,0.1)]"
-                    : "border-border/60 bg-background/50 text-foreground/70 hover:border-[var(--brand-primary)]",
+                    ? "border-[#BF6D58] bg-[#BF6D58]/10 text-[#BF6D58] shadow-lg shadow-[#BF6D58]/10"
+                    : "border-border/60 bg-background/50 text-foreground/70 hover:border-[#BF6D58]/40",
                   readOnly &&
                     !selected &&
                     reveal &&
@@ -163,67 +129,6 @@ function ExamQuestionViewInner({
             );
           })}
         </div>
-      ) : question.type === "numeric" ? (
-        <div className="space-y-3">
-          <input
-            type="text"
-            inputMode="decimal"
-            dir="ltr"
-            disabled={!selectable}
-            value={typeof answer === "string" ? answer : ""}
-            onChange={(event) => selectable && onAnswerChange!(event.target.value)}
-            placeholder="أدخل الإجابة الرقمية"
-            className={cn(
-              "h-14 w-full rounded-2xl border-2 px-4 text-lg font-extrabold tabular-nums text-foreground outline-none transition-all duration-200 placeholder:text-base placeholder:font-semibold placeholder:text-muted-foreground/50",
-              selectable && "cursor-text hover:border-[var(--brand-primary)] focus:border-[var(--brand-primary)] focus:shadow-lg focus:shadow-[rgba(0,0,0,0.1)]",
-              readOnly &&
-                question.isCorrect !== null &&
-                (question.isCorrect
-                  ? "border-emerald-500 bg-emerald-500/10"
-                  : "border-red-500 bg-red-500/10"),
-              !selectable && "opacity-80",
-            )}
-          />
-          {readOnly &&
-            question.isCorrect !== null &&
-            question.content.correct !== undefined && (
-              <p
-                className={cn(
-                  "text-sm font-extrabold",
-                  question.isCorrect ? "text-emerald-600" : "text-red-500",
-                )}
-              >
-                {question.isCorrect
-                  ? "إجابة صحيحة"
-                  : `الإجابة الصحيحة: ${question.content.correct}`}
-              </p>
-            )}
-        </div>
-      ) : question.type === "essay" || question.type === "short_answer" ? (
-        <div className="space-y-3">
-          <textarea
-            disabled={!selectable}
-            value={typeof answer === "string" ? answer : ""}
-            onChange={(event) => selectable && onAnswerChange!(event.target.value)}
-            placeholder={question.type === "essay" ? "اكتب إجابتك المقالية هنا..." : "اكتب إجابتك هنا..."}
-            rows={6}
-            className={cn(
-              "w-full rounded-2xl border-2 px-4 py-3 text-sm font-semibold leading-relaxed text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/50 resize-y",
-              selectable && "cursor-text hover:border-[var(--brand-primary)] focus:border-[var(--brand-primary)] focus:shadow-lg focus:shadow-[rgba(0,0,0,0.1)]",
-              readOnly &&
-                question.isCorrect !== null &&
-                (question.isCorrect
-                  ? "border-emerald-500 bg-emerald-500/10"
-                  : "border-red-500 bg-red-500/10"),
-              !selectable && "opacity-80",
-            )}
-          />
-          {readOnly && question.type === "essay" && (
-            <p className="text-[11px] font-medium text-muted-foreground/70">
-              هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
-            </p>
-          )}
-        </div>
       ) : (
         <div className="space-y-2.5">
           {options.map((option) => {
@@ -241,8 +146,8 @@ function ExamQuestionViewInner({
                   "group relative flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-start transition-all duration-200",
                   selectable && "cursor-pointer hover:-translate-y-0.5",
                   selected
-                    ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-lg shadow-[rgba(0,0,0,0.1)]"
-                    : "border-border/60 bg-background/50 hover:border-[var(--brand-primary)]",
+                    ? "border-[#BF6D58] bg-[#BF6D58]/10 shadow-lg shadow-[#BF6D58]/10"
+                    : "border-border/60 bg-background/50 hover:border-[#BF6D58]/40",
                   readOnly &&
                     reveal &&
                     option.correct &&
@@ -260,8 +165,8 @@ function ExamQuestionViewInner({
                   className={cn(
                     "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                     selected
-                      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white"
-                      : "border-border/70 bg-background group-hover:border-[var(--brand-primary)]",
+                      ? "border-[#BF6D58] bg-[#BF6D58] text-white"
+                      : "border-border/70 bg-background group-hover:border-[#BF6D58]/50",
                     readOnly &&
                       reveal &&
                       option.correct &&

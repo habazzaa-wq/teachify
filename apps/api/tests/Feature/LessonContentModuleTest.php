@@ -141,10 +141,10 @@ class LessonContentModuleTest extends TestCase
 
         $this->postJson($this->lessonPath($courseId, $sectionId, $lessonId).'/text', [
             'body' => 'Wrong content type.',
-            'format' => 'invalid_format',
+            'format' => 'markdown',
         ], $this->tenantHeader($tenant))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['format']);
+            ->assertJsonValidationErrors(['type']);
     }
 
     public function test_students_cannot_manage_lesson_content(): void
@@ -220,7 +220,7 @@ class LessonContentModuleTest extends TestCase
             'slug' => str($title)->slug()->toString(),
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
     }
 
     private function createSection(Tenant $tenant, int $courseId, string $title, int $sortOrder): int
@@ -230,7 +230,7 @@ class LessonContentModuleTest extends TestCase
             'sort_order' => $sortOrder,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('section.id');
     }
 
     private function createLesson(Tenant $tenant, int $courseId, int $sectionId, string $title, string $type): int
@@ -238,14 +238,11 @@ class LessonContentModuleTest extends TestCase
         return $this->postJson("/api/v1/courses/{$courseId}/sections/{$sectionId}/lessons", [
             'title' => $title,
             'slug' => str($title)->slug()->toString(),
-            'lesson_type' => match ($type) {
-                'file' => 'pdf',
-                default => $type,
-            },
+            'type' => $type,
             'visibility' => 'private',
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('lesson.id');
     }
 
     private function createMediaAsset(Tenant $tenant, string $type): MediaAsset

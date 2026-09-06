@@ -214,11 +214,9 @@ export function QuestionBank() {
               title="لا توجد أسئلة"
               description="ابدأ بإنشاء سؤال جديد أو عدّل عوامل التصفية."
               action={
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <StudioButton onClick={() => setCreateOpen(true)} className="gap-2">
-                    إنشاء سؤال
-                  </StudioButton>
-                </div>
+                <StudioButton onClick={() => setCreateOpen(true)} className="gap-2">
+                  إنشاء سؤال
+                </StudioButton>
               }
             />
           </motion.div>

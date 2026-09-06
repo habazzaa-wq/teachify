@@ -282,9 +282,9 @@ class AuditActivityFoundationTest extends TestCase
             'metadata' => ['slug' => 'acme'],
         ]);
 
-        Sanctum::actingAs($platformUser, ['platform:access']);
+        Sanctum::actingAs($platformUser);
 
-        $this->getJson('/api/platform/audit-logs')
+        $this->getJson('/api/v1/platform/audit-logs')
             ->assertOk()
             ->assertJsonPath('data.0.event_type', 'tenant.created');
     }
@@ -296,7 +296,7 @@ class AuditActivityFoundationTest extends TestCase
 
         Sanctum::actingAs($admin->user);
 
-        $this->getJson('/api/platform/audit-logs')->assertForbidden();
+        $this->getJson('/api/v1/platform/audit-logs')->assertForbidden();
     }
 
     public function test_audit_log_service_records_platform_events_without_tenant(): void

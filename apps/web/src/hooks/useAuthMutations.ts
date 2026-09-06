@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { authKeys } from "@/services/queryKeys";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/lib/toast";
+import { toast } from "sonner";
 import type { ApiError } from "@/types/common.types";
 import type { LoginRequest } from "@/types/auth.types";
 import { routes } from "@/constants/routes";
-import { hasStaffAccess } from "@/lib/tenant-access";
 import { useTenantStore } from "@/stores/tenant.store";
 
 /**
@@ -27,9 +26,8 @@ export function useLogin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.all });
       const roles = useTenantStore.getState().roles;
-      // Only staff (owner/admin/instructor) may enter the teacher control
-      // panel. A student who signs in lands on their own dashboard.
-      router.replace(hasStaffAccess(roles) ? routes.dashboard : routes.studentDashboard);
+      const isStudent = roles.some((role) => role.slug === "student");
+      router.replace(isStudent ? routes.studentDashboard : routes.dashboard);
     },
     onError: (error: ApiError) => {
       toast.error(error.message);
@@ -38,7 +36,7 @@ export function useLogin() {
 }
 
 /**
- * Logout mutation. Tears down the session and redirects to the tenant login page.
+ * Logout mutation. Tears down the session and redirects to /login.
  */
 export function useLogout() {
   const { logout } = useAuth();

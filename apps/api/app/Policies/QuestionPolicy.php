@@ -61,9 +61,9 @@ class QuestionPolicy
             && $this->auth()->hasPermission($user, currentTenant(), 'questions.delete');
     }
 
-    public function restore(User $user): bool
+    public function restore(User $user, Question $question): bool
     {
-        return $this->auth()->hasPermission($user, currentTenant(), 'questions.update');
+        return $this->update($user, $question);
     }
 
     private function isTenantOperator(User $user, Tenant $tenant): bool

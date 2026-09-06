@@ -33,15 +33,15 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
       <div className="home-enter-pop relative flex flex-col items-center group/phone" style={{ animationDelay: "0.45s" }}>
         <div className="flex flex-col items-center">
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgba(0,0,0,0.38),0_8px_25px_rgba(0,0,0,0.3)]"
+            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgba(255,181,14,0.38),0_8px_25px_rgba(0,0,0,0.3)]"
             style={{
-              backgroundColor: "var(--brand-secondary)",
-              borderColor: "var(--brand-secondary)",
+              backgroundColor: secondary,
+              borderColor: "#FFE0A0",
             }}
           >
-            <Phone className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
+            <Phone className="h-5 w-5 text-white" />
           </div>
-          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md transition-all duration-300 group-hover/phone:bg-[var(--brand-secondary)]" style={{ backgroundColor: "var(--brand-secondary)" }}>
+          <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-all duration-300 group-hover/phone:bg-[#FFB50E]" style={{ backgroundColor: `${secondary}dd` }}>
             {icons?.phone?.label || "رقم الهاتف"}
           </span>
         </div>
@@ -50,8 +50,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
           style={{ direction: "rtl", boxShadow: "0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)" }}
         >
           <a href={social?.phone ? `tel:${social.phone}` : "#"} className="group flex items-center gap-3 px-4 py-3 transition-all duration-200 hover:bg-gradient-to-l hover:from-amber-50 hover:to-orange-50">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-secondary)] transition-transform duration-200 group-hover:scale-110">
-              <PhoneCall className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110" style={{ backgroundColor: `${secondary}20` }}>
+              <PhoneCall className="h-5 w-5" style={{ color: secondary }} />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-gray-800">اتصل بنا</span>
@@ -74,7 +74,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
   );
 }
 
-const neutralDeco = "#c9ae8f";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "square"; size: number; color: string }) {
   if (shape === "circle") {
@@ -96,11 +97,18 @@ function ShapeElement({ shape, size, color }: { shape: "circle" | "diamond" | "s
    - mobile (md:hidden): a simplified background with a handful of static
      accents and zero animations.
    ───────────────────────────────────────────────────────────────────────── */
+const DESKTOP_ORBS = [
+  { x: "10%", y: "20%", size: 140, color: primary, opacity: 0.22, duration: 14, delay: 0 },
+  { x: "80%", y: "15%", size: 120, color: secondary, opacity: 0.2, duration: 16, delay: 2 },
+  { x: "5%", y: "75%", size: 100, color: secondary, opacity: 0.18, duration: 12, delay: 1 },
+  { x: "85%", y: "72%", size: 130, color: primary, opacity: 0.2, duration: 15, delay: 3 },
+];
+
 const DESKTOP_SHAPES = [
-  { x: "18%", y: "12%", size: 14, color: neutralDeco, shape: "circle" as const },
-  { x: "78%", y: "25%", size: 12, color: neutralDeco, shape: "diamond" as const },
-  { x: "22%", y: "78%", size: 12, color: neutralDeco, shape: "diamond" as const },
-  { x: "75%", y: "85%", size: 14, color: neutralDeco, shape: "square" as const },
+  { x: "18%", y: "12%", size: 14, color: primary, shape: "circle" as const },
+  { x: "78%", y: "25%", size: 12, color: secondary, shape: "diamond" as const },
+  { x: "22%", y: "78%", size: 12, color: primary, shape: "diamond" as const },
+  { x: "75%", y: "85%", size: 14, color: secondary, shape: "square" as const },
 ];
 
 const DESKTOP_MATH = [
@@ -108,82 +116,20 @@ const DESKTOP_MATH = [
   { char: "∑", x: "90%", y: "70%", size: 26, rotate: 15 },
   { char: "√", x: "15%", y: "85%", size: 22, rotate: -20 },
   { char: "∞", x: "3%", y: "40%", size: 20, rotate: 10 },
-  { char: "Δ", x: "82%", y: "18%", size: 18, rotate: -8 },
-  { char: "±", x: "70%", y: "45%", size: 16, rotate: 22 },
-  { char: "∫", x: "5%", y: "62%", size: 24, rotate: -15 },
-  { char: "θ", x: "92%", y: "42%", size: 18, rotate: 10 },
-  { char: "λ", x: "45%", y: "8%", size: 16, rotate: -18 },
-  { char: "φ", x: "60%", y: "92%", size: 14, rotate: 12 },
-  { char: "Ω", x: "25%", y: "5%", size: 18, rotate: -5 },
-  { char: "α", x: "75%", y: "60%", size: 15, rotate: 20 },
-  { char: "β", x: "35%", y: "95%", size: 14, rotate: -10 },
-  { char: "γ", x: "88%", y: "88%", size: 16, rotate: 8 },
-  { char: "μ", x: "12%", y: "48%", size: 15, rotate: -25 },
-  { char: "σ", x: "55%", y: "75%", size: 14, rotate: 15 },
-  { char: "ω", x: "38%", y: "12%", size: 16, rotate: -8 },
-  { char: "ε", x: "65%", y: "30%", size: 13, rotate: 18 },
-  { char: "η", x: "20%", y: "68%", size: 14, rotate: -12 },
-  { char: "π", x: "48%", y: "55%", size: 20, rotate: 5 },
-];
-
-const DESKTOP_ARABIC = [
-  { char: "أ", x: "8%", y: "15%", size: 32, rotate: -12 },
-  { char: "ب", x: "90%", y: "70%", size: 30, rotate: 15 },
-  { char: "ت", x: "15%", y: "85%", size: 28, rotate: -20 },
-  { char: "ث", x: "3%", y: "40%", size: 26, rotate: 10 },
-  { char: "ج", x: "82%", y: "18%", size: 24, rotate: -8 },
-  { char: "ح", x: "70%", y: "45%", size: 22, rotate: 22 },
-  { char: "خ", x: "5%", y: "62%", size: 28, rotate: -15 },
-  { char: "د", x: "92%", y: "42%", size: 22, rotate: 10 },
-  { char: "ذ", x: "45%", y: "8%", size: 20, rotate: -18 },
-  { char: "ر", x: "60%", y: "92%", size: 20, rotate: 12 },
-  { char: "ز", x: "25%", y: "5%", size: 22, rotate: -5 },
-  { char: "س", x: "75%", y: "60%", size: 26, rotate: 20 },
-  { char: "ش", x: "35%", y: "95%", size: 24, rotate: -10 },
-  { char: "ص", x: "88%", y: "88%", size: 22, rotate: 8 },
-  { char: "ض", x: "12%", y: "48%", size: 20, rotate: -25 },
-  { char: "ط", x: "55%", y: "75%", size: 22, rotate: 15 },
-  { char: "ظ", x: "38%", y: "12%", size: 20, rotate: -8 },
-  { char: "ع", x: "65%", y: "30%", size: 24, rotate: 18 },
-  { char: "غ", x: "20%", y: "68%", size: 22, rotate: -12 },
-  { char: "ف", x: "48%", y: "55%", size: 26, rotate: 5 },
-];
-
-const DESKTOP_ENGLISH = [
-  { char: "A", x: "8%", y: "15%", size: 30, rotate: -12 },
-  { char: "B", x: "90%", y: "70%", size: 28, rotate: 15 },
-  { char: "C", x: "15%", y: "85%", size: 26, rotate: -20 },
-  { char: "D", x: "3%", y: "40%", size: 24, rotate: 10 },
-  { char: "E", x: "82%", y: "18%", size: 22, rotate: -8 },
-  { char: "F", x: "70%", y: "45%", size: 20, rotate: 22 },
-  { char: "G", x: "5%", y: "62%", size: 26, rotate: -15 },
-  { char: "H", x: "92%", y: "42%", size: 20, rotate: 10 },
-  { char: "I", x: "45%", y: "8%", size: 18, rotate: -18 },
-  { char: "J", x: "60%", y: "92%", size: 18, rotate: 12 },
-  { char: "K", x: "25%", y: "5%", size: 20, rotate: -5 },
-  { char: "L", x: "75%", y: "60%", size: 22, rotate: 20 },
-  { char: "M", x: "35%", y: "95%", size: 22, rotate: -10 },
-  { char: "N", x: "88%", y: "88%", size: 20, rotate: 8 },
-  { char: "O", x: "12%", y: "48%", size: 18, rotate: -25 },
-  { char: "P", x: "55%", y: "75%", size: 20, rotate: 15 },
-  { char: "Q", x: "38%", y: "12%", size: 18, rotate: -8 },
-  { char: "R", x: "65%", y: "30%", size: 22, rotate: 18 },
-  { char: "S", x: "20%", y: "68%", size: 20, rotate: -12 },
-  { char: "T", x: "48%", y: "55%", size: 24, rotate: 5 },
 ];
 
 const DESKTOP_DOTS = [
-  { x: "14%", y: "22%", size: 5, color: neutralDeco },
-  { x: "86%", y: "20%", size: 6, color: neutralDeco },
-  { x: "10%", y: "58%", size: 5, color: neutralDeco },
-  { x: "90%", y: "55%", size: 5, color: neutralDeco },
-  { x: "20%", y: "90%", size: 6, color: neutralDeco },
-  { x: "78%", y: "88%", size: 5, color: neutralDeco },
+  { x: "14%", y: "22%", size: 5, color: primary },
+  { x: "86%", y: "20%", size: 6, color: secondary },
+  { x: "10%", y: "58%", size: 5, color: secondary },
+  { x: "90%", y: "55%", size: 5, color: primary },
+  { x: "20%", y: "90%", size: 6, color: primary },
+  { x: "78%", y: "88%", size: 5, color: secondary },
 ];
 
 const DESKTOP_STARS = [
-  { x: "12%", y: "10%", size: 14, color: neutralDeco },
-  { x: "85%", y: "8%", size: 12, color: neutralDeco },
+  { x: "12%", y: "10%", size: 14, color: primary },
+  { x: "85%", y: "8%", size: 12, color: secondary },
 ];
 
 const DESKTOP_PLUS = [
@@ -192,43 +138,57 @@ const DESKTOP_PLUS = [
 ];
 
 const MOBILE_DECOR = {
+  orbs: [
+    { x: "-20%", y: "-10%", size: 160, color: primary, opacity: 0.2 },
+    { x: "78%", y: "58%", size: 120, color: secondary, opacity: 0.16 },
+  ],
   dots: [
-    { x: "12%", y: "24%", size: 5, color: neutralDeco },
-    { x: "86%", y: "18%", size: 6, color: neutralDeco },
-    { x: "8%", y: "70%", size: 5, color: neutralDeco },
+    { x: "12%", y: "24%", size: 5, color: primary },
+    { x: "86%", y: "18%", size: 6, color: secondary },
+    { x: "8%", y: "70%", size: 5, color: secondary },
   ],
   shapes: [
-    { x: "78%", y: "25%", size: 10, color: neutralDeco, shape: "diamond" as const },
-    { x: "16%", y: "80%", size: 12, color: neutralDeco, shape: "circle" as const },
+    { x: "78%", y: "25%", size: 10, color: secondary, shape: "diamond" as const },
+    { x: "16%", y: "80%", size: 12, color: primary, shape: "circle" as const },
   ],
-  math: [
-    { char: "π", x: "88%", y: "68%", size: 22, rotate: 8 },
-    { char: "∑", x: "10%", y: "30%", size: 18, rotate: -12 },
-    { char: "∞", x: "50%", y: "90%", size: 16, rotate: 15 },
-    { char: "√", x: "75%", y: "15%", size: 14, rotate: -8 },
-  ],
-  arabic: [
-    { char: "أ", x: "88%", y: "68%", size: 24, rotate: 8 },
-    { char: "ب", x: "10%", y: "30%", size: 20, rotate: -12 },
-    { char: "ت", x: "50%", y: "90%", size: 18, rotate: 15 },
-    { char: "ث", x: "75%", y: "15%", size: 16, rotate: -8 },
-  ],
-  english: [
-    { char: "A", x: "88%", y: "68%", size: 22, rotate: 8 },
-    { char: "B", x: "10%", y: "30%", size: 18, rotate: -12 },
-    { char: "C", x: "50%", y: "90%", size: 16, rotate: 15 },
-    { char: "D", x: "75%", y: "15%", size: 14, rotate: -8 },
-  ],
+  math: [{ char: "π", x: "88%", y: "68%", size: 22, rotate: 8 }],
 };
 
-function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" | "arabic" | "english" }) {
-  const desktopSymbols = bgStyle === "arabic" ? DESKTOP_ARABIC : bgStyle === "english" ? DESKTOP_ENGLISH : DESKTOP_MATH;
-  const mobileSymbols = MOBILE_DECOR[bgStyle] || MOBILE_DECOR.math;
-
+function HeroBackground({ isDark }: { isDark: boolean }) {
   return (
     <>
       {/* Desktop — richer background, heavily reduced element count */}
       <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block" aria-hidden="true">
+        {/* Blurred gradient orbs — the only continuously animated elements */}
+        {DESKTOP_ORBS.map((orb, i) => (
+          <div
+            key={`orb-${i}`}
+            className="hero-bg-orb absolute rounded-full"
+            style={{
+              left: orb.x,
+              top: orb.y,
+              width: orb.size,
+              height: orb.size,
+              background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
+              opacity: isDark ? orb.opacity * 0.6 : orb.opacity,
+              filter: isDark ? "blur(30px)" : "blur(25px)",
+              "--orb-duration": `${orb.duration}s`,
+              "--orb-delay": `${orb.delay}s`,
+              "--orb-opacity": isDark ? orb.opacity * 0.6 : orb.opacity,
+            } as React.CSSProperties}
+          />
+        ))}
+
+        {/* Static ring outlines */}
+        <div
+          className="absolute rounded-full border"
+          style={{ left: "8%", top: "18%", width: 60, height: 60, borderColor: isDark ? "rgba(216,123,99,0.10)" : "rgba(216,123,99,0.18)" }}
+        />
+        <div
+          className="absolute rounded-full border border-dashed"
+          style={{ left: "46%", bottom: "8%", width: 48, height: 48, borderColor: isDark ? "rgba(200,170,140,0.05)" : "rgba(160,130,100,0.10)" }}
+        />
+
         {/* Static geometric shapes */}
         {DESKTOP_SHAPES.map((s, i) => (
           <div key={`shape-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.35 }}>
@@ -236,8 +196,8 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
           </div>
         ))}
 
-        {/* Static symbols */}
-        {desktopSymbols.map((m, i) => (
+        {/* Static math symbols */}
+        {DESKTOP_MATH.map((m, i) => (
           <span
             key={`math-${i}`}
             className="absolute select-none font-bold"
@@ -247,7 +207,6 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
               color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
-              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
             {m.char}
@@ -288,11 +247,27 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
           />
         </svg>
 
+        {/* Static concentric center rings */}
+        {[240, 300].map((size, i) => (
+          <div
+            key={`ring-${i}`}
+            className="absolute rounded-full border"
+            style={{
+              width: size,
+              height: size,
+              borderColor: isDark
+                ? `rgba(216,123,99,${0.06 - i * 0.01})`
+                : `rgba(216,123,99,${0.22 - i * 0.04})`,
+              borderWidth: i === 0 ? 1.5 : 1,
+            }}
+          />
+        ))}
+
         {/* Static stars */}
         {DESKTOP_STARS.map((s, i) => (
           <div key={`star-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.32 }}>
             <svg width={s.size} height={s.size} viewBox="0 0 16 16">
-              <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" style={{ fill: s.color }} />
+              <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill={s.color} />
             </svg>
           </div>
         ))}
@@ -301,8 +276,8 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
         {DESKTOP_PLUS.map((p, i) => (
           <div key={`plus-${i}`} className="absolute" style={{ left: p.x, top: p.y, opacity: isDark ? 0.12 : 0.22, transform: `rotate(${p.rotate}deg)` }}>
             <svg width={p.size} height={p.size} viewBox="0 0 10 10">
-              <line x1="5" y1="0" x2="5" y2="10" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
-              <line x1="0" y1="5" x2="10" y2="5" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
+              <line x1="5" y1="0" x2="5" y2="10" stroke={primary} strokeWidth="1.2" />
+              <line x1="0" y1="5" x2="10" y2="5" stroke={primary} strokeWidth="1.2" />
             </svg>
           </div>
         ))}
@@ -310,6 +285,21 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
 
       {/* Mobile — simplified background, fully static */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden md:hidden" aria-hidden="true">
+        {MOBILE_DECOR.orbs.map((orb, i) => (
+          <div
+            key={`orb-${i}`}
+            className="absolute rounded-full"
+            style={{
+              left: orb.x,
+              top: orb.y,
+              width: orb.size,
+              height: orb.size,
+              background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
+              opacity: isDark ? orb.opacity * 0.6 : orb.opacity,
+              filter: isDark ? "blur(30px)" : "blur(25px)",
+            }}
+          />
+        ))}
         {MOBILE_DECOR.dots.map((d, i) => (
           <div
             key={`dot-${i}`}
@@ -329,7 +319,7 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
             <ShapeElement shape={s.shape} size={s.size} color={s.color} />
           </div>
         ))}
-        {mobileSymbols.map((m, i) => (
+        {MOBILE_DECOR.math.map((m, i) => (
           <span
             key={`math-${i}`}
             className="absolute select-none font-bold"
@@ -339,7 +329,6 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
               color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
-              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
             {m.char}
@@ -374,7 +363,6 @@ export function HeroSection() {
   const title = hero?.title || `مرحباً بكم في ${tenantName}`;
   const social = hero?.socialLinks;
   const icons = hero?.icons;
-  const bgStyle = hero?.bgStyle || "math";
 
   const heroImage = toAbsoluteAssetUrl(hero?.teacherImage);
   const heroName = hero?.teacherName || "المعلم";
@@ -391,22 +379,94 @@ export function HeroSection() {
       ref={sectionRef}
       className={`hero-section relative w-full overflow-hidden${heroOffscreen ? " hero-anim-paused" : ""}`}
       dir="rtl"
-      style={{ minHeight: 620 }}
+      style={{ minHeight: 560 }}
     >
       {/* ── Background ── */}
       <div
         className="absolute inset-0 transition-colors duration-500"
         style={{ background: isDark ? darkBg : lightBg }}
       />
-      <HeroBackground isDark={isDark} bgStyle={bgStyle} />
+      <div
+        className="absolute inset-0 transition-colors duration-500"
+        style={{
+          background: isDark
+            ? "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.02) 0%, transparent 50%)"
+            : "radial-gradient(circle at 30% 70%, rgba(216,123,99,0.03) 0%, transparent 50%), radial-gradient(circle at 70% 30%, rgba(255,181,14,0.03) 0%, transparent 50%)",
+        }}
+      />
+
+      <HeroBackground isDark={isDark} />
 
       {/* ── Content ── */}
-      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-2 pb-12 sm:pt-4 sm:pb-20 lg:pt-4 lg:pb-24">
+      <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-0 pb-6 sm:pb-10">
+
+        {/* ── Floating badge pills ── */}
+        {hero?.badge2Text && (
+          <div
+            className="home-enter-badge-top absolute top-3 start-3 z-20 sm:top-4 sm:start-4 lg:top-5 lg:start-6"
+            style={{ animationDelay: "0.1s" }}
+          >
+            <div
+              className={`group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                isDark
+                  ? "border-white/10 bg-white/10"
+                  : "border-white/50 bg-white/80"
+              }`}
+              style={{
+                boxShadow: isDark
+                  ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
+                  : `0 8px 32px rgba(255,181,14,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+              }}
+            >
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
+                style={{
+                  background: `linear-gradient(135deg, ${secondary}, ${secondary}cc)`,
+                  boxShadow: `0 4px 12px ${secondary}40`,
+                }}
+              >
+                <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
+              </div>
+              <span style={{ color: secondary }}>{hero.badge2Text}</span>
+            </div>
+          </div>
+        )}
+
+        {hero?.badge1Text && (
+          <div
+            className="home-enter-badge-bottom absolute bottom-3 end-3 z-20 sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <div
+              className={`group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                isDark
+                  ? "border-white/10 bg-white/10"
+                  : "border-white/50 bg-white/80"
+              }`}
+              style={{
+                boxShadow: isDark
+                  ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
+                  : `0 8px 32px rgba(216,123,99,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
+              }}
+            >
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
+                style={{
+                  background: `linear-gradient(135deg, ${primary}, ${primary}cc)`,
+                  boxShadow: `0 4px 12px ${primary}40`,
+                }}
+              >
+                <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
+              </div>
+              <span style={{ color: primary }}>{hero.badge1Text}</span>
+            </div>
+          </div>
+        )}
 
         {/* ── Title ── */}
         <h1
-          className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          className="home-enter-up mb-5 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
+          style={{ fontFamily: "'Cairo', sans-serif" }}
         >
           {(() => {
             const fullTitle = title;
@@ -416,33 +476,42 @@ export function HeroSection() {
               const rest = parts.slice(1).join(separator);
               return (
                 <>
-                  <span style={{ color: "var(--brand-primary)" }}>{parts[0] + separator}</span>
+                  <span style={{ color: primary }}>{parts[0] + separator}</span>
                   {rest && (
                     <>
                       <br />
-                      <span style={{ color: "var(--brand-secondary)" }}>{rest}</span>
+                      <span style={{ color: secondary }}>{rest}</span>
                     </>
                   )}
                 </>
               );
             }
-            return <span style={{ color: "var(--brand-primary)" }}>{fullTitle}</span>;
+            return <span style={{ color: primary }}>{fullTitle}</span>;
           })()}
         </h1>
 
         {hero?.subtitle && (
           <p
-            className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-bold leading-snug tracking-tight text-[var(--brand-secondary)] sm:mb-6 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
-            style={{ fontFamily: "var(--font-sans)", animationDelay: "0.15s" }}
+            className="home-enter-up mb-6 max-w-lg text-center text-2xl font-extrabold leading-relaxed sm:text-3xl lg:text-4xl"
+            style={{ color: secondary, fontFamily: "'Cairo', sans-serif", animationDelay: "0.15s" }}
           >
             {hero.subtitle}
           </p>
         )}
 
         {/* ── Profile circle wrapper: 340×340 ── */}
-          <div className="home-enter-pop-soft relative mx-auto mt-4 h-[340px] w-[340px] max-w-full sm:mt-6" style={{ animationDelay: "0.25s" }}>
+        <div className="home-enter-pop-soft relative mx-auto h-[340px] w-[340px]" style={{ animationDelay: "0.25s" }}>
+          {/* Glow behind image */}
+          <div
+            className="absolute rounded-full blur-3xl"
+            style={{
+              inset: -40,
+              background: `radial-gradient(circle, ${secondary}18, transparent 70%)`,
+            }}
+          />
+
           {/* Profile image */}
-          <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
+          <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-orange-400 shadow-2xl">
             {heroImage ? (
               <Image
                 src={heroImage}
@@ -472,10 +541,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.3s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
-                <Gift className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+                <Gift className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.gifts?.label || "الهدايا"}
               </span>
             </div>
@@ -493,10 +562,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.36s" }}
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
-                  <Facebook className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
+                  <Facebook className="h-5 w-5 text-white" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
                   {icons?.facebook?.label || "فيس بوك"}
                 </span>
               </a>
@@ -514,10 +583,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.42s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
-                <MessageCircle className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+                <MessageCircle className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.chat?.label || "محادثة مباشرة"}
               </span>
             </div>
@@ -535,10 +604,10 @@ export function HeroSection() {
               style={{ animationDelay: "0.48s" }}
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
-                  <Youtube className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: secondary, borderColor: "#FFE0A0" }}>
+                  <Youtube className="h-5 w-5 text-white" />
                 </div>
-                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
+                <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${secondary}dd` }}>
                   {icons?.youtube?.label || "يوتيوب"}
                 </span>
               </a>
@@ -556,10 +625,10 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.54s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
-                <Star className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: primary, borderColor: "#F0B8A8" }}>
+                <Star className="h-5 w-5 text-white" />
               </div>
-              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
+              <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md" style={{ backgroundColor: `${primary}dd` }}>
                 {icons?.bestStudents?.label || "أفضل الطلاب"}
               </span>
             </div>
@@ -570,68 +639,7 @@ export function HeroSection() {
           {icons?.phone?.visible !== false && <PhoneIconWithTooltip social={social} icons={icons} />}
           </div>
          </div>
-
-        {/* ── Badge pills: mobile sits under the profile image (one right, one left); desktop floats in the corners ── */}
-        {(hero?.badge2Text || hero?.badge1Text) && (
-          <div className="mt-4 flex w-full items-center justify-between gap-3 sm:contents">
-            {hero?.badge2Text && (
-              <div className="home-enter-badge-top z-20 sm:absolute sm:top-4 sm:start-4 lg:top-5 lg:start-6" style={{ animationDelay: "0.1s" }}>
-                <div
-                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                    isDark
-                      ? "border-white/10 bg-white/10"
-                      : "border-white/50 bg-white/80"
-                  }`}
-                  style={{
-                    boxShadow: isDark
-                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                  }}
-                >
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
-                    style={{
-                      background: "var(--brand-secondary)",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                    }}
-                  >
-                    <Clock className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-                  </div>
-                  <span style={{ color: "var(--brand-secondary)" }}>{hero.badge2Text}</span>
-                </div>
-              </div>
-            )}
-
-            {hero?.badge1Text && (
-              <div className="home-enter-badge-bottom z-20 sm:absolute sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6" style={{ animationDelay: "0.2s" }}>
-                <div
-                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                    isDark
-                      ? "border-white/10 bg-white/10"
-                      : "border-white/50 bg-white/80"
-                  }`}
-                  style={{
-                    boxShadow: isDark
-                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                  }}
-                >
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
-                    style={{
-                      background: "var(--brand-primary)",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                    }}
-                  >
-                    <Award className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-                  </div>
-                  <span style={{ color: "var(--brand-primary)" }}>{hero.badge1Text}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        </div>
+       </div>
 
      </section>
   );

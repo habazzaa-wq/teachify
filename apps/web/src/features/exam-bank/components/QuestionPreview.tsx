@@ -1,6 +1,5 @@
 "use client";
 
-import { StructuredQuestionContent, parseQuestionDocument } from "@/components/structured-question";
 import { StudioSurfaceCard, StudioChip, StudioStatusChip } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import {
@@ -8,7 +7,6 @@ import {
   DIFFICULTY_CONFIG,
 } from "@/features/exam-bank/constants";
 import type { Question, QuestionStatus } from "@/features/exam-bank/types";
-import { ImageQuestionContent } from "./ImageQuestionContent";
 
 type StudioStatus = "active" | "pending" | "archived";
 
@@ -28,11 +26,6 @@ export function QuestionPreview({ question }: { question: Question }) {
   const typeCfg = QUESTION_TYPE_CONFIG[question.type];
   const TypeIcon = typeCfg.icon;
   const difficultyCfg = DIFFICULTY_CONFIG[question.difficulty];
-  const isScanned = question.questionFormat === "image" && question.scanUrl;
-  const structuredDoc =
-    question.questionFormat === "structured"
-      ? parseQuestionDocument(question.contentDocument)
-      : null;
 
   return (
     <StudioSurfaceCard padding="lg" className="space-y-4">
@@ -48,16 +41,6 @@ export function QuestionPreview({ question }: { question: Question }) {
         <StudioChip variant="default" size="sm">
           {question.points} نقطة
         </StudioChip>
-        {isScanned && (
-          <StudioChip variant="success" size="sm">
-            سؤال مصوّر
-          </StudioChip>
-        )}
-        {structuredDoc && (
-          <StudioChip variant="accent" size="sm">
-            سؤال مستورد
-          </StudioChip>
-        )}
         {question.category?.name && (
           <StudioChip variant="default" size="sm">
             {question.category.name}
@@ -66,24 +49,9 @@ export function QuestionPreview({ question }: { question: Question }) {
       </div>
 
       <div>
-        {structuredDoc ? (
-          <StructuredQuestionContent document={structuredDoc} />
-        ) : isScanned && question.scanUrl ? (
-          <div className="space-y-2">
-            <ImageQuestionContent
-              src={question.scanUrl}
-              alt="السؤال المصوّر"
-              maxHeight={300}
-              showControls={true}
-            />
-          </div>
-        ) : (
-          <>
-            <h3 className="text-base font-semibold text-studio-fg">{question.title}</h3>
-            {question.description && (
-              <p className="mt-1 text-sm text-studio-fg-muted">{question.description}</p>
-            )}
-          </>
+        <h3 className="text-base font-semibold text-studio-fg">{question.title}</h3>
+        {question.description && (
+          <p className="mt-1 text-sm text-studio-fg-muted">{question.description}</p>
         )}
       </div>
 

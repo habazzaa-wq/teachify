@@ -37,11 +37,6 @@ class QuestionCategoryPolicy
             && $this->auth()->hasPermission($user, currentTenant(), 'questions.delete');
     }
 
-    public function restore(User $user): bool
-    {
-        return $this->auth()->hasPermission($user, currentTenant(), 'questions.update');
-    }
-
     private function auth(): TenantAuthorizationService
     {
         return app(TenantAuthorizationService::class);

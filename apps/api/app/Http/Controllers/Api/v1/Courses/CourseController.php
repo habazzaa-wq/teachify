@@ -6,15 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use App\Repositories\CourseRepository;
-use App\Repositories\CourseSectionRepository;
 use App\Services\Courses\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Throwable;
 
 class CourseController extends Controller
 {
@@ -57,7 +54,7 @@ class CourseController extends Controller
         Gate::authorize('view', $course);
 
         return response()->json([
-            'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections', 'lessons'])),
+            'data' => new CourseResource($course->loadMissing(['creator.user', 'instructors.membership.user', 'tags', 'settings'])->loadCount(['enrollments', 'sections'])),
         ]);
     }
 
@@ -174,128 +171,6 @@ class CourseController extends Controller
         ]);
     }
 
-    /**
-     * @return array<int, int>
-     */
-    private function validatedBulkIds(Request $request): array
-    {
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:500'],
-            'ids.*' => ['integer', 'distinct'],
-        ]);
-
-        return array_map('intval', array_values($validated['ids']));
-    }
-
-    public function bulkPublish(Request $request): JsonResponse
-    {
-        $ids = $this->validatedBulkIds($request);
-        $count = $this->bulkApply(
-            $ids,
-            'publish',
-            fn (Course $course) => $this->service->publish($course),
-        );
-
-        return response()->json([
-            'message' => "{$count} course(s) published.",
-            'count' => $count,
-            'requested' => count($ids),
-        ]);
-    }
-
-    public function bulkArchive(Request $request): JsonResponse
-    {
-        $ids = $this->validatedBulkIds($request);
-        $count = $this->bulkApply(
-            $ids,
-            'archive',
-            fn (Course $course) => $this->service->archive($course),
-        );
-
-        return response()->json([
-            'message' => "{$count} course(s) archived.",
-            'count' => $count,
-            'requested' => count($ids),
-        ]);
-    }
-
-    public function bulkRestore(Request $request): JsonResponse
-    {
-        $ids = $this->validatedBulkIds($request);
-        $count = $this->bulkApply(
-            $ids,
-            'update',
-            fn (Course $course) => $this->service->restore($course),
-        );
-
-        return response()->json([
-            'message' => "{$count} course(s) restored.",
-            'count' => $count,
-            'requested' => count($ids),
-        ]);
-    }
-
-    public function bulkDelete(Request $request): JsonResponse
-    {
-        $ids = $this->validatedBulkIds($request);
-        $count = $this->bulkApply(
-            $ids,
-            'delete',
-            fn (Course $course) => $this->repository->delete($course),
-        );
-
-        return response()->json([
-            'message' => "{$count} course(s) deleted.",
-            'count' => $count,
-            'requested' => count($ids),
-        ]);
-    }
-
-    public function bulkFeature(Request $request): JsonResponse
-    {
-        $ids = $this->validatedBulkIds($request);
-        $count = $this->bulkApply(
-            $ids,
-            'feature',
-            fn (Course $course) => $this->service->toggleFeatured($course),
-        );
-
-        return response()->json([
-            'message' => "{$count} course(s) toggled as featured.",
-            'count' => $count,
-            'requested' => count($ids),
-        ]);
-    }
-
-    /**
-     * Apply a gate-guarded, best-effort operation to every selected course.
-     * Skipped courses (no permission or invalid status transition) never
-     * abort the batch.
-     *
-     * @param  array<int, int>  $ids
-     * @param  callable(Course): void  $operation
-     */
-    private function bulkApply(array $ids, string $ability, callable $operation): int
-    {
-        $count = 0;
-
-        foreach ($this->repository->findByIds($ids) as $course) {
-            if (! Gate::allows($ability, $course)) {
-                continue;
-            }
-            try {
-                $operation($course);
-                $count++;
-            } catch (ValidationException) {
-                // Status transition not allowed (e.g. already published).
-            } catch (Throwable) {
-                // Best-effort bulk operation: never abort the whole batch.
-            }
-        }
-
-        return $count;
-    }
-
     public function metrics(): JsonResponse
     {
         Gate::authorize('viewAny', Course::class);
@@ -314,7 +189,7 @@ class CourseController extends Controller
                 'avgRating' => $this->repository->avgRating(),
                 'completionRate' => $this->repository->completionRate(),
                 'featured' => $this->repository->countFeatured(),
-                'totalSections' => (new CourseSectionRepository)->countTotal(),
+                'totalSections' => (new \App\Repositories\CourseSectionRepository())->countTotal(),
             ],
         ]);
     }
@@ -327,7 +202,7 @@ class CourseController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="courses_'.now()->format('Y-m-d').'.csv"',
+            'Content-Disposition' => 'attachment; filename="courses_' . now()->format('Y-m-d') . '.csv"',
         ];
 
         $callback = function () use ($courses): void {

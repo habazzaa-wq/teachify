@@ -9,19 +9,14 @@ use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Media\Providers\BunnyStorageProvider;
-use App\Services\Media\Providers\BunnyStreamProvider;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\Bunny\BunnyCacheService;
-use App\Services\Bunny\Contracts\BunnyStreamInterface;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -165,19 +160,6 @@ class ResumableUploadService
             ]);
         }
 
-        // Persist within a transaction that retries transient MySQL deadlocks /
-        // lock-wait timeouts (which can occur when parallel chunks contend on the
-        // session row while the scheduled Bunny-sync job is hammering the DB).
-        // Laravel only re-runs the callback when it detects a deadlock or a
-        // lock-timeout QueryException, so the retry is safe and bounded.
-        //
-        // The single source of truth for "which chunks are uploaded" is the
-        // per-chunk row written below (finalize/resume both read from it). The
-        // session's `uploaded_chunks` JSON column is NOT touched here: with
-        // parallel chunk PUTs a read-modify-write of that column causes lost
-        // updates and row-lock contention on the shared session row, which made
-        // large uploads stall/fail. We only bump `updated_at`/`status` so the
-        // GC never reclaims an in-progress session.
         DB::transaction(function () use ($session, $chunkIndex, $computedHash, $absPath, $contentRange, $receivedBytes) {
             $relative = $this->chunkRelativePath($session, $chunkIndex);
             $offset = $contentRange['start'] ?? 0;
@@ -196,29 +178,17 @@ class ResumableUploadService
                 ],
             );
 
-            // Lightweight touch of the session row (no JSON read-modify-write).
-            MediaUploadSession::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
-                ->where('id', $session->id)
-                ->update([
-                    'status' => 'active',
-                    'updated_at' => now(),
-                ]);
-        }, 4);
+            $session->markChunkUploaded($chunkIndex);
+            $session->forceFill(['status' => 'active'])->save();
+        });
 
         $session->refresh();
-
-        // Authoritative bitmap derived from the chunk rows (parallel-safe).
-        $uploaded = $session->chunks()
-            ->where('status', 'uploaded')
-            ->orderBy('chunk_index')
-            ->pluck('chunk_index')
-            ->all();
 
         return [
             'ok' => true,
             'chunk_index' => $chunkIndex,
             'received_bytes' => $receivedBytes,
-            'uploaded_chunks' => $uploaded,
+            'uploaded_chunks' => $session->uploaded_chunks ?? [],
         ];
     }
 
@@ -354,24 +324,12 @@ class ResumableUploadService
 
         if ($existingAsset) {
             $this->purgeTemporaryArtifacts($session);
-
-            // The duplicate detection matched an existing ready asset. We return
-            // that asset to the client, so the freshly-created asset for THIS
-            // session is an orphan. Repoint the session to the surviving asset
-            // and remove the orphan so it does not linger as a stuck "uploading"
-            // record in the user's library.
-            $orphan = $session->asset;
             $session->forceFill([
                 'status' => 'completed',
                 'completed' => true,
                 'final_file_hash' => $effectiveHash,
                 'expires_at' => null,
-                'media_asset_id' => $existingAsset->id,
             ])->save();
-
-            if ($orphan && $orphan->id !== $existingAsset->id) {
-                $orphan->forceDelete();
-            }
 
             return [
                 'session' => $session->fresh(),
@@ -400,43 +358,19 @@ class ResumableUploadService
             fclose($out);
         }
 
-        if ($session->provider_service === 'stream') {
-            // Reserve the Bunny Stream video object (deterministic guid) and hand
-            // the (potentially long) byte upload off to a queue worker. Doing
-            // the upload inside this HTTP request would exceed nginx/fastcgi
-            // timeouts on larger videos and abort before the asset is updated.
-            $this->ensureStreamVideoExists($session);
-
-            $asset = $session->asset;
-            if ($asset) {
-                $asset->forceFill([
-                    'status' => 'uploading',
-                    'processing_status' => 'processing',
-                    'processing_progress' => 0,
-                    'cdn_url' => $asset->cdn_url,
-                ])->save();
-                $asset->refresh();
-            }
-
-            \App\Services\Media\Jobs\PushResumableToBunnyJob::dispatch($session->id, $session->tenant_id);
-        } else {
-            try {
-                $asset = $this->pushToBunny($session, $assembledAbs);
-            } catch (\Throwable $e) {
-                // Keep the assembled file and chunk artifacts so the caller can
-                // retry finalize. purgeTemporaryArtifacts runs only on success.
-                throw $e;
-            }
-
-            $this->purgeTemporaryArtifacts($session, $assembledAbs);
+        try {
+            $asset = $this->pushToBunny($session, $assembledAbs);
+        } catch (\Throwable $e) {
+            // Keep the assembled file and chunk artifacts so the caller can
+            // retry finalize. purgeTemporaryArtifacts runs only on success.
+            throw $e;
         }
 
-        // Mark the upload session finalized. For stream the asset bytes are
-        // still being pushed by the background job, which marks the session
-        // completed once they reach Bunny.
+        $this->purgeTemporaryArtifacts($session, $assembledAbs);
+
         $session->forceFill([
             'status' => 'completed',
-            'completed' => $session->provider_service !== 'stream',
+            'completed' => true,
             'final_file_hash' => $fileHash ? strtolower((string) $fileHash) : $combined,
             'expires_at' => null,
         ])->save();
@@ -459,18 +393,9 @@ class ResumableUploadService
      * Push the assembled file to Bunny using the provider's own intent (URL +
      * AccessKey), streaming the body so large files never hit memory.
      */
-    public function pushToBunny(MediaUploadSession $session, string $assembledAbs): ?MediaAsset
+    protected function pushToBunny(MediaUploadSession $session, string $assembledAbs): ?MediaAsset
     {
         $provider = $this->manager->providerFor($session->provider, $session->provider_service);
-
-        // Bunny Stream requires the video object to exist in the library before
-        // its bytes can be uploaded (PUT /videos/{guid} returns 404 otherwise).
-        // Create it now, reusing the deterministic guid already reserved on the
-        // asset so retries stay idempotent.
-        if ($session->provider_service === 'stream' && $provider instanceof BunnyStreamProvider) {
-            $this->ensureStreamVideoExists($session);
-        }
-
         $intent = $provider->createUploadIntent($session);
 
         $url = $intent['upload_url'] ?? null;
@@ -481,16 +406,8 @@ class ResumableUploadService
         $headers = $intent['headers'] ?? [];
         $headers['Content-Type'] = $session->mime_type ?: 'application/octet-stream';
 
-        // Bunny's Stream upload endpoint does not consume a chunked request body
-        // on PUT. Without an explicit Content-Length, Guzzle/curl sends the file
-        // as a chunked transfer and Bunny stores 0 bytes, leaving the video stuck
-        // in "Processing" forever. Pinning the length forces a fixed-length body
-        // so the bytes actually reach Bunny.
-        $headers['Content-Length'] = filesize($assembledAbs);
-
         $maxRetries = 3;
         $lastException = null;
-        $lastBody = null;
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
@@ -505,7 +422,6 @@ class ResumableUploadService
                 ]);
 
                 if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
-                    $lastBody = (string) $response->getBody();
                     throw new RuntimeException("Bunny rejected the upload (HTTP {$response->getStatusCode()}).");
                 }
 
@@ -513,25 +429,6 @@ class ResumableUploadService
                 break;
             } catch (GuzzleException $e) {
                 $lastException = $e;
-
-                // Bunny returns 400 "The video has already been uploaded" when the
-                // bytes were delivered on a previous attempt (e.g. a retried job or
-                // a duplicate finalize). That is not a failure: the content is
-                // present and Bunny will transcode it, so treat it as success
-                // instead of thrashing through the retry budget and failing the job.
-                if ($e instanceof RequestException && $e->getResponse()) {
-                    $body = (string) $e->getResponse()->getBody();
-                    if (stripos($body, 'already been uploaded') !== false
-                        || stripos($body, 'already uploaded') !== false) {
-                        Log::info('media: bunny reports video already uploaded; treating push as success', [
-                            'session_id' => $session->id,
-                            'attempt' => $attempt,
-                        ]);
-                        $lastException = null;
-                        break;
-                    }
-                }
-
                 if ($attempt < $maxRetries) {
                     $delay = min(30, 2 * pow(2, $attempt - 1));
                     sleep($delay);
@@ -540,18 +437,7 @@ class ResumableUploadService
         }
 
         if ($lastException !== null) {
-            // Keep the assembled file + chunk artifacts so the caller can retry
-            // finalize. Log the real Bunny response so the failure is diagnosable
-            // instead of surfacing as an opaque "Server Error".
-            Log::error('media: resumable finalize Bunny push failed', [
-                'session_id' => $session->id,
-                'provider_service' => $session->provider_service,
-                'bunny_response' => $lastBody,
-                'error' => $lastException->getMessage(),
-            ]);
-            throw new RuntimeException(
-                "Failed to upload to Bunny after {$maxRetries} attempts: {$lastException->getMessage()}",
-            );
+            throw new RuntimeException("Failed to upload to Bunny storage after {$maxRetries} attempts: {$lastException->getMessage()}");
         }
 
         $asset = $session->asset;
@@ -561,94 +447,17 @@ class ResumableUploadService
                 $cdnUrl = $provider->createSignedReadUrl($asset)['url'] ?? null;
             }
 
-            $update = [
+            $asset->forceFill([
                 'status' => 'ready',
                 'processing_status' => 'ready',
-                'processing_progress' => 100,
                 'size_bytes' => $session->size,
                 'checksum' => $session->final_file_hash,
-                'cdn_url' => $cdnUrl ?? $asset->cdn_url,
-            ];
-
-            // For Bunny Stream the upload is only the first step: the video must
-            // still be transcoded and is marked ready by the Bunny webhook. Leaving
-            // it as "ready" here would make the UI show a playable asset before it
-            // actually is. Mirror the BunnyStreamService lifecycle instead.
-            if ($session->provider_service === 'stream') {
-                $update['status'] = 'uploading';
-                $update['processing_status'] = 'processing';
-                $update['processing_progress'] = 0;
-                $update['cdn_url'] = $asset->cdn_url;
-            }
-
-            $asset->forceFill($update)->save();
-
-            if ($session->provider_service === 'stream') {
-                $libraryId = $intent['library_id'] ?? null;
-                if ($libraryId && empty($asset->bunny_library_id)) {
-                    $asset->forceFill(['bunny_library_id' => $libraryId])->save();
-                }
-            }
-
+                'cdn_url' => $cdnUrl,
+            ])->save();
             $asset->refresh();
         }
 
         return $asset;
-    }
-
-    /**
-     * Ensure a Bunny Stream video object exists for this session before its
-     * bytes are uploaded. Bunny's upload endpoint (PUT /videos/{guid}) only
-     * accepts an existing video; uploading to a never-created guid returns 404.
-     *
-     * We reuse the deterministic guid already reserved on the asset so that a
-     * retried finalize targets the same video and never creates duplicates.
-     */
-    private function ensureStreamVideoExists(MediaUploadSession $session): void
-    {
-        $asset = $session->asset;
-        if (! $asset) {
-            return;
-        }
-
-        $stream = app(BunnyStreamInterface::class);
-        $guid = $asset->external_id ?: (string) Str::uuid();
-        $title = $session->file_name ?: ($asset->title ?? 'Untitled Video');
-
-        // The asset may already carry a reserved guid (set when the asset record
-        // was created in BunnyIntegrationService::createUploadIntent) that has NOT
-        // yet been turned into a real Bunny video object. Bunny's byte-upload
-        // endpoint (PUT /videos/{guid}) only accepts an existing video, so a guid
-        // that was reserved but never created makes the upload PUT fail with
-        // 404 "Video Not Found". Always verify the video exists on Bunny and
-        // create it (with this exact guid) when it does not, regardless of whether
-        // external_id was pre-reserved.
-        $exists = false;
-        try {
-            // A 404 here means the video was never created (or was deleted).
-            $stream->getVideoStatus($guid);
-            $exists = true;
-        } catch (\Throwable) {
-            $exists = false;
-        }
-
-        if (! $exists) {
-            $created = $stream->createVideo($title, [
-                'video_id' => $guid,
-                'collection_id' => $asset->metadata['collection'] ?? null,
-            ]);
-            $guid = $created['video_id'] ?? $created['guid'] ?? $guid;
-        }
-
-        // Persist the (possibly freshly created) guid back onto the asset so the
-        // upload URL built later by createUploadIntent() targets the right video.
-        if ($asset->external_id !== $guid || $asset->bunny_video_id !== $guid) {
-            $asset->forceFill([
-                'external_id' => $guid,
-                'bunny_video_id' => $guid,
-            ])->save();
-            $session->load('asset');
-        }
     }
 
     /* ------------------------------------------------------------------ *
@@ -738,15 +547,9 @@ class ResumableUploadService
 
         $session->chunks()->delete();
 
-        // Abandoned uploads leave an empty placeholder asset behind. Load the
-        // asset outside the tenant scope — the GC command runs without tenant
-        // context, and the scope would call currentTenant() and crash.
-        $asset = MediaAsset::query()
-            ->withoutGlobalScope(TenantScope::class)
-            ->find($session->media_asset_id);
-
-        if (! $session->completed && $asset) {
-            $asset->delete();
+        // Abandoned uploads leave an empty placeholder asset behind.
+        if (! $session->completed && $session->asset) {
+            $session->asset->delete();
         }
 
         $session->delete();
@@ -755,33 +558,20 @@ class ResumableUploadService
     private function purgeOrphanDirectories(): void
     {
         $root = Storage::disk('uploads')->path('');
+        if (! is_dir($root)) {
+            return;
+        }
 
-        // The web server (www-data) creates this tree with restricted
-        // permissions; a CLI scheduler without read access must not crash
-        // the whole run. Skip anything we cannot enumerate.
-        try {
-            if (! is_dir($root)) {
-                return;
-            }
-
-            foreach (File::directories($root) as $tenantDir) {
-                foreach (File::directories($tenantDir) as $sessionDir) {
-                    $sessionId = (int) basename($sessionDir);
-                    if ($sessionId > 0 && ! MediaUploadSession::query()
-                        ->withoutGlobalScope(TenantScope::class)
-                        ->where('id', $sessionId)
-                        ->exists()) {
-                        File::deleteDirectory($sessionDir);
-                    }
+        foreach (File::directories($root) as $tenantDir) {
+            foreach (File::directories($tenantDir) as $sessionDir) {
+                $sessionId = (int) basename($sessionDir);
+                if ($sessionId > 0 && ! MediaUploadSession::query()
+                    ->withoutGlobalScope(TenantScope::class)
+                    ->where('id', $sessionId)
+                    ->exists()) {
+                    File::deleteDirectory($sessionDir);
                 }
             }
-        } catch (\Throwable $e) {
-            // Best-effort cleanup: report and continue so scheduled runs
-            // never fail because the uploads tree is unreadable.
-            Log::warning('media:gc orphan-directory scan skipped', [
-                'root' => $root,
-                'error' => $e->getMessage(),
-            ]);
         }
     }
 
@@ -874,16 +664,6 @@ class ResumableUploadService
     private function assembledPath(MediaUploadSession $session): string
     {
         return Storage::disk('uploads')->path("{$session->tenant_id}/{$session->id}/assembled");
-    }
-
-    /**
-     * Public accessor for the assembled file path. The queue worker (which runs
-     * as a different user) reads this file to push it to Bunny; it must not
-     * re-assemble because it lacks write permission on the session directory.
-     */
-    public function getAssembledPath(MediaUploadSession $session): string
-    {
-        return $this->assembledPath($session);
     }
 
     private function parseChunkIndex(?string $value): int

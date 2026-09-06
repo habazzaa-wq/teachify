@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "@/stores/workspace.store";
+import { useUiStore } from "@/stores/ui.store";
+import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { generateThemeColors } from "@/lib/color";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
 import { WorkspaceRightInspector } from "./WorkspaceRightInspector";
@@ -17,8 +21,44 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
-  // لوحة تحكم المدرس بتستخدم ألوان المنصة العالمية (platformBranding) اللي
-  // بتطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
+  const { primaryColor, secondaryColor, isActive, setColors } = useDashboardThemeStore();
+  const theme = useUiStore((s) => s.theme);
+  const { tenant } = useActiveTenant();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Auto-apply the tenant's control-panel primary/secondary colors the first
+  // time they're available, unless the user already customized them.
+  useEffect(() => {
+    const branding = tenant?.branding;
+    const primary = branding?.primary_color;
+    const secondary = branding?.secondary_color;
+    if (primary && secondary && !isActive) {
+      setColors(primary, secondary);
+    }
+  }, [tenant, isActive, setColors]);
+
+  // Inject the tenant-themed palette (primary = navbar/accent, secondary =
+  // sidebar/content) across the whole control panel, with dark-mode support.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const styleId = "dash-custom-theme";
+    let styleTag = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!isActive) {
+      if (styleTag) styleTag.remove();
+      return;
+    }
+    const colors = generateThemeColors(primaryColor, secondaryColor, theme === "dark");
+    if (!styleTag) {
+      styleTag = document.createElement("style");
+      styleTag.id = styleId;
+      document.head.appendChild(styleTag);
+    }
+    const vars = Object.entries(colors)
+      .map(([k, v]) => `${k}: ${v};`)
+      .join("");
+    styleTag.textContent = `.tenant-theme { ${vars} }`;
+  }, [primaryColor, secondaryColor, isActive, theme]);
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);
@@ -35,7 +75,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
-    <div className="tenant-theme flex h-screen flex-col bg-studio-bg text-studio-fg overflow-hidden">
+    <div ref={rootRef} className="tenant-theme flex h-screen flex-col bg-studio-bg text-studio-fg overflow-hidden">
       {/* Header */}
       <WorkspaceHeader />
 
@@ -53,13 +93,13 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
           aria-label="مساحة العمل الرئيسية"
         >
           <div className="flex-1 overflow-y-auto studio-scrollbar">
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="wait">
               <motion.div
                 key="workspace-content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8"
               >
                 {children}

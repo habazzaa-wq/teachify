@@ -21,13 +21,11 @@ import {
   AppTabsTrigger,
   AppTabsContent,
   AppLoadingState,
-  AppRadioGroup,
-  AppRadioGroupItem,
 } from "@/components/ui";
 import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
 import { mediaLibraryService } from "@/features/media-library/services";
 import { useHeroSettings, useUpdateHeroSettings } from "@/features/homepage/hero/hooks";
-import { DEFAULT_HERO, type HeroSettings, type HeroBgStyle } from "@/features/homepage/hero/types";
+import { DEFAULT_HERO, type HeroSettings } from "@/features/homepage/hero/types";
 import { HeroSection } from "@/components/home/HeroSection";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
@@ -201,54 +199,6 @@ export default function HomepageHeroPage() {
                       </div>
                     </div>
                   </div>
-                </AppCardContent>
-              </AppCard>
-
-              <AppCard>
-                <AppCardHeader>
-                  <AppCardTitle>شكل الخلفية</AppCardTitle>
-                  <AppCardDescription>
-                    اختر نوع الحروف التي تظهر في خلفية البطاقة التعريفية
-                  </AppCardDescription>
-                </AppCardHeader>
-                <AppCardContent>
-                  <AppRadioGroup
-                    value={form.bgStyle}
-                    onValueChange={(v) => setForm({ ...form, bgStyle: v as HeroBgStyle })}
-                    className="grid grid-cols-3 gap-3"
-                  >
-                    {[
-                      { value: "math", label: "رموز رياضية", preview: "π ∑ √ ∞ Δ θ" },
-                      { value: "arabic", label: "حروف عربية", preview: "أ ب ت ث ج ح" },
-                      { value: "english", label: "حروف إنجليزية", preview: "A B C D E F" },
-                    ].map((option) => (
-                      <label
-                        key={option.value}
-                        className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all hover:bg-accent ${
-                          form.bgStyle === option.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border"
-                        }`}
-                      >
-                        <AppRadioGroupItem value={option.value} />
-                        <span className="text-sm font-medium">{option.label}</span>
-                        <span
-                          className="text-lg font-bold text-muted-foreground"
-                          style={{
-                            fontFamily:
-                              option.value === "arabic"
-                                ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif"
-                                : option.value === "english"
-                                ? "'Inter', 'Segoe UI', sans-serif"
-                                : "'Georgia', serif",
-                            direction: option.value === "arabic" ? "rtl" : "ltr",
-                          }}
-                        >
-                          {option.preview}
-                        </span>
-                      </label>
-                    ))}
-                  </AppRadioGroup>
                 </AppCardContent>
               </AppCard>
 

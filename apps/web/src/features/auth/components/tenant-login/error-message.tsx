@@ -104,7 +104,7 @@ const ErrorMessage = memo(function ErrorMessage({
   const Icon = c.icon;
 
   return (
-    <AnimatePresence mode="popLayout">
+    <AnimatePresence mode="wait">
       <motion.div
         key={kind + (message ?? "")}
         initial={{ opacity: 0, y: -8, height: 0 }}

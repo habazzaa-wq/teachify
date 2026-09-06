@@ -90,8 +90,7 @@ class StudentJourneyDashboardTest extends TestCase
         $course = $this->createPublicPaidCourse($tenant, $admin, 'Owner Course', 250);
 
         $owner = $this->memberWithRole($tenant, 'tenant_owner');
-        $studentRole = Role::where('tenant_id', $tenant->id)->where('slug', 'student')->firstOrFail();
-        $owner->roles()->attach($studentRole->id, ['tenant_id' => $tenant->id]);
+        $this->assertNotContains('student', $owner->roles->pluck('slug')->all());
 
         Wallet::create([
             'tenant_id' => $tenant->id,

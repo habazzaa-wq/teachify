@@ -19,7 +19,6 @@ import { CourseStudioCreateSectionDialog } from "./CourseStudioCreateSectionDial
 import { CourseStudioEditSectionDialog } from "./CourseStudioEditSectionDialog";
 import { CourseStudioContentPicker } from "./CourseStudioContentPicker";
 import { CourseStudioEditContentDialog } from "./CourseStudioEditContentDialog";
-import { CourseStudioContentDetailsDialog } from "./CourseStudioContentDetailsDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
 import { useSectionsList, useCreateSectionAction, useUpdateSectionAction, useDeleteSectionAction, usePublishSectionAction, useArchiveSectionAction, useDuplicateSectionAction, useRestoreSectionAction, useReorderSectionsAction, useMoveSectionAction, useSelectAndScrollSection } from "../hooks/useSections";
@@ -100,14 +99,6 @@ function CourseStudio({
   const isMobile = useIsMobile();
   const store = useCourseStudioStore();
   const [editContentItem, setEditContentItem] = useState<ContentItem | null>(null);
-
-  const [pendingContent, setPendingContent] = useState<{
-    kind: "media" | "exam";
-    mediaId?: number;
-    examId?: string;
-    contentType?: ContentItemType;
-    defaultTitle: string;
-  } | null>(null);
 
   const { data: lecturesData, isLoading: lecturesLoading } = useLectures(courseId ?? null);
   const lectures: CourseModule[] = (lecturesData?.data ?? []).sort(
@@ -534,6 +525,7 @@ function CourseStudio({
           title: `${CONTENT_TYPE_CONFIG[type].label} جديد`,
           lesson_type: type === "external_link" ? "external" as any : type === "resource" ? "text" as any : type as any,
           sort_order: nextOrder + 1,
+          status: "draft",
         },
       }).then(() => {
         toast.success(`تم إنشاء ${CONTENT_TYPE_CONFIG[type].label} بنجاح`);
@@ -547,79 +539,64 @@ function CourseStudio({
   );
 
   const handleExamPicked = useCallback(
-    (result: { id: string; ids: string[]; title: string }) => {
+    async (result: { id: string; ids: string[]; title: string }) => {
       if (!courseId || !store.selectedSectionId) return;
-      store.closeExamPicker();
-      setPendingContent({
-        kind: "exam",
-        examId: result.id,
-        defaultTitle: result.title,
-      });
+      const sectionId = store.selectedSectionId;
+      const examId = result.id;
+      try {
+        await createLesson.mutateAsync({
+          courseId,
+          sectionId,
+          data: {
+            title: result.title,
+            lesson_type: "exam" as any,
+            exam_id: Number(examId),
+            sort_order: contentItems.length + 1,
+            status: "draft",
+          },
+        });
+        toast.success("تم ربط الاختبار بنجاح");
+      } catch {
+        toast.error("فشل ربط الاختبار");
+      } finally {
+        store.closeExamPicker();
+      }
     },
-    [courseId, store.selectedSectionId, store.closeExamPicker],
+    [courseId, store.selectedSectionId, store.closeExamPicker, contentItems.length, createLesson],
   );
 
   const handleMediaSelected = useCallback(
-    (result: { id: number; ids: number[]; title?: string | null }) => {
+    async (result: { id: number; ids: number[] }) => {
       if (!courseId || !store.selectedSectionId) return;
-      const contentType = store.mediaPickerContentType ?? "video";
-      const typeLabel = CONTENT_TYPE_CONFIG[contentType]?.label ?? "الوسائط";
-      store.closeMediaPicker();
-      setPendingContent({
-        kind: "media",
-        mediaId: result.id,
-        contentType,
-        defaultTitle: result.title || typeLabel,
-      });
-    },
-    [courseId, store.selectedSectionId, store.mediaPickerContentType, store.closeMediaPicker],
-  );
-
-  const handleCreateContent = useCallback(
-    async (title: string, description: string) => {
-      if (!courseId || !store.selectedSectionId || !pendingContent) return;
       const sectionId = store.selectedSectionId;
-      const nextOrder = contentItems.length + 1;
+      const mediaAssetId = result.id;
+      const contentType = store.mediaPickerContentType;
+      const lessonType = (CONTENT_TO_LESSON_TYPE[contentType ?? "video"] ?? "video") as any;
+      const typeLabel = CONTENT_TYPE_CONFIG[contentType ?? "video"]?.label ?? "الوسائط";
       try {
-        if (pendingContent.kind === "media" && pendingContent.mediaId != null) {
-          const contentType = pendingContent.contentType ?? "video";
-          const lessonType = (CONTENT_TO_LESSON_TYPE[contentType] ?? "video") as any;
-          const lesson = await createLesson.mutateAsync({
-            courseId,
-            sectionId,
-            data: {
-              title,
-              lesson_type: lessonType,
-              description: description || null,
-              sort_order: nextOrder,
-            },
-          });
-          if (contentType === "video") {
-            await attachVideo.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId: pendingContent.mediaId });
-          } else {
-            await attachFile.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId: pendingContent.mediaId, title });
-          }
-          toast.success(`تم إضافة "${title}" بنجاح`);
-        } else if (pendingContent.examId) {
-          await createLesson.mutateAsync({
-            courseId,
-            sectionId,
-            data: {
-              title,
-              lesson_type: "exam" as any,
-              exam_id: Number(pendingContent.examId),
-              description: description || null,
-              sort_order: nextOrder,
-            },
-          });
-          toast.success(`تم ربط "${title}" بنجاح`);
+        const lesson = await createLesson.mutateAsync({
+          courseId,
+          sectionId,
+          data: {
+            title: typeLabel,
+            lesson_type: lessonType,
+            sort_order: contentItems.length + 1,
+            status: "draft",
+          },
+        });
+        if (contentType === "video") {
+          await attachVideo.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId });
+        } else {
+          await attachFile.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId, title: typeLabel });
         }
-        setPendingContent(null);
+        toast.success(`تم ربط ${typeLabel} بنجاح`);
       } catch {
-        toast.error("فشل إضافة المحتوى");
+        toast.error("فشل ربط الملف");
+      } finally {
+        store.closeMediaPicker();
       }
     },
-    [courseId, store.selectedSectionId, pendingContent, contentItems.length, createLesson, attachVideo, attachFile],
+    [courseId, store.selectedSectionId, store.mediaPickerContentType, store.closeMediaPicker, contentItems.length, createLesson, attachVideo, attachFile],
   );
 
   /* Content action handlers — reuse existing lesson mutations directly */
@@ -1074,15 +1051,6 @@ function CourseStudio({
         onClose={() => setEditContentItem(null)}
         onSave={handleSaveContentTitle}
         saving={updateLesson.isPending}
-      />
-
-      <CourseStudioContentDetailsDialog
-        open={!!pendingContent}
-        type={pendingContent?.contentType ?? (pendingContent?.kind === "exam" ? "exam" : null)}
-        defaultTitle={pendingContent?.defaultTitle}
-        onClose={() => setPendingContent(null)}
-        onSave={handleCreateContent}
-        saving={createLesson.isPending || attachVideo.isPending || attachFile.isPending}
       />
     </motion.div>
   );

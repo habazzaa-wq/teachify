@@ -3,22 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\CourseInstructor;
 use App\Models\MediaAsset;
 use App\Models\MediaUploadSession;
 use App\Models\Permission;
-use App\Models\PlatformBunnySetting;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Bunny\Contracts\BunnyStreamInterface;
 use App\Services\Media\BunnyStreamService;
 use App\Services\Media\MediaManager;
 use App\Services\Media\Providers\BunnyStreamProvider;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -248,125 +246,6 @@ class BunnyStreamFoundationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_stream_provider_falls_back_to_platform_settings_when_tenant_config_lacks_stream_library(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
-        $this->createPlatformStreamSettings();
-        $this->createStreamIntegrationWithoutCredentials($tenant);
-
-        $asset = MediaAsset::withoutGlobalScopes()->create([
-            'tenant_id' => $tenant->id,
-            'provider' => 'bunny',
-            'provider_service' => 'stream',
-            'type' => 'video',
-            'status' => 'pending',
-            'visibility' => 'private',
-            'external_id' => 'video-fallback-1',
-            'mime_type' => 'video/mp4',
-            'metadata' => [],
-        ]);
-
-        $session = MediaUploadSession::create([
-            'tenant_id' => $tenant->id,
-            'media_asset_id' => $asset->id,
-            'provider' => 'bunny',
-            'provider_service' => 'stream',
-            'status' => 'draft',
-            'expires_at' => now()->addMinutes(30),
-            'metadata' => [],
-        ]);
-
-        $intent = app(MediaManager::class)
-            ->providerFor('bunny', 'stream')
-            ->createUploadIntent($session);
-
-        $this->assertSame('stream', $intent['provider_service']);
-        $this->assertStringContainsString('/library/platform-lib-1/videos/', $intent['upload_url']);
-        $this->assertSame('platform-stream-key', $intent['headers']['AccessKey']);
-    }
-
-    public function test_stream_provider_playback_data_falls_back_to_pull_zone_when_api_unavailable(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $this->bindTenant($tenant);
-        $this->createPlatformStreamSettings();
-        $this->createStreamIntegrationWithoutCredentials($tenant);
-
-        $this->mock(BunnyStreamInterface::class)
-            ->shouldReceive('getVideoStatus')
-            ->andThrow(new \RuntimeException('stream api unavailable'));
-
-        $asset = MediaAsset::withoutGlobalScopes()->create([
-            'tenant_id' => $tenant->id,
-            'provider' => 'bunny',
-            'provider_service' => 'stream',
-            'type' => 'video',
-            'status' => 'ready',
-            'visibility' => 'private',
-            'external_id' => 'video-playback-1',
-            'metadata' => [],
-        ]);
-
-        $data = app(MediaManager::class)
-            ->providerFor('bunny', 'stream')
-            ->getPlaybackData($asset);
-
-        $this->assertSame('stream', $data['provider_service']);
-        $this->assertSame('video-playback-1', $data['video_id']);
-        $this->assertSame('https://platform.example.test/video-playback-1/playlist.m3u8', $data['playback_url']);
-    }
-
-    public function test_create_video_sends_json_body_with_application_json_content_type(): void
-    {
-        $this->createPlatformStreamSettings();
-
-        Http::fake();
-
-        app(\App\Services\Bunny\BunnyStreamService::class)->createVideo('My Lesson');
-
-        $recorded = Http::recorded();
-
-        $this->assertCount(1, $recorded);
-        [$request] = $recorded[0];
-
-        $this->assertSame('POST', $request->method());
-        $this->assertStringContainsString('/library/platform-lib-1/videos', $request->url());
-        $this->assertSame('application/json', $request->header('Content-Type')[0]);
-        $this->assertSame('My Lesson', $request['title']);
-    }
-
-    private function createPlatformStreamSettings(): void
-    {
-        PlatformBunnySetting::create([
-            'storage_zone_name' => 'platform-zone',
-            'storage_zone_password' => 'storage-password',
-            'storage_zone_region' => 'de',
-            'cdn_hostname' => 'platform.example.test',
-            'library_id' => 'platform-lib-1',
-            'api_key' => 'platform-api-key',
-            'stream_api_key' => 'platform-stream-key',
-            'enabled' => true,
-            'connection_status' => 'connected',
-            'enable_stream' => true,
-        ]);
-    }
-
-    private function createStreamIntegrationWithoutCredentials(Tenant $tenant): void
-    {
-        TenantIntegration::create([
-            'tenant_id' => $tenant->id,
-            'provider' => 'bunny',
-            'service' => 'stream',
-            'status' => 'active',
-            'config' => [
-                'metadata' => ['region' => 'de'],
-                'collection' => 'tenant-'.$tenant->id,
-                'library_strategy' => 'platform',
-            ],
-        ]);
-    }
-
     private function createBunnyStreamIntegration(Tenant $tenant, string $secret = 'test-secret'): void
     {
         TenantIntegration::create([
@@ -421,7 +300,7 @@ class BunnyStreamFoundationTest extends TestCase
     }
 
     /**
-     * @param  array<string, mixed>  $overrides
+     * @param array<string, mixed> $overrides
      */
     private function createCourse(Tenant $tenant, array $overrides = []): Course
     {
@@ -446,7 +325,7 @@ class BunnyStreamFoundationTest extends TestCase
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * @param array<string, mixed> $payload
      * @return array<string, string>
      */
     private function webhookHeaders(array $payload, string $secret): array

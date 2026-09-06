@@ -24,8 +24,6 @@ import {
   BadgePercent,
   Signal,
   MapPin,
-  Send,
-  Check,
 } from "lucide-react";
 import {
   AppDropdownMenu,
@@ -48,7 +46,6 @@ interface CourseBlockProps {
   course: Course;
   index?: number;
   onEdit?: (course: Course) => void;
-  onPublish?: (course: Course) => void;
   onDuplicate?: (course: Course) => void;
   onArchive?: (course: Course) => void;
   onRestore?: (course: Course) => void;
@@ -56,8 +53,6 @@ interface CourseBlockProps {
   onToggleFeature?: (course: Course) => void;
   onTogglePin?: (courseId: string) => void;
   isPinned?: boolean;
-  selected?: boolean;
-  onToggleSelect?: (course: Course) => void;
 }
 
 const languageLabels: Record<string, string> = {
@@ -110,7 +105,6 @@ function CourseBlock({
   course,
   index = 0,
   onEdit,
-  onPublish,
   onDuplicate,
   onArchive,
   onRestore,
@@ -118,8 +112,6 @@ function CourseBlock({
   onToggleFeature,
   onTogglePin,
   isPinned,
-  selected,
-  onToggleSelect,
 }: CourseBlockProps) {
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -131,6 +123,7 @@ function CourseBlock({
   const hasCover = course.coverImage || course.thumbnail;
   const gradient = difficultyGradients[course.difficulty] ?? difficultyGradients.all_levels;
   const completion = useMemo(() => getCompletionPercent(course), [course]);
+  const contentCount = useMemo(() => getContentCount(course), [course]);
 
   const revenueDisplay = useMemo(() => {
     if (course.pricingType === "free") return "مجاني";
@@ -169,7 +162,7 @@ function CourseBlock({
       role="button"
       tabIndex={0}
       aria-label={`فتح ${course.title}`}
-      className="group h-full cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tenant-ring focus-visible:ring-offset-2 focus-visible:ring-offset-tenant-bg"
+      className="group cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tenant-ring focus-visible:ring-offset-2 focus-visible:ring-offset-tenant-bg"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       whileHover={{
@@ -177,26 +170,13 @@ function CourseBlock({
         transition: { type: "spring", stiffness: 200, damping: 20 },
       }}
     >
-      <div
-        className={cn(
-          "flex h-full flex-col overflow-hidden rounded-2xl border bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70",
-          selected
-            ? "border-tenant-accent/60 ring-2 ring-tenant-accent/60 ring-offset-2 ring-offset-tenant-bg"
-            : "border-tenant-border/40",
-        )}
-      >
+      <div className="overflow-hidden rounded-2xl border border-tenant-border/40 bg-tenant-surface shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:shadow-tenant-accent/5 group-hover:border-tenant-border/70">
         {/* Cover */}
         <div className="relative overflow-hidden bg-gradient-to-br from-tenant-soft to-tenant-surface">
           <div
             className={cn(
-              "pointer-events-none absolute inset-0 bg-gradient-to-br",
-              gradient,
-            )}
-          />
-          <div
-            className={cn(
               "relative overflow-hidden",
-              "aspect-[16/10]",
+              "aspect-[16/10] sm:aspect-[16/9]",
             )}
           >
             {hasCover ? (
@@ -233,39 +213,8 @@ function CourseBlock({
               </div>
             )}
 
-            {/* Selection checkbox */}
-            {onToggleSelect && (
-              <div className="absolute start-3 top-3 z-30">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleSelect(course);
-                  }}
-                  aria-label={selected ? "إلغاء التحديد" : "تحديد"}
-                  className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-xl border shadow-sm backdrop-blur-xl transition-all duration-200",
-                    selected
-                      ? "border-tenant-accent bg-tenant-accent text-tenant-accent-fg"
-                      : "border-tenant-border/50 bg-tenant-surface/80 text-tenant-fg-muted/50 hover:border-tenant-accent/40 hover:text-tenant-accent",
-                  )}
-                >
-                  {selected ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="h-2.5 w-2.5 rounded-[3px] border border-current opacity-70" />
-                  )}
-                </button>
-              </div>
-            )}
-
             {/* Badges */}
-            <div
-              className={cn(
-                "absolute start-3 z-10 flex flex-wrap gap-1.5",
-                onToggleSelect ? "top-14" : "top-3",
-              )}
-            >
+            <div className="absolute start-3 top-3 z-10 flex flex-wrap gap-1.5">
               {course.featured && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -373,17 +322,6 @@ function CourseBlock({
                           <Copy className="ms-2 h-4 w-4" />
                           نسخ
                         </AppDropdownMenuItem>
-                        {course.status !== "published" && onPublish && (
-                          <AppDropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPublish(course);
-                            }}
-                          >
-                            <Send className="ms-2 h-4 w-4" />
-                            نشر
-                          </AppDropdownMenuItem>
-                        )}
                         {onToggleFeature && (
                           <AppDropdownMenuItem
                             onClick={(e) => {
@@ -439,54 +377,50 @@ function CourseBlock({
               </AppTooltipProvider>
             </div>
           </div>
-        </div>
 
-        {/* Details */}
-        <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
-          {/* Title block */}
-          <div className="space-y-2">
+          {/* Info overlay at bottom of cover */}
+          <div className="absolute bottom-0 start-0 end-0 z-10 p-4 pt-12 bg-gradient-to-t from-tenant-surface via-tenant-surface/80 to-transparent">
             {course.category && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-tenant-soft/80 px-2.5 py-0.5 text-[10px] font-medium text-tenant-fg-muted border border-tenant-border/40">
+              <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-tenant-soft/80 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-medium text-tenant-fg-muted border border-tenant-border/40 shadow-sm">
                 {course.category.name}
               </span>
             )}
-            <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-tenant-fg transition-colors duration-300 group-hover:text-tenant-accent">
+            <h3 className="line-clamp-2 text-base font-bold leading-snug text-tenant-fg transition-colors duration-300 group-hover:text-tenant-accent">
               {course.title}
             </h3>
-          </div>
-
-          {/* Instructor + date */}
-          <div className="flex items-center justify-between gap-2">
-            {course.instructor ? (
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[9px] font-medium text-tenant-accent">
-                  {course.instructor.avatar ? (
-                    <img
-                      src={course.instructor.avatar}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    course.instructor.name.charAt(0)
-                  )}
+            <div className="mt-1.5 flex items-center justify-between">
+              {course.instructor ? (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[8px] font-medium text-tenant-accent">
+                    {course.instructor.avatar ? (
+                      <img
+                        src={course.instructor.avatar}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      course.instructor.name.charAt(0)
+                    )}
+                  </div>
+                  <span className="truncate text-[11px] text-tenant-fg-muted/70">
+                    {course.instructor.name}
+                  </span>
                 </div>
-                <span className="truncate text-xs font-medium text-tenant-fg-muted/70">
-                  {course.instructor.name}
+              ) : (
+                <span className="text-[11px] text-tenant-fg-muted/30">
+                  بدون مدرب
                 </span>
-              </div>
-            ) : (
-              <span className="text-xs text-tenant-fg-muted/30">
-                بدون مدرب
+              )}
+              <span className="flex items-center gap-1 text-[10px] text-tenant-fg-muted/40">
+                <Clock className="h-3 w-3" />
+                {formatDate(course.updatedAt)}
               </span>
-            )}
-            <span className="flex shrink-0 items-center gap-1 text-[10px] text-tenant-fg-muted/40">
-              <Clock className="h-3 w-3" />
-              {formatDate(course.updatedAt)}
-            </span>
+            </div>
           </div>
+        </div>
 
-          <div className="border-t border-dashed border-tenant-border/30" />
-
+        {/* Details */}
+        <div className="px-4 pb-4 pt-2 space-y-2.5">
           {/* Meta pills */}
           <div className="flex flex-wrap items-center gap-1.5">
             {visibilityConfig && (
@@ -574,25 +508,23 @@ function CourseBlock({
           )}
 
           {/* Price/Discount row */}
-          <div className="mt-auto pt-1">
-            {course.pricingType !== "free" && course.price != null && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-tenant-fg">
-                  {formatNumber(course.price)} {course.currency ?? "ر.س"}
-                </span>
-                {hasDiscount && course.discountPrice != null && (
-                  <span className="text-[11px] text-tenant-fg-muted/50 line-through">
-                    {formatNumber(course.discountPrice)} {course.currency ?? "ر.س"}
-                  </span>
-                )}
-              </div>
-            )}
-            {course.pricingType === "free" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                مجاني
+          {course.pricingType !== "free" && course.price != null && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <span className="text-sm font-bold text-tenant-fg">
+                {formatNumber(course.price)} {course.currency ?? "ر.س"}
               </span>
-            )}
-          </div>
+              {hasDiscount && course.discountPrice != null && (
+                <span className="text-[11px] text-tenant-fg-muted/50 line-through">
+                  {formatNumber(course.discountPrice)} {course.currency ?? "ر.س"}
+                </span>
+              )}
+            </div>
+          )}
+          {course.pricingType === "free" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              مجاني
+            </span>
+          )}
         </div>
       </div>
     </motion.div>

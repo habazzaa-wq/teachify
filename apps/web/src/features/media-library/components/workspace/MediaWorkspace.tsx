@@ -8,11 +8,9 @@ import {
   PanelRightClose,
   PanelRightOpen,
   GripVertical,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
-import { useMediaQuery } from "@/features/community/hooks/useMediaQuery";
 import { useRenameAsset, useMoveAsset, useDeleteAsset, useBulkDelete, useBulkMove, useToggleFavorite, useTogglePin, useArchiveAsset, useDuplicateAsset } from "../../hooks";
 import { FolderExplorer } from "./FolderExplorer";
 import { AssetWorkspace } from "./AssetWorkspace";
@@ -92,7 +90,7 @@ function ResizablePanel({
       <div
         onMouseDown={handleMouseDown}
         className={cn(
-          "absolute top-0 z-20 hidden w-1 cursor-col-resize items-center justify-center lg:flex",
+          "absolute top-0 z-20 flex h-full w-1 cursor-col-resize items-center justify-center",
           "bg-border/50 opacity-0 transition-opacity hover:bg-accent hover:opacity-100",
           side === "left" ? "end-0" : "start-0",
         )}
@@ -104,7 +102,6 @@ function ResizablePanel({
 }
 
 function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const {
     leftPanelOpen,
     leftPanelWidth,
@@ -119,10 +116,6 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
     selectedIds,
     clearSelection,
   } = useMediaWorkspaceStore();
-
-  // On mobile the side panels become slide-over drawers. The folders drawer
-  // uses its own state so it never covers the content by default.
-  const [mobileFoldersOpen, setMobileFoldersOpen] = useState(false);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [, setCreateFolderOpen] = useState(false);
@@ -173,18 +166,11 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
 
   const handleFolderId = typeof selectedFolderId === "number" ? selectedFolderId : null;
 
-  const toggleFolders = useCallback(() => {
-    if (isDesktop) setLeftPanelOpen(!leftPanelOpen);
-    else setMobileFoldersOpen((v) => !v);
-  }, [isDesktop, leftPanelOpen, setLeftPanelOpen]);
-
-  const toggleRight = useCallback(() => setRightPanelOpen(!rightPanelOpen), [setRightPanelOpen, rightPanelOpen]);
-
   return (
     <div className={cn("flex h-full overflow-hidden rounded-xl border bg-background", className)}>
-      {/* Desktop left panel */}
-      {isDesktop && leftPanelOpen && (
-        <AnimatePresence initial={false}>
+      {/* Left Panel */}
+      <AnimatePresence initial={false}>
+        {leftPanelOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: leftPanelWidth, opacity: 1 }}
@@ -202,15 +188,15 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
               <FolderExplorer />
             </ResizablePanel>
           </motion.div>
-        </AnimatePresence>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* Center panel */}
+      {/* Center Panel */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Desktop panel toggle buttons */}
-        <div className="absolute start-2 top-2 z-20 hidden flex-col gap-1 lg:flex">
+        {/* Panel toggle buttons */}
+        <div className="absolute start-2 top-2 z-20 flex flex-col gap-1">
           <button
-            onClick={toggleFolders}
+            onClick={() => setLeftPanelOpen(!leftPanelOpen)}
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors",
               "bg-background/80 backdrop-blur-sm hover:bg-accent hover:text-foreground",
@@ -220,9 +206,9 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
             {leftPanelOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
           </button>
         </div>
-        <div className="absolute end-2 top-2 z-20 hidden flex-col gap-1 lg:flex">
+        <div className="absolute end-2 top-2 z-20 flex flex-col gap-1">
           <button
-            onClick={toggleRight}
+            onClick={() => setRightPanelOpen(!rightPanelOpen)}
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors",
               "bg-background/80 backdrop-blur-sm hover:bg-accent hover:text-foreground",
@@ -242,13 +228,12 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
           onDownloadAsset={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
           onBulkDelete={() => setDeleteTarget("bulk")}
           onBulkMove={() => setMoveTarget("bulk")}
-          onOpenFolders={toggleFolders}
         />
       </div>
 
-      {/* Desktop right panel */}
-      {isDesktop && rightPanelOpen && (
-        <AnimatePresence initial={false}>
+      {/* Right Panel */}
+      <AnimatePresence initial={false}>
+        {rightPanelOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: rightPanelWidth, opacity: 1 }}
@@ -277,86 +262,6 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
               />
             </ResizablePanel>
           </motion.div>
-        </AnimatePresence>
-      )}
-
-      {/* Mobile/tablet folders drawer */}
-      <AnimatePresence>
-        {!isDesktop && mobileFoldersOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-black/50"
-              onClick={() => setMobileFoldersOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.aside
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 end-0 z-50 flex w-[85%] max-w-[340px] flex-col bg-background shadow-2xl"
-              role="dialog"
-              aria-modal="true"
-              aria-label="المجلدات"
-            >
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <span className="text-sm font-semibold">المكتبة</span>
-                <button
-                  onClick={() => setMobileFoldersOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1">
-                <FolderExplorer />
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Mobile/tablet inspector drawer */}
-      <AnimatePresence>
-        {!isDesktop && rightPanelOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-black/50"
-              onClick={() => setRightPanelOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 start-0 z-50 flex w-[88%] max-w-[400px] flex-col bg-background shadow-2xl"
-              role="dialog"
-              aria-modal="true"
-              aria-label="تفاصيل الملف"
-            >
-              <MediaInspector
-                assetId={inspectorAssetId}
-                onClose={() => setRightPanelOpen(false)}
-                onRename={setRenameTarget}
-                onMove={setMoveTarget}
-                onDelete={setDeleteTarget}
-                onArchive={(asset) => archiveAsset.mutate(asset.id)}
-                onDuplicate={(asset) => duplicateAsset.mutate(asset.id)}
-                onDownload={(asset) => { if (asset.cdnUrl) window.open(asset.cdnUrl, "_blank"); }}
-                onFavorite={(asset) => toggleFavorite.mutate(asset.id)}
-                onPin={(asset) => togglePin.mutate(asset.id)}
-              />
-            </motion.aside>
-          </>
         )}
       </AnimatePresence>
 

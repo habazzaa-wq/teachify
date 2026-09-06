@@ -148,10 +148,6 @@ function formatReviewItem(raw: Raw): ResultReviewItem {
           }))
         : undefined,
       correct: typeof content.correct === "string" ? content.correct : undefined,
-      tolerance:
-        typeof content.tolerance === "number" || typeof content.tolerance === "string"
-          ? Number(content.tolerance)
-          : undefined,
     },
     studentAnswer: formatAnswer(raw.studentAnswer),
     correctAnswer: formatAnswer(raw.correctAnswer),
@@ -161,9 +157,6 @@ function formatReviewItem(raw: Raw): ResultReviewItem {
     answered: Boolean(raw.answered),
     status: (raw.status ?? "skipped") as ReviewStatus,
     earnedPoints: Number(raw.earnedPoints ?? 0),
-    questionFormat: raw.questionFormat ?? "text",
-    scanUrl: typeof raw.scanUrl === "string" ? raw.scanUrl : null,
-    contentDocument: raw.contentDocument ?? null,
   };
 }
 

@@ -54,7 +54,6 @@ class AuthController extends Controller
                 'status' => $tenant->status,
                 'domain' => $tenant->getDefaultDomain(),
                 'branding' => $this->getBranding($tenant),
-                'platform_branding' => $this->getPlatformBranding($tenant),
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -143,33 +142,19 @@ class AuthController extends Controller
 
     private function getBranding(Tenant $tenant): array
     {
-        $setting = $tenant->settings()->where('group', 'branding')->first();
-        $values = $setting?->values ?? [];
         $domain = $tenant->getPrimaryDomain();
 
         return [
-            'logo' => $values['logo'] ?? null,
-            'favicon' => $values['favicon'] ?? null,
-            'primary_color' => $values['primary_color'] ?? null,
-            'secondary_color' => $values['secondary_color'] ?? null,
-            'accent_color' => $values['accent_color'] ?? null,
-            'font' => $values['font'] ?? null,
-            'dark_logo' => $values['dark_logo'] ?? null,
-            'light_logo' => $values['light_logo'] ?? null,
+            'logo' => null,
+            'favicon' => null,
+            'primary_color' => null,
+            'secondary_color' => null,
+            'accent_color' => null,
+            'font' => null,
+            'dark_logo' => null,
+            'light_logo' => null,
             'domain' => $domain?->domain ?? $tenant->slug . '.' . config('app.base_domain', 'localhost'),
         ];
-    }
-
-    /**
-     * Platform-level brand colors (the "platform colors" field). Distinct from
-     * `getBranding` (tenant appearance settings) which only apply to the teacher
-     * dashboard and login.
-     *
-     * @return array<string, mixed>
-     */
-    private function getPlatformBranding(Tenant $tenant): array
-    {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
     }
 
     private function getNavigation($roles, $permissions): array

@@ -353,23 +353,6 @@ export function useArchiveQuestion() {
   });
 }
 
-export function useUploadQuestionScan() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, file }: { id: string | number; file: File }) =>
-      examBankService.uploadScan(id, file),
-    onSuccess: () => invalidateAll(qc),
-  });
-}
-
-export function useRemoveQuestionScan() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string | number) => examBankService.removeScan(id),
-    onSuccess: () => invalidateAll(qc),
-  });
-}
-
 export function useBulkQuestionAction() {
   const qc = useQueryClient();
   return useMutation({

@@ -183,10 +183,9 @@ function MediaCardBase({
   onPin,
   onDelete,
 }: MediaCardProps) {
-  const effectiveIsProcessing = asset.type !== "video" && asset.cdnUrl ? false : (asset.isProcessing || asset.status === "processing");
-  const statusConfig = MEDIA_STATUS_CONFIG[effectiveIsProcessing ? "processing" : asset.status] ?? MEDIA_STATUS_CONFIG.pending;
-  const isProcessing = effectiveIsProcessing;
-  const isFailed = !isProcessing && asset.status === "failed";
+  const statusConfig = MEDIA_STATUS_CONFIG[asset.status] ?? MEDIA_STATUS_CONFIG.pending;
+  const isProcessing = asset.isProcessing || asset.status === "processing";
+  const isFailed = asset.status === "failed";
   const hasUsages = asset.usages && asset.usages.length > 0;
 
   const lastClickTime = useRef(0);

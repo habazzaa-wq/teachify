@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v1\Integrations;
 
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
-use App\Models\PlatformBunnySetting;
 use App\Models\TenantIntegration;
 use App\Services\Media\BunnyStreamService;
 use Illuminate\Http\JsonResponse;
@@ -41,39 +40,27 @@ class BunnyWebhookController extends Controller
         $sharedSecret = (string) $request->header('X-Bunny-Webhook-Secret', '');
         $payload = $request->getContent();
 
-        // Collect every configured secret: per-tenant integration secrets and
-        // the platform-wide Bunny signed-url secret (used when streaming is
-        // provided by the platform rather than a tenant integration).
-        $secrets = TenantIntegration::query()
+        $valid = TenantIntegration::query()
             ->where('provider', 'bunny')
             ->where('service', 'stream')
             ->where('tenant_id', $tenantId)
             ->whereIn('status', ['pending', 'active'])
             ->get()
-            ->map(fn (TenantIntegration $integration): string => (string) (($integration->config ?? [])['webhook_secret'] ?? ''))
-            ->filter(fn (string $secret): bool => $secret !== '')
-            ->all();
+            ->contains(function (TenantIntegration $integration) use ($signature, $sharedSecret, $payload): bool {
+                $secret = (string) (($integration->config ?? [])['webhook_secret'] ?? '');
 
-        $platformSecret = (string) (PlatformBunnySetting::active()?->signed_url_secret ?? '');
-        if ($platformSecret !== '') {
-            $secrets[] = $platformSecret;
-        }
+                if ($secret === '') {
+                    return false;
+                }
 
-        // No secret configured anywhere — we cannot authenticate the delivery,
-        // but the asset is identified by an unguessable external_id, so allow it.
-        if ($secrets === []) {
-            return;
-        }
+                if ($sharedSecret !== '' && hash_equals($secret, $sharedSecret)) {
+                    return true;
+                }
 
-        $valid = collect($secrets)->contains(function (string $secret) use ($signature, $sharedSecret, $payload): bool {
-            if ($sharedSecret !== '' && hash_equals($secret, $sharedSecret)) {
-                return true;
-            }
+                $expected = hash_hmac('sha256', $payload, $secret);
 
-            $expected = hash_hmac('sha256', $payload, $secret);
-
-            return $signature !== '' && hash_equals($expected, $signature);
-        });
+                return $signature !== '' && hash_equals($expected, $signature);
+            });
 
         abort_unless($valid, 401, 'Invalid Bunny webhook signature.');
     }

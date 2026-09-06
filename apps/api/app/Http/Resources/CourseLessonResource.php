@@ -27,9 +27,6 @@ class CourseLessonResource extends JsonResource
             'freePreview' => $this->free_preview,
             'downloadable' => $this->downloadable,
             'featured' => $this->featured,
-            'examId' => $this->exam_id ? (string) $this->exam_id : null,
-            'filesCount' => $this->files_count
-                ?? ($this->relationLoaded('files') ? $this->files->count() : $this->files()->count()),
             'commentsEnabled' => $this->comments_enabled,
             'notes' => $this->notes,
             'color' => $this->color,

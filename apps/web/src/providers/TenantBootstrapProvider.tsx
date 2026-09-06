@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   getHostname,
@@ -13,7 +13,6 @@ import { TenantNotFound } from "@/components/system/TenantNotFound";
 import { TenantBootstrapError } from "@/components/system/TenantBootstrapError";
 import { isSuperAdminPath } from "@/constants/routes";
 import { env } from "@/config/env";
-import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
 
 const MAX_RETRIES = 3;
 
@@ -24,7 +23,7 @@ export function TenantBootstrapProvider({
 }: {
   children: React.ReactNode;
   serverHostname?: string;
-  tenantContext?: TenantByDomainResponse | null;
+  tenantContext?: any;
 }) {
   const pathname = usePathname();
   const hostname = getHostname() || serverHostname || "";
@@ -34,30 +33,9 @@ export function TenantBootstrapProvider({
   const bootstrapStatus = useTenantStore((s) => s.bootstrapStatus);
   const setTenantBootstrap = useTenantStore((s) => s.setTenantBootstrap);
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
-  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
   useEffect(() => {
-    const platformOrSuper =
-      platform || isSuperAdmin || pathname === "/tenant-not-found";
-
-    // ألوان المنصة (platformBranding) بتتم إدارتها بالكامل من BrandThemeProvider
-    // (تحميل ذاتي مستقل عن البوتستراب/تسجيل الدخول). هنا بنكتفي ببذرها من سياق
-    // السيرفر (SSR) لو موجودة عشان أول رسمية تكون صح من غير وميض.
-    if (tenantContext?.platformBranding) {
-      setPlatformBranding(tenantContext.platformBranding);
-    }
-
-    // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي ببذر ألوان المنصة.
-    if (platformOrSuper) {
-      setBootstrapStatus("resolved");
-      return;
-    }
-
-    // Already bootstrapped (e.g. via login/me). Never re-clobber the tenant's
-    // branding colors on client-side navigation — doing so resets the
-    // control-panel colors back to defaults and causes them to "change on their
-    // own" between pages.
-    if (useTenantStore.getState().activeTenant) {
+    if (platform || isSuperAdmin || pathname === "/tenant-not-found") {
       setBootstrapStatus("resolved");
       return;
     }
@@ -70,7 +48,6 @@ export function TenantBootstrapProvider({
         domain: tenantContext.domain,
         status: tenantContext.status,
         branding: tenantContext.branding,
-        platformBranding: tenantContext.platformBranding ?? null,
         subdomain: getTenantSubdomain(hostname),
       });
       return;
@@ -116,7 +93,6 @@ export function TenantBootstrapProvider({
                 domain: data.domain,
                 status: data.status,
                 branding: data.branding,
-                platformBranding: data.platformBranding ?? null,
                 subdomain: getTenantSubdomain(hostname),
               });
             } else {
@@ -134,7 +110,7 @@ export function TenantBootstrapProvider({
 
       attempt(0);
     }
-  }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus, setPlatformBranding]);
+  }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus]);
 
   if (bootstrapStatus === "loading" || bootstrapStatus === "idle") {
     return <TenantLoading />;

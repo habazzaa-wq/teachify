@@ -1,21 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { routes } from "@/constants/routes";
 import { useUploadManagerStore } from "../store";
 import { uploadEngine } from "../services";
 import { hashPool } from "../services/hashPool";
-import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
+import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManager, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
 import { MEDIA_QUERY_KEY } from "../../constants";
 import { BUNNY_CENTER_QUERY_KEY } from "../../../bunny-center/constants";
 import { UploadManagerPanel } from "./UploadManagerPanel";
 import { UploadDragOverlay } from "./UploadDragOverlay";
-import { PrepareUploadDialog } from "./PrepareUploadDialog";
 import { UPLOAD_LAUNCHER_COUNT_CAP } from "../constants";
 
 const folderInputProps = { webkitdirectory: "", directory: "", multiple: true } as Record<string, string | boolean>;
@@ -24,13 +21,9 @@ export function UploadManager() {
   const isOpen = useUploadManagerStore((s) => s.isOpen);
   const setOpen = useUploadManagerStore((s) => s.setOpen);
   const toggleOpen = useUploadManagerStore((s) => s.toggleOpen);
+  const { enqueueFiles } = useUploadManager();
   const stats = useUploadManagerStats();
   const queryClient = useQueryClient();
-  const pathname = usePathname();
-
-  const isMediaLibrary = pathname === routes.dashboardMedia;
-  const hasQueue = stats.total > 0;
-  const showLauncher = isMediaLibrary || hasQueue;
 
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
@@ -67,17 +60,13 @@ export function UploadManager() {
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) {
-      useUploadManagerStore.getState().openRename(files, { source: "file-input" });
-    }
+    if (files.length > 0) enqueueFiles(files, { source: "file-input" });
     e.target.value = "";
   };
 
   const handleFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) {
-      useUploadManagerStore.getState().openRename(files, { source: "folder-input" });
-    }
+    if (files.length > 0) enqueueFiles(files, { source: "folder-input" });
     e.target.value = "";
   };
 
@@ -87,14 +76,13 @@ export function UploadManager() {
   return (
     <>
       <UploadDragOverlay />
-      <PrepareUploadDialog />
 
       {/* Hidden pickers */}
       <input ref={fileRef} type="file" multiple hidden onChange={handleFiles} aria-hidden />
       <input ref={folderRef} type="file" multiple hidden {...folderInputProps} onChange={handleFolder} aria-hidden />
 
       <div className="fixed z-50 bottom-4 end-4 flex flex-col items-end gap-3 max-md:inset-x-0 max-md:bottom-0 max-md:end-0 max-md:px-0">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="wait">
           {isOpen && (
             <UploadManagerPanel
               key="panel"
@@ -106,7 +94,7 @@ export function UploadManager() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {showLauncher && !isOpen && (
+          {!isOpen && (
             <motion.button
               key="launcher"
               type="button"

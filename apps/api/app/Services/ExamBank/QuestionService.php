@@ -2,55 +2,26 @@
 
 namespace App\Services\ExamBank;
 
-use App\Models\ExamQuestion;
 use App\Models\Question;
-use App\Models\QuestionBank;
 use App\Models\QuestionCategory;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class QuestionService
 {
-    public function __construct(
-        private readonly ExamCacheService $cache = new ExamCacheService,
-    ) {}
-
     public function create(Tenant $tenant, TenantUser $creator, array $data): Question
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Question {
-            $contentDocument = isset($data['content_document']) && is_string($data['content_document']) && trim($data['content_document']) !== ''
-                ? json_decode($data['content_document'], true)
-                : ($data['content_document'] ?? null);
-
-            $format = $contentDocument !== null
-                ? 'structured'
-                : ($data['question_format'] ?? 'text');
-
-            $title = trim((string) ($data['title'] ?? ''));
-            if ($title === '') {
-                $title = match ($format) {
-                    'image' => 'سؤال مصوّر',
-                    'structured' => 'سؤال مستورد',
-                    default => 'سؤال بدون عنوان',
-                };
-            }
-            $slugSource = trim((string) ($data['slug'] ?? ''));
-            if ($slugSource === '') {
-                $slugSource = in_array($format, ['image', 'structured'], true)
-                    ? $title.'-'.strtolower(Str::random(6))
-                    : $title;
-            }
             $question = Question::create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
-                'uuid' => Str::uuid(),
+                'uuid' => \Illuminate\Support\Str::uuid(),
                 'category_id' => $data['category_id'] ?? null,
                 'bank_id' => $data['bank_id'] ?? null,
-                'title' => $title,
-                'slug' => $this->uniqueSlug($slugSource),
+                'title' => $data['title'],
+                'slug' => $this->uniqueSlug($data['slug'] ?? $data['title']),
                 'description' => $data['description'] ?? null,
                 'type' => $data['type'],
                 'difficulty' => $data['difficulty'] ?? 'medium',
@@ -64,9 +35,7 @@ class QuestionService
                 'explanation' => $data['explanation'] ?? null,
                 'hint' => $data['hint'] ?? null,
                 'content' => $data['content'] ?? null,
-                'content_document' => $contentDocument,
                 'metadata' => $data['metadata'] ?? null,
-                'question_format' => $format,
             ]);
 
             return $question->refresh();
@@ -91,35 +60,8 @@ class QuestionService
             $question->fill(collect($data)->only([
                 'category_id', 'bank_id', 'title', 'slug', 'description', 'type',
                 'difficulty', 'tags', 'points', 'estimated_time', 'language',
-                'visibility', 'shuffle_options', 'explanation', 'hint', 'content',
-                'metadata', 'question_format',
-            ])->all());
-
-            if (array_key_exists('content_document', $data)) {
-                $document = $data['content_document'];
-
-                $question->content_document = is_string($document) && trim($document) !== ''
-                    ? json_decode($document, true)
-                    : (is_array($document) ? $document : null);
-
-                // Keep format consistent with the presence of a document.
-                if ($question->content_document !== null && ($question->question_format ?? 'text') === 'text') {
-                    $question->question_format = 'structured';
-                } elseif ($question->content_document === null && $question->question_format === 'structured') {
-                    $question->question_format = 'text';
-                }
-            }
-
-            // An image question always carries a scan asset. If a payload
-            // requests image format without one, demote to text instead of
-            // persisting an image question with a null asset (Phase 7 guard).
-            if (($question->question_format ?? 'text') === 'image' && $question->media_asset_id === null) {
-                $question->question_format = 'text';
-            }
-
-            $question->save();
-
-            $this->bumpExamsForQuestion($question);
+                'visibility', 'shuffle_options', 'explanation', 'hint', 'content', 'metadata',
+            ])->all())->save();
 
             return $question->refresh();
         });
@@ -141,8 +83,6 @@ class QuestionService
 
         $question->forceFill(['status' => $status])->save();
 
-        $this->bumpExamsForQuestion($question);
-
         return $question->refresh();
     }
 
@@ -160,31 +100,7 @@ class QuestionService
     {
         $question->forceFill(['status' => 'draft'])->save();
 
-        $this->bumpExamsForQuestion($question);
-
         return $question->refresh();
-    }
-
-    /**
-     * Invalidate every exam cache that references this question. Only published
-     * exams actually serve cached question content, but bumping all referenced
-     * exams is harmless and keeps the version counter authoritative.
-     *
-     * @internal Call from mutating paths that must invalidate the published
-     *           exam question set (scan mutations, soft-delete/restore).
-     */
-    public function bumpExamsForQuestion(Question $question): void
-    {
-        $examIds = ExamQuestion::query()
-            ->where('tenant_id', $question->tenant_id)
-            ->where('question_id', $question->id)
-            ->pluck('exam_id')
-            ->unique()
-            ->all();
-
-        foreach ($examIds as $examId) {
-            $this->cache->bump($question->tenant_id, (int) $examId);
-        }
     }
 
     public function createCategory(Tenant $tenant, TenantUser $creator, array $data): QuestionCategory
@@ -243,7 +159,7 @@ class QuestionService
 
     private function uniqueCategorySlug(string $value, ?QuestionCategory $ignore = null): string
     {
-        $slug = Str::slug($value);
+        $slug = \Illuminate\Support\Str::slug($value);
 
         if ($slug === '') {
             throw ValidationException::withMessages([
@@ -258,7 +174,7 @@ class QuestionService
         }
 
         if ($query->exists()) {
-            $slug .= '-'.substr((string) Str::uuid(), 0, 8);
+            $slug .= '-' . substr((string) \Illuminate\Support\Str::uuid(), 0, 8);
         }
 
         return $slug;
@@ -269,8 +185,8 @@ class QuestionService
         return DB::transaction(function () use ($question, $creator): Question {
             $copy = $question->replicate();
             $copy->created_by_tenant_user_id = $creator->id;
-            $copy->uuid = (string) Str::uuid();
-            $copy->slug = $this->uniqueSlug($question->title.'-copy');
+            $copy->uuid = (string) \Illuminate\Support\Str::uuid();
+            $copy->slug = $this->uniqueSlug($question->title . '-copy');
             $copy->status = 'draft';
             $copy->save();
 
@@ -294,7 +210,7 @@ class QuestionService
 
     private function assertBank(Tenant $tenant, int $bankId): void
     {
-        $exists = QuestionBank::query()
+        $exists = \App\Models\QuestionBank::query()
             ->where('tenant_id', $tenant->id)
             ->where('id', $bankId)
             ->exists();
@@ -308,7 +224,7 @@ class QuestionService
 
     private function uniqueSlug(string $value, ?Question $ignore = null): string
     {
-        $slug = Str::slug($value);
+        $slug = \Illuminate\Support\Str::slug($value);
 
         if ($slug === '') {
             throw ValidationException::withMessages([
@@ -323,7 +239,7 @@ class QuestionService
         }
 
         if ($query->exists()) {
-            $slug .= '-'.substr((string) Str::uuid(), 0, 8);
+            $slug .= '-' . substr((string) \Illuminate\Support\Str::uuid(), 0, 8);
         }
 
         return $slug;

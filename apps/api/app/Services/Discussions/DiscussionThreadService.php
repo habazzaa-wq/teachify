@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Security\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
 class DiscussionThreadService
@@ -20,13 +21,13 @@ class DiscussionThreadService
 
     /**
      * @param array<string, mixed> $filters
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return Collection<int, DiscussionThread>
      */
-    public function list(Tenant $tenant, TenantUser $viewer, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function list(Tenant $tenant, TenantUser $viewer, array $filters = []): Collection
     {
         $this->bindTenant($tenant);
 
-        $query = DiscussionThread::query()
+        return DiscussionThread::query()
             ->where('tenant_id', $tenant->id)
             ->when(
                 $filters['course_id'] ?? null,
@@ -50,9 +51,8 @@ class DiscussionThreadService
             )
             ->orderByDesc('is_pinned')
             ->orderByDesc('last_activity_at')
-            ->orderByDesc('created_at');
-
-        return $query->paginate($perPage);
+            ->orderByDesc('created_at')
+            ->get();
     }
 
     public function show(Tenant $tenant, DiscussionThread $thread): DiscussionThread

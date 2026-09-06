@@ -41,71 +41,10 @@
     --sidebar: 42 15% 94%;
     --sidebar-foreground: 225 25% 12%;
     --sidebar-accent: 42 12% 88%;
-    --sidebar-accent-foreground: 225 25% 12%;
-    --sidebar-soft: 42 14% 90%;
-    --sidebar-fg-muted: 225 12% 45%;
-    --sidebar-fg-subtle: 225 10% 60%;
     --sidebar-border: 42 10% 84%;
     --sidebar-ring: 230 65% 50%;
 
     --radius: 0.75rem;
-
-    /* ───────── Brand colors (site primary + secondary) ─────────
-       Dynamic: overridden at runtime by the tenant's branding settings via
-       BrandThemeProvider. These values are the platform fallback. */
-    --brand-primary: #D87B63;
-    --brand-secondary: #FFB50E;
-    --brand-primary-contrast: #ffffff;
-    --brand-secondary-contrast: #17130d;
-
-    /* Derived brand scale (light) — kept in sync with generateBrandScale().
-       These are only the no-JS / pre-hydration fallback; BrandThemeProvider
-       recomputes them from the tenant's live colors at runtime. */
-    --brand-primary-50: #fbf2ef;
-    --brand-primary-100: #f7e5e0;
-    --brand-primary-200: #f0cdc4;
-    --brand-primary-300: #e8b2a5;
-    --brand-primary-400: #e09582;
-    --brand-primary-500: #d87b63;
-    --brand-primary-600: #be6c57;
-    --brand-primary-700: #a45d4b;
-    --brand-primary-800: #884d3e;
-    --brand-primary-900: #6c3d31;
-    --brand-secondary-50: #fff8e7;
-    --brand-secondary-100: #fff0cf;
-    --brand-secondary-200: #ffe3a3;
-    --brand-secondary-300: #ffd473;
-    --brand-secondary-400: #ffc43e;
-    --brand-secondary-500: #ffb50e;
-    --brand-secondary-600: #e09f0c;
-    --brand-secondary-700: #c28a0b;
-    --brand-secondary-800: #a17209;
-    --brand-secondary-900: #805b07;
-    --brand-primary-soft: #f7ddd4;
-    --brand-secondary-soft: #fff0cf;
-    --brand-primary-deep: #986247;
-    --brand-secondary-deep: #e0a10c;
-    --brand-neutral: #fbf7f3;
-    --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
-
-    /* ───────── "Split Profile" Educational Stages section tokens ─────────
-       Follow the stage-section design spec. Tints/deeps are derived once with
-       `color-mix` from the live brand colors (updated from the admin dashboard
-       via BrandThemeProvider) so they re-skin automatically. They source from
-       `--brand-primary`/`--brand-secondary` rather than the bare `--primary`/
-       `--secondary` shadcn tokens, which the `.dark` block redefines as HSL for
-       the dashboard — keeping these section tokens always-valid brand hexes.
-       `--ink`/`--paper` are fixed warm neutrals (non-brand). */
-    --primary-tint: color-mix(in srgb, var(--brand-primary) 12%, white);
-    --primary-deep: color-mix(in srgb, var(--brand-primary) 100%, black 20%);
-    --secondary-tint: color-mix(in srgb, var(--brand-secondary) 12%, white);
-    --secondary-deep: color-mix(in srgb, var(--brand-secondary) 100%, black 20%);
-    /* Mode-swapped logical pair: `--ink`/`--paper` hold the active theme's
-       text/background; `.dark` repoints them to the dark values below. */
-    --ink: #241c1a;
-    --paper: #fbf7f2;
-    --paper-dark: #1c1614;
-    --ink-dark: #f3ece6;
 
     --chart-1: 230 65% 50%;
     --chart-2: 160 84% 39%;
@@ -162,44 +101,6 @@
     --background: 225 30% 8%;
     --foreground: 210 40% 96%;
 
-    /* Derived brand scale (dark) — fallback; BrandThemeProvider overrides. */
-    --brand-primary-50: #301b16;
-    --brand-primary-100: #492a22;
-    --brand-primary-200: #683b30;
-    --brand-primary-300: #824a3b;
-    --brand-primary-400: #a45d4b;
-    --brand-primary-500: #d87b63;
-    --brand-primary-600: #dc8873;
-    --brand-primary-700: #e09582;
-    --brand-primary-800: #e5a595;
-    --brand-primary-900: #eab8ab;
-    --brand-secondary-50: #382803;
-    --brand-secondary-100: #573e05;
-    --brand-secondary-200: #7a5707;
-    --brand-secondary-300: #996d08;
-    --brand-secondary-400: #c28a0b;
-    --brand-secondary-500: #ffb50e;
-    --brand-secondary-600: #ffbc26;
-    --brand-secondary-700: #ffc43e;
-    --brand-secondary-800: #ffcd5b;
-    --brand-secondary-900: #ffd77d;
-    --brand-primary-soft: #1c130f;
-    --brand-secondary-soft: #1c1605;
-    --brand-primary-deep: #e7a08f;
-    --brand-secondary-deep: #ffc43e;
-    --brand-neutral: #0e0e12;
-    --brand-gradient: linear-gradient(135deg, #d87b63, #ffb50e);
-
-    /* "Split Profile" section tokens — dark: tints deepen/destaurate against
-       the dark paper; deeps lift toward white for legible accents. */
-    --primary-tint: color-mix(in srgb, var(--brand-primary) 14%, var(--paper-dark));
-    --primary-deep: color-mix(in srgb, var(--brand-primary) 100%, white 20%);
-    --secondary-tint: color-mix(in srgb, var(--brand-secondary) 14%, var(--paper-dark));
-    --secondary-deep: color-mix(in srgb, var(--brand-secondary) 100%, white 20%);
-    /* Swap the ink/paper logical pair for dark mode. */
-    --ink: var(--ink-dark);
-    --paper: var(--paper-dark);
-
     --card: 225 25% 11%;
     --card-foreground: 210 40% 96%;
 
@@ -234,10 +135,6 @@
     --sidebar: 225 30% 9%;
     --sidebar-foreground: 210 40% 94%;
     --sidebar-accent: 225 20% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-soft: 225 24% 13%;
-    --sidebar-fg-muted: 215 14% 65%;
-    --sidebar-fg-subtle: 215 12% 50%;
     --sidebar-border: 225 15% 17%;
     --sidebar-ring: 230 65% 55%;
 
@@ -303,17 +200,11 @@
 
   html {
     @apply scroll-smooth;
-    /* Prevent any element wider than the viewport (e.g. a stray absolutely
-       positioned decoration) from creating page-wide horizontal scroll on
-       mobile. Internal carousels keep scrolling because they are their own
-       `overflow-x-auto` containers, unaffected by this guard. */
-    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    overflow-x: hidden;
   }
 
   [dir="rtl"] {
@@ -536,27 +427,6 @@
     --studio-success: 160 60% 45%;
     --studio-warning: 35 85% 55%;
     --studio-danger: 0 65% 55%;
-  }
-
-  /* ───────── Community Theme (homepage palette: coral #D87B63 + gold #FFB50E) ───────── */
-  .community-theme {
-    --primary: 12 60% 62%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 41 100% 53%;
-    --secondary-foreground: 30 80% 12%;
-    --accent: 12 60% 93%;
-    --accent-foreground: 12 55% 25%;
-    --ring: 12 60% 62%;
-  }
-
-  .dark.community-theme {
-    --primary: 12 65% 68%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 41 100% 55%;
-    --secondary-foreground: 0 0% 10%;
-    --accent: 12 55% 26%;
-    --accent-foreground: 12 65% 92%;
-    --ring: 12 65% 68%;
   }
 }
 
@@ -840,37 +710,6 @@
   }
 }
 
-/* ───────── Touch devices (phones + tablets) ─────────
-   Three rendering-only rules. None of them change the layout, spacing,
-   colors, or desktop appearance (desktop keeps `hover` + `fine` pointer):
-   1. Freeze the decorative hero orbs. On tablets the desktop orbs render and
-      the float keyframes animate blur+opacity, which re-runs the CSS filter
-      every frame. The orbs are low-opacity background blobs, so freezing
-      them is visually identical while removing a continuous repaint source.
-   2. Drop repaint-heavy backdrop-filter from glass chrome. The page
-      background is essentially flat, so removing the blur is visually
-      identical — and it eliminates the per-frame backdrop re-sampling under
-      the sticky navbar while the page scrolls.
-   3. Release the forced composited layer on frozen hero orbs. */
-@media (hover: none) and (pointer: coarse) {
-  .hero-bg-orb {
-    animation: none !important;
-    opacity: var(--orb-opacity, 0.12) !important;
-    will-change: auto !important;
-  }
-
-  .glass-touch-solid {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-
-  .nav-touch-solid {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    background-color: hsl(var(--background) / 0.94) !important;
-  }
-}
-
 /* ───────── Pause animations while scrolling or when off-screen ───────── */
 .hero-anim-paused .hero-bg-orb,
 body.page-is-scrolling .hero-bg-orb {
@@ -885,7 +724,7 @@ body.page-is-scrolling .news-marquee-track {
 /* ───────── Content-visibility: skip rendering offscreen sections ───────── */
 .section-lazy {
   content-visibility: auto;
-  contain-intrinsic-size: auto 360px;
+  contain-intrinsic-size: 300px;
 }
 
 @keyframes float-soft {
@@ -934,7 +773,7 @@ body.page-is-scrolling .news-marquee-track {
 
 /* — Hero section (قسم الترحيب): cream-themed decorations — */
 .hero-avatar-ring {
-  box-shadow: 0 0 32px var(--hero-glow, rgba(0,0,0,0.30)), 0 0 64px var(--hero-glow, rgba(0,0,0,0.12));
+  box-shadow: 0 0 32px var(--hero-glow, rgba(216,123,99,0.30)), 0 0 64px var(--hero-glow, rgba(216,123,99,0.12));
 }
 
 /* — Hero background decorations — */
@@ -1015,193 +854,27 @@ body.page-is-scrolling .news-marquee-track {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* — WhyChooseUs: learning-ecosystem spread — */
-/* entrance states (staggered via --wcu-d) */
-.wcu-anim-rise,
-.wcu-anim-fade,
-.wcu-pop {
+/* — WhyChooseUs orbit: one-shot draw-in + reveal — */
+.wc-in-view .wc-line {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: wc-line-draw 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--wc-delay, 0s);
+}
+@keyframes wc-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.wc-reveal {
   opacity: 0;
 }
-.wcu-scene.wcu-in-view .wcu-anim-rise {
-  animation: wcu-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--wcu-d, 0s);
+.wc-in-view .wc-reveal {
+  animation: wc-reveal 0.55s ease-out forwards;
+  animation-delay: var(--wc-delay, 0s);
 }
-.wcu-scene.wcu-in-view .wcu-anim-fade {
-  animation: wcu-fade 0.6s ease-out forwards;
-  animation-delay: var(--wcu-d, 0s);
-}
-.wcu-scene.wcu-in-view .wcu-pop {
-  animation: wcu-pop 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--wcu-d, 0s);
-}
-@keyframes wcu-rise {
-  from { opacity: 0; transform: translateY(16px); }
+@keyframes wc-reveal {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-@keyframes wcu-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes wcu-pop {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* mastery-ring arcs draw-in */
-.wcu-arc {
-  stroke-dashoffset: 100;
-}
-.wcu-scene.wcu-in-view .wcu-arc {
-  animation: wcu-arc 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--wcu-d, 0s);
-}
-@keyframes wcu-arc {
-  to { stroke-dashoffset: var(--wcu-to, 50); }
-}
-
-/* feature spine draws vertically */
-.wcu-spine {
-  transform: scaleY(0);
-  transform-origin: top;
-  opacity: 0;
-}
-.wcu-scene.wcu-in-view .wcu-spine {
-  animation: wcu-spine 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--wcu-d, 0.2s);
-}
-@keyframes wcu-spine {
-  to { transform: scaleY(1); opacity: 1; }
-}
-
-/* micro segment fill */
-.wcu-seg {
-  transform: scaleY(0.3);
-  transform-origin: bottom;
-  opacity: 0.55;
-}
-.wcu-scene.wcu-in-view .wcu-seg {
-  animation: wcu-seg 0.45s ease-out forwards;
-  animation-delay: var(--wcu-d, 0s);
-}
-@keyframes wcu-seg {
-  to { transform: scaleY(1); opacity: 1; }
-}
-
-/* journey ribbon line draws */
-.wcu-ribbon-line {
-  transform: scaleX(0);
-  transform-origin: right;
-}
-.wcu-scene.wcu-in-view .wcu-ribbon-line {
-  animation: wcu-line 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--wcu-d, 0s);
-}
-@keyframes wcu-line {
-  to { transform: scaleX(1); }
-}
-
-/* ribbon horizontal track — no visible scrollbar */
-.wcu-scroll::-webkit-scrollbar { display: none; }
-.wcu-scroll { scrollbar-width: none; }
-
-/* feature (module) row hover states */
-.wcu-mod {
-  border-radius: 1rem;
-  transition: background-color 0.3s ease;
-}
-.wcu-mod:hover {
-  background-color: var(--wcu-mod-hover, rgba(255, 255, 255, 0.4));
-}
-.wcu-mod-num {
-  transition: color 0.3s ease;
-}
-.wcu-mod:hover .wcu-mod-num {
-  color: var(--brand-primary);
-}
-.wcu-mod-ill {
-  transition: border-color 0.3s ease;
-}
-.wcu-mod:hover .wcu-mod-ill {
-  border-color: var(--brand-primary);
-}
-.wcu-mod-title {
-  transition: color 0.3s ease;
-}
-.wcu-mod:hover .wcu-mod-title {
-  color: var(--brand-primary);
-}
-
-/* core-panel fragment hover */
-.wcu-frag-card {
-  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-}
-.wcu-frag-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--brand-primary);
-}
-
-/* stages section — content swap on selection */
-@keyframes stageSwapIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.stage-swap {
-  animation: stageSwapIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* stages section — autoplay progress */
-@keyframes stageAutoProgress {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-/* stages section — directional panel slide */
-@keyframes stageInFwd {
-  from {
-    opacity: 0;
-    transform: translateX(-36px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes stageInBack {
-  from {
-    opacity: 0;
-    transform: translateX(36px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-.stage-swap-fwd {
-  animation: stageInFwd 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.stage-swap-back {
-  animation: stageInBack 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stage-swap-fwd,
-  .stage-swap-back {
-    animation: none !important;
-  }
-  .stage-auto-bar {
-    animation: none !important;
-    width: 100% !important;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1212,73 +885,17 @@ body.page-is-scrolling .news-marquee-track {
   .home-enter-badge-bottom,
   .home-icon-swap,
   .home-menu-pop,
-  .hero-bg-orb {
+  .hero-bg-orb,
+  .wc-in-view .wc-line,
+  .wc-in-view .wc-reveal {
     animation: none !important;
   }
   .home-enter-up,
   .home-enter-pop,
   .home-enter-pop-soft,
   .home-enter-badge-top,
-  .home-enter-badge-bottom {
+  .home-enter-badge-bottom,
+  .wc-reveal {
     opacity: 1 !important;
   }
-  .wcu-anim-rise,
-  .wcu-anim-fade,
-  .wcu-pop,
-  .wcu-seg {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .wcu-arc {
-    animation: none !important;
-    stroke-dashoffset: var(--wcu-to, 50) !important;
-  }
-  .wcu-spine,
-  .wcu-ribbon-line {
-    animation: none !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
-   Performance / "snappy feel" pass (design-neutral).
-   These rules are intentionally UNLAYERED so they win over Tailwind's
-   layered utilities in the cascade. They only shorten durations and stop
-   `transition-all` from animating layout-triggering properties — the visual
-   design (colors, shadows, spacing, shapes) is unchanged, the movement is
-   just faster and lighter.
-   ──────────────────────────────────────────────────────────────────────── */
-
-/* Shorten every Tailwind duration utility. 300ms → 150ms etc. so the whole
-   app feels responsive instead of sluggish. */
-.duration-75 { transition-duration: 75ms; }
-.duration-100 { transition-duration: 100ms; }
-.duration-150 { transition-duration: 120ms; }
-.duration-200 { transition-duration: 130ms; }
-.duration-300 { transition-duration: 150ms; }
-.duration-500 { transition-duration: 220ms; }
-.duration-600 { transition-duration: 240ms; }
-.duration-700 { transition-duration: 260ms; }
-.duration-800 { transition-duration: 280ms; }
-.duration-900 { transition-duration: 300ms; }
-.duration-1000 { transition-duration: 320ms; }
-
-/* `transition-all` animates EVERY property, including layout/paint-heavy ones
-   (width, height, filter) that cause jank. Restrict it to the cheap,
-   compositor-friendly set used by hover micro-interactions. */
-.transition-all {
-  transition-property: transform, opacity, box-shadow, background-color,
-    border-color, color, outline-color, text-decoration-color, fill, stroke;
-}
-
-/* Snappier default easing for transform/opacity transitions that don't
-   specify one. Matches the app's cubic-bezier(0.22, 1, 0.36, 1) feel. */
-.transition,
-.transition-transform,
-.transition-opacity,
-.transition-colors,
-.transition-shadow {
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }

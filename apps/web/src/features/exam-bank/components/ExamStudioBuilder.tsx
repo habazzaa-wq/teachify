@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -11,7 +10,6 @@ import {
   Target,
   Plus,
   Repeat,
-  FilePlus2,
 } from "lucide-react";
 import {
   StudioSurfaceCard,
@@ -19,10 +17,8 @@ import {
   StudioEmptyState,
   StudioChip,
 } from "@/components/studio";
-import { useQueryClient } from "@tanstack/react-query";
 import { useExamStudioStore } from "@/features/exam-bank/store";
 import { useQuestion } from "@/features/exam-bank/hooks";
-import { EXAM_BANK_QUERY_KEY } from "@/features/exam-bank/constants";
 import type { Exam, ExamQuestion } from "@/features/exam-bank/types";
 import { formatNumber } from "@/lib/format";
 import QuestionBuilder from "./QuestionBuilder";
@@ -33,7 +29,6 @@ interface ExamStudioBuilderProps {
   questions: ExamQuestion[];
   onOpenSettings: () => void;
   onAddQuestion: () => void;
-  onCreateQuestion: () => void;
   onUpdateQuestion?: (id: string, payload: Record<string, unknown>) => void;
 }
 
@@ -62,13 +57,11 @@ function ExamOverview({
   questions,
   onOpenSettings,
   onAddQuestion,
-  onCreateQuestion,
 }: {
   exam: Exam;
   questions: ExamQuestion[];
   onOpenSettings: () => void;
   onAddQuestion: () => void;
-  onCreateQuestion: () => void;
 }) {
   const firstQuestionId = questions[0]?.questionId;
   return (
@@ -118,13 +111,6 @@ function ExamOverview({
           >
             {firstQuestionId ? "إدارة الأسئلة" : "إضافة سؤال"}
           </StudioButton>
-          <StudioButton
-            variant="secondary"
-            icon={<FilePlus2 className="h-4 w-4" />}
-            onClick={onCreateQuestion}
-          >
-            سؤال جديد
-          </StudioButton>
           <StudioButton variant="secondary" icon={<Settings2 className="h-4 w-4" />} onClick={onOpenSettings}>
             فتح الإعدادات
           </StudioButton>
@@ -139,42 +125,18 @@ export function ExamStudioBuilder({
   questions,
   onOpenSettings,
   onAddQuestion,
-  onCreateQuestion,
   onUpdateQuestion,
 }: ExamStudioBuilderProps) {
   const { view, selectedQuestionId } = useExamStudioStore();
-  const qc = useQueryClient();
   const { data: question, isLoading: questionLoading } = useQuestion(
     view === "question" ? selectedQuestionId : null,
   );
 
   const link = questions.find((q) => q.questionId === selectedQuestionId);
 
-  const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
-    if (!selectedQuestionId) return;
-    qc.setQueryData(
-      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
-      (old: unknown) => {
-        if (!old || typeof old !== "object") return old;
-        return { ...old, scanUrl: payload.scanUrl, scanAssetId: payload.scanAssetId };
-      },
-    );
-  }, [selectedQuestionId, qc]);
-
-  const handleScanRemoved = useCallback(() => {
-    if (!selectedQuestionId) return;
-    qc.setQueryData(
-      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
-      (old: unknown) => {
-        if (!old || typeof old !== "object") return old;
-        return { ...old, scanUrl: null, scanAssetId: null };
-      },
-    );
-  }, [selectedQuestionId, qc]);
-
   return (
     <div className="h-full overflow-y-auto studio-scrollbar bg-studio-bg">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="wait">
         {view === "question" && selectedQuestionId ? (
           <motion.div
             key="question-view"
@@ -194,8 +156,6 @@ export function ExamStudioBuilder({
                   question={question}
                   examQuestionLink={link ?? null}
                   onChange={(payload: Record<string, unknown>) => onUpdateQuestion?.(question.id, payload)}
-                  onScanUploaded={handleScanUploaded}
-                  onScanRemoved={handleScanRemoved}
                 />
                 <StudioSurfaceCard variant="outline" padding="md">
                   <h3 className="mb-3 text-sm font-semibold text-studio-fg">معاينة السؤال</h3>
@@ -228,7 +188,6 @@ export function ExamStudioBuilder({
                 questions={questions}
                 onOpenSettings={onOpenSettings}
                 onAddQuestion={onAddQuestion}
-                onCreateQuestion={onCreateQuestion}
               />
             ) : (
               <StudioEmptyState title="لا يوجد اختبار" />

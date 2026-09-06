@@ -6,22 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\QuestionResource;
 use App\Models\Question;
 use App\Repositories\QuestionRepository;
-use App\Services\ExamBank\Import\QuestionDocumentValidator;
 use App\Services\ExamBank\QuestionService;
-use App\Services\ExamBank\ScannedQuestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class QuestionController extends Controller
 {
     public function __construct(
         private readonly QuestionRepository $repository,
         private readonly QuestionService $service,
-        private readonly QuestionDocumentValidator $documentValidator,
-        private readonly ScannedQuestionService $scannedService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -75,7 +70,7 @@ class QuestionController extends Controller
         Gate::authorize('view', $question);
 
         return response()->json([
-            'data' => new QuestionResource($question->load(['category', 'creator.user', 'mediaAsset'])),
+            'data' => new QuestionResource($question->load(['category', 'creator.user'])),
         ]);
     }
 
@@ -98,12 +93,7 @@ class QuestionController extends Controller
         abort_if($question->tenant_id !== currentTenant()->id, 404);
         Gate::authorize('delete', $question);
 
-        $this->scannedService->disposeForDeletedQuestion($question);
         $this->repository->delete($question);
-
-        // Soft-delete means published exams can no longer resolve this question:
-        // invalidate the versioned question-set cache right after the delete.
-        $this->service->bumpExamsForQuestion($question);
 
         return response()->json(['message' => 'Question deleted successfully.']);
     }
@@ -158,13 +148,10 @@ class QuestionController extends Controller
 
     public function restore(int $question): JsonResponse
     {
-        Gate::authorize('restore', Question::class);
+        Gate::authorize('update', Question::class);
 
         $question = $this->repository->restore($question);
         abort_if($question === null, 404);
-
-        // A restored question returns to the published exam set it belonged to.
-        $this->service->bumpExamsForQuestion($question);
 
         return response()->json([
             'message' => 'Question restored successfully.',
@@ -187,6 +174,8 @@ class QuestionController extends Controller
 
     public function bulkDelete(Request $request): JsonResponse
     {
+        Gate::authorize('delete', Question::class);
+
         $validated = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
@@ -195,9 +184,7 @@ class QuestionController extends Controller
         $count = 0;
         foreach ($this->repository->findByIds($validated['ids']) as $question) {
             if (Gate::allows('delete', $question)) {
-                $this->scannedService->disposeForDeletedQuestion($question);
                 $this->repository->delete($question);
-                $this->service->bumpExamsForQuestion($question);
                 $count++;
             }
         }
@@ -207,7 +194,7 @@ class QuestionController extends Controller
 
     public function bulkRestore(Request $request): JsonResponse
     {
-        Gate::authorize('restore', Question::class);
+        Gate::authorize('update', Question::class);
 
         $validated = $request->validate([
             'ids' => ['required', 'array'],
@@ -218,7 +205,6 @@ class QuestionController extends Controller
         foreach ($validated['ids'] as $id) {
             $question = $this->repository->restore($id);
             if ($question) {
-                $this->service->bumpExamsForQuestion($question);
                 $count++;
             }
         }
@@ -241,13 +227,15 @@ class QuestionController extends Controller
         }
 
         return response()->json([
-            'message' => count($copies).' questions duplicated.',
+            'message' => count($copies) . ' questions duplicated.',
             'data' => $copies,
         ], 201);
     }
 
     public function bulkArchive(Request $request): JsonResponse
     {
+        Gate::authorize('update', Question::class);
+
         $validated = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
@@ -266,6 +254,8 @@ class QuestionController extends Controller
 
     public function bulkMoveCategory(Request $request): JsonResponse
     {
+        Gate::authorize('update', Question::class);
+
         $validated = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer'],
@@ -290,18 +280,10 @@ class QuestionController extends Controller
     private function validateQuestion(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
-        $questionFormat = $request->input('question_format', $partial ? null : 'text');
-        $hasDocument = $request->filled('content_document');
 
-        // Image questions auto-generate their title; structured questions get
-        // theirs derived from the first text run when absent.
-        $titleRule = ($questionFormat === 'image' || $hasDocument)
-            ? ['sometimes', 'nullable', 'string', 'max:500']
-            : [$required, 'string', 'max:500'];
-
-        $validated = $request->validate([
-            'title' => $titleRule,
-            'slug' => ['sometimes', 'nullable', 'string', 'max:500', 'alpha_dash:ascii'],
+        return $request->validate([
+            'title' => [$required, 'string', 'max:500'],
+            'slug' => ['sometimes', 'string', 'max:500', 'alpha_dash:ascii'],
             'description' => ['nullable', 'string'],
             'type' => [$required, Rule::in([
                 'single_choice', 'multiple_choice', 'true_false', 'short_answer',
@@ -321,21 +303,7 @@ class QuestionController extends Controller
             'explanation' => ['nullable', 'string'],
             'hint' => ['nullable', 'string'],
             'content' => ['nullable', 'array'],
-            'content_document' => ['sometimes', 'nullable', 'string', 'max:131072'],
             'metadata' => ['nullable', 'array'],
-            'question_format' => ['sometimes', 'string', Rule::in(['text', 'structured', 'image'])],
         ]);
-
-        if (($validated['content_document'] ?? null) !== null) {
-            $errors = $this->documentValidator->validateJson($validated['content_document']);
-
-            if ($errors !== []) {
-                throw ValidationException::withMessages([
-                    'content_document' => $errors,
-                ]);
-            }
-        }
-
-        return $validated;
     }
 }

@@ -1,6 +1,6 @@
-export type ExamSessionStatus = "in_progress" | "grading" | "submitted";
+export type ExamSessionStatus = "in_progress" | "submitted";
 
-export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false" | "numeric" | "essay" | "short_answer";
+export type ExamSessionQuestionType = "single_choice" | "multiple_choice" | "true_false";
 
 export type ExamSessionAnswer = string[] | string | null;
 
@@ -12,8 +12,7 @@ export interface ExamSessionOption {
 
 export interface ExamSessionQuestionContent {
   options?: ExamSessionOption[];
-  correct?: string | number;
-  tolerance?: number;
+  correct?: string;
 }
 
 export interface ExamSessionQuestion {
@@ -29,9 +28,6 @@ export interface ExamSessionQuestion {
   answer: ExamSessionAnswer;
   answered: boolean;
   isCorrect: boolean | null;
-  questionFormat?: "text" | "image" | "structured";
-  scanUrl?: string | null;
-  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
 }
 
 export interface ExamSessionExamMeta {

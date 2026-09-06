@@ -9,6 +9,7 @@ import {
   FolderOpen,
   Clock,
   Users,
+  Star,
   AudioLines,
 } from "lucide-react";
 import { formatNumber } from "@/lib/format";
@@ -81,11 +82,17 @@ function CourseStatsInner({ course, modules }: CourseStatsProps) {
         label: "طالب",
         color: PRIMARY,
       },
+      {
+        icon: Star,
+        value: "4.8",
+        label: "التقييم",
+        color: "#f59e0b",
+      },
     ];
 
     return list.filter((s) => {
       const meaningful = s.value !== "0" && s.value !== "—";
-      const always = s.label === "طالب" || s.label === "درس";
+      const always = s.label === "التقييم" || s.label === "طالب" || s.label === "درس";
       return meaningful || always;
     });
   }, [course, moduleStats]);
@@ -100,7 +107,7 @@ function CourseStatsInner({ course, modules }: CourseStatsProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-30px" }}
             transition={{ duration: 0.3, delay: (i % 8) * 0.04, ease: "easeOut" }}
-            className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-2 py-4 text-center shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--brand-primary)]"
+            className="group flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card px-2 py-4 text-center shadow-sm shadow-black/[0.02] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BF6D58]/25"
           >
             <div
               className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"

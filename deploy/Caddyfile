@@ -65,7 +65,6 @@ teachify.tech, *.teachify.tech {
         root * /var/www/teachify/apps/api/public
         php_fastcgi unix//run/php/php8.4-fpm.sock {
             root /var/www/teachify/apps/api/public
-            read_timeout 600s
         }
     }
 
@@ -76,28 +75,10 @@ teachify.tech, *.teachify.tech {
         }
     }
 
-    handle /storage/* {
-        root * /var/www/teachify/apps/api/public
-        file_server
-    }
-
     handle /_next/static/* {
         reverse_proxy 127.0.0.1:3000 {
             header Cache-Control "public, max-age=31536000, immutable"
         }
-    }
-
-    # Laravel broadcast channel auth (POST /broadcasting/auth)
-    handle /broadcasting/auth {
-        root * /var/www/teachify/apps/api/public
-        php_fastcgi unix//run/php/php8.4-fpm.sock {
-            root /var/www/teachify/apps/api/public
-        }
-    }
-
-    # Reverb WebSocket server (pusher protocol at /app/*)
-    handle /app/* {
-        reverse_proxy 127.0.0.1:8080
     }
 
     handle {
@@ -148,7 +129,6 @@ https:// {
         root * /var/www/teachify/apps/api/public
         php_fastcgi unix//run/php/php8.4-fpm.sock {
             root /var/www/teachify/apps/api/public
-            read_timeout 600s
         }
     }
 
@@ -159,28 +139,10 @@ https:// {
         }
     }
 
-    handle /storage/* {
-        root * /var/www/teachify/apps/api/public
-        file_server
-    }
-
     handle /_next/static/* {
         reverse_proxy 127.0.0.1:3000 {
             header Cache-Control "public, max-age=31536000, immutable"
         }
-    }
-
-    # Laravel broadcast channel auth (POST /broadcasting/auth)
-    handle /broadcasting/auth {
-        root * /var/www/teachify/apps/api/public
-        php_fastcgi unix//run/php/php8.4-fpm.sock {
-            root /var/www/teachify/apps/api/public
-        }
-    }
-
-    # Reverb WebSocket server (pusher protocol at /app/*)
-    handle /app/* {
-        reverse_proxy 127.0.0.1:8080
     }
 
     handle {

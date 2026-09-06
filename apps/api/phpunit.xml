@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-          bootstrap="tests/bootstrap.php"
+         bootstrap="vendor/autoload.php"
          colors="true"
 >
     <testsuites>
@@ -32,10 +32,5 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <env name="MEDIA_STORAGE_DISK" value="public"/>
-        <!-- Keep noisy slow-operation logging off during the suite; the
-             dedicated slow-logging tests override these explicitly. -->
-        <env name="SLOW_REQUEST_THRESHOLD_MS" value="100000"/>
-        <env name="SLOW_QUERY_THRESHOLD_MS" value="100000"/>
     </php>
 </phpunit>

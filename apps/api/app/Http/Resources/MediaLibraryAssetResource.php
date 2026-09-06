@@ -9,10 +9,6 @@ class MediaLibraryAssetResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // Bunny Storage assets are served through the app's media proxy so their
-        // images render even when the configured pull-zone CDN is unavailable.
-        $proxyUrl = $this->storageProxyUrl();
-
         return [
             'id' => $this->id,
             'tenantId' => (string) $this->tenant_id,
@@ -29,10 +25,10 @@ class MediaLibraryAssetResource extends JsonResource
             'bunnyLibraryId' => $this->bunny_library_id,
             'bunnyStoragePath' => $this->bunny_storage_path ?? $this->storage_key,
             'bunnyStreamUrl' => $this->bunny_stream_url,
-            'cdnUrl' => $proxyUrl ?? $this->cdn_url,
-            'thumbnailUrl' => $proxyUrl ?? $this->thumbnail_url,
-            'previewUrl' => $proxyUrl ?? $this->preview_url,
-            'posterUrl' => $proxyUrl ?? $this->poster_url,
+            'cdnUrl' => $this->cdn_url,
+            'thumbnailUrl' => $this->thumbnail_url,
+            'previewUrl' => $this->preview_url,
+            'posterUrl' => $this->poster_url,
             'mimeType' => $this->mime_type,
             'extension' => $this->extension,
             'originalName' => $this->original_name ?? $this->original_filename,
@@ -46,11 +42,11 @@ class MediaLibraryAssetResource extends JsonResource
             'duration' => (float) ($this->duration ?? 0),
             'width' => $this->width,
             'height' => $this->height,
-            'status' => $this->resolveEffectiveStatus(),
+            'status' => $this->status,
             'visibility' => $this->visibility,
-            'processingStatus' => $this->resolveEffectiveProcessingStatus(),
+            'processingStatus' => $this->processing_status,
             'transcodingStatus' => $this->transcoding_status,
-            'isProcessing' => $this->resolveIsProcessing(),
+            'isProcessing' => (bool) ($this->processing_status !== null && $this->processing_status !== 'ready' && $this->processing_status !== 'failed'),
             'processingProgress' => (int) ($this->processing_progress ?? 0),
             'captions' => $this->whenLoaded('captions', fn () => $this->captions->map(fn ($c) => [
                 'id' => $c->id,
@@ -98,54 +94,5 @@ class MediaLibraryAssetResource extends JsonResource
                 'url' => $u->url,
             ])),
         ];
-    }
-
-    private function resolveIsProcessing(): bool
-    {
-        $raw = $this->processing_status !== null && $this->processing_status !== 'ready' && $this->processing_status !== 'failed';
-        if (! $raw) return false;
-        if ($this->type !== 'video' && $this->provider_service === 'storage') {
-            if (! empty($this->cdn_url)) return false;
-            if ($this->created_at && $this->created_at->lt(now()->subMinutes(5))) return false;
-        }
-        if ($this->type === 'image' && ! empty($this->cdn_url)) return false;
-        return true;
-    }
-
-    private function resolveEffectiveStatus(): string
-    {
-        if (! $this->resolveIsProcessing() && in_array($this->status, ['pending', 'uploading', 'processing'], true)) {
-            return 'ready';
-        }
-        return $this->status;
-    }
-
-    private function resolveEffectiveProcessingStatus(): string
-    {
-        if (! $this->resolveIsProcessing() && in_array($this->processing_status, ['pending', 'uploading', 'processing'], true)) {
-            return 'ready';
-        }
-        return $this->processing_status;
-    }
-
-    /**
-     * Return a same-origin proxy URL that streams this asset from the Bunny
-     * storage zone, or null when the asset is not a Bunny storage file that the
-     * proxy can serve. The app exposes GET /api/v1/media/serve/{path} which
-     * proxies the bytes from Bunny Storage using the configured credentials.
-     */
-    private function storageProxyUrl(): ?string
-    {
-        if ($this->provider_service !== 'storage') {
-            return null;
-        }
-
-        $key = $this->bunny_storage_path ?: $this->storage_key;
-
-        if (empty($key)) {
-            return null;
-        }
-
-        return '/api/v1/media/serve/' . ltrim((string) $key, '/');
     }
 }

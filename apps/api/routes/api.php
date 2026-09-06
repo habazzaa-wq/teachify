@@ -26,19 +26,6 @@ use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateVerificationController;
 use App\Http\Controllers\Api\v1\Certificates\CourseCertificateRuleController;
-use App\Http\Controllers\Api\v1\Community\ClientDiagnosticsController;
-use App\Http\Controllers\Api\v1\Community\CommunityAnnouncementController;
-use App\Http\Controllers\Api\v1\Community\CommunityBookmarkController;
-use App\Http\Controllers\Api\v1\Community\CommunityChannelController;
-use App\Http\Controllers\Api\v1\Community\CommunityGamificationController;
-use App\Http\Controllers\Api\v1\Community\CommunityMessageController;
-use App\Http\Controllers\Api\v1\Community\CommunityModerationController;
-use App\Http\Controllers\Api\v1\Community\CommunityNotificationController;
-use App\Http\Controllers\Api\v1\Community\CommunityPresenceController;
-use App\Http\Controllers\Api\v1\Community\CommunityReactionController;
-use App\Http\Controllers\Api\v1\Community\CommunitySearchController;
-use App\Http\Controllers\Api\v1\Community\CommunityStatsController;
-use App\Http\Controllers\Api\v1\Community\CommunityThreadController;
 use App\Http\Controllers\Api\v1\Courses\CategoryController;
 use App\Http\Controllers\Api\v1\Courses\CourseController;
 use App\Http\Controllers\Api\v1\Courses\CourseInstructorController;
@@ -61,7 +48,6 @@ use App\Http\Controllers\Api\v1\ExamBank\ExamSessionController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionBankController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
-use App\Http\Controllers\Api\v1\ExamBank\ScannedQuestionController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
@@ -84,23 +70,20 @@ use App\Http\Controllers\Api\v1\Payments\FawaterkWebhookController;
 use App\Http\Controllers\Api\v1\Payments\PaymentGatewayController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
-use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseController;
-use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
-use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
-use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
-use App\Http\Controllers\Api\v1\PublicSeoContentController;
 use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
+use App\Http\Controllers\Api\v1\StudentDashboardController;
+use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
 use App\Http\Controllers\Api\v1\PublicWhyChooseUsController;
@@ -108,15 +91,6 @@ use App\Http\Controllers\Api\v1\Quizzes\LessonQuizController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizAttemptController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizQuestionController;
 use App\Http\Controllers\Api\v1\Quizzes\QuizResultController;
-use App\Http\Controllers\Api\v1\Seo\SeoContentController;
-use App\Http\Controllers\Api\v1\Seo\SeoKeywordController;
-use App\Http\Controllers\Api\v1\Seo\SeoLinkSearchController;
-use App\Http\Controllers\Api\v1\Seo\SeoOverviewController;
-use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
-use App\Http\Controllers\Api\v1\StudentController;
-use App\Http\Controllers\Api\v1\StudentDashboardController;
-use App\Http\Controllers\Api\v1\StudentProfileController;
-use App\Http\Controllers\Api\v1\HealthController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -157,20 +131,11 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
     });
-    Route::get('/health/live', [HealthController::class, 'liveness']);
-    Route::get('/health/ready', [HealthController::class, 'readiness']);
     Route::post('/public/register', [PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
-    Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
-    Route::get('/public/seo/articles', [PublicSeoContentController::class, 'index'])->defaults('type', 'article');
-    Route::get('/public/seo/guides', [PublicSeoContentController::class, 'index'])->defaults('type', 'guide');
-    Route::get('/public/seo/articles/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'article');
-    Route::get('/public/seo/guides/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'guide');
-    Route::get('/public/seo/faq-collections/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'faq_collection');
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
-    Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
@@ -189,8 +154,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/courses/{slug}', [PublicCourseController::class, 'show']);
     Route::get('/public/courses/{slug}/modules', [PublicCourseController::class, 'modules']);
     Route::get('/public/courses/{slug}/related', [PublicCourseController::class, 'related']);
-    Route::get('/public/courses/{slug}/lessons/{lesson}/video', [PublicCourseLessonVideoController::class, 'show']);
-    Route::get('/public/courses/{slug}/lessons/{lesson}/files', [PublicCourseLessonFileController::class, 'show']);
 
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
@@ -236,11 +199,6 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/courses/metrics', [CourseController::class, 'metrics']);
         Route::get('/courses/export', [CourseController::class, 'export']);
-        Route::post('/courses/bulk/publish', [CourseController::class, 'bulkPublish']);
-        Route::post('/courses/bulk/archive', [CourseController::class, 'bulkArchive']);
-        Route::post('/courses/bulk/restore', [CourseController::class, 'bulkRestore']);
-        Route::post('/courses/bulk/delete', [CourseController::class, 'bulkDelete']);
-        Route::post('/courses/bulk/feature', [CourseController::class, 'bulkFeature']);
         Route::patch('/courses/{course}/status', [CourseController::class, 'updateStatus']);
         Route::patch('/courses/{course}/publish', [CourseController::class, 'publish']);
         Route::patch('/courses/{course}/archive', [CourseController::class, 'archive']);
@@ -282,7 +240,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/lessons/{lesson}/exam-entry', [ExamEntryController::class, 'show']);
         Route::post('/lessons/{lesson}/exam-sessions/start', [ExamSessionController::class, 'start'])->middleware('throttle:10,1');
         Route::get('/lessons/{lesson}/exam-sessions/current', [ExamSessionController::class, 'current']);
-        Route::get('/exams/active-attempt', [ExamSessionController::class, 'activeAttempt']);
         Route::get('/exam-sessions/{attempt}', [ExamSessionController::class, 'show']);
         Route::put('/exam-sessions/{attempt}/answers/{examQuestion}', [ExamSessionController::class, 'saveAnswer'])->middleware('throttle:300,1');
         Route::put('/exam-sessions/{attempt}/progress', [ExamSessionController::class, 'saveProgress'])->middleware('throttle:300,1');
@@ -362,8 +319,7 @@ Route::prefix('v1')->group(function () {
             // Resumable multipart upload pipeline (backend transport).
             Route::post('/upload/resumable/intent', [MediaLibraryUploadController::class, 'resumableIntent']);
             Route::put('/upload/resumable/{session}/chunk', [MediaLibraryUploadController::class, 'resumableChunk'])
-                ->withoutMiddleware('throttle:api')
-                ->middleware('throttle:resumable-upload');
+                ->withoutMiddleware('throttle:api');
             Route::get('/upload/resumable/{session}/resume', [MediaLibraryUploadController::class, 'resumableResume']);
             Route::post('/upload/resumable/{session}/finalize', [MediaLibraryUploadController::class, 'resumableFinalize']);
         });
@@ -468,80 +424,6 @@ Route::prefix('v1')->group(function () {
         Route::delete('/discussions/{thread}/posts/{post}', [DiscussionPostController::class, 'destroy']);
         Route::post('/discussions/posts/{post}/report', [DiscussionReportController::class, 'store']);
 
-        // Community
-        Route::prefix('community')->group(function () {
-            Route::get('/categories', [CommunityChannelController::class, 'index']);
-            Route::get('/channels/{channel}', [CommunityChannelController::class, 'show']);
-            Route::get('/channels/{channel}/threads', [CommunityChannelController::class, 'threads']);
-            Route::post('/channels/{channel}/lock', [CommunityChannelController::class, 'lock']);
-            Route::post('/channels/{channel}/unlock', [CommunityChannelController::class, 'unlock']);
-
-            Route::post('/channels/{channel}/threads', [CommunityThreadController::class, 'store']);
-            Route::get('/threads/{thread}', [CommunityThreadController::class, 'show']);
-            Route::post('/threads/{thread}/follow', [CommunityThreadController::class, 'follow']);
-            Route::post('/threads/{thread}/unfollow', [CommunityThreadController::class, 'unfollow']);
-            Route::post('/threads/{thread}/mute', [CommunityThreadController::class, 'mute']);
-            Route::post('/threads/{thread}/unmute', [CommunityThreadController::class, 'unmute']);
-
-            Route::get('/channels/{channel}/messages', [CommunityMessageController::class, 'index']);
-            Route::post('/channels/{channel}/messages', [CommunityMessageController::class, 'store'])->middleware('throttle:30,1');
-            Route::post('/channels/{channel}/read', [CommunityMessageController::class, 'markRead']);
-            Route::get('/messages/{message}', [CommunityMessageController::class, 'show']);
-            Route::put('/messages/{message}', [CommunityMessageController::class, 'update']);
-            Route::delete('/messages/{message}', [CommunityMessageController::class, 'destroy']);
-            Route::post('/messages/{message}/pin', [CommunityMessageController::class, 'pin']);
-            Route::post('/messages/{message}/unpin', [CommunityMessageController::class, 'unpin']);
-            Route::post('/messages/{message}/highlight', [CommunityMessageController::class, 'highlight']);
-            Route::post('/messages/{message}/unhighlight', [CommunityMessageController::class, 'unhighlight']);
-            Route::post('/messages/{message}/official', [CommunityMessageController::class, 'official']);
-            Route::post('/messages/{message}/official/remove', [CommunityMessageController::class, 'removeOfficial']);
-            Route::post('/messages/{message}/solve', [CommunityMessageController::class, 'solve']);
-            Route::post('/messages/{message}/unsolve', [CommunityMessageController::class, 'unsolve']);
-            Route::post('/messages/{message}/accept', [CommunityMessageController::class, 'accept']);
-            Route::post('/messages/{message}/unaccept', [CommunityMessageController::class, 'unaccept']);
-            Route::get('/messages/{message}/seen-by', [CommunityMessageController::class, 'seenBy']);
-
-            Route::post('/messages/{message}/reactions', [CommunityReactionController::class, 'store'])->middleware('throttle:60,1');
-            Route::get('/bookmarks', [CommunityBookmarkController::class, 'index']);
-            Route::post('/messages/{message}/bookmark', [CommunityBookmarkController::class, 'store']);
-            Route::delete('/messages/{message}/bookmark', [CommunityBookmarkController::class, 'destroy']);
-
-            Route::get('/search', [CommunitySearchController::class, 'index'])->middleware('throttle:30,1');
-
-            Route::get('/moderation/reports', [CommunityModerationController::class, 'reports']);
-            Route::patch('/moderation/reports/{report}', [CommunityModerationController::class, 'review']);
-            Route::post('/moderation/members/{subject}/warn', [CommunityModerationController::class, 'warn']);
-            Route::post('/moderation/members/{subject}/mute', [CommunityModerationController::class, 'mute']);
-            Route::post('/moderation/members/{subject}/unmute', [CommunityModerationController::class, 'unmute']);
-            Route::post('/moderation/members/{subject}/ban', [CommunityModerationController::class, 'ban']);
-            Route::post('/moderation/members/{subject}/unban', [CommunityModerationController::class, 'unban']);
-            Route::get('/moderation/members/{subject}/actions', [CommunityModerationController::class, 'actions']);
-
-            Route::post('/presence/online', [CommunityPresenceController::class, 'online'])->middleware('throttle:60,1');
-            Route::post('/presence/offline', [CommunityPresenceController::class, 'offline'])->middleware('throttle:60,1');
-            Route::get('/presence/online-members', [CommunityPresenceController::class, 'onlineMembers']);
-            Route::post('/channels/{channel}/typing', [CommunityPresenceController::class, 'typing'])->middleware('throttle:60,1');
-
-            Route::get('/announcements', [CommunityAnnouncementController::class, 'index']);
-            Route::post('/announcements', [CommunityAnnouncementController::class, 'store']);
-            Route::get('/announcements/{announcement}', [CommunityAnnouncementController::class, 'show']);
-            Route::put('/announcements/{announcement}', [CommunityAnnouncementController::class, 'update']);
-            Route::post('/announcements/{announcement}/publish', [CommunityAnnouncementController::class, 'publish']);
-            Route::delete('/announcements/{announcement}', [CommunityAnnouncementController::class, 'destroy']);
-
-            Route::get('/notifications', [CommunityNotificationController::class, 'index']);
-            Route::get('/notifications/unread', [CommunityNotificationController::class, 'unread']);
-            Route::patch('/notifications/{notification}/read', [CommunityNotificationController::class, 'read']);
-            Route::patch('/notifications/{notification}/archive', [CommunityNotificationController::class, 'archive']);
-
-            Route::get('/gamification/me', [CommunityGamificationController::class, 'me']);
-            Route::get('/gamification/leaderboard', [CommunityGamificationController::class, 'leaderboard']);
-
-            Route::get('/stats', [CommunityStatsController::class, 'show']);
-        });
-
-        Route::post('/debug/client-error', [ClientDiagnosticsController::class, 'report']);
-
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
         Route::get('/audit-logs/entity', [AuditLogController::class, 'entity']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
@@ -573,52 +455,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/permissions/matrix/clone', [MatrixController::class, 'clone']);
         Route::apiResource('roles', RoleController::class);
 
-        // Teacher students management
-        Route::get('/students', [StudentController::class, 'index']);
-        Route::get('/students/metrics', [StudentController::class, 'metrics']);
-        Route::post('/students', [StudentController::class, 'store']);
-        Route::post('/students/invite', [StudentController::class, 'invite']);
-        Route::post('/students/bulk-destroy', [StudentController::class, 'bulkDestroy']);
-        Route::post('/students/bulk/activate', [StudentController::class, 'bulkActivate']);
-        Route::post('/students/bulk/suspend', [StudentController::class, 'bulkSuspend']);
-        Route::get('/students/{student}', [StudentController::class, 'show']);
-        Route::post('/students/{student}/activate', [StudentController::class, 'activate']);
-        Route::post('/students/{student}/suspend', [StudentController::class, 'suspend']);
-        Route::get('/students/{student}/enrollments', [StudentController::class, 'enrollments']);
-        Route::get('/students/{student}/analytics', [StudentController::class, 'analytics']);
-        Route::delete('/students/{student}', [StudentController::class, 'destroy']);
-
         Route::get('/settings', [TenantSettingController::class, 'index']);
-        Route::get('/settings/site', [TenantSettingController::class, 'site']);
-        Route::put('/settings/site', [TenantSettingController::class, 'updateSite']);
-        Route::get('/settings/platform', [TenantSettingController::class, 'platform']);
-        Route::put('/settings/platform', [TenantSettingController::class, 'updatePlatformBranding']);
         Route::get('/settings/{group}', [TenantSettingController::class, 'show']);
         Route::put('/settings/{group}', [TenantSettingController::class, 'update']);
 
         Route::apiResource('teacher/news', NewsController::class)->names('teacher.news');
         Route::post('/teacher/news/reorder', [NewsController::class, 'reorder']);
-
-        // Teacher SEO & Content Studio
-        Route::get('/seo/overview', [SeoOverviewController::class, 'index']);
-        Route::get('/seo/contents', [SeoContentController::class, 'index']);
-        Route::post('/seo/contents', [SeoContentController::class, 'store']);
-        Route::get('/seo/contents/{seoContent}', [SeoContentController::class, 'show']);
-        Route::match(['put', 'patch'], '/seo/contents/{seoContent}', [SeoContentController::class, 'update']);
-        Route::delete('/seo/contents/{seoContent}', [SeoContentController::class, 'destroy']);
-        Route::post('/seo/contents/{seoContent}/publish', [SeoContentController::class, 'publish']);
-        Route::post('/seo/contents/{seoContent}/unpublish', [SeoContentController::class, 'unpublish']);
-        Route::post('/seo/contents/{seoContent}/archive', [SeoContentController::class, 'archive']);
-        Route::post('/seo/contents/{seoContent}/restore', [SeoContentController::class, 'restore']);
-        Route::get('/seo/contents/{seoContent}/revisions', [SeoContentController::class, 'revisions']);
-        Route::get('/seo/link-search', [SeoLinkSearchController::class, 'index']);
-        Route::get('/seo/keywords', [SeoKeywordController::class, 'index']);
-        Route::post('/seo/keywords', [SeoKeywordController::class, 'store']);
-        Route::get('/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'show']);
-        Route::match(['put', 'patch'], '/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'update']);
-        Route::delete('/seo/keywords/{seoKeyword}', [SeoKeywordController::class, 'destroy']);
-        Route::get('/seo/settings', [SeoSettingController::class, 'show']);
-        Route::put('/seo/settings', [SeoSettingController::class, 'update']);
 
         Route::apiResource('teacher/educational-stages', EducationalStageController::class)->names('teacher.educational-stages');
         Route::post('/teacher/educational-stages/reorder', [EducationalStageController::class, 'reorder']);
@@ -646,9 +488,6 @@ Route::prefix('v1')->group(function () {
         Route::prefix('exam-bank')->name('exam-bank.')->group(function () {
             Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
             Route::apiResource('questions', QuestionController::class);
-            // Image question: teacher uploads the question image as-is (no OCR/Vision).
-            Route::post('/questions/{question}/scan', [ScannedQuestionController::class, 'store']);
-            Route::delete('/questions/{question}/scan', [ScannedQuestionController::class, 'destroy']);
             Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
             Route::post('/questions/bulk/restore', [QuestionController::class, 'bulkRestore']);
             Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);

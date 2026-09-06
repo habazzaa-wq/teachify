@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  boundEta,
   createProgressState,
   foldCompletedBytes,
   setInFlight,
@@ -116,28 +115,5 @@ describe("progressAccounting", () => {
     // completed (0) + in-flight never exceeds 1000 even at 800; still bounded.
     expect(currentUploadedBytes(state, chunks)).toBeLessThanOrEqual(1000);
     expect(progressPercent(currentUploadedBytes(state, chunks), total)).toBeLessThanOrEqual(100);
-  });
-});
-
-describe("boundEta", () => {
-  const MAX = 6 * 3600; // matches UPLOAD_ETA_SHOW_MAX_SECONDS
-
-  it("passes through sane in-horizon estimates", () => {
-    expect(boundEta(300, MAX)).toBe(300);
-    expect(boundEta(MAX, MAX)).toBe(MAX);
-    expect(boundEta(0, MAX)).toBe(0);
-  });
-
-  it("reports unknown for estimates beyond the horizon", () => {
-    expect(boundEta(MAX + 1, MAX)).toBeNull();
-    expect(boundEta(86_400, MAX)).toBeNull();
-    expect(boundEta(1_000_000, MAX)).toBeNull();
-  });
-
-  it("reports unknown for null/negative/non-finite inputs", () => {
-    expect(boundEta(null, MAX)).toBeNull();
-    expect(boundEta(-1, MAX)).toBeNull();
-    expect(boundEta(Number.NaN, MAX)).toBeNull();
-    expect(boundEta(Number.POSITIVE_INFINITY, MAX)).toBeNull();
   });
 });

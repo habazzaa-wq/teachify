@@ -9,7 +9,6 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
   BookOpen,
   Plus,
@@ -32,40 +31,17 @@ import {
   Lock,
   Globe,
   BadgePercent,
-  Send,
-  RotateCcw,
-  Trash2,
-  ListChecks,
-  FileX,
 } from "lucide-react";
-import {
-  AppButton,
-  PermissionGuard,
-  AppPagination,
-  AppCheckbox,
-  AppConfirmDialog,
-  AppDropdownMenu,
-  AppDropdownMenuTrigger,
-  AppDropdownMenuContent,
-  AppDropdownMenuItem,
-  AppDropdownMenuSeparator,
-} from "@/components/ui";
+import { AppButton, PermissionGuard } from "@/components/ui";
 import {
   useCourses,
-  useCoursesMetrics,
   useCreateCourse,
   useUpdateCourse,
   useDeleteCourse,
-  usePublishCourse,
   useArchiveCourse,
   useRestoreCourse,
   useDuplicateCourse,
   useToggleFeatureCourse,
-  useBulkPublishCourses,
-  useBulkArchiveCourses,
-  useBulkRestoreCourses,
-  useBulkDeleteCourses,
-  useBulkToggleFeatureCourses,
 } from "@/features/courses/hooks";
 import { useCategories } from "@/features/course-categories/hooks";
 import { CourseCreatePanel } from "@/features/courses/components/CourseCreatePanel";
@@ -84,8 +60,6 @@ import type {
   UpdateCoursePayload,
   CourseFilterParams,
 } from "@/features/courses/types";
-import type { BulkActionResult } from "@/features/courses/services";
-import { normalizeApiError } from "@/services/api";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -105,37 +79,6 @@ const fadeUpItem = {
 };
 
 type SortValue = "newest" | "oldest" | "most_students" | "most_revenue" | "title";
-
-const COURSES_PER_PAGE = 12;
-
-function describeBulkResult(
-  result: BulkActionResult,
-  verb: string,
-  noneMessage: string,
-): string {
-  const { count, requested } = result;
-  if (count === 0) {
-    return noneMessage;
-  }
-
-  const noun = requested === 1 ? "دورة" : "دورات";
-  if (count < requested) {
-    return `تم ${verb} ${count} من ${requested} ${noun}`;
-  }
-  return `تم ${verb} ${requested} ${noun} بنجاح`;
-}
-
-function showBulkToast(
-  result: BulkActionResult,
-  verb: string,
-  noneMessage: string,
-): void {
-  if (result.count === 0) {
-    toast.error(noneMessage);
-  } else {
-    toast.success(describeBulkResult(result, verb, noneMessage));
-  }
-}
 
 interface FilterState {
   status: CourseStatus | null;
@@ -202,10 +145,8 @@ const SORT_OPTIONS: Array<{ value: SortValue; label: string; icon: React.Element
 function buildFilterParams(
   search: string,
   filters: FilterState,
-  page: number,
-  perPage: number,
 ): CourseFilterParams {
-  const params: CourseFilterParams = { per_page: perPage, page };
+  const params: CourseFilterParams = { per_page: 100 };
 
   if (search) params.search = search;
 
@@ -252,62 +193,35 @@ function CoursesHomeContent() {
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const pinnedCourseIds = useStudioPrefs((s) => s.pinnedCourseIds);
   const togglePin = useStudioPrefs((s) => s.togglePinned);
 
-  const resetPageAndSelection = useCallback(() => {
-    setPage(1);
-    setSelectedCourseIds(new Set());
-  }, []);
-
   /* ── Debounced search ── */
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchInput);
-      resetPageAndSelection();
-    }, 300);
+    const timer = setTimeout(() => setSearchQuery(searchInput), 300);
     return () => clearTimeout(timer);
-  }, [searchInput, resetPageAndSelection]);
+  }, [searchInput]);
 
   /* ── Query params ── */
   const queryParams = useMemo(
-    () => buildFilterParams(searchQuery, filters, page, COURSES_PER_PAGE),
-    [searchQuery, filters, page],
+      () => buildFilterParams(searchQuery, filters),
+    [searchQuery, filters],
   );
 
   /* ── Data fetching ── */
   const coursesQuery = useCourses(queryParams);
   const categoriesQuery = useCategories({ per_page: 100 });
-  const metricsQuery = useCoursesMetrics();
 
   /* ── Mutations ── */
   const createCourse = useCreateCourse();
   const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
-  const publishCourse = usePublishCourse();
   const archiveCourse = useArchiveCourse();
   const restoreCourse = useRestoreCourse();
   const duplicateCourse = useDuplicateCourse();
   const toggleFeature = useToggleFeatureCourse();
-  const bulkPublish = useBulkPublishCourses();
-  const bulkArchive = useBulkArchiveCourses();
-  const bulkRestore = useBulkRestoreCourses();
-  const bulkDelete = useBulkDeleteCourses();
-  const bulkToggleFeature = useBulkToggleFeatureCourses();
-
-  const bulkPending =
-    bulkPublish.isPending ||
-    bulkArchive.isPending ||
-    bulkRestore.isPending ||
-    bulkDelete.isPending ||
-    bulkToggleFeature.isPending;
 
   /* ── Derived data ── */
   const allCourses = coursesQuery.data?.data ?? [];
@@ -323,19 +237,6 @@ function CoursesHomeContent() {
   const unpinnedCourses = useMemo(
     () => allCourses.filter((c) => !pinnedCourseIds.includes(c.id)),
     [allCourses, pinnedCourseIds],
-  );
-
-  /* ── Pagination meta ── */
-  const totalCourses = coursesQuery.data?.total ?? 0;
-  const lastPage = coursesQuery.data?.lastPage ?? 1;
-
-  /* ── Selection state ── */
-  const selectedCount = selectedCourseIds.size;
-  const allPageSelected =
-    allCourses.length > 0 &&
-    allCourses.every((c) => selectedCourseIds.has(c.id));
-  const somePageSelected = allCourses.some((c) =>
-    selectedCourseIds.has(c.id),
   );
 
   const continueCourses = useMemo(
@@ -369,11 +270,10 @@ function CoursesHomeContent() {
     [searchQuery, filters],
   );
 
-  const isPageOutOfRange = totalCourses > 0 && allCourses.length === 0 && page > lastPage;
   const showNoCourses =
-    !isLoading && !isError && !isPageOutOfRange && allCourses.length === 0 && !hasActiveFilters;
+    !isLoading && !isError && allCourses.length === 0 && !hasActiveFilters;
   const showEmptySearch =
-    !isLoading && !isError && !isPageOutOfRange && allCourses.length === 0 && hasActiveFilters;
+    !isLoading && !isError && allCourses.length === 0 && hasActiveFilters;
 
   /* ── Handlers ── */
 
@@ -413,20 +313,6 @@ function CoursesHomeContent() {
     [duplicateCourse],
   );
 
-  const handlePublish = useCallback(
-    (course: Course) => {
-      publishCourse.mutate(course.id, {
-        onSuccess: () => {
-          toast.success(`تم نشر "${course.title}" بنجاح`);
-        },
-        onError: () => {
-          toast.error(`فشل نشر "${course.title}"`);
-        },
-      });
-    },
-    [publishCourse],
-  );
-
   const handleArchive = useCallback(
     (course: Course) => archiveCourse.mutate(course.id),
     [archiveCourse],
@@ -456,180 +342,71 @@ function CoursesHomeContent() {
     [deleteCourse],
   );
 
-  /* ── Selection handlers ── */
-  const handleSelectCourse = useCallback((course: Course) => {
-    setSelectedCourseIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(course.id)) {
-        next.delete(course.id);
-      } else {
-        next.add(course.id);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleToggleSelectAll = useCallback(() => {
-    setSelectedCourseIds((prev) => {
-      const next = new Set(prev);
-      const shouldSelectAll =
-        allCourses.length > 0 &&
-        !allCourses.every((c) => next.has(c.id));
-      if (shouldSelectAll) {
-        allCourses.forEach((c) => next.add(c.id));
-      } else {
-        allCourses.forEach((c) => next.delete(c.id));
-      }
-      return next;
-    });
-  }, [allCourses]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedCourseIds(new Set());
-  }, []);
-
-  const updateFilters = useCallback(
-    (updater: (prev: FilterState) => FilterState) => {
-      setFilters(updater);
-      resetPageAndSelection();
-    },
-    [resetPageAndSelection],
-  );
-
-  /* ── Bulk actions ── */
-  const handleBulkAction = useCallback(
-    (action: "publish" | "archive" | "restore" | "toggle_feature" | "delete") => {
-      const ids = [...selectedCourseIds];
-      if (ids.length === 0) return;
-      const onError = (err: unknown) =>
-        toast.error(normalizeApiError(err).message);
-      switch (action) {
-        case "publish":
-          bulkPublish.mutate(ids, {
-            onSuccess: (result) => {
-              showBulkToast(result, "نشر", "تعذّر نشر الدورات المحددة");
-              clearSelection();
-            },
-            onError,
-          });
-          break;
-        case "archive":
-          bulkArchive.mutate(ids, {
-            onSuccess: (result) => {
-              showBulkToast(result, "أرشفة", "تعذّرت أرشفة الدورات المحددة");
-              clearSelection();
-            },
-            onError,
-          });
-          break;
-        case "restore":
-          bulkRestore.mutate(ids, {
-            onSuccess: (result) => {
-              showBulkToast(result, "استعادة", "لا توجد دورات محذوفة لاستعادتها");
-              clearSelection();
-            },
-            onError,
-          });
-          break;
-        case "toggle_feature":
-          bulkToggleFeature.mutate(ids, {
-            onSuccess: (result) => {
-              showBulkToast(result, "تحديث التميز لـ", "تعذّر تحديث التميز للدورات المحددة");
-              clearSelection();
-            },
-            onError,
-          });
-          break;
-        case "delete":
-          setBulkDeleteOpen(true);
-          break;
-      }
-    },
-    [selectedCourseIds, bulkPublish, bulkArchive, bulkRestore, bulkToggleFeature, clearSelection],
-  );
-
-  const confirmBulkDelete = useCallback(() => {
-    const ids = [...selectedCourseIds];
-    if (ids.length === 0) return;
-    bulkDelete.mutate(ids, {
-      onSuccess: (result) => {
-        showBulkToast(result, "حذف", "تعذّر حذف الدورات المحددة");
-        setBulkDeleteOpen(false);
-        clearSelection();
-      },
-      onError: (err) => {
-        toast.error(normalizeApiError(err).message);
-        setBulkDeleteOpen(false);
-      },
-    });
-  }, [selectedCourseIds, bulkDelete, clearSelection]);
-
   const clearFilters = useCallback(() => {
     setSearchInput("");
     setSearchQuery("");
     setFilters(initialFilters);
-    resetPageAndSelection();
-  }, [resetPageAndSelection]);
+  }, []);
 
   const setStatusFilter = useCallback(
     (value: CourseStatus | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         status: prev.status === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
   const setFeaturedFilter = useCallback(() => {
-    updateFilters((prev) => ({
+    setFilters((prev) => ({
       ...prev,
       featured: prev.featured === true ? null : true,
     }));
-  }, [updateFilters]);
+  }, []);
   const setVisibilityFilter = useCallback(
     (value: CourseVisibility | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         visibility: prev.visibility === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
   const setPricingFilter = useCallback(
     (value: PricingType | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         pricingType: prev.pricingType === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
   const setDifficultyFilter = useCallback(
     (value: CourseDifficulty | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         difficulty: prev.difficulty === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
   const setLanguageFilter = useCallback(
     (value: string | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         language: prev.language === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
   const setCategoryFilter = useCallback(
     (value: string | null) => {
-      updateFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         categoryId: prev.categoryId === value ? null : value,
       }));
     },
-    [updateFilters],
+    [],
   );
 
   const cycleSort = useCallback(() => {
@@ -640,30 +417,24 @@ function CoursesHomeContent() {
       "most_revenue",
       "title",
     ];
-    updateFilters((prev) => {
+    setFilters((prev) => {
       const idx = sortValues.indexOf(prev.sort);
       return { ...prev, sort: sortValues[(idx + 1) % sortValues.length] } as FilterState;
     });
-  }, [updateFilters]);
+  }, []);
 
   const activeSortLabel = SORT_OPTIONS.find((o) => o.value === filters.sort)?.label ?? "الأحدث";
 
   /* ── Stats ── */
   const stats = useMemo(
     () => ({
-      total: totalCourses,
-      published:
-        metricsQuery.data?.published ??
-        allCourses.filter((c) => c.status === "published").length,
-      draft:
-        metricsQuery.data?.draft ??
-        allCourses.filter((c) => c.status === "draft").length,
-      archived:
-        metricsQuery.data?.archived ??
-        allCourses.filter((c) => c.status === "archived").length,
+      total: allCourses.length,
+      published: allCourses.filter((c) => c.status === "published").length,
+      draft: allCourses.filter((c) => c.status === "draft").length,
+      archived: allCourses.filter((c) => c.status === "archived").length,
       students: allCourses.reduce((s, c) => s + c.studentsCount, 0),
     }),
-    [totalCourses, metricsQuery.data, allCourses],
+    [allCourses],
   );
 
   return (
@@ -836,7 +607,6 @@ function CoursesHomeContent() {
                       onClick={() => {
                         setSearchInput("");
                         setSearchQuery("");
-                        resetPageAndSelection();
                       }}
                       className="absolute inset-y-0 end-0 flex items-center pe-5 text-tenant-fg-muted/30 hover:text-tenant-fg transition-colors"
                       aria-label="مسح البحث"
@@ -1205,154 +975,11 @@ function CoursesHomeContent() {
             </motion.div>
           )}
 
-          {/* ═══ Page Out of Range (bulk delete/archive on last page) ═══ */}
-          {isPageOutOfRange && (
-            <motion.div
-              variants={fadeUpItem}
-              className="flex flex-col items-center justify-center gap-4 py-24"
-            >
-              <FileX className="h-12 w-12 text-tenant-fg-muted/20" />
-              <div className="space-y-1 text-center">
-                <h3 className="text-base font-bold text-tenant-fg">
-                  هذه الصفحة لم تعد متوفرة
-                </h3>
-                <p className="text-sm text-tenant-fg-muted/60">
-                  تم حذف أو أرشفة أحدث الدورات في هذه الصفحة
-                </p>
-              </div>
-              <AppButton
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(lastPage)}
-              >
-                الانتقال إلى الصفحة السابقة
-              </AppButton>
-            </motion.div>
-          )}
-
           {/* ═══ Courses Exist ═══ */}
           {!showNoCourses && !showEmptySearch && allCourses.length > 0 && (
             <motion.div variants={containerVariants} className="space-y-12">
-              {/* ═══ 5. Selection Toolbar ═══ */}
-              <motion.div variants={fadeUpItem}>
-                <div
-                  className={cn(
-                    "flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border px-4 py-3 transition-colors duration-300",
-                    selectedCount > 0
-                      ? "border-tenant-accent/25 bg-tenant-accent/5"
-                      : "border-tenant-border/40 bg-tenant-surface/60",
-                  )}
-                >
-                  {/* Select all */}
-                  <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-tenant-fg-muted/70 transition-colors hover:text-tenant-fg">
-                    <AppCheckbox
-                      checked={
-                        allPageSelected
-                          ? true
-                          : somePageSelected
-                            ? "indeterminate"
-                            : false
-                      }
-                      onCheckedChange={handleToggleSelectAll}
-                      aria-label="تحديد الكل"
-                    />
-                    <span>تحديد الكل</span>
-                    <span className="rounded-full bg-tenant-soft/80 px-2 py-0.5 text-[11px] font-semibold text-tenant-fg-muted/60">
-                      {formatNumber(allCourses.length)}
-                    </span>
-                  </label>
-
-                  <div className="hidden h-5 w-px bg-tenant-border/40 sm:block" />
-
-                  {selectedCount > 0 ? (
-                    <span className="text-sm text-tenant-fg-muted/70">
-                      تم تحديد{" "}
-                      <span className="font-bold text-tenant-accent">
-                        {formatNumber(selectedCount)}
-                      </span>{" "}
-                      دورة
-                    </span>
-                  ) : (
-                    <span className="text-xs text-tenant-fg-muted/40">
-                      اختر الدورات لتنفيذ إجراء جماعي عليها
-                    </span>
-                  )}
-
-                  <div className="ms-auto flex items-center gap-2">
-                    <PermissionGuard permission="courses.update">
-                      <AppDropdownMenu>
-                        <AppDropdownMenuTrigger asChild>
-                          <AppButton
-                            variant="outline"
-                            size="sm"
-                            disabled={selectedCount === 0 || bulkPending}
-                            loading={bulkPending}
-                          >
-                            <ListChecks className="h-4 w-4" />
-                            الأكشنز
-                            {selectedCount > 0 && (
-                              <span className="rounded-full bg-tenant-accent/15 px-1.5 py-0.5 text-[10px] font-bold text-tenant-accent">
-                                {selectedCount}
-                              </span>
-                            )}
-                            <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                          </AppButton>
-                        </AppDropdownMenuTrigger>
-                        <AppDropdownMenuContent align="end" className="w-52">
-                          <AppDropdownMenuItem
-                            onClick={() => handleBulkAction("publish")}
-                          >
-                            <Send className="ms-2 h-4 w-4" />
-                            نشر
-                          </AppDropdownMenuItem>
-                          <AppDropdownMenuItem
-                            onClick={() => handleBulkAction("archive")}
-                          >
-                            <Archive className="ms-2 h-4 w-4" />
-                            أرشفة
-                          </AppDropdownMenuItem>
-                          <AppDropdownMenuItem
-                            onClick={() => handleBulkAction("restore")}
-                          >
-                            <RotateCcw className="ms-2 h-4 w-4" />
-                            استعادة
-                          </AppDropdownMenuItem>
-                          <AppDropdownMenuItem
-                            onClick={() =>
-                              handleBulkAction("toggle_feature")
-                            }
-                          >
-                            <Sparkles className="ms-2 h-4 w-4" />
-                            تمييز / إلغاء التميز
-                          </AppDropdownMenuItem>
-                          <AppDropdownMenuSeparator />
-                          <AppDropdownMenuItem
-                            onClick={() => handleBulkAction("delete")}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="ms-2 h-4 w-4" />
-                            حذف
-                          </AppDropdownMenuItem>
-                        </AppDropdownMenuContent>
-                      </AppDropdownMenu>
-                    </PermissionGuard>
-
-                    {selectedCount > 0 && (
-                      <AppButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearSelection}
-                      >
-                        إلغاء التحديد
-                      </AppButton>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* ═══ 6. Continue Working ═══ */}
+              {/* ═══ 5. Continue Working ═══ */}
               {continueCourses.length > 0 &&
-                page === 1 &&
                 !hasActiveFilters &&
                 !searchQuery && (
                   <motion.section variants={fadeUpItem}>
@@ -1378,11 +1005,8 @@ function CoursesHomeContent() {
                   </motion.section>
                 )}
 
-{/* ═══ 7. Pinned Courses ═══ */}
-              {pinnedCourses.length > 0 &&
-                page === 1 &&
-                !hasActiveFilters &&
-                !searchQuery && (
+              {/* ═══ 6. Pinned Courses ═══ */}
+              {pinnedCourses.length > 0 && !hasActiveFilters && !searchQuery && (
                 <motion.section variants={fadeUpItem}>
                   <div className="mb-4 flex items-center gap-2">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
@@ -1402,10 +1026,7 @@ function CoursesHomeContent() {
                         course={course}
                         index={i}
                         isPinned
-                        selected={selectedCourseIds.has(course.id)}
-                        onToggleSelect={handleSelectCourse}
                         onEdit={handleOpenEdit}
-                        onPublish={handlePublish}
                         onDuplicate={handleDuplicate}
                         onArchive={handleArchive}
                         onRestore={handleRestore}
@@ -1416,9 +1037,9 @@ function CoursesHomeContent() {
                     ))}
                   </div>
                 </motion.section>
-                )}
+              )}
 
-              {/* ═══ 8. All Courses ═══ */}
+              {/* ═══ 7. All Courses ═══ */}
               <motion.section variants={fadeUpItem}>
                 <div className="mb-4 flex items-center gap-2">
                   {(pinnedCourses.length > 0 ||
@@ -1446,10 +1067,7 @@ function CoursesHomeContent() {
                       course={course}
                       index={i}
                       isPinned={pinnedCourseIds.includes(course.id)}
-                      selected={selectedCourseIds.has(course.id)}
-                      onToggleSelect={handleSelectCourse}
                       onEdit={handleOpenEdit}
-                      onPublish={handlePublish}
                       onDuplicate={handleDuplicate}
                       onArchive={handleArchive}
                       onRestore={handleRestore}
@@ -1461,27 +1079,13 @@ function CoursesHomeContent() {
                 </div>
               </motion.section>
 
-              {/* ═══ 9. Pagination ═══ */}
-              <motion.div variants={fadeUpItem}>
-                <AppPagination
-                  currentPage={coursesQuery.data?.currentPage ?? page}
-                  lastPage={lastPage}
-                  total={totalCourses}
-                  onPageChange={(p) => {
-                    setPage(p);
-                    setSelectedCourseIds(new Set());
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
-              </motion.div>
-
               {/* Footer */}
               <motion.div
                 variants={fadeUpItem}
                 className="flex items-center justify-center gap-2 pb-8 text-xs text-tenant-fg-muted/20"
               >
                 <Sparkles className="h-3 w-3" />
-                <span>إجمالي {formatNumber(totalCourses)} دورة</span>
+                <span>إجمالي {formatNumber(allCourses.length)} دورة</span>
               </motion.div>
             </motion.div>
           )}
@@ -1502,18 +1106,6 @@ function CoursesHomeContent() {
         courseId={selectedCourseId}
         onSave={handleEditSave}
         saving={updateCourse.isPending}
-      />
-
-      <AppConfirmDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        title="حذف الدورات المحددة"
-        description={`هل أنت متأكد من حذف ${formatNumber(selectedCount)} دورة؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmLabel="حذف"
-        cancelLabel="إلغاء"
-        destructive
-        loading={bulkDelete.isPending}
-        onConfirm={confirmBulkDelete}
       />
     </motion.div>
   );

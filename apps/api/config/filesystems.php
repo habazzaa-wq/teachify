@@ -66,16 +66,6 @@ return [
         'uploads' => [
             'driver' => 'local',
             'root' => storage_path('app/uploads'),
-            'permissions' => [
-                'file' => [
-                    'public' => 0664,
-                    'private' => 0664,
-                ],
-                'dir' => [
-                    'public' => 0775,
-                    'private' => 0775,
-                ],
-            ],
             'throw' => false,
             'report' => false,
         ],

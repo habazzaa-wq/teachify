@@ -1,21 +1,18 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Save, RotateCcw } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Save, RotateCcw, Palette } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
   AppCard, AppCardHeader, AppCardTitle, AppCardDescription, AppCardContent,
 } from "@/components/ui";
-import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useTenantStore } from "@/stores/tenant.store";
-import { settingsService } from "@/features/settings/services";
+import { useDashboardThemeStore } from "@/stores/dashboard-theme.store";
 import { generateThemeColors } from "@/lib/color";
-import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
 
 const PRESET_COLORS = [
-  { primary: "#4F46E5", secondary: "#EEF2FF", label: "كحلي" },
-  { primary: "#059669", secondary: "#ECFDF5", label: "أخضر" },
+  { primary: "#4F46E5", secondary: "#F1F5F9", label: "كحلي" },
+  { primary: "#059669", secondary: "#F0FDF4", label: "أخضر" },
   { primary: "#DC2626", secondary: "#FEF2F2", label: "أحمر" },
   { primary: "#D97706", secondary: "#FFFBEB", label: "ذهبي" },
   { primary: "#7C3AED", secondary: "#F5F3FF", label: "بنفسجي" },
@@ -66,72 +63,28 @@ function ColorPicker({
 }
 
 function AppearancePage() {
-  const { tenant } = useActiveTenant();
-  const setTenantSite = useTenantStore((s) => s.setTenantSite);
+  const { primaryColor, secondaryColor, isActive, setColors, resetColors } = useDashboardThemeStore();
 
-  const brandingRecord = tenant?.branding as Record<string, string | null> | undefined;
-  const storedPrimary = tenant?.branding?.primary_color ?? brandingRecord?.primaryColor ?? "#4F46E5";
-  const storedSecondary =
-    tenant?.branding?.secondary_color ?? brandingRecord?.secondaryColor ?? "#F1F5F9";
-
-  const [primary, setPrimary] = useState(storedPrimary);
-  const [secondary, setSecondary] = useState(storedSecondary);
+  const [primary, setPrimary] = useState(primaryColor);
+  const [secondary, setSecondary] = useState(secondaryColor);
   const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  // Re-sync the local pickers with the server-synced branding. On a fresh page
-  // load the tenant bootstrap completes asynchronously, so the initial state may
-  // be the default; once the saved colors arrive we must reflect them instead of
-  // leaving the inputs stuck on the default. Saving also updates the store, and
-  // this only fires when the stored value actually changes (not while typing).
   useEffect(() => {
-    setPrimary(storedPrimary);
-    setSecondary(storedSecondary);
-  }, [storedPrimary, storedSecondary]);
+    setPrimary(primaryColor);
+    setSecondary(secondaryColor);
+  }, [primaryColor, secondaryColor]);
 
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      await settingsService.updateSite({
-        primary_color: primary,
-        secondary_color: secondary,
-      });
-      setTenantSite({
-        name: tenant?.name ?? "",
-        favicon: tenant?.branding?.favicon ?? null,
-        primary_color: primary,
-        secondary_color: secondary,
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch {
-      toast.error("تعذّر حفظ الألوان، حاول مرة أخرى");
-    } finally {
-      setSaving(false);
-    }
-  }, [primary, secondary, setTenantSite, tenant]);
+  const handleSave = useCallback(() => {
+    setColors(primary, secondary);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [primary, secondary, setColors]);
 
-  const handleReset = useCallback(async () => {
-    setSaving(true);
-    try {
-      await settingsService.updateSite({
-        primary_color: null,
-        secondary_color: null,
-      });
-      setTenantSite({
-        name: tenant?.name ?? "",
-        favicon: tenant?.branding?.favicon ?? null,
-        primary_color: null,
-        secondary_color: null,
-      });
-      setPrimary("#4F46E5");
-      setSecondary("#F1F5F9");
-    } catch {
-      toast.error("تعذّر إعادة التعيين، حاول مرة أخرى");
-    } finally {
-      setSaving(false);
-    }
-  }, [setTenantSite, tenant]);
+  const handleReset = useCallback(() => {
+    resetColors();
+    setPrimary("#4F46E5");
+    setSecondary("#F1F5F9");
+  }, [resetColors]);
 
   const handlePreset = useCallback((p: string, s: string) => {
     setPrimary(p);
@@ -218,21 +171,24 @@ function AppearancePage() {
               {/* Preview header */}
               <div
                 className="flex h-12 items-center gap-2 border-b px-4"
-                style={{ backgroundColor: preview["--studio-glass-toolbar"], borderColor: preview["--studio-glass-toolbar-border"], color: preview["--studio-glass-toolbar-fg"] }}
+                style={{ backgroundColor: preview["--tenant-header"], borderColor: preview["--tenant-border"] }}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className="h-6 w-6 rounded-md"
-                    style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }}
+                    style={{ backgroundColor: preview["--studio-accent"] }}
                   />
-                  <span className="text-sm font-semibold">
+                  <span
+                    className="text-sm font-semibold"
+                    style={{ color: preview["--tenant-fg"] }}
+                  >
                     الأكاديمية
                   </span>
                 </div>
                 <div className="flex-1" />
                 <div className="flex gap-1.5">
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-glass-toolbar-soft"] }} />
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-soft"] }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-accent"] }} />
                 </div>
               </div>
 
@@ -246,7 +202,7 @@ function AppearancePage() {
                     <div
                       key={i}
                       className="h-2 rounded"
-                      style={{ backgroundColor: i === 1 ? preview["--studio-accent"] : preview["--studio-sidebar-hover"] }}
+                      style={{ backgroundColor: i === 1 ? preview["--studio-accent"] : preview["--studio-soft"] }}
                     />
                   ))}
                 </div>
@@ -289,10 +245,10 @@ function AppearancePage() {
 
         {/* Actions */}
         <div className="flex items-center justify-between gap-4">
-          <AppButton variant="outline" onClick={handleReset} disabled={saving}>
+          <AppButton variant="outline" onClick={handleReset}>
             <RotateCcw className="h-4 w-4 ml-1" /> إعادة تعيين
           </AppButton>
-          <AppButton onClick={handleSave} loading={saving}>
+          <AppButton onClick={handleSave} loading={saved}>
             <Save className="h-4 w-4 ml-1" /> {saved ? "تم الحفظ" : "حفظ التغييرات"}
           </AppButton>
         </div>

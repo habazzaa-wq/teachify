@@ -265,7 +265,7 @@ class CourseAccessFoundationTest extends TestCase
 
         $id = $this->postJson('/api/v1/courses', $payload, $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('course.id');
 
         Course::withoutGlobalScopes()
             ->whereKey($id)
@@ -283,7 +283,7 @@ class CourseAccessFoundationTest extends TestCase
             'sort_order' => 1,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('section.id');
 
         CourseSection::withoutGlobalScopes()
             ->whereKey($id)
@@ -299,12 +299,12 @@ class CourseAccessFoundationTest extends TestCase
         $id = $this->postJson("/api/v1/courses/{$courseId}/sections/{$sectionId}/lessons", [
             'title' => $title,
             'slug' => str($title)->slug()->toString(),
-            'lesson_type' => 'text',
-            'visibility' => 'private',
+            'type' => 'text',
+            'visibility' => 'enrolled_only',
             'sort_order' => 1,
         ], $this->tenantHeader($tenant))
             ->assertCreated()
-            ->json('data.id');
+            ->json('lesson.id');
 
         CourseLesson::withoutGlobalScopes()
             ->whereKey($id)

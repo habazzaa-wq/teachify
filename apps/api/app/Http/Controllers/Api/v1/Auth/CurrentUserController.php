@@ -33,7 +33,6 @@ class CurrentUserController extends Controller
                 'status' => $tenant->status,
                 'domain' => $tenant->getDefaultDomain(),
                 'branding' => $this->getBranding($tenant),
-                'platform_branding' => $this->getPlatformBranding($tenant),
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -58,38 +57,24 @@ class CurrentUserController extends Controller
                 'can_manage_settings' => $permissions->contains(fn ($p) => str_starts_with($p->slug, 'settings.')),
             ],
             'navigation' => $this->getNavigation($roles, $permissions),
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        ]);
     }
 
     private function getBranding(\App\Models\Tenant $tenant): array
     {
-        $setting = $tenant->settings()->where('group', 'branding')->first();
-        $values = $setting?->values ?? [];
         $domain = $tenant->getPrimaryDomain();
 
         return [
-            'logo' => $values['logo'] ?? null,
-            'favicon' => $values['favicon'] ?? null,
-            'primary_color' => $values['primary_color'] ?? null,
-            'secondary_color' => $values['secondary_color'] ?? null,
-            'accent_color' => $values['accent_color'] ?? null,
-            'font' => $values['font'] ?? null,
-            'dark_logo' => $values['dark_logo'] ?? null,
-            'light_logo' => $values['light_logo'] ?? null,
+            'logo' => null,
+            'favicon' => null,
+            'primary_color' => null,
+            'secondary_color' => null,
+            'accent_color' => null,
+            'font' => null,
+            'dark_logo' => null,
+            'light_logo' => null,
             'domain' => $domain?->domain ?? $tenant->slug . '.' . config('app.base_domain', 'localhost'),
         ];
-    }
-
-    /**
-     * Platform-level brand colors (the "platform colors" field). Distinct from
-     * `getBranding` (tenant appearance settings) which only apply to the teacher
-     * dashboard and login.
-     *
-     * @return array<string, mixed>
-     */
-    private function getPlatformBranding(\App\Models\Tenant $tenant): array
-    {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve();
     }
 
     private function getNavigation($roles, $permissions): array

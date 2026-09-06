@@ -41,7 +41,6 @@ export const questionFormSchema = z.object({
     "file_upload",
     "coding",
   ]),
-  questionFormat: z.enum(["text", "image"]).default("text"),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   categoryId: z.number().int().positive().nullable().optional(),
   bankId: z.number().int().positive().nullable().optional(),

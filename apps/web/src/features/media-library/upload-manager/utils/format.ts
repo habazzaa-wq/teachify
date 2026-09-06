@@ -19,10 +19,6 @@ export function formatETA(seconds: number | null): string {
   if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return "—";
   if (seconds < 1) return "لحظات";
   const total = Math.round(seconds);
-  // Safety cap: anything longer than 24h is effectively unknown and would only
-  // alarm the user (a stalled upload must never show "hundreds of thousands of
-  // hours"). Treat it as unknown rather than fabricating a huge countdown.
-  if (total >= 86_400) return "—";
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;

@@ -16,22 +16,13 @@ import {
   UPLOAD_RETRY_MAX_DELAY,
   UPLOAD_SPEED_SMOOTHING,
   UPLOAD_SLOW_THRESHOLD,
-  UPLOAD_ETA_SHOW_MAX_SECONDS,
   UPLOAD_PERMISSION,
   UPLOAD_SESSION_TTL,
   UPLOAD_SYNC_TAG,
   CHUNK_MAX_RETRIES,
   CHUNK_PARALLEL_DEFAULT,
-  CHUNK_IDLE_TIMEOUT_MS,
 } from "../constants";
 import { buildChunks, contentRange, selectChunkSize, shouldChunk, sliceChunk } from "../utils/chunking";
-import {
-  boundEta,
-  currentUploadedBytes,
-  foldCompletedBytes,
-  progressPercent,
-  setInFlight,
-} from "./progressAccounting";
 import type {
   NetworkStatus,
   PersistedUploadRecord,
@@ -50,8 +41,6 @@ interface ActiveXhr {
   abortReason: "pause" | "cancel" | null;
   loaded: number;
   total: number;
-  /** Last observed uploaded byte offset, for the idle watchdog. */
-  lastProgressAt: number;
 }
 
 interface SpeedSample {
@@ -75,12 +64,6 @@ interface ItemRuntime {
   uploadStartedAt: number | null;
   /** Last known total uploaded bytes (for delta calculation). */
   lastUploadedBytes: number;
-  /**
-   * Monotonic count of fully-uploaded bytes for this item. Only ever grows
-   * (reconciled against completed chunks), so retries/recovery can never make
-   * the reported progress move backward.
-   */
-  uploadedBytes: number;
   /** AbortController for the finalize request, so cancellation works during processing. */
   finalizeAbort: AbortController | null;
 }
@@ -91,14 +74,7 @@ function statusOf(id: string): UploadStatus | undefined {
 
 class UploadExecutorError extends Error {
   constructor(
-    public kind:
-      | "network"
-      | "timeout"
-      | "server"
-      | "abort"
-      | "offline"
-      | "checksum"
-      | "unknown",
+    public kind: "network" | "timeout" | "server" | "abort" | "offline" | "checksum" | "unknown",
     public status?: number,
     message?: string,
   ) {
@@ -151,8 +127,6 @@ export interface EnqueueOptions {
   folderId?: number | null;
   canUpload?: boolean;
   source?: UploadSource;
-  /** Chosen display names, parallel to `files`. Falls back to the file name. */
-  names?: string[];
 }
 
 /**
@@ -252,10 +226,8 @@ class UploadEngine {
     const built: UploadItem[] = [];
     let rejectedCount = 0;
 
-    for (let i = 0; i < files.length; i += 1) {
-      const file = files[i]!;
-      const name = options.names?.[i]?.trim() || file.name;
-      const item = buildUploadItem(file, folderId, name);
+    for (const file of files) {
+      const item = buildUploadItem(file, folderId);
 
       const validation = uploadGuard.validateFile(file);
       if (!validation.ok && validation.error) {
@@ -348,7 +320,6 @@ class UploadEngine {
       speedSamples: [],
       uploadStartedAt: null,
       lastUploadedBytes: 0,
-      uploadedBytes: 0,
       finalizeAbort: null,
     };
     this.runtimes.set(item.id, runtime);
@@ -394,19 +365,10 @@ class UploadEngine {
       return;
     }
 
-    // Preserve already-uploaded progress when re-running (retry/recovery). The
-    // progress is derived from the runtime's monotonic byte accumulator so it
-    // can never go backward even after a transient failure.
-    this.trackCompletedBytes(runtime);
-    const priorProgress = Math.min(
-      100,
-      (runtime.uploadedBytes / (runtime.session.size || 1)) * 100,
-    );
-
     this.setItem(id, {
       status: "preparing",
       startedAt: runtime.session.startedAt > 0 ? runtime.session.startedAt : Date.now(),
-      progress: priorProgress,
+      progress: 0,
       speed: 0,
       eta: null,
       error: null,
@@ -438,7 +400,6 @@ class UploadEngine {
           folder_id: runtime.session.folderId ?? undefined,
           upload_id: runtime.session.uploadId,
           total_chunks: runtime.session.totalChunks,
-          service: runtime.session.category === "video" ? "stream" : "storage",
         });
       }
 
@@ -476,8 +437,7 @@ class UploadEngine {
           runtime.finalizeAbort = null;
         }
       } else {
-        const uploadService = runtime.session.category === "video" ? "stream" : "storage";
-        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File, undefined, uploadService);
+        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File);
         this.completeItem(id, runtime, res.asset?.id ?? null, res.cdnUrl ?? res.asset?.cdnUrl ?? null);
       }
     } catch (err) {
@@ -583,8 +543,6 @@ class UploadEngine {
           uploadedAt: chunk.uploadedAt,
           retryCount: chunk.retryCount,
         });
-        // Fold the completed chunk into the monotonic byte accumulator and drop
-        // its in-flight entry so it is not double-counted.
         runtime.chunkLoaded.delete(chunk.index);
         this.updateProgress(id, runtime);
         return;
@@ -631,90 +589,37 @@ class UploadEngine {
 
       const blob = sliceChunk(runtime.blob, chunk);
       const xhr = new XMLHttpRequest();
-      const handle: ActiveXhr = { xhr, abortReason: null, loaded: 0, total: chunk.size, lastProgressAt: 0 };
+      const handle: ActiveXhr = { xhr, abortReason: null, loaded: 0, total: chunk.size };
       runtime.items.set(chunk.chunkId, handle);
-
-      // Distinguish an idle-stall abort (retryable, like a timeout) from a
-      // user-initiated pause/cancel abort (terminal).
-      let idleStalled = false;
-
-      // Idle watchdog: unlike XMLHttpRequest.timeout (which is an absolute
-      // deadline from send() and fires even when bytes are still streaming), we
-      // only abort a chunk that has made NO forward progress for the idle
-      // window. Slow-but-active links therefore keep uploading instead of being
-      // killed mid-transfer, which stopped the progress-jump-back / repeated
-      // timeout / hard-failure spiral over slow VPNs.
-      let watchdog: ReturnType<typeof setInterval> | null = null;
-      const disposeWatchdog = () => {
-        if (watchdog) {
-          clearInterval(watchdog);
-          watchdog = null;
-        }
-      };
-      const armWatchdog = () => {
-        if (watchdog) clearInterval(watchdog);
-        watchdog = setInterval(() => {
-          const cur = handle.loaded;
-          if (cur <= handle.lastProgressAt) {
-            // No forward progress since the last tick -> treat as stalled and
-            // surface a retryable error (the engine retries the SAME chunk with
-            // its monotonic in-flight bytes preserved, so progress never jumps
-            // backwards).
-            idleStalled = true;
-            xhr.abort();
-          } else {
-            handle.lastProgressAt = cur;
-          }
-        }, CHUNK_IDLE_TIMEOUT_MS);
-      };
 
       xhr.upload.onprogress = (e: ProgressEvent) => {
         if (!e.lengthComputable) return;
-        handle.loaded = e.loaded;
-        handle.lastProgressAt = e.loaded;
         this.updateChunkProgress(id, runtime, chunk.index, e.loaded);
-        armWatchdog();
-      };
-      xhr.upload.onloadstart = () => {
-        handle.lastProgressAt = 0;
-        armWatchdog();
       };
 
       xhr.onload = () => {
         runtime.items.delete(chunk.chunkId);
-        disposeWatchdog();
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else if (xhr.status === 0) {
           reject(new UploadExecutorError("network"));
         } else if (xhr.status === 413) {
           reject(new UploadExecutorError("server", xhr.status, "Chunk too large"));
-        } else if (xhr.status === 404) {
-          // A 404 is treated as a normal retryable server error: the engine
-          // retries the SAME chunk against the SAME session (idempotent chunk
-          // writes) rather than silently dropping the session and recreating a
-          // brand-new backend asset, which would duplicate the media record.
-          reject(new UploadExecutorError("server", xhr.status));
         } else {
           reject(new UploadExecutorError("server", xhr.status));
         }
       };
       xhr.onerror = () => {
         runtime.items.delete(chunk.chunkId);
-        disposeWatchdog();
         reject(new UploadExecutorError("network"));
       };
       xhr.ontimeout = () => {
         runtime.items.delete(chunk.chunkId);
-        disposeWatchdog();
         reject(new UploadExecutorError("timeout"));
       };
       xhr.onabort = () => {
         runtime.items.delete(chunk.chunkId);
-        disposeWatchdog();
-        // Idle-stall aborts are retryable (like timeouts); user pause/cancel
-        // aborts are terminal.
-        reject(new UploadExecutorError(idleStalled ? "timeout" : "abort"));
+        reject(new UploadExecutorError("abort"));
       };
 
       try {
@@ -749,26 +654,22 @@ class UploadEngine {
         xhr.send(blob);
       } catch (e) {
         runtime.items.delete(chunk.chunkId);
-        disposeWatchdog();
         reject(e instanceof Error ? (e as UploadExecutorError) : new UploadExecutorError("unknown"));
       }
     });
   }
 
   private updateChunkProgress(id: string, runtime: ItemRuntime, chunkIndex: number, loaded: number): void {
-    // Per-chunk in-flight bytes are monotonic: a retry of the same chunk must
-    // never report less than what it had already transferred, so global
-    // progress can never dip while a chunk is being re-uploaded.
-    const { state } = this.progressState(runtime);
-    const next = setInFlight(state, chunkIndex, loaded);
-    runtime.chunkLoaded = next.inFlight;
+    runtime.chunkLoaded.set(chunkIndex, loaded);
 
     const now = Date.now();
     if (!runtime.uploadStartedAt) {
       runtime.uploadStartedAt = now;
     }
 
-    const uploadedBytes = this.currentUploadedBytes(runtime);
+    const uploadedBytes =
+      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
+      Array.from(runtime.chunkLoaded.values()).reduce((a, b) => a + b, 0);
 
     const deltaBytes = uploadedBytes - runtime.lastUploadedBytes;
     runtime.lastUploadedBytes = uploadedBytes;
@@ -815,78 +716,29 @@ class UploadEngine {
     this.patchSession(runtime.session);
   }
 
-  /**
-   * Build the pure progress state backing this runtime so accounting delegates
-   * to the testable monotonic model in progressAccounting.ts.
-   */
-  private progressState(runtime: ItemRuntime): {
-    state: { completedBytes: number; inFlight: Map<number, number>; totalBytes: number };
-    chunks: { index: number; size: number; status: "pending" | "hashing" | "uploading" | "uploaded" | "failed" }[];
-  } {
-    return {
-      state: {
-        completedBytes: runtime.uploadedBytes,
-        inFlight: runtime.chunkLoaded,
-        totalBytes: runtime.session.size || 0,
-      },
-      chunks: runtime.chunks as { index: number; size: number; status: "pending" | "hashing" | "uploading" | "uploaded" | "failed" }[],
-    };
-  }
-
-  /**
-   * Fold any chunks that are now marked "uploaded" into the monotonic byte
-   * accumulator. Never subtracts: the accumulator only grows and is reconciled
-   * with the completed-chunk set after recovery/retry.
-   */
-  private trackCompletedBytes(runtime: ItemRuntime): void {
-    const { state, chunks } = this.progressState(runtime);
-    runtime.uploadedBytes = foldCompletedBytes(state, chunks).completedBytes;
-  }
-
-  /**
-   * Aggregate uploaded bytes = monotonic completed bytes + in-flight bytes of
-   * chunks that are not yet complete. This is the single source of truth for
-   * progress/speed so parallel chunks never overwrite each other and retries
-   * never subtract already-counted bytes.
-   */
-  private currentUploadedBytes(runtime: ItemRuntime): number {
-    const { state, chunks } = this.progressState(runtime);
-    return currentUploadedBytes(state, chunks);
-  }
-
   private updateProgress(id: string, runtime: ItemRuntime): void {
     const session = runtime.session;
-    const uploadedBytes = this.currentUploadedBytes(runtime);
+    const uploadedBytes =
+      runtime.chunks.reduce((acc, c) => acc + (c.status === "uploaded" ? c.size : 0), 0) +
+      Array.from(runtime.chunkLoaded.values()).reduce((a, b) => a + b, 0);
 
     const total = session.size || 1;
-    const progress = progressPercent(uploadedBytes, total);
+    const progress = Math.min(100, (uploadedBytes / total) * 100);
     const completedChunks = session.completedChunks;
     const item = useUploadManagerStore.getState().items[id];
 
     const rawSpeed = this.computeSpeed(runtime);
-    // Smooth the speed to avoid a jittery display. Critically, when there is no
-    // recent throughput (rawSpeed === 0, e.g. during hashing / backoff / a
-    // transient network stall) we do NOT keep decaying the previously smoothed
-    // value toward zero. Decaying on zero-byte progress events drove the
-    // displayed speed to ~0, which made `eta = remaining / speed` explode to
-    // astronomically large (effectively infinite) estimates. Instead we report
-    // zero speed and an unknown ETA so the UI never shows a fake, ballooning
-    // countdown.
+    // Smooth the speed to avoid jittery display.
     const prevSpeed = item?.speed ?? 0;
     const smoothing = UPLOAD_SPEED_SMOOTHING;
-    const speed = rawSpeed > 0
-      ? (prevSpeed > 0 ? prevSpeed * (1 - smoothing) + rawSpeed * smoothing : rawSpeed)
-      : 0;
+    const speed = prevSpeed
+      ? prevSpeed * (1 - smoothing) + rawSpeed * smoothing
+      : rawSpeed;
 
     if (speed > 0) networkMonitor.reportSpeed(speed);
 
     const remaining = session.size - uploadedBytes;
-    // A stable ETA never fabricates a ballooning countdown: estimates beyond
-    // the sane horizon (an actively-progressing but very slow link) are
-    // reported as unknown instead of a multi-hour/day figure that only alarms
-    // the user. The UI renders null as "—".
-    const rawEta = speed > 0 && remaining > 0 ? remaining / speed : null;
-    const eta = boundEta(rawEta, UPLOAD_ETA_SHOW_MAX_SECONDS);
+    const eta = speed > 0 ? remaining / speed : null;
 
     let warning = item?.warning ?? null;
     if (speed > 0 && speed < UPLOAD_SLOW_THRESHOLD && item?.warning?.type !== "large") {
@@ -988,7 +840,7 @@ class UploadEngine {
           this.setItem(id, { status: "paused", retryAt: null });
           return;
         }
-        this.setItem(id, { status: "queued", retryAt: null, error: null });
+        this.setItem(id, { status: "queued", retryAt: null, progress: 0, error: null });
         if (this.runtimes.get(id)) {
           this.runtimes.get(id)!.session.status = "active";
         }
@@ -1221,7 +1073,6 @@ class UploadEngine {
       speedSamples: [],
       uploadStartedAt: null,
       lastUploadedBytes: 0,
-      uploadedBytes: 0,
       finalizeAbort: null,
     };
     this.runtimes.set(session.sessionId, runtime);

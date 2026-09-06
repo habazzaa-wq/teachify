@@ -1,6 +1,5 @@
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
-import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   darkMode: ["class"],
@@ -16,7 +15,6 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "var(--font-sans)", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -137,8 +135,6 @@ const config: Config = {
         lg: "var(--radius)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
-        "3xl": "1.75rem",
-        "4xl": "2rem",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
@@ -187,18 +183,6 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
-        "brand-glow-pulse": {
-          "0%, 100%": { opacity: "0.55" },
-          "50%": { opacity: "0.9" },
-        },
-        "brand-shimmer": {
-          "0%": { backgroundPosition: "200% 0" },
-          "100%": { backgroundPosition: "-200% 0" },
-        },
-        "brand-float": {
-          "0%, 100%": { transform: "translateY(0) scale(1)" },
-          "50%": { transform: "translateY(-6px) scale(1.04)" },
-        },
         "count-up": {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -228,21 +212,6 @@ const config: Config = {
           "25%": { transform: "rotate(-2deg)" },
           "75%": { transform: "rotate(2deg)" },
         },
-        "marquee-rtl": {
-          from: { transform: "translateX(0)" },
-          to: { transform: "translateX(50%)" },
-        },
-        /* slow Ken-Burns zoom for the hero stage photo — adds life without
-           layout cost (transform-only, GPU friendly) */
-        "slow-zoom": {
-          from: { transform: "scale(1.12)" },
-          to: { transform: "scale(1)" },
-        },
-        /* gentle radial drift for the decorative ghost numeral / watermark */
-        "drift": {
-          "0%, 100%": { transform: "translate3d(0, 0, 0) rotate(var(--drift-rot, 0deg))" },
-          "50%": { transform: "translate3d(0, -8px, 0) rotate(var(--drift-rot, 0deg))" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -263,34 +232,10 @@ const config: Config = {
         "scale-up": "scale-up 0.3s ease-out",
         "expand-in": "expand-in 0.2s ease-out",
         "wiggle": "wiggle 0.3s ease-in-out",
-        "marquee-rtl": "marquee-rtl 32s linear infinite",
-        "brand-glow-pulse": "brand-glow-pulse 2.4s ease-in-out infinite",
-        "brand-shimmer": "brand-shimmer 1.8s linear infinite",
-        "brand-float": "brand-float 5s ease-in-out infinite",
-        "slow-zoom": "slow-zoom 9s cubic-bezier(0.22, 1, 0.36, 1) both",
-        "drift": "drift 6s ease-in-out infinite",
-      },
-      transitionTimingFunction: {
-        brand: "cubic-bezier(0.22, 1, 0.36, 1)",
-      },
-      boxShadow: {
-        "soft-xs": "0 1px 2px rgb(0 0 0 / 0.04), 0 2px 8px -4px rgb(0 0 0 / 0.08)",
-        "soft-md": "0 2px 4px -1px rgb(0 0 0 / 0.05), 0 12px 28px -14px rgb(0 0 0 / 0.16)",
-        "soft-lg": "0 6px 12px -4px rgb(0 0 0 / 0.08), 0 24px 48px -22px rgb(0 0 0 / 0.22)",
-        "brand-sm": "0 6px 20px -10px color-mix(in srgb, var(--brand-primary) 45%, transparent)",
-        "brand-md": "0 14px 38px -14px color-mix(in srgb, var(--brand-primary) 55%, transparent)",
-        "brand-glow": "0 0 0 1px color-mix(in srgb, var(--brand-primary) 30%, transparent), 0 18px 50px -18px color-mix(in srgb, var(--brand-secondary) 45%, transparent)",
       },
     },
   },
-  plugins: [
-    animate,
-    plugin(({ addVariant }) => {
-      // Hover effects only on devices that can actually hover — prevents
-      // "stuck hover" states on touch screens.
-      addVariant("hoverable", "@media (hover: hover) and (pointer: fine)");
-    }),
-  ],
+  plugins: [animate],
 };
 
 export default config;

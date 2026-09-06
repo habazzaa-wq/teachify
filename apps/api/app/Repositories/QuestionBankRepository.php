@@ -26,7 +26,6 @@ class QuestionBankRepository
         $query = $this->applyVisibilityFilter($query, $params['visibility'] ?? null);
         $query = $this->applyCategoryFilter($query, $params['category_id'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
-        $query = $query->withCount('questions');
 
         return $query->paginate((int) ($params['per_page'] ?? 25));
     }
@@ -75,8 +74,6 @@ class QuestionBankRepository
 
         if ($bank) {
             $bank->restore();
-            $bank->forceFill(['status' => 'published'])->save();
-
             return $bank->refresh();
         }
 

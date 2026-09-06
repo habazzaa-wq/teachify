@@ -18,7 +18,7 @@
  * It only exposes the interface that Course Builder will consume.
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   AppDialog,
   AppDialogContent,
@@ -32,13 +32,11 @@ import { MediaToolbar } from "./MediaToolbar";
 import { MediaEmptyState } from "./MediaEmptyState";
 import { MediaLoadingState } from "./MediaLoadingState";
 import { MediaErrorState } from "./MediaErrorState";
-import { MediaPagination } from "./workspace/MediaPagination";
 import type { ViewMode, MediaType, MediaStatus } from "../types";
 
 interface MediaPickerResult {
   id: number;
   ids: number[];
-  title?: string | null;
 }
 
 interface MediaPickerProps {
@@ -62,77 +60,22 @@ function MediaPicker({
   const [sort, setSort] = useState("created_at");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(24);
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-
-  // Any filter change should return the user to the first page. We reset the
-  // page inside the handlers (not an effect) to avoid cascading re-renders.
-  const gotoFirstPage = useCallback(() => setPage(1), []);
-
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearch(value);
-      gotoFirstPage();
-    },
-    [gotoFirstPage],
-  );
-  const handleTypeChange = useCallback(
-    (value: MediaType | "all") => {
-      setTypeFilter(value);
-      gotoFirstPage();
-    },
-    [gotoFirstPage],
-  );
-  const handleStatusChange = useCallback(
-    (value: MediaStatus | "all") => {
-      setStatusFilter(value);
-      gotoFirstPage();
-    },
-    [gotoFirstPage],
-  );
-  const handleSortChange = useCallback(
-    (value: string) => {
-      setSort(value);
-      gotoFirstPage();
-    },
-    [gotoFirstPage],
-  );
-  const handlePerPageChange = useCallback(
-    (value: number) => {
-      setPerPage(value);
-      gotoFirstPage();
-    },
-    [gotoFirstPage],
-  );
-
-  // Scroll the results back to the top whenever the page or page size changes.
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [page, perPage]);
-
-  const { data, isLoading, isError, refetch, isFetching } = useMediaAssets({
+  const { data, isLoading, isError, refetch } = useMediaAssets({
     search: search || undefined,
     type: typeFilter !== "all" ? typeFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     sort,
     types: allowedTypes,
-    page,
-    per_page: perPage,
+    per_page: 50,
   });
 
   const assets = useMemo(() => data?.data ?? [], [data]);
-  const meta = data?.meta ?? {};
-  const total = Number(meta.total ?? 0);
-  const lastPage = Number(meta.last_page ?? 1);
-  const currentPage = Number(meta.current_page ?? page);
-
   const handleSelect = useCallback(
     (id: number, selected: boolean) => {
       if (mode === "single") {
         const asset = assets.find((a) => a.id === id);
-        if (asset) onSelect({ id, ids: [id], title: asset.title ?? asset.originalName });
+        if (asset) onSelect({ id, ids: [id] });
         return;
       }
       setSelectedIds((prev) => {
@@ -148,59 +91,37 @@ function MediaPicker({
   const handleConfirm = useCallback(() => {
     if (selectedIds.size > 0) {
       const ids = [...selectedIds];
-      const first = assets.find((a) => a.id === ids[0]);
-      if (ids[0] !== undefined) onSelect({ id: ids[0], ids, title: first?.title ?? first?.originalName });
+      if (ids[0] !== undefined) onSelect({ id: ids[0], ids });
     }
-  }, [selectedIds, assets, onSelect]);
-
-  const showGridLoading = isLoading;
+  }, [selectedIds, onSelect]);
 
   return (
     <AppDialog open={open} onOpenChange={onClose}>
-      <AppDialogContent
-        className="max-w-5xl"
-        style={{
-          maxHeight: "90vh",
-          display: "flex",
-          flexDirection: "column",
-          padding: 0,
-          overflow: "hidden",
-        }}
-      >
-        <AppDialogHeader className="border-b px-5 py-4">
+      <AppDialogContent className="max-w-5xl" style={{ maxHeight: "90vh" }}>
+        <AppDialogHeader>
           <AppDialogTitle>اختيار ملف وسائط</AppDialogTitle>
         </AppDialogHeader>
 
-        {/* Scrollable results area */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 md:px-6">
+        <div className="flex-1 overflow-y-auto">
           <MediaToolbar
             search={search}
-            onSearchChange={handleSearchChange}
+            onSearchChange={setSearch}
             typeFilter={typeFilter}
-            onTypeChange={handleTypeChange}
+            onTypeChange={setTypeFilter}
             statusFilter={statusFilter}
-            onStatusChange={handleStatusChange}
+            onStatusChange={setStatusFilter}
             sort={sort}
-            onSortChange={handleSortChange}
+            onSortChange={setSort}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             onUpload={() => {}}
             onCreateFolder={() => {}}
-            totalAssets={total}
           />
 
-          <div className="relative mt-4">
-            {isFetching && !showGridLoading && (
-              <div className="absolute inset-x-0 -top-2 z-10 flex justify-center">
-                <span className="rounded-full bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow-sm ring-1 ring-border">
-                  جارٍ التحميل…
-                </span>
-              </div>
-            )}
-
+          <div className="mt-4">
             {isError ? (
               <MediaErrorState onRetry={() => refetch()} />
-            ) : showGridLoading ? (
+            ) : isLoading ? (
               <MediaLoadingState />
             ) : assets.length === 0 ? (
               <MediaEmptyState />
@@ -210,7 +131,7 @@ function MediaPicker({
                 selectedIds={selectedIds}
                 onSelectionChange={setSelectedIds}
                 onAssetClick={(asset) => {
-                  if (mode === "single") onSelect({ id: asset.id, ids: [asset.id], title: asset.title ?? asset.originalName });
+                  if (mode === "single") onSelect({ id: asset.id, ids: [asset.id] });
                   else handleSelect(asset.id, !selectedIds.has(asset.id));
                 }}
                 selectable={mode === "multi"}
@@ -219,22 +140,8 @@ function MediaPicker({
           </div>
         </div>
 
-        {/* Pagination footer — lets the user browse the whole library */}
-        {!showGridLoading && !isError && total > 0 && (
-          <MediaPagination
-            currentPage={currentPage}
-            lastPage={lastPage}
-            total={total}
-            perPage={perPage}
-            onPageChange={setPage}
-            onPerPageChange={handlePerPageChange}
-            isLoading={isFetching}
-            pageSizeOptions={[24, 36, 48, 72, 96]}
-          />
-        )}
-
         {mode === "multi" && (
-          <div className="flex items-center justify-between border-t bg-background px-5 py-4">
+          <div className="flex items-center justify-between border-t pt-4">
             <span className="text-sm text-muted-foreground">
               {selectedIds.size} {selectedIds.size === 1 ? "محدد" : "محددين"}
             </span>

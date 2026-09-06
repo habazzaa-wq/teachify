@@ -3,7 +3,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Megaphone, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useBrandColors } from "@/hooks/useBrandColors";
 import { usePublicNews } from "@/features/homepage/news/hooks";
 import { resolveTicker, contrastText, darkenHex } from "@/features/homepage/news/utils";
 import type { NewsItem } from "@/features/homepage/news/types";
@@ -69,7 +68,8 @@ export function NewsTicker({
   const { config } = resolved;
   const items = useMemo(() => data?.items ?? [], [data]);
 
-  const { primary, secondary } = useBrandColors();
+  const primary = "#D87B63";
+  const secondary = "#FFB50E";
   const bg = config.bgColor || primary;
   const accent = config.accentColor || secondary;
   const text = config.textColor || contrastText(bg);
@@ -80,9 +80,6 @@ export function NewsTicker({
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
-    // On phones the ticker must be open on arrival so the news is visible
-    // right away, regardless of any previously saved "collapsed" state.
-    if (window.matchMedia("(max-width: 768px)").matches) return false;
     try {
       return localStorage.getItem("news-ticker-collapsed") === "true";
     } catch {
@@ -276,15 +273,14 @@ export function NewsTicker({
             type="button"
             onClick={() => persistCollapsed(true)}
             aria-label="إخفاء شريط الأخبار"
-            className="absolute end-3 top-1/2 z-30 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white/90 shadow-sm backdrop-blur transition-colors duration-200 hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="absolute end-3 top-1/2 z-30 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/20 text-white/90 backdrop-blur transition-colors hover:bg-black/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
-            <ChevronUp className="h-3.5 w-3.5" strokeWidth={2.25} />
+            <ChevronUp className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      {/* Collapsed re-open handle: slim pull-down chevron tab, in normal flow
-          so it sits above the sticky navbar instead of overlapping it */}
+      {/* Collapsed re-open handle: thin pull-down arrow bar */}
       {collapsible && collapsed && (
         <button
           type="button"
@@ -295,17 +291,16 @@ export function NewsTicker({
           onPointerCancel={onHandlePointerUp}
           aria-label="إظهار شريط الأخبار"
           className={cn(
-            "relative z-[60] mx-auto flex h-6 w-14 cursor-pointer items-center justify-center rounded-b-xl border border-t-0 border-white/25 text-white/90 shadow-[0_4px_16px_rgba(0,0,0,0.2)] outline-none transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing active:scale-95",
-            pulling && "translate-y-0.5",
+            "fixed inset-x-0 top-0 z-[60] mx-auto flex w-16 cursor-pointer items-center justify-center rounded-b-lg border-none py-1 outline-none backdrop-blur transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            pulling && "translate-y-1",
           )}
-          style={{ background: gradient, color: text }}
+          style={{
+            background: gradient,
+            color: text,
+            boxShadow: `0 4px 20px rgba(0,0,0,0.25)`,
+          }}
         >
-          <ChevronDown
-            className={cn(
-              "h-3.5 w-3.5 drop-shadow-sm transition-transform duration-200",
-              pulling && "translate-y-0.5",
-            )}
-          />
+          <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-300", pulling && "translate-y-0.5")} />
         </button>
       )}
     </>

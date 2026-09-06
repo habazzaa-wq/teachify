@@ -4,7 +4,6 @@ return [
 
     'platform' => [
         'domain' => env('PLATFORM_DOMAIN', 'platform-domain'),
-        'domain_check_secret' => env('DOMAIN_CHECK_SECRET'),
     ],
 
     /*

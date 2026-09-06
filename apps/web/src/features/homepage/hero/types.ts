@@ -19,8 +19,6 @@ export interface HeroIcons {
   phone: HeroIconConfig;
 }
 
-export type HeroBgStyle = "math" | "arabic" | "english";
-
 export interface HeroSettings {
   title: string;
   subtitle: string;
@@ -31,7 +29,6 @@ export interface HeroSettings {
   isActive: boolean;
   socialLinks: HeroSocialLinks;
   icons: HeroIcons;
-  bgStyle: HeroBgStyle;
 }
 
 export const DEFAULT_HERO: HeroSettings = {
@@ -56,5 +53,4 @@ export const DEFAULT_HERO: HeroSettings = {
     bestStudents: { label: "أفضل الطلاب", visible: true },
     phone: { label: "رقم الهاتف", visible: true },
   },
-  bgStyle: "math",
 };

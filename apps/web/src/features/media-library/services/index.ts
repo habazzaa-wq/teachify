@@ -70,13 +70,7 @@ function formatAsset(raw: RawAsset): MediaAsset {
     transcodingStatus: raw.transcodingStatus == null
       ? null
       : (str(raw.transcodingStatus) as ProcessingStatus),
-    isProcessing: (() => {
-      const rawProcessing = raw.isProcessing === true;
-      const hasCdn = !!str(raw.cdnUrl);
-      const type = str(raw.type, "file");
-      if (rawProcessing && hasCdn && type !== "video") return false;
-      return rawProcessing;
-    })(),
+    isProcessing: raw.isProcessing === true,
     processingProgress: num(raw.processingProgress),
     captions: Array.isArray(raw.captions) ? (raw.captions as MediaCaption[]) : [],
     qualities: Array.isArray(raw.qualities) ? (raw.qualities as MediaQuality[]) : [],
@@ -149,19 +143,6 @@ export const mediaLibraryService = {
       data: (data.data ?? []).map(formatAsset),
       meta: data.meta ?? {},
     };
-  },
-
-  async listAllAssetIds(params?: MediaFilterParams): Promise<number[]> {
-    const ids: number[] = [];
-    let page = 1;
-    let lastPage = 1;
-    do {
-      const { data, meta } = await this.listAssets({ ...params, page, per_page: 100 });
-      ids.push(...data.map((a) => a.id));
-      lastPage = Number(meta.last_page ?? page);
-      page += 1;
-    } while (page <= lastPage);
-    return ids;
   },
 
   async getAsset(id: number): Promise<MediaAsset | null> {
@@ -367,7 +348,7 @@ export const mediaLibraryService = {
     const { data } = await api.post(`/media-library/upload/resumable/${sessionId}/finalize`, {
       size_bytes: payload?.size_bytes,
       file_hash: payload?.file_hash,
-    }, { signal: options?.signal, timeout: 600_000 });
+    }, { signal: options?.signal });
     return {
       asset: data.data?.asset ? formatAsset(data.data.asset) : null,
     };
@@ -396,12 +377,10 @@ export const mediaLibraryService = {
   async uploadFileDirect(
     file: File,
     visibility?: string,
-    service?: string,
   ): Promise<{ asset: MediaAsset | null; cdnUrl: string | null }> {
     const form = new FormData();
     form.append("file", file);
     if (visibility) form.append("visibility", visibility);
-    if (service) form.append("service", service);
 
     // Build the same auth/tenant context the axios interceptor would, but use
     // the native fetch API so the browser sets the multipart boundary and the
@@ -451,12 +430,6 @@ export const mediaLibraryService = {
       headers,
       body: form,
       credentials: "include",
-      // A network blackhole must never leave this promise pending forever. Use
-      // a generous bounded timeout: the server-side endpoint is capped at 10MB,
-      // so this is plenty for the entire request. On expiry fetch rejects with
-      // an AbortError, which the caller surfaces as a normal failure instead of
-      // an upload that silently hangs.
-      signal: AbortSignal.timeout(300_000),
     });
 
     if (!res.ok) {

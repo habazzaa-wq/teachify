@@ -4,13 +4,15 @@ namespace App\Services\Bunny;
 
 use App\Services\Bunny\Contracts\BunnyStorageInterface;
 use App\Services\Bunny\Exceptions\BunnyServiceException;
+use Illuminate\Support\Str;
 
 class BunnyStorageService implements BunnyStorageInterface
 {
     public function __construct(
         private readonly BunnyClient $client,
         private readonly BunnyCacheService $cache,
-    ) {}
+    ) {
+    }
 
     public function createFolder(string $path): array
     {
@@ -32,7 +34,6 @@ class BunnyStorageService implements BunnyStorageInterface
 
         $result = $this->client->storageRequest('DELETE', $normalized.'/', [
             'operation' => "delete_folder {$normalized}",
-            'ignore_not_found' => true,
         ]);
 
         $this->cache->invalidateStorage($normalized);
@@ -144,7 +145,6 @@ class BunnyStorageService implements BunnyStorageInterface
 
         $result = $this->client->storageRequest('DELETE', $normalized, [
             'operation' => "delete_file {$normalized}",
-            'ignore_not_found' => true,
         ]);
 
         $this->cache->invalidateStorage(dirname($normalized));

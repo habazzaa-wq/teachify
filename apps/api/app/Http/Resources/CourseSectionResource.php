@@ -27,9 +27,7 @@ class CourseSectionResource extends JsonResource
             'color' => $this->color,
             'icon' => $this->icon,
             'notes' => $this->notes,
-            'lessonsCount' => $this->lessons_count
-                ?? ($this->relationLoaded('lessons') ? $this->lessons->count() : $this->lessons()->count()),
-            'lessons' => CourseLessonResource::collection($this->whenLoaded('lessons')),
+            'lessonsCount' => $this->lessons_count ?? $this->lessons()->count(),
             'course' => $this->when($this->relationLoaded('course'), fn () => [
                 'id' => (string) $this->course->id,
                 'title' => $this->course->title,

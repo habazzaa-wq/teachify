@@ -1,17 +1,15 @@
 "use client";
 
-import { useMemo, useCallback, memo, useEffect } from "react";
+import { useMemo, useCallback, memo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Upload, FolderOpen, Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
 import { useMediaAssets, useFolderBreadcrumbs, useToggleFavorite, useTogglePin, useArchiveAsset, useDuplicateAsset } from "../../hooks";
-import { mediaLibraryService } from "../../services";
 import { WorkspaceToolbar } from "./WorkspaceToolbar";
 import { MediaBreadcrumbs } from "./MediaBreadcrumbs";
 import { DamMediaCard } from "./DamMediaCard";
 import { BulkActionsBar } from "./BulkActionsBar";
-import { MediaPagination } from "./MediaPagination";
 import { StudioGenericError } from "@/components/studio";
 import type { MediaAsset, MediaFilterParams } from "../../types";
 
@@ -24,7 +22,6 @@ interface AssetWorkspaceProps {
   onDownloadAsset: (asset: MediaAsset) => void;
   onBulkDelete: () => void;
   onBulkMove: () => void;
-  onOpenFolders?: () => void;
 }
 
 function groupAssets(assets: MediaAsset[], groupBy: string): Map<string, MediaAsset[]> {
@@ -87,7 +84,6 @@ function AssetWorkspaceBase({
   onDownloadAsset,
   onBulkDelete,
   onBulkMove,
-  onOpenFolders,
 }: AssetWorkspaceProps) {
   const {
     selectedFolderId,
@@ -97,14 +93,9 @@ function AssetWorkspaceBase({
     sortDirection,
     selectedIds,
     selectAsset,
-    selectAll,
     clearSelection,
     setInspectorAssetId,
     filters,
-    currentPage,
-    perPage,
-    setCurrentPage,
-    setPerPage,
   } = useMediaWorkspaceStore();
 
   const assetParams = useMemo((): MediaFilterParams => {
@@ -124,23 +115,12 @@ function AssetWorkspaceBase({
     if (filters.uploaderId) params.uploader_id = filters.uploaderId;
     if (typeof selectedFolderId === "number") params.folder_id = selectedFolderId;
     if (selectedFolderId === "root") params.root = true;
-    if (currentPage > 1) params.page = currentPage;
-    if (perPage) params.per_page = perPage;
     return params;
-  }, [selectedFolderId, sortField, sortDirection, filters, currentPage, perPage]);
+  }, [selectedFolderId, sortField, sortDirection, filters]);
 
   const { data, isLoading, isError, refetch } = useMediaAssets(assetParams);
   const assets = useMemo(() => data?.data ?? [], [data]);
   const totalAssets = Number(data?.meta?.total ?? 0);
-  const paginationMeta = useMemo(() => {
-    const meta = data?.meta ?? {};
-    return {
-      currentPage: Number(meta.current_page ?? currentPage),
-      lastPage: Number(meta.last_page ?? 1),
-      perPage: Number(meta.per_page ?? perPage),
-      total: totalAssets,
-    };
-  }, [data, currentPage, perPage, totalAssets]);
 
   const { data: breadcrumbs } = useFolderBreadcrumbs(
     typeof selectedFolderId === "number" ? selectedFolderId : null,
@@ -176,28 +156,7 @@ function AssetWorkspaceBase({
     selectAsset(id, assets.findIndex((a) => a.id === id), !!e?.shiftKey, !!e?.ctrlKey || !!e?.metaKey, assetIds);
   }, [assets, selectAsset]);
 
-  const handleSelectAllToggle = useCallback(async (checked: boolean) => {
-    if (!checked) {
-      clearSelection();
-      return;
-    }
-    if (totalAssets === 0) return;
-    try {
-      const allIds = await mediaLibraryService.listAllAssetIds(assetParams);
-      selectAll(allIds);
-    } catch {
-      selectAll(assets.map((a) => a.id));
-    }
-  }, [assetParams, totalAssets, assets, selectAll, clearSelection]);
-
   const grouped = useMemo(() => groupAssets(assets, groupBy), [assets, groupBy]);
-
-  // Reset to the first page whenever the active filters, folder, or sort order
-  // change so the user never lands on a stale (now empty) page.
-  useEffect(() => {
-    if (currentPage !== 1) setCurrentPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolderId, sortField, sortDirection, filters]);
 
   const breadcrumbItems = useMemo(() => {
     if (!breadcrumbs) return [];
@@ -212,12 +171,9 @@ function AssetWorkspaceBase({
     <div className="flex h-full flex-col overflow-hidden">
       <WorkspaceToolbar
         totalAssets={totalAssets}
-        selectedCount={selectedIds.size}
-        onSelectAllToggle={handleSelectAllToggle}
         onUpload={onUpload}
         onCreateFolder={onCreateFolder}
         onRefresh={() => refetch()}
-        onOpenFolders={onOpenFolders}
       />
 
       {/* Breadcrumbs */}
@@ -346,17 +302,6 @@ function AssetWorkspaceBase({
           </>
         )}
       </div>
-
-      {/* Pagination footer */}
-      <MediaPagination
-        currentPage={paginationMeta.currentPage}
-        lastPage={paginationMeta.lastPage}
-        total={paginationMeta.total}
-        perPage={paginationMeta.perPage}
-        onPageChange={setCurrentPage}
-        onPerPageChange={setPerPage}
-        isLoading={isLoading}
-      />
 
       {/* Bulk Actions */}
       <BulkActionsBar

@@ -11,31 +11,25 @@ import {
   AppSelectItem,
 } from "@/components/ui";
 import { StudioSurfaceCard, StudioChip } from "@/components/studio";
-import { DIFFICULTY_OPTIONS, QUESTION_TYPE_CONFIG, QUESTION_FORMAT_CONFIG } from "@/features/exam-bank/constants";
+import { DIFFICULTY_OPTIONS, QUESTION_TYPE_CONFIG } from "@/features/exam-bank/constants";
 import { QuestionBuilderForm } from "./QuestionBuilderForm";
-import { ScannedQuestionEditor } from "./ScannedQuestionEditor";
 import type {
   Question,
   QuestionContent,
   ExamQuestion,
   Difficulty,
   QuestionType,
-  QuestionFormat,
 } from "@/features/exam-bank/types";
 
 interface QuestionBuilderProps {
   question: Question;
   examQuestionLink?: ExamQuestion | null;
   onChange?: (payload: Record<string, unknown>) => void;
-  onScanUploaded?: (payload: { scanUrl: string; scanAssetId: string }) => void;
-  onScanRemoved?: () => void;
 }
 
 export function QuestionBuilder({
   question,
   onChange,
-  onScanUploaded,
-  onScanRemoved,
 }: QuestionBuilderProps) {
   const [title, setTitle] = useState(question.title);
   const [description, setDescription] = useState(question.description ?? "");
@@ -70,53 +64,42 @@ export function QuestionBuilder({
 
   const typeCfg = QUESTION_TYPE_CONFIG[question.type as QuestionType];
 
-  const isImageFormat = ((question.questionFormat as QuestionFormat) ?? "text") === "image";
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <StudioChip variant="accent" size="sm">
           {typeCfg.label}
         </StudioChip>
-        {isImageFormat && (
-          <StudioChip variant="success" size="sm">
-            {QUESTION_FORMAT_CONFIG.image.label}
-          </StudioChip>
-        )}
         <span className="text-xs text-studio-fg-subtle">
           {points} نقطة
         </span>
       </div>
 
-      {!isImageFormat && (
-        <>
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-studio-fg-muted">العنوان</p>
-            <AppInput
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                emit({ title: e.target.value });
-              }}
-              placeholder="عنوان السؤال"
-              className="bg-studio-soft"
-            />
-          </div>
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-studio-fg-muted">العنوان</p>
+        <AppInput
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            emit({ title: e.target.value });
+          }}
+          placeholder="عنوان السؤال"
+          className="bg-studio-soft"
+        />
+      </div>
 
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-studio-fg-muted">الوصف (اختياري)</p>
-            <AppTextarea
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                emit({ description: e.target.value || null });
-              }}
-              placeholder="وصف مختصر للسؤال..."
-              className="bg-studio-soft"
-            />
-          </div>
-        </>
-      )}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-studio-fg-muted">الوصف (اختياري)</p>
+        <AppTextarea
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            emit({ description: e.target.value || null });
+          }}
+          placeholder="وصف مختصر للسؤال..."
+          className="bg-studio-soft"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
@@ -158,42 +141,16 @@ export function QuestionBuilder({
       </div>
 
       <StudioSurfaceCard variant="default" padding="md">
-        <p className="mb-3 text-sm font-semibold text-studio-fg">
-          {isImageFormat ? "صورة السؤال" : "محتوى السؤال"}
-        </p>
-        {isImageFormat ? (
-          <ScannedQuestionEditor
-            questionId={question.id}
-            scanUrl={question.scanUrl}
-            onScanUploaded={onScanUploaded}
-            onScanRemoved={onScanRemoved}
-            disabled={false}
-          />
-        ) : (
-          <QuestionBuilderForm
-            type={question.type}
-            value={content}
-            onChange={(next) => {
-              setContent(next);
-              emit({ content: next });
-            }}
-          />
-        )}
+        <p className="mb-3 text-sm font-semibold text-studio-fg">محتوى السؤال</p>
+        <QuestionBuilderForm
+          type={question.type}
+          value={content}
+          onChange={(next) => {
+            setContent(next);
+            emit({ content: next });
+          }}
+        />
       </StudioSurfaceCard>
-
-      {isImageFormat && (
-        <StudioSurfaceCard variant="default" padding="md">
-          <p className="mb-3 text-sm font-semibold text-studio-fg">خيارات الإجابة</p>
-          <QuestionBuilderForm
-            type={question.type}
-            value={content}
-            onChange={(next) => {
-              setContent(next);
-              emit({ content: next });
-            }}
-          />
-        </StudioSurfaceCard>
-      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">

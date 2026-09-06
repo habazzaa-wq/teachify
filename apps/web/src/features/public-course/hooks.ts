@@ -3,19 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicCourseService } from "./services";
 import { PUBLIC_COURSE_QUERY_KEY } from "./constants";
-import { resolveStudentAccessToken } from "@/services/api/tenant-student-fetch";
-
-/**
- * Enrollment is per-identity. Tag the key with the resolved credential so the
- * teacher's enrollment never leaks into the student's view (and vice versa)
- * when both sessions coexist in the same browser.
- */
-function enrollmentSessionTag(): string {
-  const token = resolveStudentAccessToken();
-  if (!token) return "anon";
-  const id = token.split("|")[0];
-  return id ? `user:${id}` : "anon";
-}
 
 export function usePublicCourse(slug: string | null) {
   return useQuery({
@@ -46,7 +33,7 @@ export function useRelatedCourses(slug: string | null) {
 
 export function useEnrollmentCheck(slug: string | null, enabled = true) {
   return useQuery({
-    queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug, enrollmentSessionTag()],
+    queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug],
     queryFn: () => publicCourseService.checkEnrollment(slug!),
     enabled: !!slug && enabled,
     staleTime: 2 * 60 * 1000,
@@ -78,13 +65,10 @@ export function usePurchaseCourse(slug: string | null) {
     mutationFn: () => publicCourseService.purchaseCourse(slug!),
     onSuccess: (data) => {
       if (data.enrolled && slug) {
-        queryClient.setQueryData(
-          [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug, enrollmentSessionTag()],
-          {
-            enrolled: true,
-            enrollment: data.enrollment ?? null,
-          },
-        );
+        queryClient.setQueryData([PUBLIC_COURSE_QUERY_KEY, "enrollment", slug], {
+          enrolled: true,
+          enrollment: data.enrollment ?? null,
+        });
         queryClient.invalidateQueries({
           queryKey: [PUBLIC_COURSE_QUERY_KEY, "detail", slug],
         });

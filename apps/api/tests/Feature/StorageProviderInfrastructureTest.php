@@ -13,9 +13,7 @@ use App\Models\User;
 use App\Services\Media\MediaManager;
 use App\Services\Media\Providers\BunnyStorageProvider;
 use App\Services\Media\StoragePathGenerator;
-use App\Models\PlatformBunnySetting;
 use Database\Seeders\IdentityAccessSeeder;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -100,17 +98,6 @@ class StorageProviderInfrastructureTest extends TestCase
 
     public function test_asset_status_and_deletion_use_registered_provider(): void
     {
-        Http::fake();
-
-        PlatformBunnySetting::create([
-            'storage_zone_name' => 'test-zone',
-            'storage_zone_password' => 'test-storage-password',
-            'storage_zone_region' => 'de',
-            'api_key' => 'test-api-key',
-            'enabled' => true,
-            'connection_status' => 'connected',
-        ]);
-
         $tenant = Tenant::factory()->create();
         $admin = $this->memberWithRole($tenant, 'admin');
         $this->createBunnyStorageIntegration($tenant);

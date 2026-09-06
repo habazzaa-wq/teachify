@@ -71,7 +71,6 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
-            'permission' => 0664,
         ],
 
         'stderr' => [
@@ -113,7 +112,6 @@ return [
             'level' => env('LOG_BUNNY_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
-            'permission' => 0664,
         ],
 
         'usage' => [
@@ -122,7 +120,6 @@ return [
             'level' => env('LOG_USAGE_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
-            'permission' => 0664,
         ],
 
     ],

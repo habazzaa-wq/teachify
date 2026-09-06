@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Media;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaLibraryAssetResource;
 use App\Models\MediaAsset;
+use App\Services\Bunny\Exceptions\BunnyServiceException;
 use App\Services\Media\MediaLibraryAssetService;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
@@ -106,7 +107,16 @@ class MediaLibraryController extends Controller
         $tenant = currentTenant();
         $asset = $this->assets->findOrFail($tenant, $id);
 
-        $this->assets->softDelete($tenant, $asset);
+        try {
+            $this->assets->softDelete($tenant, $asset);
+        } catch (BunnyServiceException $e) {
+            return response()->json([
+                'message' => 'Failed to delete asset from Bunny CDN. The local record was not modified.',
+                'error' => $e->getMessage(),
+                'service' => $e->getService(),
+                'operation' => $e->getOperation(),
+            ], 422);
+        }
 
         return response()->json(['message' => 'Asset deleted successfully.']);
     }
@@ -240,23 +250,13 @@ class MediaLibraryController extends Controller
             ], 500);
         }
 
-        if ($result['deleted'] === 0 && $result['failed'] > 0) {
+        if ($result['failed'] > 0 && $result['deleted'] === 0) {
             return response()->json([
                 'message' => 'All deletions failed. No assets were removed.',
                 'deleted' => 0,
                 'failed' => $result['failed'],
                 'failures' => $result['failures'],
             ], 422);
-        }
-
-        if ($result['remote_failures'] > 0) {
-            return response()->json([
-                'message' => "{$result['deleted']} assets deleted. {$result['remote_failures']} could not be removed from the CDN and were cleaned up locally.",
-                'deleted' => $result['deleted'],
-                'failed' => $result['failed'],
-                'remote_failures' => $result['remote_failures'],
-                'failures' => $result['failures'],
-            ]);
         }
 
         if ($result['failed'] > 0) {

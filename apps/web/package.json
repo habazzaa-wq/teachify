@@ -8,8 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "seo:check": "node scripts/seo-check.mjs",
     "add-domain": "node scripts/add-tenant-domain.mjs",
     "open-tenant": "node scripts/add-tenant-domain.mjs --open"
   },
@@ -32,21 +30,12 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
-    "hls.js": "^1.7.1",
-    "katex": "^0.18.1",
-    "laravel-echo": "^2.4.0",
     "lucide-react": "^0.475.0",
     "next": "16.2.9",
     "next-intl": "^4.13.0",
-    "pusher-js": "^8.6.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.54.2",
-    "react-markdown": "^10.1.0",
-    "react-virtuoso": "^4.18.11",
-    "rehype-katex": "^7.0.1",
-    "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
@@ -62,7 +51,6 @@
     "eslint-config-next": "16.2.9",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5",
-    "vitest": "^4.1.10"
+    "typescript": "^5"
   }
 }

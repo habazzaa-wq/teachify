@@ -521,7 +521,7 @@ const WorkspaceCanvas = memo(function WorkspaceCanvas({
 
   return (
     <div className="h-full overflow-y-auto">
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence mode="wait" initial={false}>
         <CanvasShell id={key}>
           {(!selected || selected.type === "course") && (
             <CourseCanvas course={course} tree={tree} onSelectLecture={onSelectLecture} onAddLecture={onAddLecture} />

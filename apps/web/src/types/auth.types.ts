@@ -1,5 +1,4 @@
 import type { ApiMessageResponse } from "./common.types";
-import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 
 export interface LoginRequest {
   email?: string;
@@ -26,10 +25,6 @@ export interface AuthTenant {
   status: string;
   domain: string;
   branding?: AuthBranding;
-  /** Platform-level brand colors (the "platform colors" field). Distinct from
-   *  `branding`, which is the teacher appearance and only applies to the teacher
-   *  dashboard and login. */
-  platformBranding?: TenantBranding | null;
 }
 
 export interface AuthBranding {
@@ -41,12 +36,6 @@ export interface AuthBranding {
   font: string | null;
   dark_logo: string | null;
   light_logo: string | null;
-  /** "icon" | "image" | null — how the navbar logo should be rendered. */
-  logo_type?: string | null;
-  /** Icon key from the built-in icon library when logo_type === "icon". */
-  logo_icon?: string | null;
-  /** Media-library image URL when logo_type === "image". */
-  logo_image?: string | null;
   domain?: string;
 }
 

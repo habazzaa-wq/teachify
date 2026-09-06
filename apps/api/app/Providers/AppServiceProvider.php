@@ -61,17 +61,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(PlatformBunnySetting::class, PlatformBunnySettingPolicy::class);
 
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
-        });
-
-        // Resumable chunk PUTs are exempt from the global api limiter (one
-        // large upload can legitimately fire hundreds of chunks per minute),
-        // but must not be unthrottled: this dedicated bucket allows ~10
-        // chunks/second per user while still capping abuse. The key prefix
-        // keeps its counter separate from the api limiter's.
-        RateLimiter::for('resumable-upload', function (Request $request) {
-            return Limit::perMinute(600)
-                ->by('resumable:'.$request->user()?->id ?: $request->ip());
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

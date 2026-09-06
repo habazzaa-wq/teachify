@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { MediaType } from "../../types";
 import type { UploadItem, UploadBulkAction, UploadSource } from "../types";
-import { revokeFilePreview, getFileCategory } from "../utils/files";
+import { revokeFilePreview } from "../utils/files";
 
 /** A file awaiting a name before it is enqueued for upload. */
 export interface RenameDraftFile {
@@ -42,8 +42,6 @@ export interface UploadManagerState {
   toggleOpen: () => void;
   setDragDepth: (depth: number) => void;
 
-  /** Stage files so the teacher can rename them before they are uploaded. */
-  openRename: (files: File[], opts?: { folderId?: number | null; source?: UploadSource }) => void;
   /** Discard the staged files without enqueuing anything. */
   closeRename: () => void;
 }
@@ -221,21 +219,6 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
   toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
   setDragDepth: (depth) =>
     set({ dragDepth: Math.max(0, depth), isDragActive: depth > 0 }),
-
-  openRename: (files, opts) =>
-    set({
-      renameDraft: files.map((file) => ({
-        id: `rn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        defaultName: file.name,
-        size: file.size,
-        mime: file.type || "application/octet-stream",
-        category: getFileCategory(file.type, file.name),
-      })),
-      renameFolderId: opts?.folderId ?? null,
-      renameSource: opts?.source ?? null,
-      isRenameOpen: files.length > 0,
-    }),
 
   closeRename: () => set({ isRenameOpen: false }),
 }));

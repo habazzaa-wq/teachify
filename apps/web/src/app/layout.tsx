@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Almarai, Cairo } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { headers } from "next/headers";
@@ -7,20 +7,9 @@ import "./globals.css";
 import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeScript } from "@/components/ThemeScript";
-import { TenantDocumentMeta } from "@/components/layout/TenantDocumentMeta";
-import {
-  getRobotsPolicy,
-  getSiteDescription,
-  getSiteName,
-  getSiteTitleTemplate,
-  getVerificationTokens,
-  robotsRulesForPolicy,
-} from "@/lib/seo/metadata";
+import { env } from "@/config/env";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
-import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
-import { buildPwaMetadata } from "@/lib/pwa/metadata";
-import { resolveManifestColor } from "@/lib/pwa/manifest";
-import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
+import { resolveAssetUrl, getRequestOrigin } from "@/lib/seo/url";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -28,67 +17,48 @@ const cairo = Cairo({
   display: "swap",
 });
 
-const almarai = Almarai({
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "700"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-export async function generateMetadata(): Promise<Metadata> {
-  const [tenant, origin] = await Promise.all([getTenantSeoContext(), getRequestOrigin()]);
-  const siteName = getSiteName(tenant);
-  const description = getSiteDescription(tenant);
-  const logo = resolveAssetUrl(
-    tenant?.seo?.ogImage ?? tenant?.branding?.logo ?? null,
-    origin,
-  );
-  const twitterImage = resolveAssetUrl(tenant?.seo?.twitterImage ?? logo, origin);
-  const verification = getVerificationTokens(tenant);
-
-  return {
-    metadataBase: new URL(origin),
-    title: {
-      default: siteName,
-      template: getSiteTitleTemplate(tenant) ?? `%s | ${siteName}`,
-    },
-    description,
-    robots: robotsRulesForPolicy(getRobotsPolicy(tenant)),
-    ...(verification.google || verification.bing
-      ? {
-          verification: {
-            ...(verification.google ? { google: verification.google } : {}),
-            ...(verification.bing
-              ? { other: { "msvalidate.01": verification.bing } }
-              : {}),
-          },
-        }
-      : {}),
-    openGraph: {
-      type: "website",
-      locale: "ar_SA",
-      siteName,
-      title: siteName,
-      description,
-      url: origin,
-      ...(logo
-        ? { images: [{ url: logo, alt: siteName, width: 512, height: 512 }] }
-        : {}),
-    },
-    twitter: {
-      card: twitterImage ? "summary_large_image" : "summary",
-      title: siteName,
-      description,
-      ...(twitterImage ? { images: [twitterImage] } : {}),
-    },
-    ...buildPwaMetadata(tenant, origin),
-  };
-}
-
+/**
+ * Tenant-aware PWA / iOS install metadata, derived from the same server-side
+ * tenant context as the rest of the site (cached per request, no duplicate
+ * resolution or branding fetch). Platform hosts fall back to app-name branding.
+ */
 export async function generateViewport(): Promise<Viewport> {
   const tenant = await getTenantSeoContext();
+  const themeColor = tenant?.branding?.primaryColor?.trim() || "#ffffff";
+  return { themeColor };
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const tenant = await getTenantSeoContext();
+  const origin = await getRequestOrigin();
+
+  const siteName = tenant?.name?.trim() || env.appName;
+  const appleIcon = resolveAssetUrl(
+    tenant?.branding?.favicon ??
+      tenant?.branding?.lightLogo ??
+      tenant?.branding?.darkLogo ??
+      tenant?.branding?.logo ??
+      null,
+    origin,
+  );
+
   return {
-    themeColor: resolveManifestColor(tenant?.branding?.primaryColor),
+    title: {
+      default: siteName,
+      template: `%s | ${siteName}`,
+    },
+    description: "منصة إدارة التعلم — لوحة تحكم الأكاديمية",
+    manifest: "/manifest.webmanifest",
+    other: {
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-status-bar-style": "default",
+      "apple-mobile-web-app-title": siteName,
+    },
+    icons: appleIcon
+      ? {
+          apple: [{ url: appleIcon }],
+        }
+      : undefined,
   };
 }
 
@@ -109,31 +79,9 @@ export default async function RootLayout({
     }
   }
 
-  const tenant = await getTenantSeoContext();
-  const tenantFont = tenant?.branding?.font ?? null;
-  const fontCssUrl = getFontCssUrl(tenantFont);
-  const fontStack = buildFontStack(tenantFont);
-
   return (
-    <html
-      lang="ar"
-      dir="rtl"
-      className={`${cairo.variable} ${almarai.variable} h-full`}
-      style={
-        fontStack
-          ? ({ "--font-sans": fontStack } as React.CSSProperties)
-          : undefined
-      }
-      suppressHydrationWarning
-    >
+    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`} suppressHydrationWarning>
       <head>
-        {fontCssUrl && (
-          <>
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-            <link id="tenant-dynamic-font" rel="stylesheet" href={fontCssUrl} />
-          </>
-        )}
         <ThemeScript />
       </head>
       <body className="min-h-full bg-background font-sans antialiased" suppressHydrationWarning>
@@ -143,7 +91,6 @@ export default async function RootLayout({
               serverHostname={serverHostname}
               tenantContext={tenantContext}
             >
-              <TenantDocumentMeta />
               {children}
             </AppProviders>
           </NextIntlClientProvider>

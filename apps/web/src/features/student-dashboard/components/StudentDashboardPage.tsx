@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { useStudentDashboard } from "../hooks";
+import { AppPage } from "@/components/ui/AppPage";
 import { AppLoadingState } from "@/components/ui/AppLoadingState";
 import { AppErrorState } from "@/components/ui/AppErrorState";
-import { NavDock, type DashboardViewId } from "./NavDock";
-import { OverviewView } from "./OverviewView";
-import { CoursesView } from "./CoursesView";
-import { ExamsView } from "./ExamsView";
-import { TasksView } from "./TasksView";
-import { WalletHistoryView } from "./WalletHistoryView";
-import { AchievementsView } from "./AchievementsView";
-import { CalendarView } from "./CalendarView";
+import { StudentHero } from "./StudentHero";
+import { StudentStatCards } from "./StudentStatCards";
+import { ContinueLearningSection } from "./ContinueLearningSection";
+import { UpcomingTasksSection } from "./UpcomingTasksSection";
+import { RecentAttemptsSection } from "./RecentAttemptsSection";
+import { TimelineSection } from "./TimelineSection";
+import { AchievementsSection } from "./AchievementsSection";
+import { CalendarSection } from "./CalendarSection";
+import { QuickActions } from "./QuickActions";
 
 export function StudentDashboardPage() {
   const { data, isLoading, isError, refetch } = useStudentDashboard();
-  const [activeView, setActiveView] = useState<DashboardViewId>("overview");
 
   if (isLoading) {
     return <AppLoadingState label="جارٍ تحميل لوحة الطالب..." className="min-h-[60vh]" />;
@@ -33,22 +33,22 @@ export function StudentDashboardPage() {
   }
 
   return (
-    <div className="pb-28 lg:pb-10">
-      <NavDock
-        active={activeView}
-        onChange={setActiveView}
-        streakDays={data.stats.currentStreakDays}
-      />
-
-      <div key={activeView} className="animate-fade-in-up">
-        {activeView === "overview" && <OverviewView data={data} onNavigate={setActiveView} />}
-        {activeView === "courses" && <CoursesView items={data.continueLearning} />}
-        {activeView === "exams" && <ExamsView attempts={data.recentAttempts} />}
-        {activeView === "tasks" && <TasksView tasks={data.upcomingTasks} />}
-        {activeView === "wallet" && <WalletHistoryView />}
-        {activeView === "achievements" && <AchievementsView achievements={data.achievements} />}
-        {activeView === "calendar" && <CalendarView calendar={data.calendar} />}
+    <AppPage maxWidth="xl" className="space-y-6">
+      <StudentHero data={data} />
+      <StudentStatCards stats={data.stats} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ContinueLearningSection items={data.continueLearning} />
+        <UpcomingTasksSection tasks={data.upcomingTasks} />
       </div>
-    </div>
+      <RecentAttemptsSection attempts={data.recentAttempts} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <TimelineSection events={data.timeline} />
+        <AchievementsSection achievements={data.achievements} />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CalendarSection calendar={data.calendar} />
+        <QuickActions data={data} />
+      </div>
+    </AppPage>
   );
 }

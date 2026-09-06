@@ -16,12 +16,6 @@ import { cn } from "@/lib/cn";
 import { DIFFICULTY_LABELS, REVIEW_STATUS_LABELS } from "../constants";
 import type { ResultReviewItem } from "../types";
 import type { ExamSessionQuestionType } from "@/features/exam-session/types";
-import { ImageQuestionContent } from 
-"@/features/exam-bank/components/ImageQuestionContent";
-import {
-  StructuredQuestionContent,
-  parseQuestionDocument,
-} from "@/components/structured-question";
 
 interface ReviewQuestionCardProps {
   item: ResultReviewItem;
@@ -58,10 +52,6 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
   const status = STATUS_STYLES[item.status];
   const StatusIcon = status.icon;
   const difficultyLabel = DIFFICULTY_LABELS[item.difficulty] ?? DIFFICULTY_LABELS.medium;
-  const structuredDoc =
-    item.questionFormat === "structured"
-      ? parseQuestionDocument(item.contentDocument)
-      : null;
 
   return (
     <div
@@ -123,24 +113,9 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="border-t border-border/30 px-4 py-5 sm:px-5">
-              {structuredDoc ? (
-                <div className="mb-4 rounded-xl border border-border/60 bg-background/40 p-4">
-                  <StructuredQuestionContent document={structuredDoc} />
-                </div>
-              ) : item.questionFormat === "image" && item.scanUrl ? (
-                <div className="mb-4">
-                  <ImageQuestionContent
-                    src={item.scanUrl}
-                    alt={`صورة السؤال ${index + 1}`}
-                    maxHeight={300}
-                    showControls={true}
-                  />
-                </div>
-              ) : (
-                <h3 className="text-base font-extrabold leading-relaxed text-foreground">
-                  {item.title}
-                </h3>
-              )}
+              <h3 className="text-base font-extrabold leading-relaxed text-foreground">
+                {item.title}
+              </h3>
 
               {item.description && (
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -236,60 +211,6 @@ function QuestionOptions({
             </div>
           );
         })}
-      </div>
-    );
-  }
-
-  if (type === "numeric") {
-    const student = typeof studentAnswer === "string" ? studentAnswer : "";
-    const correct = revealCorrect
-      ? typeof correctAnswer === "string"
-        ? correctAnswer
-        : correctAnswer != null
-          ? String(correctAnswer)
-          : null
-      : null;
-
-    return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border-2 border-border/60 bg-background/50 p-4">
-          <p className="text-xs font-bold text-muted-foreground">إجابتك</p>
-          <p
-            dir="ltr"
-            className={cn(
-              "mt-1 text-right text-lg font-extrabold tabular-nums",
-              student ? "text-foreground" : "text-muted-foreground/50",
-            )}
-          >
-            {student || "—"}
-          </p>
-        </div>
-        {correct !== null && (
-          <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 p-4">
-            <p className="text-xs font-bold text-emerald-600">الإجابة الصحيحة</p>
-            <p dir="ltr" className="mt-1 text-right text-lg font-extrabold tabular-nums text-emerald-600">
-              {correct}
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (type === "essay" || type === "short_answer") {
-    const student = typeof studentAnswer === "string" ? studentAnswer : "";
-
-    return (
-      <div className="space-y-3">
-        <div className="rounded-2xl border-2 border-border/60 bg-background/50 p-4">
-          <p className="text-xs font-bold text-muted-foreground">إجابتك</p>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-foreground whitespace-pre-wrap">
-            {student || "—"}
-          </p>
-        </div>
-        <p className="text-[11px] font-medium text-muted-foreground/70">
-          هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
-        </p>
       </div>
     );
   }

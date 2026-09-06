@@ -11,7 +11,7 @@ class QuestionRepository
 {
     protected array $allowedSorts = [
         'title', 'type', 'difficulty', 'status', 'visibility',
-        'points', 'estimated_time', 'created_at', 'updated_at', 'question_format',
+        'points', 'estimated_time', 'created_at', 'updated_at',
     ];
 
     public function query(): Builder
@@ -35,9 +35,7 @@ class QuestionRepository
         $query = $this->applyFavoritesFilter($query, $params['favorites'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query
-            ->with('mediaAsset')
-            ->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate((int) ($params['per_page'] ?? 25));
     }
 
     public function listAll(array $params = []): Collection
@@ -48,10 +46,7 @@ class QuestionRepository
         $query = $this->applyTypeFilter($query, $params['type'] ?? null);
         $query = $this->applyStatusFilter($query, $params['status'] ?? null);
 
-        return $query
-            ->with('mediaAsset')
-            ->orderBy('title')
-            ->get();
+        return $query->orderBy('title')->get();
     }
 
     public function findById(int $id): ?Question
@@ -98,8 +93,6 @@ class QuestionRepository
 
         if ($question) {
             $question->restore();
-            $question->forceFill(['status' => 'published'])->save();
-
             return $question->refresh();
         }
 

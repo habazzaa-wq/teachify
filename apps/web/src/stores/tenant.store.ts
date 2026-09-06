@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { addApiRequestContextReader } from "@/services/api/request-context";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   ActiveTenant,
   Membership,
@@ -81,7 +81,11 @@ interface TenantState {
     navigation: NavigationItem[];
   }) => void;
   /** Updates only the platform-level brand colors (the public-site theme). */
-  setPlatformBranding: (branding: Partial<TenantBranding>) => void;
+  setPlatformBranding: (branding: Partial<TenantBranding> & {
+    logoType?: string | null;
+    logoIcon?: string | null;
+    logoImage?: string | null;
+  }) => void;
   setTenantBootstrap: (data: {
     id: number;
     name: string;
@@ -89,7 +93,6 @@ interface TenantState {
     domain: string;
     status: string;
     branding: TenantBranding;
-    platformBranding?: TenantBranding | null;
     subdomain?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
@@ -166,76 +169,39 @@ export const useTenantStore = create<TenantState>()(
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
       set({
-        activeTenant: tenant
-          ? { ...tenant, branding: normalizeBranding(tenant.branding) as unknown as AuthBranding }
-          : tenant,
+        activeTenant: tenant,
         membership,
         roles,
         permissions,
         abilities,
         navigation,
-        // ملاحظة: ألوان المنصة (platformBranding) بتدار بالكامل من BrandThemeProvider
-        // ومستقلة عن بيانات الـ tenant/تسجيل الدخول — فمبنغيّرش قيمتها هنا عشان
-        // متتلغش ولا تتسرّب ألوان مظهر المدرس للمنصة كلها.
       }),
 
     setTenantBootstrap: (data) =>
-      set((state) => {
-        const prev = state.activeTenant?.branding;
-        const incoming = data.branding;
-        // The auth/me `branding` payload is snake_case at runtime (`primary_color`)
-        // while the public `by-domain` payload is camelCase (`primaryColor`).
-        // Read both shapes defensively.
-        const raw = incoming as unknown as Record<string, unknown>;
-
-        // Preserve the previously-applied brand colors if the incoming payload
-        // doesn't carry them (e.g. a bootstrap source with null branding), so a
-        // re-bootstrap can never reset the control-panel colors to defaults.
-        // Accept both snake_case (auth/me `getBranding`) and camelCase
-        // (public `by-domain`) key shapes.
-        const primaryColor =
-          (incoming.primaryColor as string | undefined) ??
-          (raw["primary_color"] as string | undefined) ??
-          prev?.primary_color ??
-          null;
-        const secondaryColor =
-          (incoming.secondaryColor as string | undefined) ??
-          (raw["secondary_color"] as string | undefined) ??
-          prev?.secondary_color ??
-          null;
-
-        return {
-          activeTenant: {
-            id: data.id,
-            name: data.name,
-            slug: data.slug,
-            status: data.status,
-            domain: data.domain,
-            branding: normalizeBranding({
-              logo: incoming.logo ?? prev?.logo ?? null,
-              favicon: incoming.favicon ?? prev?.favicon ?? null,
-              primary_color: primaryColor,
-              secondary_color: secondaryColor,
-              accent_color: incoming.accentColor ?? prev?.accent_color ?? null,
-              font: incoming.font ?? prev?.font ?? null,
-              dark_logo: incoming.darkLogo ?? prev?.dark_logo ?? null,
-              light_logo: incoming.lightLogo ?? prev?.light_logo ?? null,
-              logo_type: incoming.logoType ?? prev?.logo_type ?? null,
-              logo_icon: incoming.logoIcon ?? prev?.logo_icon ?? null,
-              logo_image: incoming.logoImage ?? prev?.logo_image ?? null,
-              domain: data.domain,
-            }) as unknown as AuthBranding,
-          },
+      set({
+        activeTenant: {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          status: data.status,
           domain: data.domain,
-          subdomain: data.subdomain ?? null,
-          branding: normalizeBranding({
-            ...incoming,
-            primaryColor,
-            secondaryColor,
-          }) as unknown as TenantBranding,
-          bootstrapStatus: "resolved",
-          bootstrapError: null,
-        };
+          branding: {
+            logo: data.branding.logo,
+            favicon: data.branding.favicon,
+            primary_color: data.branding.primaryColor,
+            secondary_color: data.branding.secondaryColor,
+            accent_color: data.branding.accentColor,
+            font: data.branding.font,
+            dark_logo: data.branding.darkLogo,
+            light_logo: data.branding.lightLogo,
+            domain: data.domain,
+          },
+        },
+        domain: data.domain,
+        subdomain: data.subdomain ?? null,
+        branding: data.branding,
+        bootstrapStatus: "resolved",
+        bootstrapError: null,
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
@@ -273,18 +239,8 @@ export const useTenantStore = create<TenantState>()(
         domain: null,
         subdomain: null,
         branding: null,
-        // نحافظ على platformBranding بعد تسجيل الخروج عشان الموقع العام يفضل
-        // بلونه الصح فوراً من غير flicker (BrandThemeProvider بيعيد تحميله لو احتاج).
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),
   }),
 );
-
-// Provide tenant request context lazily to the API layer at request time.
-// Registered from the store itself so axios.ts never has to import Zustand
-// (see services/api/request-context.ts).
-addApiRequestContextReader(() => ({
-  tenantId: useTenantStore.getState().activeTenant?.id?.toString() ?? null,
-  tenantDomain: useTenantStore.getState().domain ?? null,
-}));

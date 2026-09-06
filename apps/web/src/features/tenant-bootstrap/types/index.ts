@@ -8,12 +8,6 @@ export interface TenantBranding {
   font: string | null;
   darkLogo: string | null;
   lightLogo: string | null;
-  /** "icon" | "image" | null — how the navbar logo should be rendered. */
-  logoType?: string | null;
-  /** Icon key from the built-in icon library when logoType === "icon". */
-  logoIcon?: string | null;
-  /** Media-library image URL when logoType === "image". */
-  logoImage?: string | null;
 }
 
 /** Robots meta policy values saved in the SEO settings (`default_robots_policy`). */
@@ -60,10 +54,6 @@ export interface TenantByDomainResponse {
   domain: string;
   status: string;
   branding: TenantBranding;
-  /** Platform-level brand colors (the "platform colors" field). Distinct from
-   *  `branding`, which is the teacher appearance applied only to the teacher
-   *  dashboard and login. */
-  platformBranding?: TenantBranding | null;
   /** Present only when the proxy/API supplies tenant-specific SEO settings. */
   seo?: TenantSeoConfig | null;
 }

@@ -33,9 +33,7 @@ class Question extends Model
         'explanation',
         'hint',
         'content',
-        'content_document',
         'metadata',
-        'question_format',
     ];
 
     protected $casts = [
@@ -44,12 +42,10 @@ class Question extends Model
         'estimated_time' => 'integer',
         'shuffle_options' => 'boolean',
         'content' => 'array',
-        'content_document' => 'array',
         'metadata' => 'array',
         'deleted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'question_format' => 'string',
     ];
 
     public function tenant(): BelongsTo
@@ -70,11 +66,6 @@ class Question extends Model
     public function bank(): BelongsTo
     {
         return $this->belongsTo(QuestionBank::class, 'bank_id');
-    }
-
-    public function mediaAsset(): BelongsTo
-    {
-        return $this->belongsTo(MediaAsset::class, 'media_asset_id');
     }
 
     public function examQuestions(): \Illuminate\Database\Eloquent\Relations\HasMany

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AppDialog,
   AppDialogContent,
@@ -33,27 +33,12 @@ interface AddQuestionDialogProps {
 export function AddQuestionDialog({ examId, open, onOpenChange, onAdded }: AddQuestionDialogProps) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("all");
-  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // A filter change makes the current page offset meaningless; reset to first.
-  useEffect(() => {
-    setPage(1);
-  }, [search, type]);
-
   const { data, isLoading } = useQuestions(
-    open
-      ? {
-          search: search || undefined,
-          type: type === "all" ? undefined : (type as QuestionType),
-          page,
-          perPage: 24,
-        }
-      : undefined,
+    open ? { search: search || undefined, type: (type === "all" ? undefined : (type as QuestionType)) } : undefined,
   );
   const questions: Question[] = data?.data ?? [];
-  const currentPage = data?.currentPage ?? 1;
-  const lastPage = data?.lastPage ?? 1;
 
   const addQuestion = useAddExamQuestion();
 
@@ -155,28 +140,6 @@ export function AddQuestionDialog({ examId, open, onOpenChange, onAdded }: AddQu
               </ul>
             )}
           </div>
-
-          {!isLoading && lastPage > 1 ? (
-            <div className="flex items-center justify-between px-1 pt-2 text-sm text-studio-fg-muted">
-              <StudioButton
-                variant="ghost"
-                disabled={currentPage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                السابق
-              </StudioButton>
-              <span>
-                صفحة {currentPage} من {lastPage}
-              </span>
-              <StudioButton
-                variant="ghost"
-                disabled={currentPage >= lastPage}
-                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-              >
-                التالي
-              </StudioButton>
-            </div>
-          ) : null}
         </div>
 
         <AppDialogFooter>

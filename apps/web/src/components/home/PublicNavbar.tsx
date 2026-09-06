@@ -1,24 +1,20 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useContext } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   Sun, Moon, GraduationCap, LogIn,
-  Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
-  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
-  LayoutDashboard,
+  Sparkles, ChevronLeft, Home, Layers, BookOpen, MessageCircle, User,
+  LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
-import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
-import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
-import { getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { cn } from "@/lib/cn";
 
 const PublicRegisterCard = dynamic(
@@ -61,10 +57,8 @@ const OnlineRechargeModal = dynamic(
   { ssr: false },
 );
 
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
-
-const STUDENT_PROFILE_QUERY_KEY = ["student-profile", "profile"];
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 type NavLink = {
   label: string;
@@ -77,6 +71,7 @@ const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
+  { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
 function prefersReducedMotion(): boolean {
@@ -94,13 +89,13 @@ function WalletBalanceBadgeFallback(): React.ReactNode {
       aria-label="رصيد المحفظة"
       onClick={() => walletBadgeOnClick?.()}
       className="group relative flex h-8 items-center gap-1.5 rounded-full px-2.5 opacity-60"
-      style={{ border: "1px solid var(--brand-secondary)" }}
+      style={{ border: "1px solid #FFB50E66" }}
     >
       <span
         className="flex h-5 w-5 items-center justify-center rounded-full"
-        style={{ background: "var(--brand-primary)" }}
+        style={{ background: "linear-gradient(135deg, #D87B63, #D87B63cc)" }}
       >
-        <Wallet className="h-3 w-3 text-[var(--brand-primary-contrast)]" />
+        <Wallet className="h-3 w-3 text-white" />
       </span>
       <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: primary }} />
     </button>
@@ -130,13 +125,13 @@ function ThemeBtn() {
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
         style={{
           backgroundColor: secondary,
-          border: `3px solid var(--brand-primary)`,
-          boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
+          border: `3px solid ${primary}`,
+          boxShadow: `0 0 24px ${primary}40`,
         }}
       />
       <span
         key={theme}
-        className="home-icon-swap relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300"
+        className="home-icon-swap relative z-10 group-hover:text-[#2D1B00] transition-colors duration-300"
       >
         {theme === "light" ? (
           <Moon className="h-[18px] w-[18px]" />
@@ -165,12 +160,12 @@ function NavLinkItem({
               className="absolute inset-0 rounded-2xl"
               style={{
                 backgroundColor: primary,
-                boxShadow: `0 4px 24px rgba(0,0,0,0.314)`,
+                boxShadow: `0 4px 24px ${primary}50`,
               }}
             />
             <span
               className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.314)` }}
+              style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
             />
           </>
         ) : (
@@ -178,51 +173,21 @@ function NavLinkItem({
             className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
             style={{
               backgroundColor: secondary,
-              border: `3px solid var(--brand-primary)`,
-              boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
+              border: `3px solid ${primary}`,
+              boxShadow: `0 0 24px ${primary}40`,
             }}
           />
         )}
         <Icon className={cn(
           "h-4 w-4 relative z-10 transition-all duration-300",
-          isActive ? "text-[var(--brand-primary-contrast)]" : "text-muted-foreground/70 group-hover:text-[var(--brand-secondary-contrast)] group-hover:scale-110",
+          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00] group-hover:scale-110",
         )} />
         <span className={cn(
           "relative z-10 transition-colors duration-300",
-          isActive ? "text-[var(--brand-primary-contrast)]" : "text-muted-foreground/70 group-hover:text-[var(--brand-secondary-contrast)]",
+          isActive ? "text-white" : "text-muted-foreground/70 group-hover:text-[#2D1B00]",
         )}>{label}</span>
       </div>
     </Link>
-  );
-}
-
-function NavbarLogoImage({ src, alt }: { src: string; alt: string }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      className="h-auto w-auto max-h-9 max-w-[200px] object-contain transition-all duration-500 group-hover:scale-105"
-    />
-  );
-}
-
-function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
-  return (
-    <div
-      className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
-      style={{
-        backgroundColor: primary,
-        boxShadow: `0 2px 20px rgba(0,0,0,0.251)`,
-      }}
-    >
-      <Icon className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
-      {/* Hover: border = secondary */}
-      <span
-        className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.314)` }}
-      />
-    </div>
   );
 }
 
@@ -230,26 +195,18 @@ export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
   const pathname = usePathname();
-  const router = useRouter();
-  const auth = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState("/");
 
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [registeredName, setRegisteredName] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
 
-  const [studentRegistered, setStudentRegistered] = useState<{
-    name: string;
-    token: string;
-    refreshToken?: string | null;
-    avatar?: string | null;
-  } | null>(() => {
+  const [studentRegistered, setStudentRegistered] = useState(() => {
     if (typeof window === "undefined") return null;
     try {
       const stored = localStorage.getItem("public-register-state");
-      return stored ? JSON.parse(stored) as { name: string; token: string; refreshToken?: string | null; avatar?: string | null } : null;
+      return stored ? JSON.parse(stored) as { name: string; token: string; avatar?: string | null } : null;
     } catch {
       return null;
     }
@@ -261,30 +218,10 @@ export function PublicNavbar() {
   const [rechargeWalletOpen, setRechargeWalletOpen] = useState(false);
   const [onlineRechargeOpen, setOnlineRechargeOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     walletBadgeOnClick = () => setRechargeWalletOpen(true);
   }, [setRechargeWalletOpen]);
-
-  // Ctrl/Cmd+K toggles the course search dialog from anywhere.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Allow the mobile secondary nav's search button to open the same dialog.
-  useEffect(() => {
-    const onSearchRequest = () => setSearchOpen(true);
-    window.addEventListener("public-search-request", onSearchRequest);
-    return () => window.removeEventListener("public-search-request", onSearchRequest);
-  }, []);
 
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
@@ -292,83 +229,14 @@ export function PublicNavbar() {
   const setTenantContext = useTenantStore((s) => s.setTenantContext);
   const clearAuth = useAuthStore((s) => s.clear);
 
-  // The home page runs without AuthProvider, so the auth store is only populated
-  // when the user logs in/registers on this page. After a reload, `public-register-state`
-  // is the source of truth — seed the auth store (token + user) from it so tenant API
-  // calls (profile, avatar, wallet) carry a Bearer token and currentUser stays non-null.
-  useEffect(() => {
-    if (!studentRegistered) return;
-    const current = useAuthStore.getState();
-    if (studentRegistered.token && !current.accessToken) {
-      setAuthTokens(studentRegistered.token, current.refreshToken ?? studentRegistered.refreshToken ?? "");
-    }
-    if (!current.user && (studentRegistered.name || studentRegistered.avatar)) {
-      setAuthUser({
-        id: 0,
-        name: studentRegistered.name ?? "",
-        email: "",
-        avatar: studentRegistered.avatar ?? null,
-        is_platform_super_admin: false,
-      });
-    }
-  }, [studentRegistered, setAuthTokens, setAuthUser]);
-
-  // The home page runs without AuthProvider, so the auth store is only populated
-  // when the user logs in/registers on this page. On authenticated routes (e.g.
-  // the student dashboard) the AuthProvider session is available instead.
-  const authSessionActive = !!auth && !!authUser;
-  const isLoggedIn = !!studentRegistered || authSessionActive;
-  const sessionName = studentRegistered?.name ?? authUser?.name ?? "";
-  const sessionAvatar = studentRegistered?.avatar ?? authUser?.avatar ?? null;
+  const isLoggedIn = !!studentRegistered;
 
   const handleLogout = useCallback(() => {
-    if (auth) {
-      setProfileDropdownOpen(false);
-      setStudentRegistered(null);
-      try {
-        localStorage.removeItem("public-register-state");
-      } catch {
-        // ignore storage errors
-      }
-      void auth.logout();
-      return;
-    }
     setStudentRegistered(null);
     localStorage.removeItem("public-register-state");
     clearAuth();
     setProfileDropdownOpen(false);
-    queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
-  }, [auth, clearAuth, queryClient]);
-
-  // The student API layer clears `public-register-state` when it can no longer
-  // refresh a 401 (the tokens were revoked by a login on /tenant-login and no
-  // valid replacement exists). Sync the navbar back to a logged-out state then.
-  useEffect(() => {
-    const onSessionExpired = () => {
-      setStudentRegistered(null);
-      setProfileDropdownOpen(false);
-      queryClient.removeQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
-    };
-    window.addEventListener("public-session-expired", onSessionExpired);
-    return () => window.removeEventListener("public-session-expired", onSessionExpired);
-  }, [queryClient]);
-
-  useEffect(() => {
-    const onPublicAuthUpdated = () => {
-      try {
-        const stored = localStorage.getItem("public-register-state");
-        setStudentRegistered(
-          stored
-            ? (JSON.parse(stored) as { name: string; token: string; refreshToken?: string | null; avatar?: string | null })
-            : null,
-        );
-      } catch {
-        setStudentRegistered(null);
-      }
-    };
-    window.addEventListener("public-auth-updated", onPublicAuthUpdated);
-    return () => window.removeEventListener("public-auth-updated", onPublicAuthUpdated);
-  }, []);
+  }, [clearAuth]);
 
   const scrollToSection = useCallback(
     (targetId: string) => {
@@ -396,20 +264,13 @@ export function PublicNavbar() {
   );
 
   const handleLoginSuccess = useCallback(
-    (data: { name: string; avatar?: string | null; token?: string | null; refreshToken?: string | null }) => {
-      const token = data.token || "";
-      const state = { name: data.name, token, refreshToken: data.refreshToken ?? null, avatar: data.avatar ?? null };
-      try {
-        localStorage.setItem("public-register-state", JSON.stringify(state));
-      } catch {
-        // ignore storage errors
-      }
+    (data: { name: string; avatar?: string | null }) => {
       setLoginOpen(false);
-      setStudentRegistered(state);
-      queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
-      router.push("/student/dashboard");
+      setRegisteredName(data.name);
+      setStudentRegistered({ name: data.name, token: "", avatar: data.avatar ?? null });
+      setRegisterSuccess(true);
     },
-    [queryClient, router],
+    [],
   );
 
   const handleRegisterSuccess = useCallback(
@@ -425,45 +286,16 @@ export function PublicNavbar() {
       });
       setAuthUser(response.user as any);
 
-      const state = { name: response.user.name, token: response.access_token, refreshToken: response.refresh_token, avatar: response.user.avatar ?? null };
+      const state = { name: response.user.name, token: response.access_token, avatar: response.user.avatar ?? null };
       localStorage.setItem("public-register-state", JSON.stringify(state));
 
       setRegisterOpen(false);
       setRegisteredName(response.user.name);
       setRegisterSuccess(true);
       setStudentRegistered(state);
-      queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
     },
-    [setAuthTokens, setAuthUser, setTenantContext, queryClient],
+    [setAuthTokens, setAuthUser, setTenantContext],
   );
-
-  useEffect(() => {
-    const handleProfileUpdated = (event: Event) => {
-      const detail = (event as CustomEvent<{ avatar?: string | null }>).detail;
-      if (!detail) return;
-
-      // Keep the auth-store user avatar fresh so authUser?.avatar matches
-      const current = useAuthStore.getState().user;
-      if (current) {
-        setAuthUser({ ...current, avatar: detail.avatar ?? current.avatar });
-      }
-
-      // Keep the navbar's mirrored session state + localStorage in sync
-      setStudentRegistered((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, avatar: detail.avatar ?? prev.avatar };
-        try {
-          localStorage.setItem("public-register-state", JSON.stringify(next));
-        } catch {
-          // ignore storage errors
-        }
-        return next;
-      });
-    };
-
-    window.addEventListener("student-profile-updated", handleProfileUpdated);
-    return () => window.removeEventListener("student-profile-updated", handleProfileUpdated);
-  }, [setAuthUser]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -475,59 +307,60 @@ export function PublicNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // The public navbar reflects the *platform* branding (the Branding page),
-  // not the teacher dashboard appearance. Falls back to the tenant's legacy
-  // appearance branding so the navbar never breaks when platform branding is
-  // partially configured.
-  const platformBranding = useTenantStore((s) => s.platformBranding);
-  const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
   const logo = theme === "dark"
-    ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
-    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo;
-  const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
-
-  const logoType = platformBranding?.logoType ?? tenant?.branding?.logo_type ?? null;
-  const navbarLogoIcon = getNavbarIcon(platformBranding?.logoIcon ?? tenant?.branding?.logo_icon ?? null);
-  const navbarLogoImage = platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null;
-
-  const showDynamicImage = logoType === "image" && !!navbarLogoImage;
-  const showDynamicIcon = logoType === "icon" && !!navbarLogoIcon;
-  const showLegacyImage = !showDynamicImage && !showDynamicIcon && !!logo;
+    ? tenant?.branding?.dark_logo
+    : tenant?.branding?.light_logo ?? tenant?.branding?.logo;
+  const tenantName = tenant?.name ?? "أكاديميتي";
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full" role="banner">
-        <div
-          className="nav-touch-solid relative flex h-16 w-full items-center justify-between gap-2 bg-background/75 px-4 backdrop-blur-2xl sm:px-6 lg:px-8"
-          style={{
-            boxShadow: `0 8px 32px rgba(0,0,0,0.06)`,
-          }}
-        >
+      <header
+        className="sticky top-0 z-50 w-full py-2"
+        role="banner"
+      >
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div
+            className="relative mx-auto flex items-center justify-between rounded-[28px] border h-14 bg-background/75 backdrop-blur-2xl px-3"
+            style={{
+              borderColor: `${primary}30`,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.06), 0 0 0 1px ${primary}15`,
+            }}
+          >
+            <div
+              className="pointer-events-none absolute -inset-[1px] rounded-[28px] opacity-30 blur-[2px]"
+              style={{
+                background: `linear-gradient(135deg, ${primary}50, transparent 40%, transparent 60%, ${secondary}40)`,
+              }}
+            />
+
             {/* ── Logo ── */}
             <div className="relative z-10 flex items-center">
-               <Link href="/" className="group relative flex items-center gap-2.5">
-                {showDynamicImage ? (
+              <Link href="/" className="group relative flex items-center gap-2.5">
+                {logo ? (
                   <div className="relative">
-                    <NavbarLogoImage src={navbarLogoImage} alt={tenantName} />
+                    <Image src={logo} alt={tenantName} width={100} height={28} className="h-7 w-auto transition-all duration-500 group-hover:scale-105" />
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.271)` }}
-                    />
-                  </div>
-                ) : showDynamicIcon ? (
-                  <NavbarLogoIcon icon={navbarLogoIcon} />
-                ) : showLegacyImage ? (
-                  <div className="relative">
-                    <NavbarLogoImage src={logo} alt={tenantName} />
-                    {/* Hover: border = secondary */}
-                    <span
-                      className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.271)` }}
+                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}45` }}
                     />
                   </div>
                 ) : (
-                  <NavbarLogoIcon icon={GraduationCap} />
+                  <div
+                    className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
+                    style={{
+                      backgroundColor: primary,
+                      boxShadow: `0 2px 20px ${primary}40`,
+                    }}
+                  >
+                    <GraduationCap className="h-5 w-5 text-white" />
+                    {/* Hover: border = secondary */}
+                    <span
+                      className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 24px ${secondary}50` }}
+                    />
+                  </div>
                 )}
                 <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
                   {tenantName}
@@ -562,33 +395,8 @@ export function PublicNavbar() {
             </nav>
 
             {/* ── Right actions ── */}
-            <div className="relative z-10 flex items-center gap-1 sm:gap-1.5 lg:gap-2">
-              {/* Search + theme move to the mobile secondary nav on small screens */}
-              <div className="hidden items-center gap-1 sm:gap-1.5 lg:gap-2 md:flex">
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(true)}
-                  title="بحث عن كورس (Ctrl+K)"
-                  aria-label="بحث عن كورس"
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
-                >
-                  <span
-                    className="absolute inset-0 rounded-xl"
-                    style={{ boxShadow: `inset 0 0 0 1px hsl(var(--border))` }}
-                  />
-                  <span
-                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
-                    style={{
-                      backgroundColor: secondary,
-                      border: `3px solid var(--brand-primary)`,
-                      boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
-                    }}
-                  />
-                  <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300" />
-                </button>
-
-                <ThemeBtn />
-              </div>
+            <div className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+              <ThemeBtn />
 
               {/* Desktop auth */}
               <div className="flex items-center gap-1 sm:gap-2">
@@ -599,84 +407,72 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                        aria-expanded={profileDropdownOpen}
-                        aria-haspopup="menu"
-                        className="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
+                        className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                         style={{
-                          border: `1px solid ${profileDropdownOpen ? primary : "hsl(var(--border))"}`,
-                          backgroundColor: profileDropdownOpen
-                            ? "hsl(var(--accent) / 0.6)"
-                            : "hsl(var(--background) / 0.5)",
-                          boxShadow: profileDropdownOpen ? `0 4px 20px rgba(0,0,0,0.1)` : undefined,
+                          border: `1px solid ${profileDropdownOpen ? primary : `${primary}30`}`,
+                          backgroundColor: profileDropdownOpen ? `${primary}15` : `${primary}08`,
+                          boxShadow: profileDropdownOpen ? `0 4px 20px ${primary}30` : undefined,
                         }}
                       >
-                        <div
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold overflow-hidden shrink-0"
-                          style={{
-                            backgroundColor: primary,
-                            color: `var(--brand-primary-contrast)`,
-                            border: `2px solid ${secondary}`,
-                            boxShadow: `0 2px 10px rgba(0,0,0,0.18)`,
-                          }}
-                        >
-                          {sessionAvatar ? (
-                            <img
-                              src={sessionAvatar}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            sessionName?.charAt(0) ?? <User className="h-4 w-4" />
-                          )}
-                        </div>
-                        <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
-                          {sessionName}
-                        </span>
-                        <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
-                          <ChevronDown className="h-4 w-4 text-muted-foreground/70 hidden sm:block" />
-                        </div>
-                      </button>
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold overflow-hidden"
+                        style={{ backgroundColor: primary }}
+                      >
+                        {(authUser?.avatar || studentRegistered?.avatar) ?? undefined ? (
+                          <img
+                            src={(authUser?.avatar || studentRegistered?.avatar) ?? undefined}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          studentRegistered?.name?.charAt(0) ?? <User className="h-4 w-4" />
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold text-foreground/80 max-w-[100px] truncate hidden sm:block">
+                        {studentRegistered?.name}
+                      </span>
+                      <div className={`transition-transform duration-200 ${profileDropdownOpen ? "rotate-180" : ""}`}>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground/60 hidden sm:block" />
+                      </div>
+                    </button>
                     </div>
 
                     <div
                       aria-hidden={!profileDropdownOpen}
-                      role="menu"
-                      className={`glass-touch-solid absolute top-full end-0 z-50 mt-2 w-64 origin-top rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-200 ease-out ${
+                      className={`absolute top-full mt-2 end-0 z-50 w-64 origin-top rounded-2xl border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-200 ease-out ${
                         profileDropdownOpen ? "visible translate-y-0 scale-100 opacity-100" : "invisible pointer-events-none translate-y-2 scale-95 opacity-0"
                       }`}
                       style={{
-                        borderColor: "hsl(var(--border))",
-                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)`,
+                        borderColor: `${primary}25`,
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${primary}10`,
                       }}
                     >
                           {/* Header */}
                           <div
                             className="px-4 py-3 border-b"
-                            style={{ borderColor: "hsl(var(--border))" }}
+                            style={{ borderColor: `${primary}15` }}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden shrink-0"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-white text-sm font-bold overflow-hidden shrink-0"
                                 style={{
                                   backgroundColor: primary,
-                                  color: `var(--brand-primary-contrast)`,
-                                  border: `2px solid ${secondary}`,
-                                  boxShadow: `0 2px 12px rgba(0,0,0,0.25)`,
+                                  boxShadow: `0 2px 12px ${primary}40`,
                                 }}
                               >
-                                {sessionAvatar ? (
+                                {(authUser?.avatar || studentRegistered?.avatar) ?? undefined ? (
                                   <img
-                                    src={sessionAvatar}
+                                    src={(authUser?.avatar || studentRegistered?.avatar) ?? undefined}
                                     alt=""
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  sessionName?.charAt(0) ?? <User className="h-5 w-5" />
+                                  studentRegistered?.name?.charAt(0) ?? <User className="h-5 w-5" />
                                 )}
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-foreground truncate">
-                                  {sessionName}
+                                  {studentRegistered?.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground/60">
                                   حساب الطالب
@@ -686,61 +482,33 @@ export function PublicNavbar() {
                           </div>
 
                           {/* Menu items */}
-                          <div className="p-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileDropdownOpen(false);
-                                router.push("/student/dashboard");
-                              }}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-                            >
-                              <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
-                              />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <LayoutDashboard className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
-                              <span className="relative z-10">لوحة تحكم الطالب</span>
-                            </button>
-
+                          <div className="py-2">
                             <button
                               type="button"
                               onClick={() => {
                                 setProfileDropdownOpen(false);
                                 setProfileDrawerOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
                               />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <User className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <User className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">المعلومات الشخصية</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
                               />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <Settings className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <Settings className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">الإعدادات</span>
                             </button>
 
@@ -750,17 +518,13 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setChangePasswordOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
                               />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <KeyRound className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">تغيير كلمة المرور</span>
                             </button>
 
@@ -770,17 +534,13 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setRechargeWalletOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
                               />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">شحن المحفظة بالكود</span>
                             </button>
 
@@ -790,29 +550,25 @@ export function PublicNavbar() {
                                 setProfileDropdownOpen(false);
                                 setOnlineRechargeOpen(true);
                               }}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: "hsl(var(--accent) / 0.6)" }}
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                style={{ backgroundColor: `${primary}08` }}
                               />
-                              <span
-                                className="absolute inset-y-1.5 start-1 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{ backgroundColor: primary }}
-                              />
-                              <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
+                              <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                               <span className="relative z-10">شحن المحفظة أونلاين</span>
                             </button>
 
-                            <div className="my-1.5 mx-1 border-t" style={{ borderColor: "hsl(var(--border))" }} />
+                            <div className="my-1 mx-3 border-t" style={{ borderColor: `${primary}10` }} />
 
                             <button
                               type="button"
                               onClick={handleLogout}
-                              className="group relative flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-red-500 hover:text-red-600 transition-colors"
+                              className="group relative flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:text-red-600 transition-colors"
                             >
                               <span
-                                className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
                                 style={{ backgroundColor: "rgba(239, 68, 68, 0.08)" }}
                               />
                               <LogOut className="h-4 w-4 relative z-10 group-hover:-translate-x-0.5 transition-transform" />
@@ -823,11 +579,11 @@ export function PublicNavbar() {
                   </div>
                 ) : (
                   <>
-                    <div className="shrink-0 transition-transform duration-300 hover:scale-105 active:scale-95">
+                    <div className="transition-transform duration-300 hover:scale-105 active:scale-95">
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3 md:py-1.5 md:text-sm"
+                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-1.5 max-md:px-3 max-md:py-1.5 text-sm max-md:text-xs font-semibold transition-all duration-300"
                         style={{
                           color: "hsl(var(--foreground))",
                           border: `1px solid hsl(var(--border))`,
@@ -835,37 +591,39 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl md:rounded-2xl"
+                          className="absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
                           style={{
                             backgroundColor: secondary,
-                            border: `3px solid var(--brand-primary)`,
-                            boxShadow: `0 0 24px rgba(0,0,0,0.271)`,
+                            border: `3px solid ${primary}`,
+                            boxShadow: `0 0 24px ${primary}45`,
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 sm:h-4 sm:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
-                        <span className="relative z-10 whitespace-nowrap group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
+                        <LogIn className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10 group-hover:text-[#2D1B00] transition-colors" />
+                        <span className="relative z-10 group-hover:text-[#2D1B00] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
 
-                    <div className="shrink-0 transition-transform duration-300 hover:scale-105 hover:-translate-y-px active:scale-95">
+                    <div className="transition-transform duration-300 hover:scale-105 hover:-translate-y-px active:scale-95">
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3.5 md:py-1.5 md:text-sm"
+                        className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-2xl px-4 py-1.5 max-md:px-3.5 max-md:py-1.5 text-sm max-md:text-xs font-semibold text-white transition-all duration-300"
                         style={{
                           backgroundColor: primary,
-                          boxShadow: `0 4px 20px rgba(0,0,0,0.271)`,
+                          boxShadow: `0 4px 20px ${primary}45`,
                         }}
                       >
                         <span
-                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-2xl md:rounded-[18px]"
-                          style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
+                          className="absolute -inset-[3px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          style={{ border: `3px solid ${secondary}`, boxShadow: `0 0 28px ${secondary}55` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-4 w-4 sm:h-4 sm:w-4 relative z-10" />
-                        <span className="relative z-10 whitespace-nowrap">إنشاء حساب</span>
-                        <ChevronLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
+                        <span className="absolute -top-1 -start-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
+                        <span className="absolute -bottom-1 -end-1 h-3 w-3 rounded-full blur-[2px]" style={{ backgroundColor: `${primary}60` }} />
+                        <Sparkles className="h-4 w-4 max-md:h-4 max-md:w-4 relative z-10" />
+                        <span className="relative z-10">إنشاء حساب</span>
+                        <ChevronLeft className="h-3.5 w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform" />
                       </button>
                     </div>
                   </>
@@ -874,6 +632,7 @@ export function PublicNavbar() {
 
             </div>
           </div>
+        </div>
       </header>
 
       <PublicRegisterCard
@@ -914,8 +673,6 @@ export function PublicNavbar() {
         open={onlineRechargeOpen}
         onClose={() => setOnlineRechargeOpen(false)}
       />
-
-      <CourseSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }

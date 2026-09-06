@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AUTH_EVENTS } from "@/constants/auth-events";
+import { AUTH_EVENTS } from "@/services/api/axios";
 import { authService } from "@/services/api/auth.service";
 import { tenantService } from "@/services/api/tenant.service";
 import { authKeys } from "@/services/queryKeys";
@@ -11,10 +11,6 @@ import { useTenantStore } from "@/stores/tenant.store";
 import type { CurrentUserResponse, LoginRequest } from "@/types/auth.types";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  isStudentRoute,
-  resolveStudentSession,
-} from "@/services/api/tenant-student-fetch";
 import { isSuperAdminPath, routes } from "@/constants/routes";
 
 interface AuthProviderValue {
@@ -23,12 +19,10 @@ interface AuthProviderValue {
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   bootstrap: () => Promise<void>;
-  refreshSession: () => Promise<boolean>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthProviderValue | null>(null);
-
-export { AuthContext };
 
 /**
  * Public, user-independent query keys that must survive session invalidation
@@ -65,6 +59,7 @@ function isPublicRoute(pathname: string): boolean {
     pathname.startsWith(`${routes.publicCourse}/`) ||
     pathname.startsWith("/stages") ||
     pathname === routes.tenantLogin ||
+    pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/tenant-not-found"
   );
@@ -75,10 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const isSuperAdminRoute = isSuperAdminPath(pathname);
-  const refreshingPromiseRef = useRef<Promise<boolean> | null>(null);
-  // Tracks the token we most recently obtained from a refresh so we can detect
-  // the "refreshed but the new token still 401s" case and break the loop.
-  const lastRefreshedTokenRef = useRef<string | null>(null);
+  const refreshingRef = useRef(false);
 
   const user = useAuthStore((state) => state.user);
   const status = useAuthStore((state) => state.status);
@@ -99,48 +91,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateSession(queryClient);
     if (!isPublicRoute(window.location.pathname)) {
       clearTenant();
-      // Send expired dashboard sessions back to the teacher login so they can
-      // re-authenticate, instead of dumping them onto the public storefront
-      // home page (which is confusing and often unusable for a signed-out
-      // teacher). Public routes keep their own (guest) behavior.
-      router.replace(routes.tenantLogin);
+      router.replace("/tenant-login");
     }
   }, [clearAuth, clearTenant, queryClient, router]);
 
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    // Read at call time — bootstrap may have just re-seeded the store with a
-    // different identity's token (student route after a teacher login).
-    const currentRefresh = useAuthStore.getState().refreshToken;
-    if (!currentRefresh) {
-      handleStaleSession();
-      return false;
-    }
-
-    if (refreshingPromiseRef.current) {
-      return refreshingPromiseRef.current;
-    }
-
-    refreshingPromiseRef.current = (async (): Promise<boolean> => {
-      try {
-        const result = await authService.refresh({ refresh_token: currentRefresh });
-        setAccessToken(result.access_token);
-        lastRefreshedTokenRef.current = result.access_token;
-        queryClient.invalidateQueries({
-          predicate: (query) => !isPublicQueryKey(query.queryKey),
-        });
-        return true;
-      } catch {
-        handleStaleSession();
-        return false;
-      }
-    })();
+  const refreshSession = useCallback(async () => {
+    if (refreshingRef.current || !refreshToken) return;
+    refreshingRef.current = true;
 
     try {
-      return await refreshingPromiseRef.current;
+      const result = await authService.refresh({ refresh_token: refreshToken });
+      setAccessToken(result.access_token);
+    } catch {
+      handleStaleSession();
     } finally {
-      refreshingPromiseRef.current = null;
+      refreshingRef.current = false;
     }
-  }, [setAccessToken, handleStaleSession, queryClient]);
+  }, [refreshToken, setAccessToken, handleStaleSession]);
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
@@ -148,26 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // On student routes the public student session (public-register-state) is
-    // the source of truth. A teacher/dashboard login must never resolve the
-    // student context, so prefer the student's own token here.
-    let token = accessToken;
-    let refresh = refreshToken;
-    if (isStudentRoute(pathname)) {
-      const studentSession = resolveStudentSession(pathname);
-      if (studentSession.accessToken) {
-        token = studentSession.accessToken;
-        refresh = studentSession.refreshToken ?? refresh;
-      }
-    }
-
-    if (!token) {
+    if (!accessToken) {
       setStatus("unauthenticated");
       return;
-    }
-
-    if (token !== accessToken || refresh !== refreshToken) {
-      setTokens(token, refresh ?? "");
     }
 
     setStatus("loading");
@@ -187,10 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Token might be expired, try refresh
       try {
-        const refreshed = await refreshSession();
-        if (!refreshed) {
-          return;
-        }
+        await refreshSession();
         // Retry bootstrap with new token
         const context = await tenantService.resolveContext();
         setTenantContext({
@@ -203,13 +150,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         setUser(context.user);
       } catch {
-        // Refresh succeeded but the retried /auth/me failed transiently
-        // (rate limit, 5xx, network). The session is still valid — keep it
-        // instead of logging the user out.
-        setStatus("authenticated");
+        clearAuth();
       }
     }
-  }, [activeTenant, accessToken, refreshToken, pathname, setStatus, setUser, setTenantContext, refreshSession, setTokens]);
+  }, [activeTenant, accessToken, setStatus, setUser, setTenantContext, refreshSession, clearAuth]);
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
@@ -256,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuth();
     clearTenant();
     invalidateSession(queryClient);
-    router.replace(routes.home);
+    router.replace("/tenant-login");
   }, [clearAuth, clearTenant, queryClient, router]);
 
   // Bootstrap session on mount when a tenant is already known
@@ -267,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isGuestRoute =
       pathname === routes.tenantLogin ||
+      pathname === "/login" ||
       pathname === "/register" ||
       pathname === "/tenant-not-found";
 
@@ -278,45 +223,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [activeTenant, bootstrap, isSuperAdminRoute, pathname, status, setStatus]);
-
-  // The student dashboard must always reflect the public student session, never
-  // a different dashboard identity (e.g. a teacher signed in on /tenant-login).
-  // When the shared auth store holds someone else's session while navigating on
-  // to a student route, re-seed it from the student session and re-bootstrap so
-  // the student's own context is resolved.
-  useEffect(() => {
-    if (status !== "authenticated" || isSuperAdminRoute) {
-      return;
-    }
-    if (!isStudentRoute(pathname)) {
-      return;
-    }
-
-    const studentSession = resolveStudentSession(pathname);
-    if (!studentSession.accessToken) {
-      return;
-    }
-
-    const current = useAuthStore.getState();
-    if (current.accessToken === studentSession.accessToken) {
-      return;
-    }
-
-    setTokens(
-      studentSession.accessToken,
-      studentSession.refreshToken ?? current.refreshToken ?? "",
-    );
-    if (studentSession.name || studentSession.avatar) {
-      setUser({
-        id: 0,
-        name: studentSession.name ?? "",
-        email: "",
-        avatar: studentSession.avatar ?? null,
-        is_platform_super_admin: false,
-      });
-    }
-    setStatus("idle");
-  }, [pathname, status, isSuperAdminRoute, setTokens, setUser, setStatus]);
 
   // React to 401 from tenant API requests
   useEffect(() => {
@@ -330,16 +236,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     function handleTokenExpired() {
       if (isSuperAdminPath(window.location.pathname)) {
-        return;
-      }
-
-      // If the in-flight request is already using the token we just refreshed,
-      // refreshing again won't help — the 401 is persistent (e.g. the tenant
-      // context isn't resolvable). Bail out instead of looping 401 → refresh
-      // → 401 forever, which manifests as the page "constantly reloading".
-      const currentToken = useAuthStore.getState().accessToken;
-      if (currentToken && lastRefreshedTokenRef.current === currentToken) {
-        handleStaleSession();
         return;
       }
 

@@ -143,11 +143,6 @@ export const env = {
   reverbScheme: process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http",
   reverbAppKey: process.env.NEXT_PUBLIC_REVERB_APP_KEY ?? "techify-reverb-key",
   reverbCluster: process.env.NEXT_PUBLIC_REVERB_CLUSTER ?? "mt1",
-  // Platform-wide search engine verification tokens (Google Search Console /
-  // Bing Webmaster). Per-tenant tokens override these when present in the
-  // tenant SEO configuration (see lib/seo/metadata.ts).
-  googleVerification: process.env.NEXT_PUBLIC_GSC_VERIFICATION?.trim() || null,
-  bingVerification: process.env.NEXT_PUBLIC_BING_VERIFICATION?.trim() || null,
 } as const;
 
 /**

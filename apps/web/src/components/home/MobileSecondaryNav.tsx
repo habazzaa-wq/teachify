@@ -4,14 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon,
+  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -29,6 +29,7 @@ const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
+  { label: "تواصل معنا", href: "/contact", icon: MessageCircle },
 ];
 
 export function MobileSecondaryNav() {
@@ -43,12 +44,12 @@ export function MobileSecondaryNav() {
   const social = hero?.socialLinks;
 
   const mobileIconItems = [
-    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.gifts?.visible },
-    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.facebook?.visible, href: social?.facebook },
-    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.chat?.visible },
-    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.youtube?.visible, href: social?.youtube },
-    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.bestStudents?.visible },
-    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
+    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: "#F0B8A8", visible: icons?.gifts?.visible },
+    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: "#FFE0A0", visible: icons?.facebook?.visible, href: social?.facebook },
+    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: "#F0B8A8", visible: icons?.chat?.visible },
+    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: "#FFE0A0", visible: icons?.youtube?.visible, href: social?.youtube },
+    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: "#F0B8A8", visible: icons?.bestStudents?.visible },
+    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: "#FFE0A0", visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
   ];
 
   const visibleIcons = mobileIconItems.filter((item) => item.visible !== false);
@@ -59,16 +60,16 @@ export function MobileSecondaryNav() {
       <div className="relative">
         {/* ── Nav bar ── */}
         <div
-          className="glass-touch-solid relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
+          className="relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
           style={{
             backgroundColor: isDark ? "rgba(22,24,29,0.8)" : "rgba(255,255,255,0.85)",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.15)",
+            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(216,123,99,0.15)",
           }}
         >
           <div
             className="pointer-events-none absolute -top-px inset-x-4 h-px opacity-60"
             style={{
-              background: `linear-gradient(90deg, transparent, var(--brand-primary), var(--brand-secondary), var(--brand-primary), transparent)`,
+              background: `linear-gradient(90deg, transparent, ${primary}, ${secondary}, ${primary}, transparent)`,
             }}
           />
 
@@ -79,9 +80,9 @@ export function MobileSecondaryNav() {
               onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
               className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300 active:scale-90"
               style={{
-                backgroundColor: mobileIconsOpen ? primary : "rgba(0,0,0,0.07)",
+                backgroundColor: mobileIconsOpen ? primary : `${primary}12`,
                 color: mobileIconsOpen ? "#fff" : primary,
-                boxShadow: mobileIconsOpen ? "0 2px 12px rgba(0,0,0,0.25)" : undefined,
+                boxShadow: mobileIconsOpen ? `0 2px 12px ${primary}40` : undefined,
               }}
             >
               <Plus
@@ -125,11 +126,11 @@ export function MobileSecondaryNav() {
                   onClick={handleClick}
                   className={cn(
                     "relative whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
-                    isActive ? "text-[var(--brand-primary-contrast)]" : "text-foreground/70 hover:text-foreground",
+                    isActive ? "text-white" : "text-foreground/70 hover:text-foreground",
                   )}
                   style={{
                     backgroundColor: isActive ? primary : "transparent",
-                    boxShadow: isActive ? "0 2px 12px rgba(0,0,0,0.21)" : undefined,
+                    boxShadow: isActive ? `0 2px 12px ${primary}35` : undefined,
                   }}
                 >
                   {isActive && (
@@ -143,57 +144,19 @@ export function MobileSecondaryNav() {
               );
             })}
           </div>
-
-          {/* ── Search + theme (freed up from the main navbar on mobile) ── */}
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("public-search-request"))}
-              aria-label="بحث عن كورس"
-              title="بحث عن كورس"
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
-              style={{
-                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                color: primary,
-                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
-                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-              }}
-            >
-              <Search className="h-[17px] w-[17px]" />
-            </button>
-            <button
-              type="button"
-              onClick={() => useUiStore.getState().toggleTheme()}
-              aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
-              title={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
-              style={{
-                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                color: "var(--brand-secondary)",
-                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
-                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-              }}
-            >
-              {theme === "light" ? (
-                <Moon className="h-[17px] w-[17px]" />
-              ) : (
-                <Sun className="h-[17px] w-[17px]" />
-              )}
-            </button>
-          </div>
         </div>
 
         {/* ── Icons floating overlay ── */}
         {mobileIconsOpen && (
           <div className="home-menu-pop absolute end-0 start-0 z-50 mt-1.5">
             <div
-              className="glass-touch-solid overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
+              className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
               style={{
                 backgroundColor: isDark ? "rgba(22,24,29,0.88)" : "rgba(255,255,255,0.88)",
-                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.12)",
+                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(216,123,99,0.12)",
               }}
             >
-              <div className="flex flex-col divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)" }}>
+              <div className="flex flex-col divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(216,123,99,0.06)" }}>
                 {visibleIcons.map((item) => {
                   const iconContent = (
                     <div className="flex items-center gap-3 px-3.5 py-2.5 transition-all duration-200 hover:bg-black/5 active:scale-[0.98]">
@@ -204,11 +167,11 @@ export function MobileSecondaryNav() {
                           borderColor: item.borderColor,
                         }}
                       >
-                        <item.icon className="h-[18px] w-[18px]" style={{ color: item.contrast }} />
+                        <item.icon className="h-[18px] w-[18px] text-white" />
                       </div>
                       <span
-                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-sm"
-                        style={{ backgroundColor: item.badge, color: item.contrast }}
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
+                        style={{ backgroundColor: `${item.color}dd` }}
                       >
                         {item.label}
                       </span>

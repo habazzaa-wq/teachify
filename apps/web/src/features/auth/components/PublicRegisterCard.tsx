@@ -7,7 +7,8 @@ import { usePublicRegister, type PublicRegisterPayload, type PublicRegisterRespo
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
 import { cn } from "@/lib/cn";
 
-const secondary = "var(--brand-secondary)";
+const primary = "#D87B63";
+const secondary = "#FFB50E";
 
 interface PublicRegisterCardProps {
   open: boolean;
@@ -282,7 +283,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 320, damping: 26 }}
             className="fixed z-[100] inset-x-0 inset-y-0 m-auto w-[calc(100vw-2rem)] max-w-lg h-fit max-h-[90vh] rounded-3xl border border-border/40 bg-card shadow-2xl shadow-black/10 flex flex-col"
-            style={{ boxShadow: `0 25px 60px -12px rgba(0,0,0,0.145), 0 0 0 1px rgba(0,0,0,0.063)` }}
+            style={{ boxShadow: `0 25px 60px -12px ${primary}25, 0 0 0 1px ${primary}10` }}
           >
             <div className="p-5 sm:p-6 flex flex-col min-h-0 flex-1 overflow-y-auto">
                 <div className="mb-4">
@@ -497,8 +498,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                       disabled={registerMutation.isPending}
                       className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60"
                       style={{
-                        background: `var(--brand-primary)`,
-                        boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+                        background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+                        boxShadow: `0 4px 16px ${primary}40`,
                       }}
                     >
                       {registerMutation.isPending ? (
@@ -548,13 +549,16 @@ export function RegisterSuccessOverlay({ name, onDone }: { name: string; onDone:
         exit={{ opacity: 0, scale: 0.85, y: 20 }}
         transition={{ type: "spring", stiffness: 320, damping: 24 }}
         className="fixed z-[100] top-1/2 inset-x-0 mx-auto -translate-y-1/2 w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-border/40 bg-card p-8 text-center shadow-2xl"
-        style={{ boxShadow: `0 25px 60px -12px rgba(0,0,0,0.188)` }}
+        style={{ boxShadow: `0 25px 60px -12px ${secondary}30` }}
       >
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.15 }}
           className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+          style={{
+            background: `linear-gradient(135deg, ${secondary}20, ${primary}15)`,
+          }}
         >
           <CheckCircle className="h-8 w-8" style={{ color: secondary }} />
         </motion.div>
@@ -568,8 +572,8 @@ export function RegisterSuccessOverlay({ name, onDone }: { name: string; onDone:
           onClick={onDone}
           className="mt-6 h-11 px-8 rounded-xl text-sm font-semibold text-white transition-all duration-300"
           style={{
-            background: `var(--brand-primary)`,
-            boxShadow: `0 4px 16px rgba(0,0,0,0.251)`,
+            background: `linear-gradient(135deg, ${primary}, ${primary}dd)`,
+            boxShadow: `0 4px 16px ${primary}40`,
           }}
         >
           الذهاب للرئيسية

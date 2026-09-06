@@ -6,6 +6,7 @@ export const routes = {
   home: "/",
   publicCourse: "/courses",
   // Auth
+  login: "/login",
   tenantLogin: "/tenant-login",
   // Teacher control panel (tenant dashboard) — all under /teacher/
   dashboard: "/teacher/dashboard",
@@ -37,8 +38,6 @@ export const routes = {
   dashboardProfile: "/teacher/profile",
   dashboardHelp: "/teacher/help",
   dashboardSettings: "/teacher/settings",
-  dashboardSiteSettings: "/teacher/settings/site",
-  dashboardBranding: "/teacher/settings/branding",
   // Student control panel (learner dashboard) — under /student/
   studentDashboard: "/student/dashboard",
   // Student community — under /community

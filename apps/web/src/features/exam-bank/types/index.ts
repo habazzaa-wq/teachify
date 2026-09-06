@@ -11,24 +11,6 @@ export type QuestionType =
   | "file_upload"
   | "coding";
 
-export type QuestionFormat = "text" | "image" | "structured";
-
-export type ScanMode = "bw_document" | "auto" | "color_document" | "grayscale_document" | "original_preserve";
-
-export interface ScanProcessingStage {
-  key: string;
-  label: string;
-  status: "done" | "skipped";
-  detail?: string;
-}
-
-export interface ScanProcessingInfo {
-  mode: ScanMode;
-  fallbackUsed: boolean;
-  qualityLevel?: "excellent" | "good" | "original" | null;
-  stages: ScanProcessingStage[];
-}
-
 export type Difficulty = "easy" | "medium" | "hard";
 
 export type ExamStatus = "draft" | "published" | "archived";
@@ -120,12 +102,9 @@ export interface Question {
   explanation?: string | null;
   hint?: string | null;
   content: QuestionContent;
-  contentDocument?: import("@/components/structured-question").QuestionDocument | null;
   metadata: Record<string, unknown>;
-  questionFormat?: QuestionFormat;
   scanUrl?: string | null;
   scanAssetId?: string | null;
-  scanProcessing?: ScanProcessingInfo | null;
   category?: { id: string; name: string; slug: string } | null;
   creator?: { id: string; name: string | null } | null;
   createdAt?: string;

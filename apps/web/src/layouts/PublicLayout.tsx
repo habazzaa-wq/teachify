@@ -1,6 +1,10 @@
 import dynamic from "next/dynamic";
-import { PublicFooter } from "@/components/home/PublicFooter";
-import { WhatsAppFloatButton } from "@/components/home/WhatsAppFloatButton";
+
+const InstallAppBanner = dynamic(
+  () =>
+    import("@/components/pwa/InstallAppBanner").then((m) => m.InstallAppBanner),
+  { ssr: false },
+);
 
 const NewsTicker = dynamic(
   () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
@@ -17,21 +21,21 @@ const MobileSecondaryNav = dynamic(
   { ssr: true }
 );
 
-/**
- * Public shell for tenant storefronts. The footer carries the tenant brand
- * alongside the platform developer credit, keeping the shell light and focused.
- */
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="community-theme flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <NewsTicker />
       <PublicNavbar />
       <MobileSecondaryNav />
+      <InstallAppBanner />
 
       <main className="flex-1">{children}</main>
 
-      <PublicFooter />
-      <WhatsAppFloatButton />
+      <footer className="border-t py-6">
+        <div className="container text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} أكاديميتي. جميع الحقوق محفوظة.
+        </div>
+      </footer>
     </div>
   );
 }

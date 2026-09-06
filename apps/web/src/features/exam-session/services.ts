@@ -94,9 +94,6 @@ function formatQuestion(raw: Raw): ExamSession["questions"][number] {
     answered: Boolean(raw.answered),
     isCorrect:
       raw.isCorrect === null || raw.isCorrect === undefined ? null : Boolean(raw.isCorrect),
-    questionFormat: raw.questionFormat ?? "text",
-    scanUrl: typeof raw.scanUrl === "string" ? raw.scanUrl : null,
-    contentDocument: raw.contentDocument ?? null,
   };
 }
 

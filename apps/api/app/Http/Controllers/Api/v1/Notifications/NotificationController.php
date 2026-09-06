@@ -13,36 +13,15 @@ class NotificationController extends Controller
 {
     public function index(NotificationService $notifications): JsonResponse
     {
-        $page = $notifications->list(
-            currentTenant(),
-            app(TenantUser::class),
-            perPage: (int) request()->input('per_page', 25),
-        );
-
         return response()->json([
-            'notifications' => $page->items(),
-            'total' => $page->total(),
-            'current_page' => $page->currentPage(),
-            'last_page' => $page->lastPage(),
-            'per_page' => $page->perPage(),
+            'notifications' => $notifications->list(currentTenant(), app(TenantUser::class)),
         ]);
     }
 
     public function unread(NotificationService $notifications): JsonResponse
     {
-        $page = $notifications->list(
-            currentTenant(),
-            app(TenantUser::class),
-            unreadOnly: true,
-            perPage: (int) request()->input('per_page', 25),
-        );
-
         return response()->json([
-            'notifications' => $page->items(),
-            'total' => $page->total(),
-            'current_page' => $page->currentPage(),
-            'last_page' => $page->lastPage(),
-            'per_page' => $page->perPage(),
+            'notifications' => $notifications->list(currentTenant(), app(TenantUser::class), true),
         ]);
     }
 

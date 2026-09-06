@@ -124,18 +124,16 @@ class MediaLibraryAssetService
      * Flow:
      *  1. Determine provider + service from asset metadata
      *  2. Dispatch MediaDeleting event
-     *  3. Delete from Bunny (Storage or Stream) — best effort
-     *  4. Begin DB transaction
-     *  5. Clean up pivot/related records
-     *  6. Soft delete the asset
-     *  7. Commit transaction
-     *  8. Dispatch MediaDeleted event
-     *  9. Invalidate caches + recalculate usage
+     *  3. Delete from Bunny (Storage or Stream)
+     *  4. Verify Bunny deletion succeeded (exception = failure)
+     *  5. Begin DB transaction
+     *  6. Clean up pivot/related records
+     *  7. Soft delete the asset
+     *  8. Commit transaction
+     *  9. Dispatch MediaDeleted event
+     * 10. Invalidate caches + recalculate usage
      *
-     * If Bunny deletion fails (e.g. expired subscription, object already gone)
-     * the failure is logged and the local record is still removed so the user
-     * can always clear their library. A queued retry job keeps trying to purge
-     * the orphaned remote object.
+     * If Bunny fails: no local changes, throw exception.
      */
     public function softDelete(Tenant $tenant, MediaAsset $asset): void
     {
@@ -148,31 +146,7 @@ class MediaLibraryAssetService
             $providerService,
         ));
 
-        try {
-            $this->deleteFromBunny($asset, $providerService);
-        } catch (\Throwable $e) {
-            Log::channel('bunny')->warning('Delete: Bunny deletion failed, continuing with local delete', [
-                'asset_id' => $asset->id,
-                'tenant_id' => $tenant->id,
-                'provider' => $asset->provider,
-                'provider_service' => $providerService,
-                'storage_key' => $asset->bunny_storage_path ?: $asset->storage_key,
-                'bunny_video_id' => $asset->bunny_video_id,
-                'error' => $e->getMessage(),
-                'code' => $e->getCode(),
-            ]);
-
-            event(new MediaDeleteFailed(
-                $asset,
-                $tenant->id,
-                $asset->provider,
-                $providerService,
-                $e->getMessage(),
-                $e->getCode() ?: null,
-            ));
-
-            $this->queueRetryForFailedAsset($asset, $e);
-        }
+        $this->deleteFromBunny($asset, $providerService);
 
         DB::transaction(function () use ($asset) {
             $this->cleanupRelatedRecords($asset);
@@ -256,13 +230,11 @@ class MediaLibraryAssetService
     /**
      * Bulk delete with partial failure handling.
      *
-     * Remote (Bunny) deletion is best-effort. Even when the object cannot be
-     * removed from the CDN (expired credentials, already-deleted object, …) the
-     * local record is still soft-deleted so the library can always be cleared.
-     * Failures are collected and returned. Only a genuine local (DB) failure
-     * prevents an asset from being removed from the library.
+     * Each asset is processed independently. Failures are collected
+     * and returned. No asset is deleted locally if its Bunny deletion
+     * fails. Failed items are queued for retry.
      *
-     * @return array{deleted: int, failed: int, failures: array<int, array{asset_id: int, error: string}>, remote_failures: int}
+     * @return array{deleted: int, failed: int, failures: array<int, array{asset_id: int, error: string}>}
      */
     public function bulkDelete(Tenant $tenant, array $ids): array
     {
@@ -273,29 +245,47 @@ class MediaLibraryAssetService
 
         $deleted = 0;
         $failures = [];
-        $remoteFailures = 0;
 
         foreach ($assets as $asset) {
-            $providerService = $this->resolveProviderService($asset);
-
-            event(new MediaDeleting(
-                $asset,
-                $tenant->id,
-                $asset->provider,
-                $providerService,
-            ));
-
             try {
-                $this->deleteFromBunny($asset, $providerService);
-            } catch (\Throwable $e) {
-                $remoteFailures++;
+                $providerService = $this->resolveProviderService($asset);
 
-                Log::channel('bunny')->warning('Bulk delete: Bunny deletion failed, continuing with local delete', [
+                event(new MediaDeleting(
+                    $asset,
+                    $tenant->id,
+                    $asset->provider,
+                    $providerService,
+                ));
+
+                $this->deleteFromBunny($asset, $providerService);
+
+                DB::transaction(function () use ($asset) {
+                    $this->cleanupRelatedRecords($asset);
+                    $asset->delete();
+                });
+
+                $deleted++;
+
+                $this->logDeletionSuccess($asset, $tenant->id);
+                $this->cache->invalidateStorage($asset->bunny_storage_path);
+
+                event(new MediaDeleted(
+                    $tenant->id,
+                    $asset->bunny_storage_path ?: ($asset->bunny_video_id ?: (string) $asset->id),
+                    $providerService,
+                ));
+            } catch (\Throwable $e) {
+                $failures[] = [
+                    'asset_id' => $asset->id,
+                    'error' => $e->getMessage(),
+                ];
+
+                Log::channel('bunny')->error('Bulk delete: Bunny deletion failed, skipping local delete', [
                     'asset_id' => $asset->id,
                     'tenant_id' => $tenant->id,
                     'provider' => $asset->provider,
-                    'provider_service' => $providerService,
-                    'storage_key' => $asset->bunny_storage_path ?: $asset->storage_key,
+                    'provider_service' => $asset->provider_service,
+                    'storage_key' => $asset->storage_key,
                     'bunny_video_id' => $asset->bunny_video_id,
                     'error' => $e->getMessage(),
                     'code' => $e->getCode(),
@@ -305,44 +295,13 @@ class MediaLibraryAssetService
                     $asset,
                     $tenant->id,
                     $asset->provider,
-                    $providerService,
+                    $this->resolveProviderService($asset),
                     $e->getMessage(),
                     $e->getCode() ?: null,
                 ));
 
                 $this->queueRetryForFailedAsset($asset, $e);
             }
-
-            try {
-                DB::transaction(function () use ($asset) {
-                    $this->cleanupRelatedRecords($asset);
-                    $asset->delete();
-                });
-            } catch (\Throwable $e) {
-                $failures[] = [
-                    'asset_id' => $asset->id,
-                    'error' => $e->getMessage(),
-                ];
-
-                Log::channel('bunny')->error('Bulk delete: local record deletion failed', [
-                    'asset_id' => $asset->id,
-                    'tenant_id' => $tenant->id,
-                    'error' => $e->getMessage(),
-                ]);
-
-                continue;
-            }
-
-            $deleted++;
-
-            $this->logDeletionSuccess($asset, $tenant->id);
-            $this->cache->invalidateStorage($asset->bunny_storage_path);
-
-            event(new MediaDeleted(
-                $tenant->id,
-                $asset->bunny_storage_path ?: ($asset->bunny_video_id ?: (string) $asset->id),
-                $providerService,
-            ));
         }
 
         if ($deleted > 0) {
@@ -362,7 +321,6 @@ class MediaLibraryAssetService
             'deleted' => $deleted,
             'failed' => count($failures),
             'failures' => $failures,
-            'remote_failures' => $remoteFailures,
         ];
     }
 
@@ -523,13 +481,6 @@ class MediaLibraryAssetService
             && in_array($error->getCode(), [429, 500, 502, 503, 504, 0], true);
 
         if (! $isRetryable) {
-            return;
-        }
-
-        // Configuration errors (expired/disabled Bunny integration, missing
-        // credentials) are not transient — queuing retry jobs would only
-        // pollute the queue since they can never succeed.
-        if (stripos($error->getMessage(), 'not configured') !== false) {
             return;
         }
 

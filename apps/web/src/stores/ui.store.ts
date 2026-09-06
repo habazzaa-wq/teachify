@@ -32,10 +32,14 @@ export const useUiStore = create<UiState>()(
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setMobileSidebarOpen: (mobileSidebarOpen) => set({ mobileSidebarOpen }),
       setTheme: (theme) => {
+        console.log("[ui.store] setTheme called with:", theme);
         set({ theme });
       },
       toggleTheme: () => {
-        set((state) => ({ theme: state.theme === "light" ? "dark" : "light" }));
+        set((state) => {
+          console.log("[ui.store] toggleTheme, current theme:", state.theme);
+          return { theme: state.theme === "light" ? "dark" : "light" };
+        });
       },
     }),
     {

@@ -16,22 +16,16 @@ class NotificationService
     }
 
     /**
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return Collection<int, Notification>
      */
-    public function list(
-        Tenant $tenant,
-        TenantUser $recipient,
-        bool $unreadOnly = false,
-        ?string $typePrefix = null,
-        int $perPage = 25,
-    ): \Illuminate\Contracts\Pagination\LengthAwarePaginator {
+    public function list(Tenant $tenant, TenantUser $recipient, bool $unreadOnly = false): Collection
+    {
         return Notification::query()
             ->where('tenant_id', $tenant->id)
             ->where('tenant_user_id', $recipient->id)
             ->when($unreadOnly, fn ($query) => $query->where('status', 'unread'))
-            ->when($typePrefix, fn ($query) => $query->where('type', 'like', $typePrefix . '%'))
             ->orderByDesc('created_at')
-            ->paginate($perPage);
+            ->get();
     }
 
     /**

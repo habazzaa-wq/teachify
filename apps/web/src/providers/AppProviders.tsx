@@ -1,21 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import dynamic from "next/dynamic";
-import { MotionConfig } from "framer-motion";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "./ThemeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { TenantBootstrapProvider } from "./TenantBootstrapProvider";
 import { TenantProvider } from "./TenantProvider";
-import { TenantFontProvider } from "@/components/layout/TenantFontProvider";
-import { BrandThemeProvider } from "@/components/layout/BrandThemeProvider";
-import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
-import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
-
-const Toaster = dynamic(
-  () => import("@/components/system/Toaster").then((m) => m.Toaster),
-  { ssr: false },
-);
+import { InstallPromptBridge } from "@/components/pwa/InstallPromptBridge";
 
 function PauseAnimationsWhileScrolling() {
   useEffect(() => {
@@ -51,30 +42,28 @@ export function AppProviders({
 }: {
   children: React.ReactNode;
   serverHostname?: string;
-  tenantContext?: TenantByDomainResponse | null;
+  tenantContext?: any;
 }) {
   return (
-    <MotionConfig
-      reducedMotion="user"
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <ThemeProvider>
-        <QueryProvider>
-          <TenantBootstrapProvider 
-            serverHostname={serverHostname}
-            tenantContext={tenantContext}
-          >
-            <TenantProvider>
-              <PauseAnimationsWhileScrolling />
-              <TenantFontProvider />
-              <BrandThemeProvider />
-              {children}
-              <ActiveExamProvider />
-              <Toaster />
-            </TenantProvider>
-          </TenantBootstrapProvider>
-        </QueryProvider>
-      </ThemeProvider>
-    </MotionConfig>
+    <ThemeProvider>
+      <QueryProvider>
+        <TenantBootstrapProvider 
+          serverHostname={serverHostname}
+          tenantContext={tenantContext}
+        >
+          <TenantProvider>
+            <PauseAnimationsWhileScrolling />
+            <InstallPromptBridge />
+            {children}
+            <Toaster
+              position="top-center"
+              dir="rtl"
+              richColors
+              closeButton
+            />
+          </TenantProvider>
+        </TenantBootstrapProvider>
+      </QueryProvider>
+    </ThemeProvider>
   );
 }

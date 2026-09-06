@@ -13,7 +13,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class MediaLibraryUploadController extends Controller
 {
@@ -157,35 +156,7 @@ class MediaLibraryUploadController extends Controller
     {
         Gate::authorize('upload', MediaAsset::class);
 
-        set_time_limit(600);
-
-        try {
-            $result = $this->resumable->finalize($request, $session);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Let Laravel render validation failures as 422 as usual.
-            throw $e;
-        } catch (\Throwable $e) {
-            // Surface the real cause instead of an opaque "Server Error" and keep
-            // the session + chunk artifacts intact so the upload can be retried.
-            Log::error('media: resumable finalize failed', [
-                'session_id' => $session->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Guaranteed file log so the error is capturable even if the Monolog
-            // channel is misconfigured or unwritable.
-            try {
-                $detail = '['.date('c').'] session='.$session->id
-                    .' | error='.$e->getMessage()."\n".$e->getTraceAsString()."\n";
-                file_put_contents(storage_path('logs/finalize-debug.log'), $detail, FILE_APPEND);
-            } catch (\Throwable) {
-            }
-
-            return response()->json([
-                'message' => 'Finalize failed: '.get_class($e).': '.$e->getMessage(),
-            ], 500);
-        }
+        $result = $this->resumable->finalize($request, $session);
 
         return response()->json([
             'data' => [
@@ -345,9 +316,8 @@ class MediaLibraryUploadController extends Controller
             $storageKey = "tenants/{$tenant->id}/courses/" . \Illuminate\Support\Str::random(12) . '.' . ($file->getClientOriginalExtension() ?: 'bin');
             $localPath = "courses/" . basename($storageKey);
 
-            $media = app(\App\Services\Media\MediaStorage::class);
-            $media->put($localPath, $file->getContent());
-            $cdnUrl = $media->url($localPath);
+            \Illuminate\Support\Facades\Storage::disk('public')->put($localPath, $file->getContent());
+            $cdnUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($localPath);
 
             $asset = \App\Models\MediaAsset::create([
                 'tenant_id' => $tenant->id,

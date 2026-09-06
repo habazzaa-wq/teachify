@@ -8,8 +8,13 @@ import {
   Users,
   Clock,
   BookOpen,
+  Award,
   Heart,
   Share2,
+  Signal,
+  GraduationCap,
+  Landmark,
+  Sparkles,
   Check,
   Crown,
 } from "lucide-react";
@@ -18,20 +23,15 @@ import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { useUiStore } from "@/stores/ui.store";
 import { formatDurationLong } from "../utils";
+import {
+  ACCENT,
+  ACCENT_GRADIENT,
+  CTA_GRADIENT,
+  DIFFICULTY_LABELS,
+  LANGUAGE_LABELS,
+  PRIMARY,
+} from "../brand";
 import type { PublicCourse } from "../types";
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  beginner: "مبتدئ",
-  intermediate: "متوسط",
-  advanced: "متقدم",
-  all_levels: "جميع المستويات",
-};
-
-const LANGUAGE_LABELS: Record<string, string> = {
-  ar: "العربية",
-  en: "English",
-  fr: "Français",
-};
 
 interface CourseHeroProps {
   course: PublicCourse;
@@ -51,7 +51,10 @@ function RatingStars({ rating, size = 14 }: { rating: number; size?: number }) {
               className="absolute inset-0 text-amber-500/25"
               style={{ width: size, height: size }}
             />
-            <span className="absolute inset-0 overflow-hidden" style={{ width: `${fill * 100}%` }}>
+            <span
+              className="absolute inset-0 overflow-hidden"
+              style={{ width: `${fill * 100}%` }}
+            >
               <Star
                 className="fill-amber-400 text-amber-400"
                 style={{ width: size, height: size }}
@@ -64,55 +67,58 @@ function RatingStars({ rating, size = 14 }: { rating: number; size?: number }) {
   );
 }
 
-function MetaSep({ color }: { color: string }) {
-  return <span aria-hidden className="hidden h-4 w-px sm:block" style={{ background: color }} />;
-}
-
-function Stamp({
-  label,
-  tone,
+function HeroBadge({
   icon,
-  rotate,
-  paper,
+  label,
+  tone = "neutral",
 }: {
-  label: string;
-  tone: string;
   icon: React.ReactNode;
-  rotate: string;
-  paper: string;
+  label: string;
+  tone?: "brand" | "accent" | "neutral" | "success";
 }) {
+  const tones = {
+    brand:
+      "border-[#BF6D58]/25 bg-[#BF6D58]/12 text-[#BF6D58] dark:border-[#BF6D58]/30 dark:bg-[#BF6D58]/15 dark:text-[#ffd6c9]",
+    accent:
+      "border-[#FFB50E]/30 bg-[#FFB50E]/12 text-[#b45309] dark:border-[#FFB50E]/30 dark:bg-[#FFB50E]/12 dark:text-[#FFB50E]",
+    neutral:
+      "border-border/60 bg-background/70 text-muted-foreground dark:bg-white/[0.04]",
+    success:
+      "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  } as const;
+
   return (
-    <div
-      className="flex h-[70px] w-[70px] flex-col items-center justify-center gap-0.5 rounded-full text-center"
-      style={{
-        background: paper,
-        border: `2px dashed ${tone}77`,
-        color: tone,
-        transform: `rotate(${rotate})`,
-        boxShadow: "0 8px 18px rgba(0,0,0,0.16)",
-      }}
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold",
+        tones[tone],
+      )}
     >
-      <span className="px-1 text-[9px] font-black leading-tight">{label}</span>
       {icon}
-    </div>
+      <span className="whitespace-nowrap">{label}</span>
+    </span>
   );
 }
 
-function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroProps) {
+function CourseHeroInner({
+  course,
+  isEnrolled,
+  onEnroll,
+  onLogin,
+}: CourseHeroProps) {
   const theme = useUiStore((s) => s.theme);
   const prefersReduced = useReducedMotion();
   const isDark = theme === "dark";
   const [wishlisted, setWishlisted] = useState(false);
 
   const rating = 4.8;
-  const isFree = course.pricingType === "free";
   const hasDiscount =
     !isEnrolled &&
-    !isFree &&
+    course.pricingType !== "free" &&
     course.discountPrice != null &&
     course.price != null &&
     course.discountPrice < course.price;
-  const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
+  const displayPrice = course.pricingType === "free" ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice - course.discountPrice!) / originalPrice) * 100)
@@ -120,17 +126,6 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
   const currency = "ج.م";
 
   const coverSrc = course.coverImage || course.thumbnail;
-  const ghostLetter = course.title.trim().charAt(0) || "د";
-
-  const P = "var(--brand-primary, #D87B63)";
-  const PC = "var(--brand-primary-contrast, #fff)";
-  const S = "var(--brand-secondary, #FFB50E)";
-  const ink = isDark ? "#f6f0e6" : "#201a12";
-  const soft = isDark ? "rgba(246,240,230,0.68)" : "#6e6254";
-  const faint = isDark ? "rgba(246,240,230,0.45)" : "#978a79";
-  const line = isDark ? "rgba(246,240,230,0.16)" : "rgba(32,26,18,0.14)";
-  const paper = isDark ? "#171310" : "#fdfaf4";
-  const paperSoft = isDark ? "#211c17" : "#f6f0e6";
 
   const handleWishlist = useCallback(() => {
     setWishlisted((prev) => {
@@ -155,101 +150,131 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
   }, [course.title]);
 
   const fade = (delay: number) => ({
-    initial: { opacity: 0, y: prefersReduced ? 0 : 14 },
+    initial: { opacity: 0, y: prefersReduced ? 0 : 18 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] as const },
   });
+
+  const isFree = course.pricingType === "free";
 
   return (
     <section
       dir="rtl"
       className="relative w-full overflow-hidden"
-      style={{
-        background: isDark
-          ? "linear-gradient(180deg, #15110e 0%, #13100d 60%, #110d0b 100%)"
-          : "linear-gradient(180deg, #fbf7f1 0%, #f7f0e6 55%, #f3ebde 100%)",
-      }}
+      style={{ minHeight: "clamp(640px, 78vw, 760px)" }}
     >
-      {/* brand top band */}
-      <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: P }} />
-
-      {/* soft primary wash behind text */}
+      {/* ── Warm branded background ── */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 start-0 w-1/2"
+        className="absolute inset-0 transition-colors duration-700"
         style={{
-          background: `linear-gradient(100deg, color-mix(in srgb, var(--brand-primary, #D87B63) 6%, transparent), transparent 70%)`,
+          background: isDark
+            ? "linear-gradient(180deg, #0c0e12 0%, #0f1116 34%, #131019 70%, #160e0e 100%)"
+            : "linear-gradient(180deg, #faf6f1 0%, #f7f1ea 36%, #f3ecdf 72%, #f7e8dd 100%)",
         }}
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8 lg:pb-24">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-16">
-          {/* ── Text column ── */}
-          <div className="relative flex flex-col gap-6">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -top-14 -start-2 hidden select-none text-[13rem] font-black leading-none md:block"
-              style={{
-                color: `color-mix(in srgb, var(--brand-primary, #D87B63) 9%, transparent)`,
-              }}
-            >
-              {ghostLetter}
-            </span>
+      {/* subtle radial color washes */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: isDark
+            ? `radial-gradient(700px 420px at 82% 12%, ${PRIMARY}26, transparent 60%), radial-gradient(520px 360px at 8% 88%, ${ACCENT}14, transparent 60%)`
+            : `radial-gradient(720px 440px at 82% 10%, ${PRIMARY}14, transparent 62%), radial-gradient(540px 380px at 8% 90%, ${ACCENT}12, transparent 62%)`,
+        }}
+      />
 
-            {/* eyebrow */}
-            <motion.div {...fade(0.05)} className="relative flex flex-wrap items-center gap-2.5">
-              <span
-                className="inline-flex items-center gap-2 rounded-[8px] px-3.5 py-1.5 text-[11px] font-black"
-                style={{ background: P, color: PC }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: PC }} />
-                {course.category?.name ?? "دورة احترافية"}
-              </span>
+      {/* decorative floating orbs — transform/opacity only */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        {[
+          { top: "12%", left: "6%", size: 220, color: PRIMARY, delay: 0 },
+          { top: "70%", right: "8%", size: 180, color: ACCENT, delay: 1.4 },
+        ].map((orb, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: orb.size,
+              height: orb.size,
+              left: orb.left,
+              right: orb.right,
+              top: orb.top,
+              background: `radial-gradient(circle, ${orb.color}40, transparent 70%)`,
+            }}
+            initial={prefersReduced ? { opacity: 0.5 } : { opacity: 0, scale: 0.7 }}
+            animate={
+              prefersReduced
+                ? { opacity: 0.5 }
+                : {
+                    opacity: 0.55,
+                    scale: [0.7, 1.15, 0.9, 1],
+                    y: [0, -14, 8, 0],
+                  }
+            }
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: orb.delay }}
+          />
+        ))}
+      </div>
+
+      {/* subtle dot grid */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: `radial-gradient(${isDark ? "#fff" : "#000"} 1px, transparent 1px)`,
+          backgroundSize: "26px 26px",
+        }}
+      />
+
+      {/* ── Content ── */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8 lg:pb-24 lg:pt-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_440px] lg:gap-14">
+          {/* ── Text column (right in RTL) ── */}
+          <div className="flex flex-col gap-5">
+            <motion.div {...fade(0.05)} className="flex flex-wrap items-center gap-2">
+              {course.category && (
+                <HeroBadge
+                  tone="brand"
+                  icon={<GraduationCap className="h-3.5 w-3.5" />}
+                  label={course.category.name}
+                />
+              )}
               {course.difficulty && (
-                <span
-                  className="inline-flex items-center rounded-[8px] border px-3 py-1.5 text-[11px] font-black"
-                  style={{
-                    borderColor: `color-mix(in srgb, var(--brand-secondary, #FFB50E) 45%, transparent)`,
-                    color: S,
-                  }}
-                >
-                  {DIFFICULTY_LABELS[course.difficulty] ?? course.difficulty}
-                </span>
+                <HeroBadge
+                  tone="accent"
+                  icon={<Signal className="h-3.5 w-3.5" />}
+                  label={DIFFICULTY_LABELS[course.difficulty] ?? course.difficulty}
+                />
               )}
               {course.educationalStage && (
-                <span
-                  className="hidden items-center gap-1.5 rounded-[8px] border px-3 py-1.5 text-[11px] font-bold sm:inline-flex"
-                  style={{ borderColor: line, color: soft }}
-                >
-                  {course.educationalStage.name}
-                </span>
+                <HeroBadge
+                  tone="neutral"
+                  icon={<Landmark className="h-3.5 w-3.5" />}
+                  label={course.educationalStage.name}
+                />
+              )}
+              {course.subject && (
+                <HeroBadge
+                  tone="neutral"
+                  icon={<BookOpen className="h-3.5 w-3.5" />}
+                  label={course.subject.name}
+                />
               )}
             </motion.div>
 
             <motion.h1
               {...fade(0.12)}
-              className="relative max-w-2xl text-balance text-[2.15rem] font-black leading-[1.13] tracking-tight sm:text-5xl"
-              style={{ color: ink }}
+              className="max-w-3xl text-balance text-3xl font-extrabold leading-[1.15] tracking-tight sm:text-4xl lg:text-[2.75rem]"
+              style={{ color: isDark ? "#faf6f1" : "#221a12" }}
             >
               {course.title}
-              <span aria-hidden className="mt-4 block h-[11px] w-52 max-w-full sm:w-64">
-                <svg viewBox="0 0 260 11" preserveAspectRatio="none" className="h-full w-full">
-                  <path
-                    d="M3 8C48 3 96 9 150 6c34-2 70 0 107-2"
-                    stroke={P}
-                    strokeWidth="3.2"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
             </motion.h1>
 
             {course.subtitle && (
               <motion.p
                 {...fade(0.18)}
-                className="relative max-w-2xl text-lg font-bold leading-relaxed sm:text-xl"
-                style={{ color: soft }}
+                className="max-w-2xl text-lg font-semibold leading-relaxed sm:text-xl"
+                style={{ color: isDark ? "rgba(250,246,241,0.72)" : "#5b5147" }}
               >
                 {course.subtitle}
               </motion.p>
@@ -258,55 +283,49 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
             {course.shortDescription && (
               <motion.p
                 {...fade(0.24)}
-                className="relative max-w-2xl text-sm leading-relaxed sm:text-[15px]"
-                style={{ color: faint }}
+                className="max-w-2xl text-sm leading-relaxed sm:text-base"
+                style={{ color: isDark ? "rgba(250,246,241,0.5)" : "#7c7166" }}
               >
                 {course.shortDescription}
               </motion.p>
             )}
 
-            <motion.div {...fade(0.3)} className="relative h-px w-full" style={{ background: line }} />
-
             {/* meta row */}
             <motion.div
-              {...fade(0.34)}
-              className="relative flex flex-wrap items-center gap-x-5 gap-y-3 text-sm"
-              style={{ color: soft }}
+              {...fade(0.3)}
+              className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm"
+              style={{ color: isDark ? "rgba(250,246,241,0.6)" : "#6b6156" }}
             >
-              <span className="inline-flex items-center gap-1.5 font-bold">
-                <RatingStars rating={rating} size={13} />
-                <span className="tabular-nums" style={{ color: ink }}>
-                  {rating.toFixed(1)}
-                </span>
-                <span className="text-xs font-medium">({formatNumber(course.studentsCount)} تقييم)</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <RatingStars rating={rating} />
+                <span className="font-bold text-amber-500">{rating.toFixed(1)}</span>
+                <span className="text-xs opacity-70">({formatNumber(course.studentsCount)} تقييم)</span>
+              </div>
 
-              <MetaSep color={line} />
+              <span className="hidden h-4 w-px sm:block" style={{ background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)" }} />
 
               <span className="inline-flex items-center gap-1.5 font-medium">
-                <Users className="h-4 w-4" style={{ color: P }} />
+                <Users className="h-4 w-4" style={{ color: PRIMARY }} />
                 {formatNumber(course.studentsCount)} طالب
               </span>
 
               {course.duration != null && course.duration > 0 && (
                 <>
-                  <MetaSep color={line} />
+                  <span className="hidden h-4 w-px sm:block" style={{ background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)" }} />
                   <span className="inline-flex items-center gap-1.5 font-medium">
-                    <Clock className="h-4 w-4" style={{ color: S }} />
+                    <Clock className="h-4 w-4" style={{ color: ACCENT }} />
                     {formatDurationLong(course.duration)}
                   </span>
                 </>
               )}
 
-              <MetaSep color={line} />
-
+              <span className="hidden h-4 w-px sm:block" style={{ background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)" }} />
               <span className="inline-flex items-center gap-1.5 font-medium">
-                <BookOpen className="h-4 w-4" style={{ color: P }} />
+                <BookOpen className="h-4 w-4" style={{ color: PRIMARY }} />
                 {formatNumber(course.lessonsCount)} درس
               </span>
 
-              <MetaSep color={line} />
-
+              <span className="hidden h-4 w-px sm:block" style={{ background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)" }} />
               <span className="inline-flex items-center gap-1.5 font-medium">
                 {LANGUAGE_LABELS[course.language] ?? course.language}
               </span>
@@ -314,12 +333,16 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
 
             {/* tags */}
             {course.tags.length > 0 && (
-              <motion.div {...fade(0.38)} className="relative flex flex-wrap gap-2">
+              <motion.div {...fade(0.34)} className="flex flex-wrap gap-2">
                 {course.tags.slice(0, 5).map((tag) => (
                   <span
                     key={tag.id}
-                    className="inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[11px] font-bold"
-                    style={{ borderColor: line, color: faint }}
+                    className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ring-1"
+                    style={{
+                      color: isDark ? "rgba(250,246,241,0.45)" : "#8a7f73",
+                      background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+                      borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                    }}
                   >
                     #{tag.name}
                   </span>
@@ -327,224 +350,153 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
               </motion.div>
             )}
 
-            {/* desktop actions */}
-            <motion.div {...fade(0.44)} className="relative hidden items-center gap-6 pt-1 lg:flex">
-              <button
-                type="button"
-                onClick={handleWishlist}
-                aria-pressed={wishlisted}
-                aria-label={wishlisted ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-                className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
-                style={{ color: soft }}
-              >
-                <Heart
-                  className={cn("h-4 w-4 transition-colors", wishlisted && "fill-current")}
-                  style={{ color: wishlisted ? P : undefined }}
+            {course.certificateEnabled && (
+              <motion.div {...fade(0.38)}>
+                <HeroBadge
+                  tone="success"
+                  icon={<Award className="h-3.5 w-3.5" />}
+                  label="شهادة إتمام معتمدة"
                 />
-                {wishlisted ? "في المفضلة" : "أضف إلى المفضلة"}
-              </button>
-
-              <MetaSep color={line} />
-
-              <button
-                type="button"
-                onClick={handleShare}
-                aria-label="مشاركة الدورة"
-                className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
-                style={{ color: soft }}
-              >
-                <Share2 className="h-4 w-4" style={{ color: P }} />
-                مشاركة الدورة
-              </button>
-            </motion.div>
+              </motion.div>
+            )}
           </div>
 
-          {/* ── Framed artwork column ── */}
+          {/* ── Image column with floating card + purchase ── */}
           <motion.div
-            initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-[520px]"
+            initial={prefersReduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="relative mx-auto w-full max-w-md lg:max-w-none"
           >
-            {/* offset gold outline behind the frame */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -end-4 -top-4 h-32 w-32 border-2 sm:-end-6 sm:-top-6 sm:h-40 sm:w-40"
-              style={{ borderColor: S, opacity: 0.55 }}
-            />
-
-            {/* frame */}
-            <div className="relative">
-              <div
-                className="border p-2.5 sm:p-3.5"
-                style={{ borderColor: line, background: paper, boxShadow: "0 28px 60px -24px rgba(0,0,0,0.35)" }}
-              >
-                {/* gold corner squares */}
-                <span aria-hidden className="absolute -top-1.5 -start-1.5 h-3 w-3" style={{ background: S }} />
-                <span aria-hidden className="absolute -top-1.5 -end-1.5 h-3 w-3" style={{ background: S }} />
-                <span aria-hidden className="absolute -bottom-1.5 -start-1.5 h-3 w-3" style={{ background: S }} />
-                <span aria-hidden className="absolute -bottom-1.5 -end-1.5 h-3 w-3" style={{ background: S }} />
-
-                {/* primary molding */}
+            {/* image card */}
+            <div className="relative overflow-hidden rounded-3xl border border-white/40 shadow-2xl shadow-black/10 dark:border-white/10">
+              <div className="relative aspect-[4/3] w-full">
+                {coverSrc ? (
+                  <Image
+                    src={coverSrc}
+                    alt={course.title}
+                    fill
+                    sizes="(max-width: 1024px) 90vw, 440px"
+                    priority
+                    className="object-cover"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${PRIMARY}2a, ${ACCENT}14)`,
+                    }}
+                  >
+                    <BookOpen className="h-20 w-20" style={{ color: `${PRIMARY}55` }} />
+                  </div>
+                )}
+                {/* legibility gradient */}
                 <div
-                  className="p-2 sm:p-2.5"
-                  style={{ background: P, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.07)" }}
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0,0,0,0.02) 40%, rgba(0,0,0,0.45) 100%)",
+                  }}
+                />
+
+                {/* floating rating card */}
+                <div
+                  className="absolute bottom-4 start-4 flex items-center gap-3 rounded-2xl border border-white/50 bg-white/90 px-4 py-3 shadow-lg shadow-black/10"
+                  style={{ backdropFilter: "none" }}
                 >
-                  {/* secondary inner lip */}
-                  <div className="p-[3px]" style={{ background: S }}>
-                    {/* artwork */}
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      {coverSrc ? (
-                        <Image
-                          src={coverSrc}
-                          alt={course.title}
-                          fill
-                          sizes="(max-width: 1024px) 90vw, 520px"
-                          priority
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="absolute inset-0 flex items-center justify-center"
-                          style={{ background: `linear-gradient(135deg, ${P}, ${S})` }}
-                        >
-                          <BookOpen className="h-16 w-16" style={{ color: "rgba(255,255,255,0.85)" }} />
-                        </div>
-                      )}
-                      {/* legibility shade */}
-                      <div
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0"
-                        style={{ background: "linear-gradient(180deg, transparent 58%, rgba(0,0,0,0.32) 100%)" }}
-                      />
-                      <div aria-hidden className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/20" />
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-lg font-extrabold text-white shadow-md"
+                    style={{ background: CTA_GRADIENT }}
+                  >
+                    {rating.toFixed(1)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <RatingStars rating={rating} size={12} />
                     </div>
+                    <p className="mt-1 text-[11px] font-semibold text-gray-600">
+                      تقييم {formatNumber(course.studentsCount)} طالب
+                    </p>
                   </div>
                 </div>
 
-                {/* caption bar inside the mat */}
-                <div
-                  className="mt-2.5 flex items-center justify-between gap-3 border-t pt-2.5 sm:mt-3.5 sm:pt-3"
-                  style={{ borderColor: line }}
-                >
-                  <span
-                    className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]"
-                    style={{ color: P }}
+                {/* floating certificate badge */}
+                {course.certificateEnabled && (
+                  <div
+                    className="absolute end-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-white shadow-lg"
+                    style={{ background: ACCENT_GRADIENT, boxShadow: "0 6px 20px rgba(245,158,11,0.4)" }}
                   >
-                    <span className="h-1.5 w-1.5" style={{ background: S }} />
-                    {course.category?.name ?? "دورة احترافية"}
-                  </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: faint }}>
-                    {String(course.lessonsCount).padStart(2, "0")} دروس
-                  </span>
+                    <Award className="h-3.5 w-3.5" />
+                    شهادة معتمدة
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Price + Subscribe + Actions (mobile only; sidebar handles lg+) ── */}
+            <div className="mt-5 rounded-3xl border border-border/60 bg-background/80 p-5 shadow-lg shadow-black/5 dark:bg-white/[0.03] sm:p-6 lg:hidden">
+              {isFree ? (
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">مجاني</span>
+                  <Sparkles className="h-6 w-6 text-emerald-400" />
                 </div>
-              </div>
-            </div>
-
-            {/* rating label on the artwork */}
-            <div
-              className="absolute bottom-14 start-3 z-10 flex items-center gap-2 rounded-[8px] border px-3 py-2 sm:bottom-16"
-              style={{ background: paper, borderColor: line, boxShadow: "0 8px 18px rgba(0,0,0,0.14)" }}
-            >
-              <RatingStars rating={rating} size={13} />
-              <span className="text-sm font-black tabular-nums" style={{ color: ink }}>
-                {rating.toFixed(1)}
-              </span>
-              <span className="text-[10px] font-semibold" style={{ color: soft }}>
-                {formatNumber(course.studentsCount)} تقييم
-              </span>
-            </div>
-
-            {/* free stamp */}
-            {isFree && (
-              <div className="absolute -top-3 -end-3 z-20 sm:-top-4 sm:-end-4">
-                <Stamp
-                  label="مجانية"
-                  tone="#059669"
-                  rotate="9deg"
-                  paper={paper}
-                  icon={<Check className="h-3.5 w-3.5" strokeWidth={3} />}
-                />
-              </div>
-            )}
-
-            {/* ── Mobile price + subscribe card ── */}
-            <div className="mt-9 lg:hidden">
-              <div
-                className="flex items-center justify-between gap-4 rounded-[14px] border p-4 sm:p-5"
-                style={{ borderColor: line, background: paper, boxShadow: "0 18px 40px -26px rgba(30,20,10,0.4)" }}
-              >
-                <div className="min-w-0">
-                  <p
-                    className="mb-1 text-[10px] font-black uppercase tracking-[0.2em]"
-                    style={{ color: faint }}
-                  >
-                    سعر الالتحاق
-                  </p>
-                  {isFree ? (
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">مجانية</p>
-                  ) : (
-                    <div className="flex flex-wrap items-end gap-x-2 gap-y-0.5">
-                      <span className="text-3xl font-black tabular-nums tracking-tight" style={{ color: P }}>
-                        {formatNumber(displayPrice)}
+              ) : (
+                <div className="mb-4 flex flex-wrap items-end gap-3">
+                  <span className="text-3xl font-extrabold tracking-tight text-foreground">
+                    {formatNumber(displayPrice)}
+                  </span>
+                  <span className="mb-1 text-sm font-semibold text-muted-foreground">{currency}</span>
+                  {hasDiscount && (
+                    <>
+                      <span className="mb-1 text-base text-muted-foreground line-through">
+                        {formatNumber(originalPrice)} {currency}
                       </span>
-                      <span className="mb-1 text-sm font-bold" style={{ color: soft }}>
-                        {currency}
+                      <span
+                        className="mb-1 rounded-lg px-2.5 py-0.5 text-xs font-extrabold"
+                        style={{ background: `${ACCENT}22`, color: "#b45309" }}
+                      >
+                        خصم {discountPercent}%
                       </span>
-                      {hasDiscount && (
-                        <>
-                          <span className="mb-1 text-sm font-semibold text-rose-500 line-through dark:text-rose-400">
-                            {formatNumber(originalPrice)} {currency}
-                          </span>
-                          <span
-                            className="mb-1 rounded-[6px] px-2 py-0.5 text-[11px] font-black"
-                            style={{ background: `color-mix(in srgb, var(--brand-secondary, #FFB50E) 22%, transparent)`, color: "#8a5a00" }}
-                          >
-                            خصم {discountPercent}%
-                          </span>
-                        </>
-                      )}
-                    </div>
+                    </>
                   )}
                 </div>
+              )}
 
-                <SubscribeButtonHero onClick={isEnrolled ? onEnroll : onLogin} enrolled={isEnrolled} />
-              </div>
+              <SubscribeButtonHero onClick={isEnrolled ? onEnroll : onLogin} enrolled={isEnrolled} />
 
-              <div className="mt-3 flex items-center gap-2.5">
+              <div className="mt-4 flex items-center gap-3">
                 <button
                   type="button"
                   onClick={handleWishlist}
                   aria-pressed={wishlisted}
                   aria-label={wishlisted ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-                  className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[10px] border text-xs font-black transition-colors duration-200 hover:opacity-80"
-                  style={{
-                    borderColor: wishlisted ? P : line,
-                    color: wishlisted ? P : soft,
-                    background: wishlisted ? `color-mix(in srgb, var(--brand-primary, #D87B63) 12%, transparent)` : paperSoft,
-                  }}
+                  className={cn(
+                    "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border text-sm font-bold transition-colors duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40",
+                    wishlisted
+                      ? "border-[#BF6D58]/30 bg-[#BF6D58]/10 text-[#BF6D58]"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground",
+                  )}
                 >
-                  <Heart className={cn("h-4 w-4 transition-colors", wishlisted && "fill-current")} />
+                  <Heart
+                    className={cn("h-4.5 w-4.5 transition-colors", wishlisted && "fill-[#BF6D58] text-[#BF6D58]")}
+                    style={{ width: 18, height: 18 }}
+                  />
                   {wishlisted ? "في المفضلة" : "مفضلة"}
                 </button>
-
                 <button
                   type="button"
                   onClick={handleShare}
                   aria-label="مشاركة الدورة"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] border transition-colors hover:opacity-80"
-                  style={{ borderColor: line, color: soft, background: paperSoft }}
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58]/40"
                 >
-                  <Share2 className="h-4 w-4" style={{ color: P }} />
+                  <Share2 className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
                 </button>
+              </div>
 
-                <span
-                  className="hidden flex-1 items-center justify-end gap-1.5 text-[10px] font-semibold sm:inline-flex"
-                  style={{ color: faint }}
-                >
-                  <Check className="h-3 w-3 text-emerald-500" strokeWidth={3} />
-                  ضمان استرداد خلال 30 يوم
-                </span>
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={3} />
+                ضمان استرداد الأموال خلال 30 يوماً
               </div>
             </div>
           </motion.div>
@@ -553,7 +505,7 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
 
       {/* bottom fade into page background */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
         style={{
           background: isDark
             ? "linear-gradient(to top, #0c0e12, transparent)"
@@ -571,30 +523,22 @@ function SubscribeButtonHero({
   onClick: () => void;
   enrolled: boolean;
 }) {
-  const cta = "linear-gradient(135deg, var(--brand-primary, #D87B63), color-mix(in srgb, var(--brand-primary, #D87B63) 74%, #000))";
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] px-6 py-3.5 text-sm font-black transition-all duration-300",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary,#D87B63)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "group relative inline-flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-7 py-4 text-base font-extrabold text-white transition-all duration-300",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BF6D58] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         enrolled
-          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-500"
-          : "hover:brightness-110",
+          ? "bg-emerald-600 shadow-lg shadow-emerald-600/25 hover:bg-emerald-500"
+          : "shadow-[0_10px_32px_rgba(191,109,88,0.4)] hover:shadow-[0_14px_44px_rgba(191,109,88,0.5)]",
       )}
-      style={
-        enrolled
-          ? undefined
-          : {
-              background: cta,
-              color: "var(--brand-primary-contrast, #fff)",
-              boxShadow: "0 10px 28px color-mix(in srgb, var(--brand-primary, #D87B63) 35%, transparent)",
-            }
-      }
+      style={enrolled ? undefined : { background: CTA_GRADIENT }}
     >
-      <Crown className="h-4 w-4" />
-      <span className="whitespace-nowrap">{enrolled ? "ابدأ التعلم الآن" : "اشترك الآن"}</span>
+      <span className="pointer-events-none absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <Crown className="relative h-5 w-5" />
+      <span className="relative">{enrolled ? "ابدأ التعلم الآن" : "اشترك الآن وابدأ التعلم"}</span>
     </button>
   );
 }

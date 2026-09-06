@@ -21,7 +21,7 @@ export function StudioWorkspaceSidebar({
   ...props
 }: StudioWorkspaceSidebarProps) {
   return (
-    <AnimatePresence mode="popLayout">
+    <AnimatePresence mode="wait">
       {!collapsed && (
         <motion.aside
           initial={{ width: 0, opacity: 0 }}

@@ -93,12 +93,6 @@ class ExamRepository
 
         if ($exam) {
             $exam->restore();
-            $exam->forceFill([
-                'status' => 'published',
-                'archived_at' => null,
-                'published_at' => now(),
-            ])->save();
-
             return $exam->refresh();
         }
 

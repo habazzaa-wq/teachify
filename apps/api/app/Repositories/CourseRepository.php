@@ -32,7 +32,7 @@ class CourseRepository
 
     public function withEnrollmentsCount(Builder $query): Builder
     {
-        return $query->withCount(['enrollments', 'sections', 'lessons']);
+        return $query->withCount('enrollments');
     }
 
     public function list(array $params = []): LengthAwarePaginator
@@ -70,13 +70,6 @@ class CourseRepository
         return $this->query()->where('id', $id)->first();
     }
 
-    public function findByIds(array $ids, int $limit = 500): Collection
-    {
-        return $this->query()
-            ->whereIn('id', array_slice(array_unique($ids), 0, $limit))
-            ->get();
-    }
-
     public function findByIdOrFail(int $id): Course
     {
         return $this->query()->where('id', $id)->firstOrFail();
@@ -87,14 +80,12 @@ class CourseRepository
         $data['tenant_id'] = currentTenant()->id;
         $course = Course::create($data);
         $course->load($this->defaultEagerLoads());
-
         return $course;
     }
 
     public function update(Course $course, array $data): Course
     {
         $course->fill(collect($data)->only($course->getFillable())->all())->save();
-
         return $course->refresh()->load($this->defaultEagerLoads());
     }
 
@@ -112,7 +103,6 @@ class CourseRepository
 
         if ($course) {
             $course->restore();
-
             return $course->load($this->defaultEagerLoads());
         }
 
@@ -181,8 +171,7 @@ class CourseRepository
             return $query;
         }
 
-        $search = '%'.$search.'%';
-
+        $search = '%' . $search . '%';
         return $query->where(function (Builder $q) use ($search): void {
             $q->where('title', 'like', $search)
                 ->orWhere('short_description', 'like', $search)
@@ -198,7 +187,6 @@ class CourseRepository
         if (! $status || $status === 'all') {
             return $query;
         }
-
         return $query->where('status', $status);
     }
 
@@ -207,7 +195,6 @@ class CourseRepository
         if (! $visibility || $visibility === 'all') {
             return $query;
         }
-
         return $query->where('visibility', $visibility);
     }
 
@@ -216,7 +203,6 @@ class CourseRepository
         if (! $difficulty || $difficulty === 'all') {
             return $query;
         }
-
         return $query->where('difficulty', $difficulty);
     }
 
@@ -225,7 +211,6 @@ class CourseRepository
         if (! $categoryId) {
             return $query;
         }
-
         return $query->whereHas('categories', fn (Builder $q) => $q->where('categories.id', $categoryId));
     }
 
@@ -234,7 +219,6 @@ class CourseRepository
         if (! $instructorId) {
             return $query;
         }
-
         return $query->where(function (Builder $q) use ($instructorId): void {
             $q->where('primary_instructor_tenant_user_id', $instructorId)
                 ->orWhereHas('instructors', fn (Builder $iq) => $iq->where('tenant_user_id', $instructorId));
@@ -246,7 +230,6 @@ class CourseRepository
         if (! $language || $language === 'all') {
             return $query;
         }
-
         return $query->where('language', $language);
     }
 
@@ -255,7 +238,6 @@ class CourseRepository
         if (! $pricingType || $pricingType === 'all') {
             return $query;
         }
-
         return $query->where('pricing_type', $pricingType);
     }
 
@@ -264,7 +246,6 @@ class CourseRepository
         if ($featured === null || $featured === 'all') {
             return $query;
         }
-
         return $query->where('featured', filter_var($featured, FILTER_VALIDATE_BOOLEAN));
     }
 
@@ -276,7 +257,6 @@ class CourseRepository
         if ($to) {
             $query->where('created_at', '<=', $to);
         }
-
         return $query;
     }
 

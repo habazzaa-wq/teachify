@@ -14,14 +14,12 @@ const containerVariants = {
 };
 
 const PageContent = memo(function PageContent() {
-  // صفحة الدخول بتستخدم ألوان المنصة العالمية (platformBranding) اللي بتطبّقها
-  // BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="tenant-theme min-h-screen flex flex-col-reverse lg:flex-row"
+      className="min-h-screen flex flex-col-reverse lg:flex-row"
     >
       <HeroSection />
       <LoginCard />

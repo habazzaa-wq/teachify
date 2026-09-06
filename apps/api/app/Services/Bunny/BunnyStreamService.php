@@ -3,6 +3,7 @@
 namespace App\Services\Bunny;
 
 use App\Services\Bunny\Contracts\BunnyStreamInterface;
+use App\Services\Bunny\Exceptions\BunnyServiceException;
 use Illuminate\Support\Str;
 
 class BunnyStreamService implements BunnyStreamInterface
@@ -11,7 +12,8 @@ class BunnyStreamService implements BunnyStreamInterface
         private readonly BunnyClient $client,
         private readonly BunnyCacheService $cache,
         private readonly BunnySignedUrlService $signedUrlService,
-    ) {}
+    ) {
+    }
 
     public function createVideo(string $title, array $options = []): array
     {
@@ -20,11 +22,6 @@ class BunnyStreamService implements BunnyStreamInterface
         $videoId = $options['video_id'] ?? (string) Str::uuid();
 
         $body = ['title' => $title];
-
-        // Request the exact video id the caller reserved (if any) so the Bunny
-        // video stays in sync with the asset's external_id. Bunny ignores this
-        // field when absent and generates its own guid instead.
-        $body['guid'] = $videoId;
 
         if (isset($options['collection_id'])) {
             $body['collectionId'] = $options['collection_id'];
@@ -52,7 +49,6 @@ class BunnyStreamService implements BunnyStreamInterface
 
         $result = $this->client->streamRequest('DELETE', "library/{$libraryId}/videos/{$videoId}", [
             'operation' => "delete_video {$videoId}",
-            'ignore_not_found' => true,
         ]);
 
         $this->cache->invalidateVideo($videoId);
@@ -214,6 +210,9 @@ class BunnyStreamService implements BunnyStreamInterface
         ]));
     }
 
+    /**
+     * @param string|int|null $status
+     */
     private function mapVideoStatus(string|int|null $status): string
     {
         return match (strtolower(trim((string) $status))) {
