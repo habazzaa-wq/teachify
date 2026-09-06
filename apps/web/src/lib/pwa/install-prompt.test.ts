@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   checkStandalone,
+  clearInstallCompletion,
   clearInstallDismissal,
   dismissalKeyFor,
+  hasInstallCompletion,
   hasInstallDismissal,
+  installCompletedKeyFor,
   isIosSafari,
+  markInstallCompleted,
   markInstallDismissed,
   resolveInstallPromptVariant,
   resolveInstallScope,
@@ -56,6 +60,12 @@ describe("resolveInstallPromptVariant", () => {
   it("hides the banner when the user dismissed it", () => {
     expect(
       resolveInstallPromptVariant({ ...base, dismissed: true }),
+    ).toBe("hidden");
+  });
+
+  it("hides the banner when the app was installed on this browser previously", () => {
+    expect(
+      resolveInstallPromptVariant({ ...base, installCompletedPersisted: true }),
     ).toBe("hidden");
   });
 
@@ -179,6 +189,34 @@ describe("tenant-scoped dismissal storage", () => {
     markInstallDismissed(storage, "tenant-a");
     clearInstallDismissal(storage, "tenant-a");
     expect(hasInstallDismissal(storage, "tenant-a")).toBe(false);
+  });
+
+  it("keeps the completion key distinct from the dismissal key", () => {
+    expect(installCompletedKeyFor("tenant-a")).not.toBe(
+      dismissalKeyFor("tenant-a"),
+    );
+  });
+
+  it("persists install completion per scope without leaking to another", () => {
+    const storage = new MemoryStorage();
+    markInstallCompleted(storage, "tenant-a");
+
+    expect(hasInstallCompletion(storage, "tenant-a")).toBe(true);
+    expect(hasInstallCompletion(storage, "tenant-b")).toBe(false);
+    expect(hasInstallDismissal(storage, "tenant-a")).toBe(false);
+  });
+
+  it("reports no completion when nothing was stored and tolerates null storage", () => {
+    expect(hasInstallCompletion(new MemoryStorage(), "tenant-a")).toBe(false);
+    markInstallCompleted(null, "tenant-a");
+    expect(hasInstallCompletion(null, "tenant-a")).toBe(false);
+  });
+
+  it("clears a previously stored completion", () => {
+    const storage = new MemoryStorage();
+    markInstallCompleted(storage, "tenant-a");
+    clearInstallCompletion(storage, "tenant-a");
+    expect(hasInstallCompletion(storage, "tenant-a")).toBe(false);
   });
 
   it("prefers the tenant slug over the host and normalizes it", () => {

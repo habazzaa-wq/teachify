@@ -1,7 +1,11 @@
 "use client";
 
 import { useInstallPromptStore } from "@/stores/install-prompt.store";
-import type { BeforeInstallPromptEvent } from "@/lib/pwa/install-prompt";
+import {
+  markInstallCompleted,
+  resolveInstallScope,
+  type BeforeInstallPromptEvent,
+} from "@/lib/pwa/install-prompt";
 
 /**
  * Early capture of the browser's install signals.
@@ -18,6 +22,8 @@ import type { BeforeInstallPromptEvent } from "@/lib/pwa/install-prompt";
  * Renders nothing; it only owns the listeners and feeds the store.
  */
 if (typeof window !== "undefined") {
+  const hostScope = resolveInstallScope(null, window.location.host);
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     useInstallPromptStore.getState().setDeferredPrompt(
@@ -27,6 +33,9 @@ if (typeof window !== "undefined") {
   window.addEventListener("appinstalled", () => {
     useInstallPromptStore.getState().markAppInstalled();
     useInstallPromptStore.getState().setDeferredPrompt(null);
+    // Persist "installed" so the icon stays hidden on future visits even
+    // though Chrome/Edge no longer fire `beforeinstallprompt`.
+    markInstallCompleted(window.localStorage, hostScope);
   });
 }
 

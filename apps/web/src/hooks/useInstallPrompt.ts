@@ -5,7 +5,10 @@ import { useInstallPromptStore } from "@/stores/install-prompt.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import {
   checkStandalone,
+  clearInstallCompletion,
+  hasInstallCompletion,
   isIosSafari,
+  markInstallCompleted,
   resolveInstallPromptVariant,
   resolveInstallScope,
   type InstallPromptVariant,
@@ -59,9 +62,23 @@ export function useInstallPrompt() {
   const host = isClient() ? window.location.host : null;
   const scope = resolveInstallScope(activeTenantSlug, host);
 
+  // The banner is mounted client-side only, so this lazy initializer runs on
+  // the first client render with no flash: if the app was already installed on
+  // this browser, Chrome/Edge stop firing `beforeinstallprompt`, so the only
+  // correct behavior is to keep the icon hidden for good (persisted flag).
+  const [installedPersisted] = useState(() => {
+    if (!isClient()) return false;
+    const fallbackScope = resolveInstallScope(null, host);
+    return (
+      hasInstallCompletion(window.localStorage, scope) ||
+      hasInstallCompletion(window.localStorage, fallbackScope)
+    );
+  });
+
   const variant = resolveInstallPromptVariant({
     standalone,
     installCompleted: appInstalled,
+    installCompletedPersisted: installedPersisted,
     deferredPrompt,
     dismissed,
   });
@@ -82,10 +99,17 @@ export function useInstallPrompt() {
     const choice = await prompt.userChoice;
     if (choice.outcome === "accepted") {
       useInstallPromptStore.getState().setDeferredPrompt(null);
+      if (isClient()) {
+        markInstallCompleted(window.localStorage, scope);
+        markInstallCompleted(
+          window.localStorage,
+          resolveInstallScope(null, window.location.host),
+        );
+      }
       return "accepted";
     }
     return "dismissed";
-  }, []);
+  }, [scope]);
 
   /** Hide the banner for the rest of this page load; it returns next visit. */
   const dismiss = useCallback(() => {
@@ -94,8 +118,10 @@ export function useInstallPrompt() {
 
   /** Re-show the banner for this page load (used by tests / debugging). */
   const resetDismissal = useCallback(() => {
+    if (!isClient()) return;
+    clearInstallCompletion(window.localStorage, scope);
     setDismissed(false);
-  }, [setDismissed]);
+  }, [scope, setDismissed]);
 
   return {
     variant,

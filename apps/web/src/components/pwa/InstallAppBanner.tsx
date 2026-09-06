@@ -23,7 +23,8 @@ const HINT_FIRST_DELAY_MS = 900;
  *
  * Behavior:
  *  - hides automatically when already running as an installed PWA
- *    (standalone display mode) or after `appinstalled`;
+ *    (standalone display mode), after `appinstalled`, or when the app was
+ *    installed on this browser before (persisted flag);
  *  - triggers the real `beforeinstallprompt` dialog when the browser captured
  *    the event (Chrome / Edge / Android);
  *  - shows manual "add to home screen" instructions when no native event

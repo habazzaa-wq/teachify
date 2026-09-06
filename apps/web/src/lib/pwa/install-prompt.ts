@@ -39,6 +39,8 @@ export interface ResolveInstallPromptVariantInput {
   standalone: boolean;
   /** Fired any time after load (the `appinstalled` event). */
   installCompleted: boolean;
+  /** Persisted "already installed on this browser" flag. */
+  installCompletedPersisted?: boolean;
   /** Captured `beforeinstallprompt` event, if any. */
   deferredPrompt: BeforeInstallPromptEvent | null;
   /** Whether the user previously dismissed this tenant's banner. */
@@ -48,10 +50,18 @@ export interface ResolveInstallPromptVariantInput {
 export function resolveInstallPromptVariant({
   standalone,
   installCompleted,
+  installCompletedPersisted = false,
   deferredPrompt,
   dismissed,
 }: ResolveInstallPromptVariantInput): InstallPromptVariant {
-  if (standalone || installCompleted || dismissed) return "hidden";
+  if (
+    standalone ||
+    installCompleted ||
+    installCompletedPersisted ||
+    dismissed
+  ) {
+    return "hidden";
+  }
   return deferredPrompt ? "native" : "manual";
 }
 
@@ -99,6 +109,16 @@ export function isIosSafari(userAgent: string | null | undefined): boolean {
 }
 
 export const INSTALL_DISMISSAL_PREFIX = "install-app-dismissed:v1";
+
+/**
+ * localStorage key recording that the app was INSTALLED on this browser (not
+ * dismissed). Chrome/Edge stop firing `beforeinstallprompt` once the origin is
+ * installed, so without this flag the install icon would linger and route users
+ * to the manual-instructions dialog even though they already have the app.
+ * Unlike the dismissal flag (session-only), completion is persisted on purpose:
+ * an installed app stays installed, so the icon must not come back.
+ */
+export const INSTALL_COMPLETED_PREFIX = "install-app-installed:v1";
 
 /**
  * localStorage key that scopes the dismissal to ONE tenant, so a browser
@@ -160,6 +180,46 @@ export function clearInstallDismissal(
   if (!storage) return;
   try {
     storage.removeItem(dismissalKeyFor(scope));
+  } catch {
+    // best-effort
+  }
+}
+
+export function installCompletedKeyFor(scope: string): string {
+  return `${INSTALL_COMPLETED_PREFIX}:${scope}`;
+}
+
+export function hasInstallCompletion(
+  storage: StorageLike | null | undefined,
+  scope: string,
+): boolean {
+  if (!storage) return false;
+  try {
+    return storage.getItem(installCompletedKeyFor(scope)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markInstallCompleted(
+  storage: StorageLike | null | undefined,
+  scope: string,
+): void {
+  if (!storage) return;
+  try {
+    storage.setItem(installCompletedKeyFor(scope), "1");
+  } catch {
+    // best-effort (private/blocked contexts)
+  }
+}
+
+export function clearInstallCompletion(
+  storage: StorageLike | null | undefined,
+  scope: string,
+): void {
+  if (!storage) return;
+  try {
+    storage.removeItem(installCompletedKeyFor(scope));
   } catch {
     // best-effort
   }
