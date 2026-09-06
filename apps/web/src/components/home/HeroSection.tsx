@@ -350,6 +350,31 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
   );
 }
 
+function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!imageUrl || failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white/10">
+        <User className="h-24 w-24 text-white/25" />
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={imageUrl}
+      alt={alt}
+      fill
+      priority
+      unoptimized
+      sizes="340px"
+      referrerPolicy="no-referrer"
+      className="object-cover"
+      fetchPriority="high"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function HeroSection() {
   const { data: hero } = usePublicHero();
   const { tenant } = useActiveTenant();
@@ -443,21 +468,11 @@ export function HeroSection() {
           <div className="home-enter-pop-soft relative mx-auto mt-4 h-[340px] w-[340px] max-w-full sm:mt-6" style={{ animationDelay: "0.25s" }}>
           {/* Profile image */}
           <div className="hero-avatar-ring absolute inset-0 overflow-hidden rounded-full border-4 border-[color:var(--brand-secondary)] shadow-2xl">
-            {heroImage ? (
-              <Image
-                src={heroImage}
-                alt={heroName}
-                fill
-                priority
-                sizes="340px"
-                className="object-cover"
-                fetchPriority="high"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/10">
-                <User className="h-24 w-24 text-white/25" />
-              </div>
-            )}
+            <HeroTeacherPhoto
+              key={heroImage ?? "empty"}
+              imageUrl={heroImage}
+              alt={heroName}
+            />
           </div>
 
           {/* ── Desktop orbiting icons ── */}

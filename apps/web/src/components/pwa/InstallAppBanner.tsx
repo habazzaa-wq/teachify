@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Smartphone, X } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
-import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useTenantStore } from "@/stores/tenant.store";
-import { resolveBrandHexColors, brandContrast } from "@/lib/brand";
+import { brandContrast } from "@/lib/brand";
+import { resolveBrandThemeColors } from "@/lib/brand-theme";
 import { cn } from "@/lib/cn";
 import { InstallInstructionsDialog } from "@/components/pwa/InstallInstructionsDialog";
 
@@ -17,7 +17,7 @@ const HINT_FIRST_DELAY_MS = 900;
  * Per-tenant "Install App" pill.
  *
  * Placement: injected once in `PublicLayout`. Rendered as a small floating
- * icon pinned to the far right edge of the page, next to a self-hiding hint
+ * icon pinned to the bottom-right edge of the page, next to a self-hiding hint
  * ("ثبّت المنصة على جهازك") that fades in and out on a loop so it stays
  * discoverable without permanently occupying page space.
  *
@@ -30,12 +30,13 @@ const HINT_FIRST_DELAY_MS = 900;
  *    (persisted flag), or when the browser exposes no native install event at
  *    all (iOS Safari, Firefox, installed Chrome/Edge origins) — no icon and no
  *    manual-instructions dialog ever appear in those cases;
- *  - the hint loop pauses while hovered / focused, and the button hides for
- *    the rest of the page load once dismissed (session-only — it returns on
- *    the next visit).
+ *  - the hint loop pauses while hovered / focused, and the "X" on the hint
+ *    hides ONLY the label (session-only) — the install icon itself stays
+ *    visible until the app is actually installed;
+ *  - colors follow the open tenant's platform branding (same `--brand-primary`
+ *    the navbar/hero use), resolved reactively from the store.
  */
 export function InstallAppBanner() {
-  const { tenant } = useActiveTenant();
   const platformBranding = useTenantStore((s) => s.platformBranding);
 
   const { variant, clientReady, isIos, promptToInstall, dismiss } =
@@ -44,9 +45,10 @@ export function InstallAppBanner() {
 
   const [hintVisible, setHintVisible] = useState(false);
   const [hintPaused, setHintPaused] = useState(false);
+  const [hintDismissed, setHintDismissed] = useState(false);
 
   useEffect(() => {
-    if (hintPaused) return;
+    if (hintPaused || hintDismissed) return;
 
     let timer: number | undefined;
     let cancelled = false;
@@ -69,12 +71,15 @@ export function InstallAppBanner() {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [hintPaused]);
+  }, [hintPaused, hintDismissed]);
 
   const isHidden =
     !clientReady || variant === "hidden" || variant === "manual";
 
-  const { primary } = resolveBrandHexColors(tenant, platformBranding);
+  // The tenant's platform brand colors — the same pair `BrandThemeProvider`
+  // maps to `--brand-primary`/`--brand-secondary` for the whole public site, so
+  // the floating icon always matches the open tenant.
+  const { primary } = resolveBrandThemeColors(platformBranding);
   const iconOn = brandContrast(primary);
 
   async function handleInstallClick() {
@@ -101,7 +106,7 @@ export function InstallAppBanner() {
 
   return (
     <>
-      <div dir="rtl" className="fixed right-3 top-1/2 z-[70] -translate-y-1/2">
+      <div dir="rtl" className="fixed bottom-6 right-3 z-[70]">
         <div
           className="relative flex items-center"
           onMouseEnter={() => setHintPaused(true)}
@@ -110,7 +115,7 @@ export function InstallAppBanner() {
           <div
             className={cn(
               "absolute right-full mr-3 flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-bold shadow-xl transition-all duration-300",
-              hintVisible
+              hintVisible && !hintDismissed
                 ? "translate-x-0 opacity-100"
                 : "pointer-events-none translate-x-1.5 opacity-0",
             )}
@@ -130,7 +135,7 @@ export function InstallAppBanner() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                dismiss();
+                setHintDismissed(true);
               }}
               aria-label="إخفاء تلميح التثبيت"
               className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full opacity-80 transition-opacity hover:opacity-100"

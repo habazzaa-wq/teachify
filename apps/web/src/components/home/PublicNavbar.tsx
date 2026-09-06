@@ -20,6 +20,7 @@ import type { PublicRegisterResponse } from "@/features/auth/services/public-reg
 import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
 import { getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { cn } from "@/lib/cn";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 const PublicRegisterCard = dynamic(
   () => import("@/features/auth/components/PublicRegisterCard").then((m) => m.PublicRegisterCard),
@@ -196,15 +197,37 @@ function NavLinkItem({
   );
 }
 
-function NavbarLogoImage({ src, alt }: { src: string; alt: string }) {
+function NavbarLogoImage({
+  src,
+  alt,
+  onError,
+}: {
+  src: string;
+  alt: string;
+  onError?: () => void;
+}) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}
+      referrerPolicy="no-referrer"
+      decoding="async"
+      onError={onError}
       className="h-auto w-auto max-h-9 max-w-[200px] object-contain transition-all duration-500 group-hover:scale-105"
     />
   );
+}
+
+// CDN logo images can fail on a subset of mobile networks. When the image
+// errors, fall back to the built-in cap icon instead of leaving an empty slot.
+// Keyed by `src` at the call site so a changed URL remounts fresh state.
+function BrandLogo({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <NavbarLogoIcon icon={GraduationCap} />;
+  }
+  return <NavbarLogoImage src={src} alt={alt} onError={() => setFailed(true)} />;
 }
 
 function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
@@ -481,14 +504,14 @@ export function PublicNavbar() {
   // partially configured.
   const platformBranding = useTenantStore((s) => s.platformBranding);
   const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
-  const logo = theme === "dark"
+  const logo = toAbsoluteAssetUrl(theme === "dark"
     ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
-    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo;
+    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo);
   const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
 
   const logoType = platformBranding?.logoType ?? tenant?.branding?.logo_type ?? null;
   const navbarLogoIcon = getNavbarIcon(platformBranding?.logoIcon ?? tenant?.branding?.logo_icon ?? null);
-  const navbarLogoImage = platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null;
+  const navbarLogoImage = toAbsoluteAssetUrl(platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null);
 
   const showDynamicImage = logoType === "image" && !!navbarLogoImage;
   const showDynamicIcon = logoType === "icon" && !!navbarLogoIcon;
@@ -508,7 +531,7 @@ export function PublicNavbar() {
                <Link href="/" className="group relative flex items-center gap-2.5">
                 {showDynamicImage ? (
                   <div className="relative">
-                    <NavbarLogoImage src={navbarLogoImage} alt={tenantName} />
+                    <BrandLogo key={navbarLogoImage!} src={navbarLogoImage!} alt={tenantName} />
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -519,7 +542,7 @@ export function PublicNavbar() {
                   <NavbarLogoIcon icon={navbarLogoIcon} />
                 ) : showLegacyImage ? (
                   <div className="relative">
-                    <NavbarLogoImage src={logo} alt={tenantName} />
+                    <BrandLogo key={logo!} src={logo!} alt={tenantName} />
                     {/* Hover: border = secondary */}
                     <span
                       className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
