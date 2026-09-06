@@ -76,9 +76,14 @@ export function InstallAppBanner() {
 
   async function handleInstallClick() {
     if (variant === "native") {
-      const result = await promptToInstall();
-      if (result === "accepted") {
-        dismiss();
+      try {
+        const result = await promptToInstall();
+        if (result === "accepted") {
+          dismiss();
+        }
+      } catch {
+        // `prompt()` throws if it was already consumed this session; ignore so
+        // the button never crashes on repeat clicks.
       }
       return;
     }
