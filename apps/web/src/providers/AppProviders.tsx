@@ -11,6 +11,7 @@ import { TenantFontProvider } from "@/components/layout/TenantFontProvider";
 import { BrandThemeProvider } from "@/components/layout/BrandThemeProvider";
 import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
+import { InstallPromptBridge } from "@/components/pwa/InstallPromptBridge";
 
 const Toaster = dynamic(
   () => import("@/components/system/Toaster").then((m) => m.Toaster),
@@ -66,6 +67,7 @@ export function AppProviders({
           >
             <TenantProvider>
               <PauseAnimationsWhileScrolling />
+              <InstallPromptBridge />
               <TenantFontProvider />
               <BrandThemeProvider />
               {children}

@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { PublicFooter } from "@/components/home/PublicFooter";
 import { WhatsAppFloatButton } from "@/components/home/WhatsAppFloatButton";
+import { InstallAppBannerMount } from "@/components/pwa/InstallAppBannerMount";
 
 const NewsTicker = dynamic(
   () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
@@ -27,6 +28,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       <NewsTicker />
       <PublicNavbar />
       <MobileSecondaryNav />
+      <InstallAppBannerMount />
 
       <main className="flex-1">{children}</main>
 
