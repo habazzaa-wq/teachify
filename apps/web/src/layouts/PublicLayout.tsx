@@ -1,10 +1,5 @@
 import dynamic from "next/dynamic";
-
-const InstallAppBanner = dynamic(
-  () =>
-    import("@/components/pwa/InstallAppBanner").then((m) => m.InstallAppBanner),
-  { ssr: false },
-);
+import { InstallAppBannerMount } from "@/components/pwa/InstallAppBannerMount";
 
 const NewsTicker = dynamic(
   () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
@@ -27,7 +22,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
       <NewsTicker />
       <PublicNavbar />
       <MobileSecondaryNav />
-      <InstallAppBanner />
+      <InstallAppBannerMount />
 
       <main className="flex-1">{children}</main>
 
