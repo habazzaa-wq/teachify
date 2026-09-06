@@ -186,8 +186,20 @@ describe("icon fallback", () => {
 
   it("returns null when no icon is configured (safe fallback)", () => {
     expect(pickTenantIconUrl(tenant(5, "Empty", "empty", "empty.test"))).toBeNull();
+  });
+
+  it("advertises the bundled default icon for icon-less tenants so the app stays installable", () => {
     const m = manifestFor(tenant(5, "Empty", "empty", "empty.test"), "https://empty.test");
-    expect(m.icons).toEqual([]);
+    expect(m.icons).toEqual([
+      { src: "/icons/app-icon-512.png", sizes: "512x512", type: "image/png" },
+    ]);
+  });
+
+  it("keeps the tenant's own icon when one is configured (never a default fallback)", () => {
+    const m = manifestFor(TENANT_A, "https://the-mechanist.com");
+    expect(m.icons).toEqual([
+      { src: "https://the-mechanist.com/uploads/mechanist-favicon.ico", sizes: "any" },
+    ]);
   });
 });
 

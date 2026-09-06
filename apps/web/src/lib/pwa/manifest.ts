@@ -38,6 +38,18 @@ export function manifestResponseHeaders(): Record<string, string> {
 }
 
 /**
+ * Fallback PWA icon shipped with the app. A manifest with an empty `icons`
+ * array is not installable, which silently hides the install affordance for
+ * tenants that have not configured their own branding icon — this guarantees
+ * every tenant is installable (PWA installability requires at least one icon)
+ * while tenants with their own icon keep theirs untouched.
+ *
+ * Root-relative path: the browser resolves it against the manifest origin, so
+ * each tenant origin serves its own copy from the Next.js public assets.
+ */
+export const DEFAULT_PWA_ICON_PATH = "/icons/app-icon-512.png";
+
+/**
  * Icon candidates in preference order. The tenant favicon is the best PWA icon
  * (square, self-contained), so it is preferred over the wide logo. `logoImage`
  * is the media-library image used by the navbar when configured; `logo` is the
@@ -120,6 +132,9 @@ export function buildManifest({ tenant, origin }: BuildManifestInput): MetadataR
     background_color: themeColor,
     lang: MANIFEST_LANG,
     dir: MANIFEST_DIR,
+    // An empty `icons` array fails PWA installability, so icon-less tenants
+    // fall back to the bundled platform icon. Tenants with a branded icon keep
+    // exactly their own.
     icons: iconUrl
       ? [
           {
@@ -131,6 +146,12 @@ export function buildManifest({ tenant, origin }: BuildManifestInput): MetadataR
             sizes: "any",
           },
         ]
-      : [],
+      : [
+          {
+            src: DEFAULT_PWA_ICON_PATH,
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
   };
 }

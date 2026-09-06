@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { TenantSeoContext } from "@/lib/seo/tenant-context";
 import { resolveAssetUrl } from "@/lib/seo/url";
 import { getSiteName } from "@/lib/seo/metadata";
-import { pickTenantIconUrl } from "@/lib/pwa/manifest";
+import { DEFAULT_PWA_ICON_PATH, pickTenantIconUrl } from "@/lib/pwa/manifest";
 
 /**
  * Server-rendered PWA / iOS install metadata, merged into the root layout's
@@ -21,7 +21,11 @@ export function buildPwaMetadata(
   origin: string,
 ): Pick<Metadata, "manifest" | "appleWebApp" | "icons"> {
   const siteName = getSiteName(tenant);
-  const appleIcon = resolveAssetUrl(pickTenantIconUrl(tenant), origin);
+  // The fallback ensures a non-empty asset, so the result is never null.
+  const appleIcon = resolveAssetUrl(
+    pickTenantIconUrl(tenant) ?? DEFAULT_PWA_ICON_PATH,
+    origin,
+  )!;
 
   return {
     manifest: "/manifest.webmanifest",
@@ -30,10 +34,8 @@ export function buildPwaMetadata(
       title: siteName,
       statusBarStyle: "default",
     },
-    icons: appleIcon
-      ? {
-          apple: [{ url: appleIcon, sizes: "any" }],
-        }
-      : undefined,
+    icons: {
+      apple: [{ url: appleIcon, sizes: "any" }],
+    },
   };
 }
