@@ -19,9 +19,16 @@ class MediaLibraryService
     private const ASSET_STATUSES = ['pending', 'uploading', 'processing', 'ready', 'failed', 'deleted'];
     private const ASSET_TYPES = ['video', 'image', 'document', 'pdf', 'archive', 'attachment', 'caption', 'thumbnail'];
     private const VISIBILITIES = ['private', 'public'];
-    private const VARIANT_TYPES = ['thumbnail', 'preview', 'transcode', 'stream_playlist', 'download'];
+    // 'optimized' is additive for this phase: the compressed/re-encoded image
+    // variant that GenerateAnswerPageVariantsJob produces for exam answer pages
+    // (Phase F). It follows the same one-row-per-(asset, type) contract as the
+    // other entries and is validated by createVariant() below.
+    private const VARIANT_TYPES = ['optimized', 'thumbnail', 'preview', 'transcode', 'stream_playlist', 'download'];
     private const CAPTION_FORMATS = ['vtt', 'srt'];
-    private const UPLOAD_SESSION_STATUSES = ['draft', 'uploading', 'completed', 'failed', 'expired'];
+    // 'pending' is used by scoped exam-answer page uploads (B2) for an intent
+    // that has been issued but not yet confirmed; it is additive and never set
+    // by the media library flows themselves.
+    private const UPLOAD_SESSION_STATUSES = ['pending', 'draft', 'uploading', 'completed', 'failed', 'expired'];
 
     /**
      * @param array<string, mixed> $data
@@ -162,6 +169,8 @@ class MediaLibraryService
         return MediaUploadSession::create([
             'tenant_id' => $tenant->id,
             'media_asset_id' => $data['media_asset_id'] ?? null,
+            'exam_attempt_id' => $data['exam_attempt_id'] ?? null,
+            'exam_question_id' => $data['exam_question_id'] ?? null,
             'created_by_tenant_user_id' => $creator?->id,
             'provider' => $data['provider'],
             'provider_service' => $data['provider_service'] ?? null,

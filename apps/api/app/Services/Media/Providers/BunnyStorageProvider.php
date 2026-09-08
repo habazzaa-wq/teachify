@@ -34,6 +34,18 @@ class BunnyStorageProvider implements MediaProvider
         ];
     }
 
+    /**
+     * Public accessor over private config() so scoped upload intents (e.g. exam
+     * answer page uploads) can reuse the exact same per-tenant credential
+     * resolution this provider uses, instead of duplicating it.
+     *
+     * @return array<string, mixed>
+     */
+    public function configForTenant(int $tenantId): array
+    {
+        return $this->config($tenantId);
+    }
+
     public function confirmUpload(MediaUploadSession $session, array $payload = []): array
     {
         return [

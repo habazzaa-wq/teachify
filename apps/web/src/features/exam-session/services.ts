@@ -5,6 +5,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import type {
   ActiveExamAttempt,
   AntiCheatEvent,
+  ExamAnswerPagesPayload,
+  ExamPageConfirmResult,
+  ExamPageManageResult,
+  ExamPageUploadIntent,
   ExamSession,
   SaveProgressPayload,
 } from "./types";
@@ -106,6 +110,41 @@ function formatAnswer(raw: unknown): ExamSession["questions"][number]["answer"] 
   return null;
 }
 
+function formatAnswerPages(raw: Raw): ExamAnswerPagesPayload {
+  return {
+    attemptId: String(raw.attemptId),
+    examQuestionId: String(raw.examQuestionId),
+    answerId: String(raw.answerId),
+    answerMode: String(raw.answerMode),
+    gradingStatus: String(raw.gradingStatus),
+    pages: Array.isArray(raw.pages)
+      ? raw.pages.map((page: Raw) => ({
+          id: String(page.id),
+          pageOrder: Number(page.pageOrder),
+          capturedAt: page.capturedAt ?? null,
+          width: page.width ?? null,
+          height: page.height ?? null,
+          mimeType: page.mimeType ?? null,
+          url: String(page.url),
+        }))
+      : [],
+  };
+}
+
+function formatManageResult(raw: Raw): ExamPageManageResult {
+  return {
+    answerId: String(raw.answerId),
+    answerMode: String(raw.answerMode),
+    gradingStatus: String(raw.gradingStatus),
+    pages: Array.isArray(raw.pages)
+      ? raw.pages.map((page: Raw) => ({
+          id: String(page.id),
+          pageOrder: Number(page.pageOrder),
+        }))
+      : [],
+  };
+}
+
 export const examSessionService = {
   async start(lessonId: string): Promise<ExamSession> {
     const { data } = await api.post(`/lessons/${lessonId}/exam-sessions/start`);
@@ -167,6 +206,116 @@ export const examSessionService = {
   async submit(attemptId: string): Promise<ExamSession> {
     const { data } = await api.post(`/exam-sessions/${attemptId}/submit`);
     return formatSession(data.data);
+  },
+
+  /**
+   * Issue a direct-PUT intent for one photograph page of an answer
+   * (Phase B2). The PUT itself happens in the feature layer (raw XHR so
+   * progress is observable and the 15s axios timeout does not apply); the
+   * `headers` here carry the Bunny `AccessKey` + `Content-Type`.
+   */
+  async createPageUploadIntent(
+    attemptId: string,
+    examQuestionId: string,
+    payload: {
+      original_filename: string;
+      mime_type?: string;
+      size_bytes?: number;
+    },
+  ): Promise<ExamPageUploadIntent> {
+    const { data } = await api.post(
+      `/exam-sessions/${attemptId}/answers/${examQuestionId}/upload-intent`,
+      payload,
+    );
+    const d = data.data;
+    return {
+      sessionId: String(d.session_id),
+      uploadUrl: d.upload_url ?? null,
+      uploadMethod: d.upload_method ?? "PUT",
+      storageKey: d.storage_key ?? null,
+      headers: d.headers ?? {},
+      expiresAt: d.expires_at ?? null,
+    };
+  },
+
+  /**
+   * Confirm one uploaded page (Phase B2): the server verifies the object
+   * exists on Bunny, then creates the private asset + page row and flips the
+   * answer to `image_pages` / `pending_manual_review`. The `session` path
+   * segment IS the id from `createPageUploadIntent`.
+   */
+  async confirmPageUpload(
+    attemptId: string,
+    examQuestionId: string,
+    sessionId: string,
+    payload: {
+      captured_at?: string;
+      width?: number;
+      height?: number;
+      size_bytes?: number;
+      mime_type?: string;
+      original_filename?: string;
+    },
+  ): Promise<ExamPageConfirmResult> {
+    const { data } = await api.post(
+      `/exam-sessions/${attemptId}/answers/${examQuestionId}/pages/${sessionId}/confirm`,
+      payload,
+    );
+    const d = data.data;
+    return {
+      pageId: String(d.page_id),
+      pageOrder: Number(d.page_order),
+      answerId: String(d.answer_id),
+      gradingStatus: d.grading_status,
+      mediaAssetId: d.media_asset_id ?? null,
+    };
+  },
+
+  /**
+   * Ordered page metadata for one answer (Phase C read endpoint). Consumed by
+   * the "already-uploaded pages" preview when the student navigates back to a
+   * question. Auth: the attempt owner only.
+   */
+  async getAnswerPages(
+    attemptId: string,
+    examQuestionId: string,
+  ): Promise<ExamAnswerPagesPayload> {
+    const { data } = await api.get(
+      `/exam-attempts/${attemptId}/answers/${examQuestionId}/pages`,
+    );
+    return formatAnswerPages(data.data);
+  },
+
+  /**
+   * Delete one already-confirmed page (Phase D-FIX). The response carries the
+   * answer's current mode/status plus the surviving page list in final order.
+   * Rejected 422 once the attempt leaves `in_progress`.
+   */
+  async deletePage(
+    attemptId: string,
+    examQuestionId: string,
+    pageId: string,
+  ): Promise<ExamPageManageResult> {
+    const { data } = await api.delete(
+      `/exam-attempts/${attemptId}/answers/${examQuestionId}/pages/${pageId}`,
+    );
+    return formatManageResult(data.data);
+  },
+
+  /**
+   * Bulk reorder of an answer's uploaded pages (Phase D-FIX). `pageIds` must be
+   * the FULL current page set in the desired order; partial/foreign lists 422.
+   */
+  async reorderPages(
+    attemptId: string,
+    examQuestionId: string,
+    pageIds: string[],
+  ): Promise<ExamPageManageResult> {
+    const { data } = await api.put(
+      `/exam-attempts/${attemptId}/answers/${examQuestionId}/pages/reorder`,
+      { page_ids: pageIds.map((id) => Number(id)) },
+    );
+    return formatManageResult(data.data);
   },
 };
 

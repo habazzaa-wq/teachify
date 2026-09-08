@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import { QUESTION_TYPE_LABELS } from "../constants";
 import { toggleMultiOption } from "../utils";
+import { ImageAnswerCapture } from "../image-cap/components/ImageAnswerCapture";
 import { ImageQuestionContent } from 
 "@/features/exam-bank/components/ImageQuestionContent";
 import {
@@ -23,6 +24,10 @@ interface ExamQuestionViewProps {
   answer: ExamSessionAnswer;
   onAnswerChange?: (answer: ExamSessionAnswer) => void;
   readOnly?: boolean;
+  attemptId?: string;
+  imageCaptureDisabled?: boolean;
+  onImageBusyChange?: (examQuestionId: string, busy: boolean) => void;
+  onImageAnsweredChange?: (examQuestionId: string, answered: boolean) => void;
 }
 
 function ExamQuestionViewInner({
@@ -32,6 +37,10 @@ function ExamQuestionViewInner({
   answer,
   onAnswerChange,
   readOnly = false,
+  attemptId,
+  imageCaptureDisabled = false,
+  onImageBusyChange,
+  onImageAnsweredChange,
 }: ExamQuestionViewProps) {
   const options = question.content.options ?? [];
   const structuredDoc =
@@ -309,6 +318,18 @@ function ExamQuestionViewInner({
           يمكنك تحديد أكثر من خيار لهذا السؤال.
         </p>
       )}
+
+      {question.type === "essay" || question.type === "short_answer" ? (
+        !readOnly && attemptId ? (
+          <ImageAnswerCapture
+            attemptId={attemptId}
+            examQuestionId={question.examQuestionId}
+            disabled={imageCaptureDisabled}
+            onBusyChange={onImageBusyChange}
+            onAnsweredChange={onImageAnsweredChange}
+          />
+        ) : null
+      ) : null}
     </div>
   );
 }

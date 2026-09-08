@@ -42,3 +42,17 @@ export function useSubmitExam(attemptId: string | null) {
     },
   });
 }
+
+/**
+ * Ordered pages already uploaded for one answer (Phase C read endpoint). Only
+ * meaningful while the attempt is in progress; the attempt owner can list pages
+ * for any attempt state.
+ */
+export function useAnswerPages(attemptId: string, examQuestionId: string) {
+  return useQuery({
+    queryKey: [EXAM_SESSION_QUERY_KEY, attemptId, "answer-pages", examQuestionId],
+    queryFn: () => examSessionService.getAnswerPages(attemptId, examQuestionId),
+    staleTime: 30_000,
+    retry: 1,
+  });
+}

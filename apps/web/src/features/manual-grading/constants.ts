@@ -1,0 +1,1 @@
+export const MANUAL_GRADING_QUERY_KEY = "manual-grading";

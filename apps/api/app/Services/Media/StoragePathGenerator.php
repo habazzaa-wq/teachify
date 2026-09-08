@@ -15,6 +15,7 @@ class StoragePathGenerator
         'branding',
         'imports',
         'exports',
+        'exam_attempts',
     ];
 
     public function generate(Tenant $tenant, string $root, string $filename): string

@@ -39,6 +39,12 @@ class ExamSessionService
     private const SUPPORTED_QUESTION_TYPES = ['single_choice', 'multiple_choice', 'true_false', 'numeric', 'essay', 'short_answer'];
 
     /**
+     * Types that can never be auto-scored and must go through teacher review.
+     * Mirrors ExamAnswerGrader::grade() ("essay, short_answer => false").
+     */
+    private const MANUALLY_GRADED_QUESTION_TYPES = ['essay', 'short_answer'];
+
+    /**
      * Hard caps so anti-cheat event spam can never block answer autosave or
      * blow up a row. The metadata payload is additionally size-capped.
      */
@@ -382,10 +388,11 @@ class ExamSessionService
         // critical section only performs the idempotent upsert.
         $examQuestion->load('question');
         $normalized = $this->validator->validate($examQuestion->question, $answer);
-        $isCorrect = $this->grader->grade($examQuestion->question, $normalized);
+        $isManual = in_array($examQuestion->question->type, self::MANUALLY_GRADED_QUESTION_TYPES, true);
+        $isCorrect = $isManual ? null : $this->grader->grade($examQuestion->question, $normalized);
         $points = max(0, (int) ($examQuestion->points ?? $examQuestion->question?->points ?? 0));
 
-        return DB::transaction(function () use ($user, $attempt, $examQuestion, $normalized, $isCorrect, $points): ExamAttemptAnswer {
+        return DB::transaction(function () use ($user, $attempt, $examQuestion, $normalized, $isCorrect, $isManual, $points): ExamAttemptAnswer {
             $attempt = $this->lockAttempt($attempt, $user);
             $this->ensureAttemptOwnedByUser($attempt, $user);
             $this->ensureInProgress($attempt);
@@ -396,19 +403,48 @@ class ExamSessionService
                     'exam_attempt_id' => $attempt->id,
                     'exam_question_id' => $examQuestion->id,
                 ],
-                [
-                    'question_id' => $examQuestion->question_id,
-                    'answer' => $normalized,
-                    'is_correct' => $isCorrect,
-                    'earned_points' => $isCorrect ? $points : 0,
-                    'answered_at' => now(),
-                ],
+                $this->answerValues($examQuestion, $normalized, $isCorrect, $isManual, $points),
             );
 
             $saved->setRelation('attempt', $attempt);
 
             return $saved;
         });
+    }
+
+    /**
+     * Values for the answer upsert. Non-manual types keep the exact auto-grading
+     * fields the pre-B2 code wrote (`is_correct` + `earned_points`). Manual
+     * types (essay / short_answer) are recorded as `pending_manual_review` with
+     * a NULL `is_correct` and 0 points — the B1 "essay must never default to
+     * incorrect" invariant.
+     *
+     * `answer_mode` is deliberately absent from this array entirely: when the
+     * row already exists in `image_pages` mode from a page upload, a later text
+     * save must NOT flip it back to the default; when the row is created by a
+     * text-only save it correctly keeps the column default.
+     *
+     * @param  array<int, string>|string  $normalized
+     * @return array<string, mixed>
+     */
+    private function answerValues(ExamQuestion $examQuestion, array|string $normalized, ?bool $isCorrect, bool $isManual, int $points): array
+    {
+        $values = [
+            'question_id' => $examQuestion->question_id,
+            'answer' => $normalized,
+            'answered_at' => now(),
+        ];
+
+        if ($isManual) {
+            $values['grading_status'] = 'pending_manual_review';
+            $values['is_correct'] = null;
+            $values['earned_points'] = 0;
+        } else {
+            $values['is_correct'] = $isCorrect;
+            $values['earned_points'] = $isCorrect ? $points : 0;
+        }
+
+        return $values;
     }
 
     /**

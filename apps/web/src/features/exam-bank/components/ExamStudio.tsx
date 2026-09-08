@@ -14,6 +14,7 @@ import {
   Star,
   Trash2,
   FilePlus2,
+  ClipboardCheck,
 } from "lucide-react";
 import { ChevronStartIcon } from "@/components/ui/icons";
 import { PermissionGuard } from "@/components/ui";
@@ -328,6 +329,16 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
                 </StudioButton>
               </PermissionGuard>
             )}
+            <PermissionGuard permission="exams.update">
+              <StudioButton
+                variant="soft"
+                size="sm"
+                icon={<ClipboardCheck className="h-4 w-4" />}
+                onClick={() => router.push(`/teacher/exams/${exam.id}/grading`)}
+              >
+                تصحيح يدوي
+              </StudioButton>
+            </PermissionGuard>
             <StudioButton
               variant="ghost"
               size="icon"

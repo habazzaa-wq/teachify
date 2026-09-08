@@ -37,6 +37,8 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
   const [navigationIndex, setNavigationIndex] = useState<number | null>(null);
   const [workspace, setWorkspace] = useState<Record<string, ExamSessionAnswer>>({});
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [imageBusy, setImageBusy] = useState<Record<string, boolean>>({});
+  const [imageAnswered, setImageAnswered] = useState<Record<string, boolean>>({});
 
   const deadlineRef = useRef<number | null>(null);
   const currentIndexRef = useRef(0);
@@ -201,8 +203,24 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     outboxRef.current?.queueAnswer(question.examQuestionId, answer);
   }
 
+  const handleImageBusyChange = useCallback(
+    (examQuestionId: string, busy: boolean) => {
+      setImageBusy((prev) => ({ ...prev, [examQuestionId]: busy }));
+    },
+    [],
+  );
+
+  const handleImageAnsweredChange = useCallback(
+    (examQuestionId: string, answered: boolean) => {
+      setImageAnswered((prev) => ({ ...prev, [examQuestionId]: answered }));
+    },
+    [],
+  );
+
   function navigateTo(index: number) {
     if (!attempt || !inProgress) return;
+    const current = questions[currentIndex];
+    if (current && imageBusy[current.examQuestionId]) return;
     const clamped = Math.min(Math.max(index, 0), questions.length - 1);
     if (clamped === currentIndex) return;
 
@@ -217,9 +235,10 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
     () =>
       questions.filter((question) => {
         const value = workspace[question.examQuestionId] ?? question.answer;
-        return !isAnswerEmpty(value, question.type);
+        if (!isAnswerEmpty(value, question.type)) return true;
+        return imageAnswered[question.examQuestionId] === true;
       }).length,
-    [questions, workspace],
+    [questions, workspace, imageAnswered],
   );
 
   const backToCourse = useCallback(() => {
@@ -250,6 +269,9 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
   const currentAnswer = question
     ? workspace[question.examQuestionId] ?? question.answer ?? null
     : null;
+  const currentQuestionBusy = question
+    ? imageBusy[question.examQuestionId] === true
+    : false;
 
   return (
     <div className="min-h-screen bg-background">
@@ -283,13 +305,24 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
                     total={questions.length}
                     answer={currentAnswer}
                     onAnswerChange={handleAnswerChange}
+                    attemptId={attempt.id}
+                    imageCaptureDisabled={!inProgress}
+                    onImageBusyChange={handleImageBusyChange}
+                    onImageAnsweredChange={handleImageAnsweredChange}
                   />
+
+                  {currentQuestionBusy && (
+                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs font-bold text-amber-700 ring-1 ring-amber-500/30">
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                      جارٍ رفع صفحات الإجابة... يُرجى الانتظار حتى يكتمل الرفع قبل الانتقال بين الأسئلة.
+                    </div>
+                  )}
 
                   <div className="mt-8 flex items-center justify-between gap-3 border-t border-border/30 pt-5">
                     <button
                       type="button"
                       onClick={() => navigateTo(currentIndex - 1)}
-                      disabled={currentIndex === 0}
+                      disabled={currentIndex === 0 || currentQuestionBusy}
                       className="inline-flex h-11 items-center gap-2 rounded-xl border border-border/50 bg-background/60 px-4 text-sm font-bold text-foreground/80 transition-all duration-200 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -307,7 +340,8 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
                           ? setSubmitOpen(true)
                           : navigateTo(currentIndex + 1)
                       }
-                      className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5"
+                      disabled={currentQuestionBusy}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ background: "var(--brand-primary)" }}
                     >
                       {currentIndex === questions.length - 1 ? "تسليم الامتحان" : "التالي"}

@@ -14,6 +14,8 @@ class MediaUploadSession extends Model
     protected $fillable = [
         'tenant_id',
         'media_asset_id',
+        'exam_attempt_id',
+        'exam_question_id',
         'created_by_tenant_user_id',
         'provider',
         'provider_service',
@@ -47,6 +49,16 @@ class MediaUploadSession extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(MediaAsset::class, 'media_asset_id');
+    }
+
+    public function attempt(): BelongsTo
+    {
+        return $this->belongsTo(ExamAttempt::class, 'exam_attempt_id');
+    }
+
+    public function examQuestion(): BelongsTo
+    {
+        return $this->belongsTo(ExamQuestion::class, 'exam_question_id');
     }
 
     public function creator(): BelongsTo

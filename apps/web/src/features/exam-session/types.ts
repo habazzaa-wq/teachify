@@ -109,3 +109,58 @@ export interface SaveProgressPayload {
   current_question_index: number;
   events?: AntiCheatEvent[];
 }
+
+/**
+ * One photographed answer page, as returned by the Phase C read endpoint
+ * (GET /exam-attempts/{attempt}/answers/{examQuestion}/pages). This is the
+ * student-shaped payload — grading fields are never present.
+ */
+export interface ExamAnswerPage {
+  id: string;
+  pageOrder: number;
+  capturedAt: string | null;
+  width: number | null;
+  height: number | null;
+  mimeType: string | null;
+  url: string;
+}
+
+export interface ExamAnswerPagesPayload {
+  attemptId: string;
+  examQuestionId: string;
+  answerId: string;
+  answerMode: string;
+  gradingStatus: string;
+  pages: ExamAnswerPage[];
+}
+
+/** PUT-intent response for one page (POST .../upload-intent). */
+export interface ExamPageUploadIntent {
+  sessionId: string;
+  uploadUrl: string | null;
+  uploadMethod: string;
+  storageKey: string | null;
+  headers: Record<string, string>;
+  expiresAt: string | null;
+}
+
+/** POST .../pages/{session}/confirm response data. */
+export interface ExamPageConfirmResult {
+  pageId: string;
+  pageOrder: number;
+  answerId: string;
+  gradingStatus: string;
+  mediaAssetId: number | null;
+}
+
+/**
+ * DELETE / PUT answer-page manage response (Phase D-FIX): the answer's current
+ * mode/status plus the authoritative page list (id + page_order) after a delete
+ * or reorder.
+ */
+export interface ExamPageManageResult {
+  answerId: string;
+  answerMode: string;
+  gradingStatus: string;
+  pages: { id: string; pageOrder: number }[];
+}
