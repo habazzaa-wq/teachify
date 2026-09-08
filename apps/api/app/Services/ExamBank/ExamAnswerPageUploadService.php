@@ -38,9 +38,10 @@ use Throwable;
  *    `pending`, `media_asset_id` NULL) and carries the `exam_attempt_id` /
  *    `exam_question_id` binding so a session issued for attempt A cannot be
  *    confirmed against attempt B's answer,
- *  - confirm verifies the object actually landed on Bunny via a HEAD metadata
- *    request (BunnyStorageInterface::getMetadata) instead of trusting the
- *    client, then creates the private asset + answer page in one transaction.
+ *  - confirm verifies the object actually landed on Bunny via an existence
+ *    metadata lookup (BunnyStorageInterface::getMetadata — implemented against
+ *    a directory listing, since Bunny rejects HEAD with 401) instead of trusting
+ *    the client, then creates the private asset + answer page in one transaction.
  */
 class ExamAnswerPageUploadService
 {

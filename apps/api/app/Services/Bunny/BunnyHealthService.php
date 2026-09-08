@@ -171,7 +171,7 @@ class BunnyHealthService implements BunnyHealthInterface
     {
         try {
             $start = microtime(true);
-            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
+            $this->client->storageRequest('GET', '/', ['timeout' => 5, 'connect_timeout' => 5]);
             $latencyMs = (int) ((microtime(true) - $start) * 1000);
 
             return ['status' => self::HEALTH_STATUS_HEALTHY, 'latency_ms' => $latencyMs];
@@ -258,7 +258,7 @@ class BunnyHealthService implements BunnyHealthInterface
     {
         try {
             $start = microtime(true);
-            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
+            $this->client->storageRequest('GET', '/', ['timeout' => 5, 'connect_timeout' => 5]);
 
             return (int) ((microtime(true) - $start) * 1000);
         } catch (Throwable $e) {
@@ -283,7 +283,7 @@ class BunnyHealthService implements BunnyHealthInterface
     private function isStorageAvailable(): bool
     {
         try {
-            $this->client->storageRequest('HEAD', '/', ['timeout' => 5, 'connect_timeout' => 5]);
+            $this->client->storageRequest('GET', '/', ['timeout' => 5, 'connect_timeout' => 5]);
 
             return true;
         } catch (Throwable $e) {

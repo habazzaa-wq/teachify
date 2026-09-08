@@ -27,9 +27,9 @@ use Tests\TestCase;
 /**
  * Phase B2 — Student image page uploads (intent -> confirm) over the real
  * routes. The only seam is Bunny Storage: the intent/confirm flow resolves the
- * tenant's integration row, but the confirm's object-existence HEAD is routed
- * through a fake BunnyStorageInterface while the client's direct PUT never
- * happens in a server-side test.
+ * tenant's integration row, but the confirm's object-existence metadata lookup
+ * is routed through a fake BunnyStorageInterface while the client's direct PUT
+ * never happens in a server-side test.
  *
  * The confirm route segment is the MediaUploadSession id returned by the
  * intent (…/pages/{session}/confirm) — this test pins that contract so a bad

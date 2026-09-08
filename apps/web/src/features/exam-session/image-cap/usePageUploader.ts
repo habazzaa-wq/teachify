@@ -381,7 +381,23 @@ export function usePageUploader({
     async (draft: ImagePageDraft): Promise<PageUploadResult> => {
       // Always render fresh so the uploaded bytes exactly match the current
       // rotation/crop, even if the eager preview render hasn't caught up yet.
-      const processed = await renderProcessedImage(draft.source, draft.rotation, draft.crop);
+      let processed: Awaited<ReturnType<typeof renderProcessedImage>>;
+      try {
+        processed = await renderProcessedImage(draft.source, draft.rotation, draft.crop);
+      } catch {
+        // The file could not be decoded/encoded client-side (unsupported
+        // format, corrupt bytes, canvas limits). This is NOT a network/server
+        // failure — surface an actionable message instead of the generic
+        // "unexpected error" the upload-error classifier would otherwise pick.
+        throw {
+          status: 415,
+          message:
+            "تعذّرت معالجة هذه الصورة (القص/التدوير). جرّب صورة أخرى بصيغة JPG أو PNG.",
+          fieldErrors: {},
+          isNetworkError: false,
+          raw: null,
+        };
+      }
 
       const original_filename = outputFileNameFor(draft.source, draft.rotation);
       const mime_type = processed.mimeType || outputMimeFor(draft.source);

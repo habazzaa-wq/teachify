@@ -217,9 +217,48 @@ class BunnyStorageService implements BunnyStorageInterface
     {
         $normalized = $this->normalizePath($path);
 
-        return $this->client->storageRequest('HEAD', $normalized, [
-            'operation' => "get_metadata {$normalized}",
+        // Bunny's legacy Storage API (storage.bunnycdn.com + the region hosts)
+        // rejects HEAD requests outright with HTTP 401 even when the AccessKey
+        // is valid — PUT/GET/DELETE work fine (verified: HEAD 401 vs PUT 201 /
+        // GET 200 for the same zone + password). Object existence + metadata are
+        // therefore resolved from a FRESH listing of the object's parent
+        // directory. The cache is deliberately bypassed: callers such as
+        // ExamAnswerPageUploadService::assertStored verify an object that the
+        // client PUT directly moments earlier, so a stale listing would produce
+        // a false "not found".
+        $parent = dirname($normalized);
+        $name = basename($normalized);
+
+        $listing = $this->client->storageRequest('GET', $parent.'/', [
+            'operation' => "list_objects {$parent}/",
         ]);
+
+        foreach ($listing as $key => $entry) {
+            if (! is_int($key) || ! is_array($entry)) {
+                continue;
+            }
+
+            $objectName = $entry['ObjectName'] ?? $entry['name'] ?? null;
+
+            if ($objectName === null || $objectName !== $name) {
+                continue;
+            }
+
+            return array_merge([
+                'success' => true,
+                'status' => 200,
+                'name' => $name,
+                'path' => $normalized,
+            ], $entry);
+        }
+
+        throw new BunnyServiceException(
+            "Storage object not found: {$normalized}",
+            'storage',
+            "get_metadata {$normalized}",
+            ['object' => $normalized],
+            404,
+        );
     }
 
     public function generatePublicUrl(string $path): string
