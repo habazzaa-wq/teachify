@@ -250,6 +250,34 @@ export function usePageUploader({
     [disabled],
   );
 
+  /**
+   * Seed a draft from an already-confirmed page (fetched blob + its server id)
+   * so the student can crop/rotate an uploaded page and re-upload a REPLACEMENT.
+   * Returns the new draft id (for the crop editor to open immediately) or null.
+   */
+  const addServerPageForEdit = useCallback(
+    (file: File, serverPageId: string): string | null => {
+      if (busyRef.current) return null;
+      const id = nextId();
+      const draft: ImagePageDraft = {
+        id,
+        source: file,
+        rawUrl: URL.createObjectURL(file),
+        rotation: 0,
+        crop: null,
+        processed: null,
+        status: "draft",
+        progress: 0,
+        error: null,
+        capturedAt: new Date().toISOString(),
+        serverPageId,
+      };
+      setDrafts((prev) => [...prev, draft]);
+      return id;
+    },
+    [],
+  );
+
   const removeDraft = useCallback(
     (id: string) => {
       if (busyRef.current) return;
@@ -327,30 +355,45 @@ export function usePageUploader({
       });
   }, []);
 
-  const setRotation = useCallback(
-    (id: string, rotation: ImageRotation) => {
-      if (busyRef.current) return;
-      setDraft(id, { rotation, processed: null });
+  /**
+   * Apply rotation/crop edits through one guarded path. Editing a page that is
+   * already uploaded (status "done") keeps its serverPageId, flips the card
+   * back to a draft so the edit/upload controls reappear, and the next upload
+   * REPLACES the stale server page instead of appending a duplicate.
+   */
+  const applyEdits = useCallback(
+    (id: string, patch: Partial<Pick<ImagePageDraft, "rotation" | "crop">>) => {
+      const draft = draftsRef.current.find((d) => d.id === id);
+      if (!draft || busyRef.current) return;
+      if (draft.status === "done") {
+        setDraft(id, { ...patch, processed: null, status: "draft" });
+      } else {
+        setDraft(id, { ...patch, processed: null });
+      }
       refreshProcessed(id);
     },
     [refreshProcessed],
+  );
+
+  const setRotation = useCallback(
+    (id: string, rotation: ImageRotation) => {
+      applyEdits(id, { rotation });
+    },
+    [applyEdits],
   );
 
   const setCrop = useCallback(
     (id: string, crop: CropRect | null) => {
-      if (busyRef.current) return;
-      setDraft(id, { crop, processed: null });
-      refreshProcessed(id);
+      applyEdits(id, { crop });
     },
-    [refreshProcessed],
+    [applyEdits],
   );
 
   const clearEdits = useCallback(
     (id: string) => {
-      setDraft(id, { rotation: 0, crop: null, processed: null });
-      refreshProcessed(id);
+      applyEdits(id, { rotation: 0, crop: null });
     },
-    [refreshProcessed],
+    [applyEdits],
   );
 
   const moveDraft = useCallback(
@@ -425,6 +468,7 @@ export function usePageUploader({
 
       // Dimensions sent to confirm are of the PROCESSED (rotated/cropped) image
       // so the read-back mirrors what the student actually submitted.
+      const replacedPageId = draft.serverPageId;
       const result = await examSessionService.confirmPageUpload(
         attemptId,
         examQuestionId,
@@ -438,6 +482,19 @@ export function usePageUploader({
           original_filename,
         },
       );
+
+      // When this draft was a re-edit of an already-confirmed page (crop or
+      // rotation applied after the first upload), remove the stale server page
+      // so the freshly confirmed one does not get duplicated. Non-terminal: a
+      // leftover page stays visible in the read endpoint and can be removed
+      // manually, so a failure here must not fail the re-upload itself.
+      if (replacedPageId && replacedPageId !== result.pageId) {
+        try {
+          await examSessionService.deletePage(attemptId, examQuestionId, replacedPageId);
+        } catch {
+          // ignore — the new page is already confirmed
+        }
+      }
 
       return {
         type: "ok" as const,
@@ -556,6 +613,7 @@ export function usePageUploader({
     uploadingId,
     busy,
     addFiles,
+    addServerPageForEdit,
     removeDraft,
     forgetServerPage,
     setRotation,

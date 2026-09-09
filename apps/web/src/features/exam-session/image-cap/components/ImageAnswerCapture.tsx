@@ -79,6 +79,7 @@ export function ImageAnswerCapture({
   const [serverPreviews, setServerPreviews] = useState<Record<string, string | null>>({});
   const serverPreviewLoadingRef = useRef<Record<string, boolean>>({});
   const serverObjectURLsRef = useRef<Record<string, string>>({});
+  const [serverEditLoading, setServerEditLoading] = useState(false);
 
   useEffect(() => {
     const urls = serverObjectURLsRef.current;
@@ -93,8 +94,8 @@ export function ImageAnswerCapture({
 
   const editorVisible =
     !!editingDraft &&
-    editingDraft.status !== "done" &&
-    editingDraft.status !== "uploading";
+    editingDraft.status !== "uploading" &&
+    editingDraft.status !== "expired";
 
   const visibleDrafts = uploader.drafts.filter(uploader.draftDedup);
   const queueCount = visibleDrafts.filter(
@@ -213,6 +214,24 @@ export function ImageAnswerCapture({
     [attemptId, examQuestionId, runManage, uploadBusy],
   );
 
+  const handleEditServerPage = async (page: ExamAnswerPage) => {
+    if (uploadBusy || managingRef.current || serverEditLoading) return;
+    setServerEditLoading(true);
+    try {
+      const { data } = await api.get(page.url, {
+        responseType: "blob",
+        timeout: 60_000,
+      });
+      const type: string = data.type || "image/jpeg";
+      const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+      const file = new File([data], `page-${page.id}.${ext}`, { type });
+      const draftId = uploader.addServerPageForEdit(file, page.id);
+      if (draftId) openEditor(draftId);
+    } finally {
+      setServerEditLoading(false);
+    }
+  };
+
   const handleMovePage = useCallback(
     (page: ExamAnswerPage, direction: -1 | 1) => {
       if (uploadBusy) return;
@@ -280,6 +299,11 @@ export function ImageAnswerCapture({
                   preview={serverPreviews[page.id] ?? null}
                   onToggle={() => void toggleServerPreview(page)}
                   onDelete={selectable ? () => void handleDeletePage(page) : undefined}
+                  onEdit={
+                    selectable && !serverEditLoading
+                      ? () => void handleEditServerPage(page)
+                      : undefined
+                  }
                   onMoveUp={
                     selectable && index > 0
                       ? () => void handleMovePage(page, -1)
@@ -324,23 +348,44 @@ export function ImageAnswerCapture({
                   selectable={selectable}
                   uploading={uploader.uploadingId === draft.id}
                   onEdit={
-                    draft.status === "draft" || draft.status === "error"
+                    draft.status === "draft" ||
+                    draft.status === "error" ||
+                    draft.status === "done"
                       ? () => openEditor(draft.id)
                       : undefined
                   }
-                  onRotate={() =>
-                    uploader.setRotation(
-                      draft.id,
-                      ((draft.rotation + 90) % 360) as ImageRotation,
-                    )
-                  }
-                  onMoveUp={index > 0 ? () => uploader.moveDraft(draft.id, -1) : undefined}
-                  onMoveDown={
-                    index < visibleDrafts.length - 1
-                      ? () => uploader.moveDraft(draft.id, 1)
+                  onRotate={
+                    draft.status === "draft" ||
+                    draft.status === "error" ||
+                    draft.status === "done"
+                      ? () =>
+                          uploader.setRotation(
+                            draft.id,
+                            ((draft.rotation + 90) % 360) as ImageRotation,
+                          )
                       : undefined
                   }
-                  onRemove={() => uploader.removeDraft(draft.id)}
+                  onMoveUp={
+                    draft.status !== "done"
+                      ? index > 0
+                        ? () => uploader.moveDraft(draft.id, -1)
+                        : undefined
+                      : undefined
+                  }
+                  onMoveDown={
+                    draft.status !== "done"
+                      ? index < visibleDrafts.length - 1
+                        ? () => uploader.moveDraft(draft.id, 1)
+                        : undefined
+                      : undefined
+                  }
+                  onRemove={
+                    draft.status === "draft" ||
+                    draft.status === "error" ||
+                    draft.status === "expired"
+                      ? () => uploader.removeDraft(draft.id)
+                      : undefined
+                  }
                   onUpload={
                     draft.status === "draft" || draft.status === "error"
                       ? () => void uploader.uploadDraft(draft.id)
@@ -433,6 +478,7 @@ function ServerPageCard({
   preview,
   onToggle,
   onDelete,
+  onEdit,
   onMoveUp,
   onMoveDown,
   mutating,
@@ -441,6 +487,7 @@ function ServerPageCard({
   preview: string | null;
   onToggle: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   mutating?: boolean;
@@ -466,6 +513,16 @@ function ServerPageCard({
           صفحة {page.pageOrder}
         </span>
         <div className="flex shrink-0 items-center gap-0.5">
+          {onEdit && onDelete && (
+            <IconButton
+              label="قصّ"
+              title="قصّ الصفحة المرفوعة"
+              disabled={mutating}
+              onClick={onEdit}
+            >
+              <Crop className="h-3.5 w-3.5" />
+            </IconButton>
+          )}
           {onDelete && (
             <>
               <IconButton
@@ -540,7 +597,10 @@ function DraftCard({
   onUpload,
 }: DraftCardProps) {
   const canManage =
-    selectable && (draft.status === "draft" || draft.status === "error");
+    selectable &&
+    (draft.status === "draft" ||
+      draft.status === "error" ||
+      draft.status === "done");
   const previewUrl = draft.processed?.url ?? draft.rawUrl;
 
   return (
