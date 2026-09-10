@@ -5,6 +5,7 @@ namespace App\Services\ExamBank;
 use App\Models\CourseLesson;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\ExamAttemptAnswerPage;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
@@ -54,7 +55,7 @@ class ExamResultService
 
         $exam = $attempt->exam()->firstOrFail();
         $examQuestions = $this->grading->questionsForAttempt($attempt, $exam);
-        $answers = $attempt->answers()->get()->keyBy('exam_question_id');
+        $answers = $attempt->answers()->with('pages')->get()->keyBy('exam_question_id');
         $revealCorrect = $exam->show_correct_answers;
 
         $examQuestions->load('question.mediaAsset');
@@ -112,6 +113,19 @@ class ExamResultService
                 'scanUrl' => $question->question_format === 'image' && $question->media_asset_id
                     ? ($question->mediaAsset?->cdn_url ?? null)
                     : null,
+                'answerMode' => $saved?->answer_mode,
+                'gradingStatus' => $saved?->grading_status,
+                'answerPages' => $saved !== null && $saved->answer_mode === 'image_pages'
+                    ? $saved->pages->map(fn (ExamAttemptAnswerPage $page): array => [
+                        'id' => (string) $page->id,
+                        'pageOrder' => (int) $page->page_order,
+                        'url' => route('exam-bank.answer-pages.show', [
+                            'attempt' => $attempt->id,
+                            'examQuestion' => $examQuestion->id,
+                            'page' => $page->id,
+                        ]),
+                    ])->values()->all()
+                    : [],
             ];
         }
 

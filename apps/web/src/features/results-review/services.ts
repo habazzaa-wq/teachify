@@ -164,6 +164,15 @@ function formatReviewItem(raw: Raw): ResultReviewItem {
     questionFormat: raw.questionFormat ?? "text",
     scanUrl: typeof raw.scanUrl === "string" ? raw.scanUrl : null,
     contentDocument: raw.contentDocument ?? null,
+    answerMode: typeof raw.answerMode === "string" ? raw.answerMode : null,
+    gradingStatus: typeof raw.gradingStatus === "string" ? raw.gradingStatus : null,
+    answerPages: Array.isArray(raw.answerPages)
+      ? raw.answerPages.map((page: Raw) => ({
+          id: String(page.id),
+          pageOrder: Number(page.pageOrder ?? 0),
+          url: String(page.url),
+        }))
+      : [],
   };
 }
 

@@ -16,6 +16,13 @@ export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = {
   skipped: "لم تتم الإجابة",
 };
 
+export const REVIEW_PENDING_LABEL = "يتم مراجعته بواسطة المدرس";
+
+export const PENDING_REVIEW_STATUSES: readonly string[] = [
+  "pending_manual_review",
+  "partially_graded",
+];
+
 export const DIFFICULTY_LABELS: Record<string, string> = {
   easy: "سهل",
   medium: "متوسط",

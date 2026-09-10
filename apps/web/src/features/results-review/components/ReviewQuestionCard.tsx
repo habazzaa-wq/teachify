@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCircle2,
   CircleX,
+  Hourglass,
   MinusCircle,
   ChevronDown,
   Check,
@@ -13,8 +14,14 @@ import {
   Tag,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { DIFFICULTY_LABELS, REVIEW_STATUS_LABELS } from "../constants";
-import type { ResultReviewItem } from "../types";
+import { api } from "@/services/api";
+import {
+  DIFFICULTY_LABELS,
+  PENDING_REVIEW_STATUSES,
+  REVIEW_PENDING_LABEL,
+  REVIEW_STATUS_LABELS,
+} from "../constants";
+import type { ResultReviewAnswerPage, ResultReviewItem } from "../types";
 import type { ExamSessionQuestionType } from "@/features/exam-session/types";
 import { ImageQuestionContent } from 
 "@/features/exam-bank/components/ImageQuestionContent";
@@ -53,10 +60,28 @@ const STATUS_STYLES: Record<
   },
 };
 
+const PENDING_STYLE: {
+  badge: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconClass: string;
+  bar: string;
+} = {
+  badge: "bg-amber-500/10 text-amber-600 ring-amber-500/30",
+  icon: Hourglass,
+  iconClass: "text-amber-500",
+  bar: "bg-amber-500",
+};
+
 function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionCardProps) {
   const [open, setOpen] = useState(false);
   const status = STATUS_STYLES[item.status];
-  const StatusIcon = status.icon;
+  const isPendingReview =
+    item.gradingStatus != null && PENDING_REVIEW_STATUSES.includes(item.gradingStatus);
+  const presentation = isPendingReview ? PENDING_STYLE : status;
+  const StatusIcon = presentation.icon;
+  const statusLabel = isPendingReview
+    ? REVIEW_PENDING_LABEL
+    : REVIEW_STATUS_LABELS[item.status];
   const difficultyLabel = DIFFICULTY_LABELS[item.difficulty] ?? DIFFICULTY_LABELS.medium;
   const structuredDoc =
     item.questionFormat === "structured"
@@ -82,7 +107,7 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
           <span
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-              status.badge,
+              presentation.badge,
             )}
           >
             <StatusIcon className="h-5 w-5" />
@@ -92,7 +117,7 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
               سؤال {index + 1}
             </p>
             <p className="truncate text-xs font-semibold text-muted-foreground">
-              {REVIEW_STATUS_LABELS[item.status]} · {item.points} درجة
+              {statusLabel} · {item.points} درجة
             </p>
           </div>
         </div>
@@ -111,7 +136,7 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
       </button>
 
       {/* Accent bar */}
-      <div className={cn("h-0.5 w-full", status.bar, !open && "opacity-60")} />
+      <div className={cn("h-0.5 w-full", presentation.bar, !open && "opacity-60")} />
 
       {/* Expanded body */}
       <AnimatePresence initial={false}>
@@ -155,6 +180,8 @@ function ReviewQuestionCardInner({ item, index, revealCorrect }: ReviewQuestionC
                   studentAnswer={item.studentAnswer}
                   correctAnswer={item.correctAnswer}
                   revealCorrect={revealCorrect}
+                  answerPages={item.answerPages ?? []}
+                  pendingReview={isPendingReview}
                 />
               </div>
 
@@ -199,12 +226,16 @@ function QuestionOptions({
   studentAnswer,
   correctAnswer,
   revealCorrect,
+  answerPages,
+  pendingReview,
 }: {
   type: ExamSessionQuestionType;
   content: ResultReviewItem["content"];
   studentAnswer: string[] | string | null;
   correctAnswer: string[] | string | null;
   revealCorrect: boolean;
+  answerPages: ResultReviewAnswerPage[];
+  pendingReview: boolean;
 }) {
   if (type === "true_false") {
     const selected = typeof studentAnswer === "string" ? studentAnswer : null;
@@ -281,15 +312,18 @@ function QuestionOptions({
 
     return (
       <div className="space-y-3">
+        {answerPages.length > 0 && <AnswerPagesGallery pages={answerPages} />}
         <div className="rounded-2xl border-2 border-border/60 bg-background/50 p-4">
           <p className="text-xs font-bold text-muted-foreground">إجابتك</p>
           <p className="mt-2 text-sm font-semibold leading-relaxed text-foreground whitespace-pre-wrap">
             {student || "—"}
           </p>
         </div>
-        <p className="text-[11px] font-medium text-muted-foreground/70">
-          هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
-        </p>
+        {pendingReview && (
+          <p className="text-[11px] font-medium text-muted-foreground/70">
+            هذه الإجابة تحتاج مراجعة يدوية من المعلّم.
+          </p>
+        )}
       </div>
     );
   }
@@ -337,6 +371,80 @@ function QuestionOptions({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function AnswerPagesGallery({ pages }: { pages: ResultReviewAnswerPage[] }) {
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const objectUrlsRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void Promise.all(
+      pages.map(async (page) => {
+        if (objectUrlsRef.current[page.id]) return;
+        try {
+          const { data } = await api.get(page.url, {
+            responseType: "blob",
+            timeout: 60_000,
+          });
+          if (cancelled) return;
+          const objectUrl = URL.createObjectURL(data as Blob);
+          objectUrlsRef.current[page.id] = objectUrl;
+          setPreviews((prev) => ({ ...prev, [page.id]: objectUrl }));
+        } catch {
+          return;
+        }
+      }),
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pages]);
+
+  useEffect(() => {
+    const urls = objectUrlsRef.current;
+    return () => {
+      for (const url of Object.values(urls)) URL.revokeObjectURL(url);
+    };
+  }, []);
+
+  return (
+    <div>
+      <p className="text-xs font-bold text-muted-foreground">صفحات إجابتك</p>
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {pages.map((page) => {
+          const preview = previews[page.id];
+
+          return (
+            <button
+              key={page.id}
+              type="button"
+              disabled={!preview}
+              onClick={() =>
+                preview &&
+                window.open(preview, "_blank", "noopener,noreferrer")
+              }
+              className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-border/60 bg-muted"
+              title={`صفحة ${page.pageOrder}`}
+            >
+              {preview && (
+                <img
+                  src={preview}
+                  alt={`صفحة الإجابة ${page.pageOrder}`}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+              )}
+              <span className="absolute start-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white">
+                {page.pageOrder}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

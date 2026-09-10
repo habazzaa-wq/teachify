@@ -10,6 +10,12 @@ export interface ResultReviewOption {
   correct?: boolean;
 }
 
+export interface ResultReviewAnswerPage {
+  id: string;
+  pageOrder: number;
+  url: string;
+}
+
 export interface ResultReviewContent {
   options?: ResultReviewOption[];
   correct?: string;
@@ -38,6 +44,9 @@ export interface ResultReviewItem {
   questionFormat?: "text" | "image" | "structured";
   scanUrl?: string | null;
   contentDocument?: import("@/components/structured-question").QuestionDocument | null;
+  answerMode?: string | null;
+  gradingStatus?: string | null;
+  answerPages?: ResultReviewAnswerPage[];
 }
 
 export interface ResultAttemptMeta {
