@@ -6,6 +6,7 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamAttemptAnswer;
 use App\Models\TenantUser;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -82,10 +83,32 @@ class ExamManualGradingService
             // its submit-time recompute on (ExamGradingService.php:36):
             // 'in_progress' / 'grading' are pre-submission states whose later
             // grade() would recompute from scratch and overwrite this award.
-            if (in_array($locked->status, ['in_progress', 'grading'], true)) {
-                throw ValidationException::withMessages([
-                    'attempt' => ['Cannot grade an answer before the student has submitted the attempt.'],
-                ]);
+            //
+            // Attempts that got STUCK before finalization are still gradeable:
+            //  - "grading" was already claimed for submission (student submit or
+            //    expiry reconcile) and is frozen — the student can no longer
+            //    answer, only the queued grade() is pending;
+            //  - an expired "in_progress" attempt is over — every session write
+            //    reconciles it to "grading"/"submitted".
+            // In both cases this transaction finalizes the attempt (below) so
+            // the pending grade() becomes a no-op and can never overwrite the
+            // award. Only a genuinely still-answerable "in_progress" attempt is
+            // blocked (B1 §4.3): the student is still taking the exam.
+            $finalizing = false;
+
+            if ($locked->status === 'grading') {
+                $finalizing = true;
+            } elseif ($locked->status === 'in_progress') {
+                if ($locked->timer_ends_at === null
+                    || ! now()->greaterThanOrEqualTo($locked->timer_ends_at)) {
+                    throw ValidationException::withMessages([
+                        'attempt' => ['Cannot grade an answer before the student has submitted the attempt.'],
+                    ]);
+                }
+
+                $finalizing = true;
+            } elseif ($locked->status !== 'submitted') {
+                abort(404);
             }
 
             // (2) Guards are evaluated under the lock so the grading state is
@@ -106,6 +129,22 @@ class ExamManualGradingService
 
             // (4) Recompute totals from the locked attempt's answer set.
             $recalculated = $this->recalculate($locked);
+
+            // (4b) Finalize a stuck pre-submission attempt now that the teacher
+            // has awarded it: the frozen ("grading") or expired attempt is
+            // effectively finished, and marking it "submitted" makes any pending
+            // GradeExamAttemptJob a no-op instead of an overwrite of this award.
+            if ($finalizing && $recalculated->status !== 'submitted') {
+                $submittedAt = now();
+
+                $recalculated->forceFill([
+                    'status' => 'submitted',
+                    'submitted_at' => $recalculated->submitted_at ?? $submittedAt,
+                    'duration_seconds' => $recalculated->duration_seconds ?? $this->computeDuration($recalculated, $submittedAt),
+                ])->save();
+
+                $recalculated = $recalculated->refresh();
+            }
 
             return [
                 'answer' => $answer->refresh()->load('grader.user'),
@@ -223,6 +262,24 @@ class ExamManualGradingService
         ])->save();
 
         return $attempt->refresh();
+    }
+
+    /**
+     * Same duration-accounting as ExamGradingService::computeDuration() when
+     * finalizing a stuck attempt: cap the reported session at the timer if the
+     * student overran it.
+     */
+    private function computeDuration(ExamAttempt $attempt, CarbonInterface $submittedAt): ?int
+    {
+        if ($attempt->started_at === null) {
+            return null;
+        }
+
+        $end = $attempt->timer_ends_at !== null && $submittedAt->greaterThan($attempt->timer_ends_at)
+            ? $attempt->timer_ends_at
+            : $submittedAt;
+
+        return max(0, (int) $end->diffInSeconds($attempt->started_at));
     }
 
     /**

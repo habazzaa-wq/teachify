@@ -15,6 +15,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Services\ExamBank\ExamGradingService;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -296,6 +297,65 @@ class ExamManualGradingTest extends TestCase
         $this->assertSame(8.0, (float) $response['answer']['manualScore']);
         $this->assertSame(18.0, (float) $response['attempt']['score']);
         $this->assertSame(60.0, (float) $response['attempt']['percentage']);
+    }
+
+    public function test_teacher_grades_expired_in_progress_attempt_and_it_finalizes(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture(false);
+
+        // The student answered, the timer ran out, but the attempt was never
+        // reconciled (student never came back) — it is stuck in "in_progress"
+        // with pending answers. This used to block the teacher forever.
+        ExamAttempt::query()->whereKey($attemptId)->update([
+            'timer_ends_at' => now()->subMinutes(10),
+        ]);
+
+        Sanctum::actingAs($admin->user);
+
+        $response = $this->putJson("/api/v1/exam-attempts/{$attemptId}/answers/{$essayAnswerId}/grade", [
+            'manual_score' => 8,
+        ], $this->tenantHeader($tenant))->assertOk()->json('data');
+
+        $this->assertSame('graded', $response['answer']['gradingStatus']);
+        $this->assertSame(18.0, (float) $response['attempt']['score']);
+        $this->assertSame(60.0, (float) $response['attempt']['percentage']);
+
+        // The attempt was finalized in the same transaction: pending queued
+        // grade() work must never overwrite the teacher's award afterwards.
+        $attempt = ExamAttempt::query()->whereKey($attemptId)->firstOrFail();
+        $this->assertSame('submitted', $attempt->status);
+        $this->assertNotNull($attempt->submitted_at);
+        $this->assertGreaterThan(0, $attempt->duration_seconds);
+    }
+
+    public function test_teacher_grades_frozen_grading_attempt_and_later_job_is_a_noop(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture(false);
+
+        // The student submitted but grading is frozen: status "grading" (the
+        // claim submit()/expiry-reconcile makes before the job grades). If the
+        // GradeExamAttemptJob never ran (or crashed), the teacher was stuck.
+        ExamAttempt::query()->whereKey($attemptId)->update(['status' => 'grading']);
+
+        Sanctum::actingAs($admin->user);
+
+        $this->putJson("/api/v1/exam-attempts/{$attemptId}/answers/{$essayAnswerId}/grade", [
+            'manual_score' => 8,
+        ], $this->tenantHeader($tenant))->assertOk()->json('data');
+
+        $attempt = ExamAttempt::query()->whereKey($attemptId)->firstOrFail();
+        $this->assertSame('submitted', $attempt->status);
+
+        // The queued job would now run grade(): it must be a no-op for a
+        // submitted attempt and must NOT recompute the essay as 0 points.
+        app(ExamGradingService::class)->grade($attempt);
+
+        $attempt->refresh();
+        $this->assertSame('submitted', $attempt->status);
+        $this->assertSame(18.0, (float) $attempt->score);
+        $this->assertSame(60.0, (float) $attempt->percentage);
+        $this->assertSame(8.0, (float) ExamAttemptAnswer::query()->whereKey($essayAnswerId)->value('manual_score'));
+        $this->assertSame('graded', ExamAttemptAnswer::query()->whereKey($essayAnswerId)->value('grading_status'));
     }
 
     public function test_manual_score_validation_caps_at_question_points(): void
