@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCheck, FileText, Info, Loader2, Save } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  CheckCheck,
+  FileText,
+  Info,
+  Keyboard,
+  Loader2,
+  Save,
+} from "lucide-react";
 import { AppInput, AppTextarea } from "@/components/ui";
 import { ScanImageViewer } from "@/features/exam-bank/components/ScanImageViewer";
 import { StudioButton, StudioChip, StudioSurfaceCard } from "@/components/studio";
@@ -58,6 +65,10 @@ function GradingWorkspaceInner({
   const [clientError, setClientError] = useState<string | null>(null);
   const [pageUrls, setPageUrls] = useState<Record<string, string>>({});
   const [pagesLoading, setPagesLoading] = useState(() => pages.length > 0);
+  const [zoom, setZoom] = useState(1);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  const scoreInputRef = useRef<HTMLInputElement>(null);
 
   const safePageIndex = Math.min(pageIndex, Math.max(pages.length - 1, 0));
   const currentPage = pages[safePageIndex] ?? null;
@@ -104,6 +115,121 @@ function GradingWorkspaceInner({
     setClientError(null);
     onSave({ manualScore: parsed.value, feedback: feedback.trim() });
   };
+
+  // Mirrors for the keyboard listener (subscribed once at mount) so it always
+  // reads the latest score / save state. Updated in an effect, never during
+  // render — the React-compiler-safe pattern.
+  const scoreRef = useRef(score);
+  const actionsRef = useRef({ handleSubmit: () => {}, onPrev, onNext, busy: false });
+
+  useEffect(() => {
+    scoreRef.current = score;
+    actionsRef.current = { handleSubmit, onPrev, onNext, busy: answerLoading || savePending };
+  });
+
+  // Auto-focus the score field as soon as the answer is usable so the teacher
+  useEffect(() => {
+    if (!answerLoading && !savePending) scoreInputRef.current?.focus();
+  }, [answerLoading, savePending]);
+
+  /* Keyboard grading shortcuts (best-effort modeless; ignored while typing in
+     an input/textarea so the browser editing behavior is never hijacked):
+       Enter        → save + advance       Ctrl/⌘+Enter → save (in textarea too)
+       ← →         → pages (RTL: ← next, → prev)      ↓ ↑ → next / previous answer
+       + / −        → zoom in / out       0 → reset zoom            f → fullscreen */
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+    };
+
+    const guard = (fn: () => void) => {
+      if (actionsRef.current.busy) return;
+      fn();
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey) return;
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          guard(() => actionsRef.current.handleSubmit());
+        }
+        return;
+      }
+
+      if (isEditableTarget(e.target)) return;
+
+      switch (e.key) {
+        case "Enter": {
+          // Let buttons/links keep their native Enter activation.
+          if (
+            e.target instanceof HTMLElement &&
+            (e.target.tagName === "BUTTON" || e.target.tagName === "A" || e.target.getAttribute("role") === "button")
+          ) {
+            return;
+          }
+          e.preventDefault();
+          if (actionsRef.current.busy) break;
+          const parsed = parseScoreInput(scoreRef.current, maxPoints);
+          if (parsed.ok) actionsRef.current.handleSubmit();
+          else scoreInputRef.current?.focus();
+          break;
+        }
+        case "ArrowLeft":
+          if (pages.length > 1) {
+            e.preventDefault();
+            guard(() => setPageIndex((i) => Math.min(pages.length - 1, i + 1)));
+          }
+          break;
+        case "ArrowRight":
+          if (pages.length > 1) {
+            e.preventDefault();
+            guard(() => setPageIndex((i) => Math.max(0, i - 1)));
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          guard(() => actionsRef.current.onNext?.());
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          guard(() => actionsRef.current.onPrev?.());
+          break;
+        case "+":
+        case "=":
+          if (pages.length > 0) {
+            e.preventDefault();
+            guard(() => setZoom((z) => Math.min(z + 0.25, 3)));
+          }
+          break;
+        case "-":
+          if (pages.length > 0) {
+            e.preventDefault();
+            guard(() => setZoom((z) => Math.max(z - 0.25, 0.5)));
+          }
+          break;
+        case "0":
+          if (pages.length > 0) {
+            e.preventDefault();
+            guard(() => setZoom(1));
+          }
+          break;
+        case "f":
+        case "F":
+          if (pages.length > 0) {
+            e.preventDefault();
+            guard(() => setFullscreen((v) => !v));
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [maxPoints, pages.length]);
 
   const isGraded = answer?.gradingStatus === "graded";
 
@@ -188,7 +314,15 @@ function GradingWorkspaceInner({
 
           <div className="w-full overflow-hidden rounded-xl border border-studio-border bg-studio-soft">
             {currentUrl ? (
-              <ScanImageViewer src={currentUrl} alt={`صفحة ${safePageIndex + 1}`} maxHeight={520} />
+              <ScanImageViewer
+                src={currentUrl}
+                alt={`صفحة ${safePageIndex + 1}`}
+                maxHeight={520}
+                zoom={zoom}
+                onZoomChange={setZoom}
+                fullscreen={fullscreen}
+                onFullscreenChange={setFullscreen}
+              />
             ) : (
               <div className="flex min-h-[260px] items-center justify-center p-8">
                 {pagesLoading ? (
@@ -230,10 +364,11 @@ function GradingWorkspaceInner({
                   step="any"
                   placeholder={String(maxPoints)}
                   value={score}
+                  ref={scoreInputRef}
                   disabled={answerLoading || savePending}
                   onChange={(e) => setScore(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSubmit();
+                    if (e.key === "Enter" && !savePending && !answerLoading) handleSubmit();
                   }}
                 />
                 <span className="shrink-0 text-xs text-studio-fg-muted">
@@ -257,6 +392,12 @@ function GradingWorkspaceInner({
                 value={feedback}
                 disabled={answerLoading || savePending}
                 onChange={(e) => setFeedback(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    if (!savePending && !answerLoading) handleSubmit();
+                  }
+                }}
                 className="resize-none"
               />
             </div>
@@ -278,6 +419,48 @@ function GradingWorkspaceInner({
             </p>
           </div>
         </StudioSurfaceCard>
+      </div>
+
+      {/* ----------------------------- keyboard shortcut bar ----------------------------- */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-studio-border bg-studio-surface/60 px-4 py-2 text-[11px] text-studio-fg-muted md:flex">
+        <span className="inline-flex items-center gap-1.5 font-medium text-studio-fg-subtle">
+          <Keyboard className="h-3.5 w-3.5" />
+          اختصارات التصحيح
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">Enter</kbd>
+          حفظ والانتقال
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">Ctrl</kbd>
+          +
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">Enter</kbd>
+          حفظ من الملاحظات
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">←</kbd>
+          /
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">→</kbd>
+          صفحات الإجابة
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">↓</kbd>
+          /
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">↑</kbd>
+          إجابة تالية/سابقة
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">+</kbd>
+          /
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">−</kbd>
+          تكبير/تصغير (
+          <kbd className="rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">0</kbd>
+          ضبط)
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="flex items-center gap-1 rounded-md border border-studio-border bg-studio-soft px-1.5 py-0.5 text-[10px] text-studio-fg-muted">F</kbd>
+          ملء الشاشة
+        </span>
       </div>
     </div>
   );

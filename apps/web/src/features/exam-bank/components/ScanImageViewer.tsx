@@ -18,6 +18,15 @@ interface ScanImageViewerProps {
   maxWidth?: number;
   maxHeight?: number;
   showControls?: boolean;
+  /**
+   * Optional controlled zoom (1 = fit). When omitted the viewer keeps its own
+   * internal zoom state; when provided, the parent owns the value.
+   */
+  zoom?: number;
+  onZoomChange?: (zoom: number) => void;
+  /** Optional controlled fullscreen flag (defaults to internal state). */
+  fullscreen?: boolean;
+  onFullscreenChange?: (fullscreen: boolean) => void;
 }
 
 export function ScanImageViewer({
@@ -26,44 +35,74 @@ export function ScanImageViewer({
   className,
   maxHeight = 500,
   showControls = true,
+  zoom,
+  onZoomChange,
+  fullscreen,
+  onFullscreenChange,
 }: ScanImageViewerProps) {
-  const [scale, setScale] = useState(1);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [internalZoom, setInternalZoom] = useState(1);
+  const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setScale(1);
+  const scale = zoom ?? internalZoom;
+  const fs = fullscreen ?? internalFullscreen;
+
+  // Reset internal zoom/fullscreen / load state when src changes (the
+  // render-time state-adjust pattern recommended by the React Compiler
+  // rules; avoids set-state-in-effect).
+  const [prevSrc, setPrevSrc] = useState(src);
+  if (prevSrc !== src) {
+    setPrevSrc(src);
+    setInternalZoom(1);
     setLoaded(false);
     setError(false);
-  }, [src]);
+  }
+
+  const applyZoom = useCallback(
+    (next: number) => {
+      setInternalZoom(next);
+      onZoomChange?.(next);
+    },
+    [onZoomChange],
+  );
+
+  const applyFullscreen = useCallback(
+    (next: boolean) => {
+      setInternalFullscreen(next);
+      onFullscreenChange?.(next);
+    },
+    [onFullscreenChange],
+  );
 
   const handleZoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev + 0.25, 3));
-  }, []);
+    applyZoom(Math.min(scale + 0.25, 3));
+  }, [applyZoom, scale]);
 
   const handleZoomOut = useCallback(() => {
-    setScale((prev) => Math.max(prev - 0.25, 0.5));
-  }, []);
+    applyZoom(Math.max(scale - 0.25, 0.5));
+  }, [applyZoom, scale]);
 
   const handleResetZoom = useCallback(() => {
-    setScale(1);
-  }, []);
+    applyZoom(1);
+  }, [applyZoom]);
 
   const handleToggleFullscreen = useCallback(() => {
-    setFullscreen((prev) => !prev);
-  }, []);
+    applyFullscreen(!fs);
+  }, [applyFullscreen, fs]);
 
   useEffect(() => {
-    if (!fullscreen) return;
+    if (!fs) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFullscreen(false);
+      if (e.key === "Escape") applyFullscreen(false);
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [fullscreen]);
+  }, [fs, applyFullscreen]);
+
+  const fuzzy = useCallback((a: number, b: number) => Math.abs(a - b) < 0.001, []);
 
   if (error) {
     return (
@@ -78,7 +117,7 @@ export function ScanImageViewer({
       ref={containerRef}
       className={cn(
         "relative overflow-hidden rounded-xl border border-studio-border bg-studio-soft",
-        fullscreen
+        fs
           ? "fixed inset-0 z-50 rounded-none border-0 bg-black/95 flex items-center justify-center"
           : "",
         className,
@@ -87,9 +126,9 @@ export function ScanImageViewer({
       <div
         className={cn(
           "flex items-center justify-center overflow-auto",
-          fullscreen ? "w-full h-full p-4" : "",
+          fs ? "w-full h-full p-4" : "",
         )}
-        style={fullscreen ? {} : { maxHeight }}
+        style={fs ? {} : { maxHeight }}
       >
         {!loaded && !error && (
           <div className="flex items-center justify-center p-12">
@@ -106,7 +145,7 @@ export function ScanImageViewer({
           className={cn(
             "transition-transform duration-200 ease-out",
             !loaded && "hidden",
-            fullscreen ? "max-h-[90vh] max-w-[90vw]" : "w-full",
+            fs ? "max-h-[90vh] max-w-[90vw]" : "w-full",
           )}
           style={{
             objectFit: "contain",
@@ -120,7 +159,7 @@ export function ScanImageViewer({
         <div
           className={cn(
             "absolute flex items-center gap-1 rounded-lg border border-studio-border bg-background/90 p-1 shadow-sm backdrop-blur-sm",
-            fullscreen ? "bottom-6 left-1/2 -translate-x-1/2" : "bottom-2 left-2",
+            fs ? "bottom-6 left-1/2 -translate-x-1/2" : "bottom-2 left-2",
           )}
         >
           <button
@@ -139,7 +178,7 @@ export function ScanImageViewer({
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
-          {scale !== 1 && (
+          {!fuzzy(scale, 1) && (
             <button
               type="button"
               onClick={handleResetZoom}
@@ -154,9 +193,9 @@ export function ScanImageViewer({
             type="button"
             onClick={handleToggleFullscreen}
             className="flex h-7 w-7 items-center justify-center rounded-md text-studio-fg-muted transition-colors hover:bg-studio-soft hover:text-studio-fg"
-            aria-label={fullscreen ? "تصغير" : "ملء الشاشة"}
+            aria-label={fs ? "تصغير" : "ملء الشاشة"}
           >
-            {fullscreen ? (
+            {fs ? (
               <Minimize2 className="h-3.5 w-3.5" />
             ) : (
               <Maximize2 className="h-3.5 w-3.5" />
@@ -165,7 +204,7 @@ export function ScanImageViewer({
         </div>
       )}
 
-      {fullscreen && (
+      {fs && (
         <button
           type="button"
           onClick={handleToggleFullscreen}
