@@ -11,6 +11,14 @@ function answerKey(attemptId: string | number | null, examQuestionId: string | n
   return [MANUAL_GRADING_QUERY_KEY, "answer", attemptId, examQuestionId];
 }
 
+export function useGradingOverview() {
+  return useQuery({
+    queryKey: [MANUAL_GRADING_QUERY_KEY, "overview"],
+    queryFn: () => manualGradingService.gradingOverview(),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useGradingQueue(examId: string | number | null) {
   return useQuery({
     queryKey: [MANUAL_GRADING_QUERY_KEY, "queue", examId],

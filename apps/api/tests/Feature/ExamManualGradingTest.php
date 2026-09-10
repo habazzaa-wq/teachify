@@ -391,6 +391,47 @@ class ExamManualGradingTest extends TestCase
         $this->getJson("/api/v1/exams/{$exam}/grading-queue", $this->tenantHeader($foreignTenant))->assertNotFound();
     }
 
+    public function test_grading_overview_lists_exam_with_pending_count(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture();
+
+        Sanctum::actingAs($admin->user);
+
+        $overview = $this->getJson("/api/v1/exam-bank/grading/overview", $this->tenantHeader($tenant))
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $overview);
+        $this->assertSame((string) $exam, $overview[0]['examId']);
+        $this->assertSame('Grading Exam', $overview[0]['title']);
+        $this->assertSame(2, $overview[0]['pendingCount']);
+
+        // The auto-graded MCQ never contributes to the pending count.
+        $this->putJson("/api/v1/exam-attempts/{$attemptId}/answers/{$essayAnswerId}/grade", [
+            'manual_score' => 8,
+        ], $this->tenantHeader($tenant))->assertOk();
+
+        $after = $this->getJson("/api/v1/exam-bank/grading/overview", $this->tenantHeader($tenant))
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $after);
+        $this->assertSame(1, $after[0]['pendingCount']);
+    }
+
+    public function test_grading_overview_is_empty_for_students(): void
+    {
+        [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture();
+
+        Sanctum::actingAs($student->user);
+
+        $overview = $this->getJson("/api/v1/exam-bank/grading/overview", $this->tenantHeader($tenant))
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame([], $overview);
+    }
+
     public function test_unauthenticated_grade_is_denied(): void
     {
         [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture();

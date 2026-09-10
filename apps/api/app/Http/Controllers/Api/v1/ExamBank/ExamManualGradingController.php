@@ -81,6 +81,19 @@ class ExamManualGradingController extends Controller
     }
 
     /**
+     * Grading hub: exams with answers awaiting teacher review, each with its
+     * pending count. Authorized per exam (ExamPolicy::update only, matching
+     * `pendingQueue`), so the hub never advertises exams the caller cannot
+     * actually grade.
+     */
+    public function overview(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->grading->pendingOverview(),
+        ]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function gradePayload(ExamAttemptAnswer $answer, ExamAttempt $attempt): array

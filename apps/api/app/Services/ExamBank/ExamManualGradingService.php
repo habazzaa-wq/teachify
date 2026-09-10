@@ -8,6 +8,7 @@ use App\Models\ExamAttemptAnswer;
 use App\Models\TenantUser;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -128,6 +129,45 @@ class ExamManualGradingService
             ->with(['attempt.user', 'examQuestion.question'])
             ->orderBy('exam_attempt_answers.id')
             ->get();
+    }
+
+    /**
+     * Per-exam pending-review counts for the grading hub: only exams the
+     * caller may actually grade (same data gate as pendingReviewAnswers' route
+     * — ExamPolicy::update). Exams without pending work are omitted.
+     *
+     * @return array<int, array{examId: string, title: string, pendingCount: int}>
+     */
+    public function pendingOverview(): array
+    {
+        $tenantId = currentTenant()->id;
+
+        $rows = ExamAttemptAnswer::query()
+            ->selectRaw('exam_attempts.exam_id as exam_id, COUNT(*) as pending_count')
+            ->join('exam_attempts', 'exam_attempts.id', '=', 'exam_attempt_answers.exam_attempt_id')
+            ->where('exam_attempt_answers.tenant_id', $tenantId)
+            ->whereIn('exam_attempt_answers.grading_status', self::PENDING_REVIEW_STATUSES)
+            ->where('exam_attempts.tenant_id', $tenantId)
+            ->groupBy('exam_attempts.exam_id')
+            ->get()
+            ->keyBy('exam_id');
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        return Exam::query()
+            ->whereIn('id', $rows->keys())
+            ->get()
+            ->filter(fn (Exam $exam): bool => Gate::allows('update', $exam))
+            ->map(fn (Exam $exam): array => [
+                'examId' => (string) $exam->id,
+                'title' => $exam->title,
+                'pendingCount' => (int) $rows[$exam->id]->pending_count,
+            ])
+            ->sortByDesc('pendingCount')
+            ->values()
+            ->all();
     }
 
     /**

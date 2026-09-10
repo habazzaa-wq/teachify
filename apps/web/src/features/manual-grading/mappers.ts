@@ -1,4 +1,4 @@
-import type { GradeResult, GradingAnswer, GradingQueueItem, Raw } from "./types";
+import type { GradeResult, GradingAnswer, GradingOverviewItem, GradingQueueItem, Raw } from "./types";
 
 function toNullableNumber(value: unknown): number | null {
   return value === null || value === undefined ? null : Number(value);
@@ -26,6 +26,15 @@ export function mapQueueItem(raw: Raw): GradingQueueItem {
       : null,
     answeredAt: toNullableString(raw.answeredAt),
     scoreUrl: String(raw.scoreUrl ?? ""),
+  };
+}
+
+/** Map one row of the grading hub (`GET /exam-bank/grading/overview`). */
+export function mapOverviewItem(raw: Raw): GradingOverviewItem {
+  return {
+    examId: String(raw.examId),
+    title: String(raw.title ?? "اختبار"),
+    pendingCount: Number(raw.pendingCount ?? 0),
   };
 }
 

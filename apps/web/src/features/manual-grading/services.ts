@@ -1,12 +1,18 @@
 import { api } from "@/services/api";
-import { mapGradeResult, mapGradingAnswer, mapQueueItem } from "./mappers";
-import type { GradeResult, GradingAnswer, GradingQueueItem } from "./types";
+import { mapGradeResult, mapGradingAnswer, mapOverviewItem, mapQueueItem } from "./mappers";
+import type { GradeResult, GradingAnswer, GradingOverviewItem, GradingQueueItem } from "./types";
 
 export const manualGradingService = {
   /** Pending / partially-graded manual-review items for an exam. */
   async gradingQueue(examId: string | number): Promise<GradingQueueItem[]> {
     const { data } = await api.get(`/exams/${examId}/grading-queue`);
     return (data.data ?? []).map((item: Record<string, unknown>) => mapQueueItem(item));
+  },
+
+  /** Exams with answers awaiting teacher review, each with its pending count. */
+  async gradingOverview(): Promise<GradingOverviewItem[]> {
+    const { data } = await api.get("/exam-bank/grading/overview");
+    return (data.data ?? []).map((item: Record<string, unknown>) => mapOverviewItem(item));
   },
 
   /** Teacher-facing answer view (pages + current grade state) for one exam question. */

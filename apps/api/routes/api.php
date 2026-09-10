@@ -703,6 +703,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/analytics/overview', [ExamAnalyticsController::class, 'overview']);
             Route::get('/exams/{exam}/analytics', [ExamAnalyticsController::class, 'exam']);
+            Route::get('/grading/overview', [ExamManualGradingController::class, 'overview']);
         });
 
         Route::get('/categories/tree', [CategoryController::class, 'tree']);

@@ -5,5 +5,6 @@ export * from "./services";
 export * from "./hooks";
 
 export { ManualGradingScreen } from "./components/ManualGradingScreen";
+export { GradingOverviewScreen } from "./components/GradingOverviewScreen";
 export { QueueList } from "./components/QueueList";
 export { GradingWorkspace } from "./components/GradingWorkspace";

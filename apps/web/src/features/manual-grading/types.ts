@@ -46,6 +46,13 @@ export interface GradingAnswer {
   gradedAt: string | null;
 }
 
+/** One exam in the grading hub: how many answers are awaiting the teacher. */
+export interface GradingOverviewItem {
+  examId: string;
+  title: string;
+  pendingCount: number;
+}
+
 /** Shape returned by `PUT /exam-attempts/{attempt}/answers/{answer}/grade`. */
 export interface GradeResult {
   answerId: string;

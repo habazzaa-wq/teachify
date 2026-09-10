@@ -25,6 +25,7 @@ export const routes = {
   seoSettings: "/teacher/seo/settings",
   dashboardMedia: "/teacher/media",
   dashboardExams: "/teacher/exams",
+  dashboardGrading: "/teacher/grading",
   dashboardSubjects: "/teacher/subjects",
   dashboardRechargeCodes: "/teacher/recharge-codes",
   dashboardDiscussions: "/teacher/discussions",

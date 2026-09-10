@@ -25,6 +25,7 @@ import {
   CreditCard,
   ImageIcon,
   Search,
+  ClipboardCheck,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -212,6 +213,16 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith("/teacher/exams")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate(routes.dashboardExams)}
+              />
+              <StudioSidebarItem
+                icon={<ClipboardCheck className="h-4 w-4" />}
+                label="تصحيح إجابات الطلاب"
+                active={
+                  pathname.startsWith(routes.dashboardGrading) ||
+                  pathname.includes("/grading")
+                }
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardGrading)}
               />
               <StudioSidebarItem
                 icon={<BookOpen className="h-4 w-4" />}
