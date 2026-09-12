@@ -271,7 +271,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       pathname === "/tenant-not-found";
 
     if (status === "idle") {
-      if (activeTenant && !isGuestRoute) {
+      // A signed-in teacher may open /tenant-login directly (new tab, manual
+      // URL, refresh). Re-bootstrap with the persisted token so TenantGuestRoute
+      // can send them straight back to the dashboard instead of showing the
+      // login form again. Guest routes without a stored token stay guests.
+      const canResumeSession =
+        pathname === routes.tenantLogin && Boolean(useAuthStore.getState().accessToken);
+
+      if (activeTenant && (!isGuestRoute || canResumeSession)) {
         void bootstrap();
       } else {
         setStatus("unauthenticated");
