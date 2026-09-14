@@ -369,7 +369,6 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
       alt={alt}
       loading="eager"
       decoding="async"
-      referrerPolicy="no-referrer"
       className="h-full w-full object-cover"
       onError={() => setStage(stage === "direct" ? "optimized" : "fallback")}
     />
