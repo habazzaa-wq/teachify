@@ -6,6 +6,7 @@ import {
   BookOpen,
   Wallet,
   ArrowLeft,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -23,16 +24,16 @@ import {
   AppProgress,
   AppEmptyState,
 } from "@/components/ui";
-import type { TeacherDashboardData } from "../types";
+import type { TopCourseItem } from "../types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface TopCoursesTableProps {
-  data: TeacherDashboardData;
+  courses: TopCourseItem[];
 }
 
-export function TopCoursesTable({ data }: TopCoursesTableProps) {
+export function TopCoursesTable({ courses }: TopCoursesTableProps) {
   const maxStudents = Math.max(
-    ...data.top_courses.map((course) => course.students),
+    ...courses.map((course) => course.students_period),
     1,
   );
 
@@ -53,7 +54,7 @@ export function TopCoursesTable({ data }: TopCoursesTableProps) {
         </div>
       </AppCardHeader>
       <AppCardContent className="p-0">
-        {data.top_courses.length === 0 ? (
+        {courses.length === 0 ? (
           <AppEmptyState
             icon={BookOpen}
             title="لا توجد دورات بعد"
@@ -65,16 +66,16 @@ export function TopCoursesTable({ data }: TopCoursesTableProps) {
             <AppTableHeader>
               <AppTableRow className="hover:bg-transparent">
                 <AppTableHead className="px-6">الدورة</AppTableHead>
-                <AppTableHead className="text-center">الطلاب</AppTableHead>
+                <AppTableHead className="text-center">طلاب الفترة</AppTableHead>
                 <AppTableHead>نسبة الإتمام</AppTableHead>
-                <AppTableHead className="text-end">الإيرادات</AppTableHead>
+                <AppTableHead className="text-end">إيرادات الفترة</AppTableHead>
               </AppTableRow>
             </AppTableHeader>
             <AppTableBody>
-              {data.top_courses.map((course, index) => {
+              {courses.map((course, index) => {
                 const share =
                   maxStudents > 0
-                    ? Math.round((course.students / maxStudents) * 100)
+                    ? Math.round((course.students_period / maxStudents) * 100)
                     : 0;
 
                 return (
@@ -85,11 +86,12 @@ export function TopCoursesTable({ data }: TopCoursesTableProps) {
                           {index + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="max-w-[240px] truncate text-sm font-medium">
+                          <p className="max-w-[220px] truncate text-sm font-medium">
                             {course.title}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatNumber(course.students)} طالب
+                          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            {formatNumber(course.students_total)} طالب إجمالًا
                           </p>
                         </div>
                       </div>
@@ -97,11 +99,11 @@ export function TopCoursesTable({ data }: TopCoursesTableProps) {
                     <AppTableCell className="text-center">
                       <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center gap-1 text-sm font-medium">
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          {course.students}
+                          <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                          {course.students_period}
                         </div>
                         <span className="text-[10px] text-muted-foreground">
-                          {share}%
+                          {share}% من الأفضل
                         </span>
                       </div>
                     </AppTableCell>
@@ -127,8 +129,11 @@ export function TopCoursesTable({ data }: TopCoursesTableProps) {
                     <AppTableCell className="text-end">
                       <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums">
                         <Wallet className="h-3.5 w-3.5 text-success" />
-                        {formatCurrency(course.revenue)}
+                        {formatCurrency(course.revenue_period)}
                       </span>
+                      <p className="text-[10px] text-muted-foreground">
+                        الإجمالي {formatCurrency(course.revenue_total)}
+                      </p>
                     </AppTableCell>
                   </AppTableRow>
                 );

@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { RefreshCw, Download, CalendarDays } from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
 import {
   AppPage,
   AppPageHeader,
@@ -13,12 +13,16 @@ import {
 } from "@/components/ui";
 import { useDashboardStats } from "@/features/dashboard/hooks";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import { DashboardPeriodFilter } from "@/features/dashboard/components/DashboardPeriodFilter";
 import { DashboardMetricCards } from "@/features/dashboard/components/DashboardMetricCards";
 import { DashboardCharts } from "@/features/dashboard/components/DashboardCharts";
 import { TopCoursesTable } from "@/features/dashboard/components/TopCoursesTable";
+import { ExamPerformanceTable } from "@/features/dashboard/components/ExamPerformanceTable";
 import { DashboardActivity } from "@/features/dashboard/components/DashboardActivity";
 import { DashboardResources } from "@/features/dashboard/components/DashboardResources";
 import { DashboardSummary } from "@/features/dashboard/components/DashboardSummary";
+import { exportTeacherDashboardCsv } from "@/features/dashboard/export";
+import type { DashboardQueryParams } from "@/features/dashboard/types";
 
 function formatToday() {
   return new Intl.DateTimeFormat("ar-EG", {
@@ -30,11 +34,14 @@ function formatToday() {
 }
 
 function DashboardHomePage() {
-  const { data, isLoading, isError, refetch, isRefetching } =
-    useDashboardStats();
+  const [filters, setFilters] = useState<DashboardQueryParams>({
+    period: "all",
+  });
+  const { data, isLoading, isError, refetch, isFetching } =
+    useDashboardStats(filters);
   const { user } = useCurrentUser();
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <AppLoadingState label="جارٍ تحميل لوحة التحكم..." className="min-h-[60vh]" />
     );
@@ -51,8 +58,6 @@ function DashboardHomePage() {
     );
   }
 
-  const { stats } = data;
-
   return (
     <AppPage maxWidth="xl">
       <motion.div
@@ -62,49 +67,51 @@ function DashboardHomePage() {
       >
         <AppPageHeader
           title={`أهلًا ${user?.name ?? "أستاذي"} 👋`}
-          description={`إليك ملخص منصتك اليوم — ${formatToday()}`}
+          description={`إليك ملخص منصتك — ${formatToday()}`}
           actions={
             <>
               <AppButton
                 variant="outline"
                 size="sm"
                 onClick={() => void refetch()}
-                loading={isRefetching}
+                loading={isFetching}
               >
                 <RefreshCw className="h-4 w-4" />
                 تحديث
               </AppButton>
-              <AppButton variant="outline" size="sm">
+              <AppButton
+                variant="outline"
+                size="sm"
+                onClick={() => exportTeacherDashboardCsv(data)}
+              >
                 <Download className="h-4 w-4" />
-                تصدير التقرير
+                تصدير CSV
               </AppButton>
             </>
           }
         />
       </motion.div>
 
-      <AppSection>
-        <DashboardMetricCards stats={stats} />
+      <AppSection className="pt-0">
+        <DashboardPeriodFilter
+          value={filters}
+          onChange={setFilters}
+          disabled={isFetching}
+        />
+      </AppSection>
+
+      <AppSection
+        title="المؤشرات الرئيسية"
+        description="قيم مقيَّدة بالفترة المحددة، مع المقارنة بالفترة السابقة"
+      >
+        <DashboardMetricCards summary={data.summary} />
       </AppSection>
 
       <AppSection
         title="التحليلات والاتجاهات"
-        description="حركة المنصة خلال آخر 12 شهرًا"
-        actions={
-          <AppButton
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            asChild
-          >
-            <Link href="/teacher/analytics">
-              <CalendarDays className="h-3.5 w-3.5" />
-              التحليلات المتقدمة
-            </Link>
-          </AppButton>
-        }
+        description="سلسلة زمنية كاملة داخل الفترة المحددة"
       >
-        <DashboardCharts data={data} />
+        <DashboardCharts data={data} loading={isFetching} />
       </AppSection>
 
       <AppSection
@@ -113,22 +120,29 @@ function DashboardHomePage() {
       >
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <TopCoursesTable data={data} />
+            <TopCoursesTable courses={data.breakdowns.top_courses} />
           </div>
           <DashboardActivity items={data.recent_activity} />
         </div>
       </AppSection>
 
       <AppSection
-        title="ملخص إضافي"
-        description="مؤشرات سريعة لتتبع نمو منصتك"
+        title="تفاصيل الامتحانات والموارد"
+        description="تحليل أداء كل امتحان وحالة مصادر المنصة"
       >
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <DashboardSummary stats={stats} />
+            <ExamPerformanceTable exams={data.breakdowns.exam_performance} />
           </div>
-          <DashboardResources stats={stats} />
+          <DashboardResources summary={data.summary} />
         </div>
+      </AppSection>
+
+      <AppSection
+        title="المؤشرات الإجمالية"
+        description="أرقام من عمر المنصة بالكامل"
+      >
+        <DashboardSummary summary={data.summary} />
       </AppSection>
     </AppPage>
   );

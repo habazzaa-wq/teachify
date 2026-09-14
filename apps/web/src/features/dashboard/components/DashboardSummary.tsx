@@ -1,52 +1,105 @@
 "use client";
 
+import type { ComponentType } from "react";
 import {
+  Users,
+  Wallet,
   GraduationCap,
   CheckCircle2,
   ListChecks,
+  Award,
   Ticket,
   Percent,
-  Video,
 } from "lucide-react";
 import { AppMetric } from "@/components/ui/AppMetric";
-import type { DashboardStats } from "../types";
+import type { DashboardSummary } from "../types";
 
 interface DashboardSummaryProps {
-  stats: DashboardStats;
+  summary: DashboardSummary;
 }
 
-const items = [
-  { key: "enrollments_active" as const, label: "تسجيلات نشطة", icon: GraduationCap, color: "text-primary" },
-  { key: "enrollments_completed" as const, label: "دورات مكتملة", icon: CheckCircle2, color: "text-success" },
-  { key: "average_completion_rate" as const, label: "متوسط الإتمام", icon: Percent, color: "text-warning", suffix: "%" },
-  { key: "questions_total" as const, label: "أسئلة الامتحانات", icon: ListChecks, color: "text-info" },
-  { key: "recharge_codes_active" as const, label: "أكواد شحن مفعّلة", icon: Ticket, color: "text-primary" },
-  { key: "media_videos" as const, label: "فيديوهات تعليمية", icon: Video, color: "text-info" },
-];
+export function DashboardSummary({ summary }: DashboardSummaryProps) {
+  const { students, enrollments, exams, revenue, certificates, recharge_codes, completions, media } =
+    summary;
 
-export function DashboardSummary({ stats }: DashboardSummaryProps) {
+  const items: {
+    label: string;
+    value: number;
+    suffix?: string;
+    icon: ComponentType<{ className?: string }>;
+    color: string;
+  }[] = [
+    {
+      label: "إجمالي الطلاب",
+      value: students.total,
+      icon: Users,
+      color: "text-primary",
+    },
+    {
+      label: "إجمالي الإيرادات",
+      value: Math.round(revenue.total),
+      suffix: " ج.م",
+      icon: Wallet,
+      color: "text-success",
+    },
+    {
+      label: "تسجيلات نشطة حاليًا",
+      value: enrollments.active,
+      icon: GraduationCap,
+      color: "text-primary",
+    },
+    {
+      label: "دورات مكتملة كليًا",
+      value: enrollments.completed,
+      icon: CheckCircle2,
+      color: "text-success",
+    },
+    {
+      label: "متوسط الإتمام",
+      value: Math.round(completions.rate),
+      suffix: "%",
+      icon: Percent,
+      color: "text-warning",
+    },
+    {
+      label: "أسئلة الامتحانات",
+      value: exams.questions,
+      icon: ListChecks,
+      color: "text-info",
+    },
+    {
+      label: "إجمالي الشهادات",
+      value: certificates.total,
+      icon: Award,
+      color: "text-info",
+    },
+    {
+      label: "أكواد شحن مفعّلة",
+      value: recharge_codes.active,
+      icon: Ticket,
+      color: "text-primary",
+    },
+    {
+      label: "ملفات الوسائط",
+      value: media.total,
+      icon: GraduationCap,
+      color: "text-info",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       {items.map((item, index) => {
         const Icon = item.icon;
-        const value = stats[item.key];
-        const display =
-          item.key === "average_completion_rate"
-            ? Math.round(value)
-            : value;
-
         return (
           <div
-            key={item.key}
-            className={
-              "rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30 " +
-              (index % 2 === 0 ? "animate-fade-in-up" : "")
-            }
-            style={{ animationDelay: `${index * 60}ms` }}
+            key={item.label}
+            className={cnRow(index)}
+            style={{ animationDelay: `${index * 40}ms` }}
           >
             <AppMetric
               label={item.label}
-              value={display}
+              value={item.value}
               suffix={item.suffix}
               icon={() => <Icon className={`h-4 w-4 ${item.color}`} />}
             />
@@ -55,4 +108,10 @@ export function DashboardSummary({ stats }: DashboardSummaryProps) {
       })}
     </div>
   );
+}
+
+function cnRow(index: number): string {
+  const base =
+    "rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30";
+  return index % 2 === 0 ? `${base} animate-fade-in-up` : base;
 }
