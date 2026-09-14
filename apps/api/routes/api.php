@@ -122,6 +122,7 @@ use App\Http\Controllers\Api\v1\StudentController;
 use App\Http\Controllers\Api\v1\StudentCourseController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
+use App\Http\Controllers\Api\v1\TeacherDashboardController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -257,6 +258,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/analytics/overview', [TenantAnalyticsController::class, 'overview']);
         Route::get('/analytics/courses', [TenantAnalyticsController::class, 'courses']);
         Route::get('/analytics/learners', [TenantAnalyticsController::class, 'learners']);
+        Route::get('/dashboard/stats', [TeacherDashboardController::class, 'stats']);
         Route::get('/courses/{course}/analytics', [CourseAnalyticsController::class, 'show']);
         Route::get('/learners/{membership}/analytics', [LearnerAnalyticsController::class, 'show']);
         Route::get('/notifications', [NotificationController::class, 'index']);
