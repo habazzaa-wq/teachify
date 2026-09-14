@@ -40,6 +40,10 @@ export const routes = {
   dashboardSettings: "/teacher/settings",
   dashboardSiteSettings: "/teacher/settings/site",
   dashboardBranding: "/teacher/settings/branding",
+  teacherLegal: "/teacher/settings/legal",
+  teacherFooter: "/teacher/settings/footer",
+  publicPrivacy: "/privacy",
+  publicTerms: "/terms",
   // Student control panel (learner dashboard) — under /student/
   studentDashboard: "/student/dashboard",
   // Student community — under /community
