@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
         hostname: "**",
       },
     ],
+    formats: ["image/webp"],
   },
   async rewrites() {
     if (!isDev) return [];
