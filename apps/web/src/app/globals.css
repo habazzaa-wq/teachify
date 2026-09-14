@@ -937,6 +937,26 @@ body.page-is-scrolling .news-marquee-track {
   box-shadow: 0 0 32px var(--hero-glow, rgba(0,0,0,0.30)), 0 0 64px var(--hero-glow, rgba(0,0,0,0.12));
 }
 
+/* — Hero ID-card orbit icons: thick translucent ring + layered halo —
+   Uses --icon-ring-color (brand-primary / brand-secondary) which is set
+   inline per icon, so the ring always matches the icon's brand color. */
+.hero-icon-ring {
+  border: 5px solid color-mix(in srgb, var(--icon-ring-color, var(--brand-primary)) 30%, transparent);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--icon-ring-color, var(--brand-primary)) 13%, transparent),
+    0 0 26px -4px color-mix(in srgb, var(--icon-ring-color, var(--brand-primary)) 35%, transparent),
+    0 12px 26px -12px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease;
+}
+.hero-icon-ring:hover {
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, var(--icon-ring-color, var(--brand-primary)) 19%, transparent),
+    0 8px 34px -6px color-mix(in srgb, var(--icon-ring-color, var(--brand-primary)) 48%, transparent),
+    0 18px 40px -12px rgba(0, 0, 0, 0.45);
+}
+
 /* — Hero background decorations — */
 .hero-bg-orb {
   will-change: transform;
