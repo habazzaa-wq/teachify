@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api\v1\Media;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlatformBunnySetting;
+use App\Repositories\TenantRepository;
+use App\Services\Media\Providers\BunnyStorageProvider;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,21 +17,21 @@ class MediaProxyController extends Controller
 
     private const CACHE_CONTROL = 'public, max-age=2592000, stale-while-revalidate=86400';
 
-    public function serve(string $path): Response
+    public function serve(string $path, Request $request): Response
     {
-        $settings = PlatformBunnySetting::active();
+        $creds = $this->resolveCredentials($request);
 
-        if (! $settings || ! $settings->hasStorageCredentials()) {
+        if ($creds === null) {
             return response('Media service unavailable.', 503);
         }
 
         $normalizedPath = ltrim($path, '/');
-        $storageUrl = $this->buildStorageUrl($settings, $normalizedPath);
+        $storageUrl = $this->buildStorageUrl($creds, $normalizedPath);
 
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'AccessKey' => $settings->storage_zone_password,
+                    'AccessKey' => $creds['password'],
                 ])
                 ->withOptions(['stream' => true])
                 ->get($storageUrl);
@@ -96,9 +99,95 @@ class MediaProxyController extends Controller
         }
     }
 
-    private function buildStorageUrl(PlatformBunnySetting $settings, string $path): string
+    /**
+     * Resolve Bunny storage credentials the same way the rest of the media
+     * stack does: the tenant's own integration first, then the platform-wide
+     * settings. Media proxy requests arrive without authenticated context
+     * (they are plain <img> loads), so the tenant is derived from the headers
+     * Caddy forwards, mirroring IdentifyTenant.
+     *
+     * @return array{zone: string, password: string, region: string}|null
+     */
+    private function resolveCredentials(Request $request): ?array
     {
-        $region = strtolower(trim((string) ($settings->storage_zone_region ?: 'de')));
+        $tenantId = $this->resolveTenantId($request);
+
+        if ($tenantId !== null) {
+            try {
+                $config = app(BunnyStorageProvider::class)->configForTenant($tenantId);
+
+                $zone = $config['storage_zone_name'] ?? $config['zone'] ?? null;
+                $password = $config['storage_zone_password']
+                    ?? $config['password']
+                    ?? $config['client_upload_key']
+                    ?? null;
+
+                if (is_string($zone) && $zone !== '' && is_string($password) && $password !== '') {
+                    return [
+                        'zone' => $zone,
+                        'password' => $password,
+                        'region' => strtolower(trim((string) ($config['region'] ?? 'de'))) ?: 'de',
+                    ];
+                }
+            } catch (\Throwable) {
+                // Fall through to the platform-wide settings.
+            }
+        }
+
+        $settings = PlatformBunnySetting::active();
+
+        if (! $settings || ! $settings->hasStorageCredentials()) {
+            return null;
+        }
+
+        return [
+            'zone' => $settings->storage_zone_name,
+            'password' => $settings->storage_zone_password,
+            'region' => strtolower(trim((string) $settings->storage_zone_region ?: 'de')) ?: 'de',
+        ];
+    }
+
+    private function resolveTenantId(Request $request): ?int
+    {
+        $tenantRepository = app(TenantRepository::class);
+
+        $headerId = trim((string) $request->header('X-Tenant-ID', ''));
+        if ($headerId !== '') {
+            $tenant = $tenantRepository->findById($headerId);
+            if ($tenant && $tenantRepository->isActive((string) $tenant->id)) {
+                return (int) $tenant->id;
+            }
+        }
+
+        $domain = trim((string) $request->header('X-Tenant-Domain', ''));
+        if ($domain !== '') {
+            $tenant = $tenantRepository->findByDomain($domain);
+            if ($tenant) {
+                return (int) $tenant->id;
+            }
+        }
+
+        $forwardedHost = trim((string) $request->header('X-Forwarded-Host', ''));
+        if ($forwardedHost !== '') {
+            $tenant = $tenantRepository->findByHostname($forwardedHost);
+            if ($tenant) {
+                return (int) $tenant->id;
+            }
+        }
+
+        $tenant = $tenantRepository->findByHostname($request->getHost());
+        if ($tenant) {
+            return (int) $tenant->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array{zone: string, password: string, region: string} $creds
+     */
+    private function buildStorageUrl(array $creds, string $path): string
+    {
         $hostMap = [
             'de' => 'storage.bunnycdn.com',
             'uk' => 'uk.storage.bunnycdn.com',
@@ -114,8 +203,8 @@ class MediaProxyController extends Controller
             'au' => 'syd.storage.bunnycdn.com',
         ];
 
-        $host = $hostMap[$region] ?? 'storage.bunnycdn.com';
+        $host = $hostMap[$creds['region']] ?? 'storage.bunnycdn.com';
 
-        return "https://{$host}/{$settings->storage_zone_name}/{$path}";
+        return "https://{$host}/{$creds['zone']}/{$path}";
     }
 }
