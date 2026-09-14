@@ -43,6 +43,24 @@ class MediaProxyController extends Controller
             }
 
             $contentType = $response->header('Content-Type') ?? 'application/octet-stream';
+
+            if ($contentType === 'application/octet-stream') {
+                $ext = strtolower(pathinfo($normalizedPath, PATHINFO_EXTENSION));
+                $contentType = [
+                    'jpg' => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                    'gif' => 'image/gif',
+                    'svg' => 'image/svg+xml',
+                    'avif' => 'image/avif',
+                    'heic' => 'image/heic',
+                    'heif' => 'image/heif',
+                    'bmp' => 'image/bmp',
+                    'ico' => 'image/x-icon',
+                ][$ext] ?? $contentType;
+            }
+
             $contentLength = $response->header('Content-Length');
 
             $headers = [

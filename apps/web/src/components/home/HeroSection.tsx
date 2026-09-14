@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import Image from "next/image";
 import {
   Facebook,
   Youtube,
@@ -348,7 +347,7 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
 }
 
 function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: string }) {
-  const [stage, setStage] = useState<"next" | "plain" | "fallback">("next");
+  const [stage, setStage] = useState<"direct" | "optimized" | "fallback">("direct");
 
   if (!imageUrl || stage === "fallback") {
     return (
@@ -358,30 +357,21 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
     );
   }
 
-  if (stage === "plain") {
-    return (
-      <Image
-        src={imageUrl}
-        alt={alt}
-        fill
-        unoptimized
-        sizes="340px"
-        className="object-cover"
-        onError={() => setStage("fallback")}
-      />
-    );
-  }
+  const src =
+    stage === "direct"
+      ? imageUrl
+      : `/_next/image?url=${encodeURIComponent(imageUrl)}&w=640&q=80`;
 
   return (
-    <Image
-      src={imageUrl}
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
       alt={alt}
-      fill
-      priority
-      sizes="340px"
-      className="object-cover"
-      fetchPriority="high"
-      onError={() => setStage("plain")}
+      loading="eager"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      className="h-full w-full object-cover"
+      onError={() => setStage(stage === "direct" ? "optimized" : "fallback")}
     />
   );
 }

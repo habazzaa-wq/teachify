@@ -187,7 +187,7 @@ Route::prefix('v1')->group(function () {
         ->name('payments.fawaterk.webhook');
     Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
         ->where('path', '.*')
-        ->middleware('throttle:120,1')
+        ->middleware('throttle:1200,1')
         ->name('media.serve');
 
     // Public course routes (no auth required)
