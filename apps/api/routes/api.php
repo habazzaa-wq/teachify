@@ -119,6 +119,7 @@ use App\Http\Controllers\Api\v1\Seo\SeoLinkSearchController;
 use App\Http\Controllers\Api\v1\Seo\SeoOverviewController;
 use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
 use App\Http\Controllers\Api\v1\StudentController;
+use App\Http\Controllers\Api\v1\StudentCourseController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
@@ -231,6 +232,7 @@ Route::prefix('v1')->group(function () {
 
         // Student self-service dashboard & profile
         Route::get('/student/dashboard', [StudentDashboardController::class, 'show']);
+        Route::get('/student/courses', [StudentCourseController::class, 'index']);
         Route::get('/student/profile', [StudentProfileController::class, 'profile']);
         Route::post('/student/profile/avatar', [StudentProfileController::class, 'updateAvatar']);
 

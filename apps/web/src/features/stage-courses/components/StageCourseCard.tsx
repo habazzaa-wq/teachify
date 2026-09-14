@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Users, Award, Tag, Sparkles } from "lucide-react";
+import { BookOpen, Clock, Users, Award, Tag, Sparkles, CheckCircle2 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { formatNumber, initialsOf } from "@/lib/format";
@@ -13,6 +13,7 @@ import { ACCENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS, PRIMARY } from "../consta
 interface StageCourseCardProps {
   course: StageCourse;
   index: number;
+  enrolled?: boolean;
 }
 
 function formatDuration(minutes: number | null): string | null {
@@ -28,7 +29,7 @@ function formatDuration(minutes: number | null): string | null {
   return `${formatNumber(minutes)} دقيقة`;
 }
 
-export function StageCourseCard({ course, index }: StageCourseCardProps) {
+export function StageCourseCard({ course, index, enrolled = false }: StageCourseCardProps) {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
   const diffColor = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
@@ -208,72 +209,87 @@ export function StageCourseCard({ course, index }: StageCourseCardProps) {
 
         {/* price */}
         <div className="flex items-center justify-between">
-          {isFree ? (
+          {enrolled ? (
             <span
-              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
               style={{
                 background: "linear-gradient(135deg, #22C55E, #16A34A)",
                 boxShadow: "0 4px 16px rgba(34,197,94,0.35)",
               }}
             >
-              مجاني
-            </span>
-          ) : hasDiscount ? (
-            <div className="flex items-center gap-2">
-              <span
-                className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg"
-                style={{
-                  background: "var(--brand-primary)",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
-                }}
-              >
-                {formatNumber(course.discountPrice!)} {currency}
-              </span>
-              <span
-                className="rounded-full px-2.5 py-1 text-[11px] font-bold text-white/70 line-through"
-                style={{ background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.35)" }}
-              >
-                {formatNumber(course.price ?? 0)} {currency}
-              </span>
-            </div>
-          ) : course.price ? (
-            <span
-              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
-              style={{
-                background: "var(--brand-primary)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
-              }}
-            >
-              {formatNumber(course.price)} {currency}
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              مشترك
             </span>
           ) : (
-            <span className="text-xs font-medium" style={{ color: isDark ? "#8a8290" : "#9CA3AF" }}>
-              —
-            </span>
-          )}
+            <>
+              {isFree ? (
+                <span
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
+                  style={{
+                    background: "linear-gradient(135deg, #22C55E, #16A34A)",
+                    boxShadow: "0 4px 16px rgba(34,197,94,0.35)",
+                  }}
+                >
+                  مجاني
+                </span>
+              ) : hasDiscount ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-lg"
+                    style={{
+                      background: "var(--brand-primary)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
+                    }}
+                  >
+                    {formatNumber(course.discountPrice!)} {currency}
+                  </span>
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[11px] font-bold text-white/70 line-through"
+                    style={{ background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.35)" }}
+                  >
+                    {formatNumber(course.price ?? 0)} {currency}
+                  </span>
+                </div>
+              ) : course.price ? (
+                <span
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-lg"
+                  style={{
+                    background: "var(--brand-primary)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
+                  }}
+                >
+                  {formatNumber(course.price)} {currency}
+                </span>
+              ) : (
+                <span className="text-xs font-medium" style={{ color: isDark ? "#8a8290" : "#9CA3AF" }}>
+                  —
+                </span>
+              )}
 
-          {isFree ? (
-            <span
-              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
-              style={{
-                background: "var(--brand-secondary)",
-                color: "var(--brand-secondary-contrast)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.333)",
-              }}
-            >
-              اشترك الآن مجاناً
-            </span>
-          ) : (
-            <span
-              className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
-              style={{
-                background: "var(--brand-secondary)",
-                color: "var(--brand-secondary-contrast)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-              }}
-            >
-              اشترك الآن
-            </span>
+              {isFree ? (
+                <span
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
+                  style={{
+                    background: "var(--brand-secondary)",
+                    color: "var(--brand-secondary-contrast)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.333)",
+                  }}
+                >
+                  اشترك الآن مجاناً
+                </span>
+              ) : (
+                <span
+                  className="inline-flex items-center rounded-full px-3.5 py-1.5 text-xs font-bold shadow-lg transition-all duration-300 group-hover:-translate-x-1"
+                  style={{
+                    background: "var(--brand-secondary)",
+                    color: "var(--brand-secondary-contrast)",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  اشترك الآن
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
