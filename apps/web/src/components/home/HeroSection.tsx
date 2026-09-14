@@ -348,14 +348,30 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
 }
 
 function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: string }) {
-  const [failed, setFailed] = useState(false);
-  if (!imageUrl || failed) {
+  const [stage, setStage] = useState<"next" | "plain" | "fallback">("next");
+
+  if (!imageUrl || stage === "fallback") {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white/10">
         <User className="h-24 w-24 text-white/25" />
       </div>
     );
   }
+
+  if (stage === "plain") {
+    return (
+      <Image
+        src={imageUrl}
+        alt={alt}
+        fill
+        unoptimized
+        sizes="340px"
+        className="object-cover"
+        onError={() => setStage("fallback")}
+      />
+    );
+  }
+
   return (
     <Image
       src={imageUrl}
@@ -363,10 +379,9 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
       fill
       priority
       sizes="340px"
-      referrerPolicy="no-referrer"
       className="object-cover"
       fetchPriority="high"
-      onError={() => setFailed(true)}
+      onError={() => setStage("plain")}
     />
   );
 }
