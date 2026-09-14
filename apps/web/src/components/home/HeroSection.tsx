@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import {
   Facebook,
@@ -33,11 +33,8 @@ function PhoneIconWithTooltip({ social, icons }: { social: import("@/features/ho
       <div className="home-enter-pop relative flex flex-col items-center group/phone" style={{ animationDelay: "0.45s" }}>
         <div className="flex flex-col items-center">
           <div
-            className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer group-hover/phone:shadow-[0_0_20px_rgba(0,0,0,0.38),0_8px_25px_rgba(0,0,0,0.3)]"
-            style={{
-              backgroundColor: "var(--brand-secondary)",
-              borderColor: "var(--brand-secondary)",
-            }}
+            className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer"
+            style={{ backgroundColor: "var(--brand-secondary)", "--icon-ring-color": "var(--brand-secondary)" } as CSSProperties}
           >
             <Phone className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
           </div>
@@ -486,7 +483,7 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.3s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
+              <div className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", "--icon-ring-color": "var(--brand-primary)" } as CSSProperties}>
                 <Gift className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
@@ -507,7 +504,7 @@ export function HeroSection() {
               style={{ animationDelay: "0.36s" }}
             >
               <a href={social?.facebook || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
+                <div className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", "--icon-ring-color": "var(--brand-secondary)" } as CSSProperties}>
                   <Facebook className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
                 <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
@@ -528,7 +525,7 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.42s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
+              <div className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", "--icon-ring-color": "var(--brand-primary)" } as CSSProperties}>
                 <MessageCircle className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
@@ -549,7 +546,7 @@ export function HeroSection() {
               style={{ animationDelay: "0.48s" }}
             >
               <a href={social?.youtube || "#"} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", borderColor: "var(--brand-secondary)" }}>
+                <div className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer" style={{ backgroundColor: "var(--brand-secondary)", "--icon-ring-color": "var(--brand-secondary)" } as CSSProperties}>
                   <Youtube className="h-5 w-5 text-[var(--brand-secondary-contrast)]" />
                 </div>
                 <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-secondary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-secondary)" }}>
@@ -570,7 +567,7 @@ export function HeroSection() {
               className="home-enter-pop flex flex-col items-center"
               style={{ animationDelay: "0.54s" }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-[3.5px] shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-2xl cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", borderColor: "var(--brand-primary)" }}>
+              <div className="hero-icon-ring flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 cursor-pointer" style={{ backgroundColor: "var(--brand-primary)", "--icon-ring-color": "var(--brand-primary)" } as CSSProperties}>
                 <Star className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
               </div>
               <span className="mt-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold text-[var(--brand-primary-contrast)] shadow-md" style={{ backgroundColor: "var(--brand-primary)" }}>
