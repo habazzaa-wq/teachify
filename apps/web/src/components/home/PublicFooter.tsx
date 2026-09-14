@@ -328,12 +328,10 @@ export function PublicFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer dir="rtl" className="relative w-full py-8 sm:py-12 lg:py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* ── The flight card ── */}
-        <div
-          className="relative overflow-hidden rounded-3xl shadow-brand-md"
-          style={{
+    <footer dir="rtl" className="relative w-full px-2 py-8 sm:px-4 sm:py-12 lg:px-5 lg:py-16">
+      <div
+        className="relative w-full overflow-hidden rounded-2xl shadow-brand-md sm:rounded-3xl"
+        style={{
             border: "1px solid rgba(255,255,255,0.12)",
             background:
               "linear-gradient(165deg, color-mix(in srgb, var(--brand-primary) 70%, #1a0f08) 0%, color-mix(in srgb, var(--brand-primary) 85%, #1a0f08) 50%, color-mix(in srgb, var(--brand-primary) 80%, #120a06) 100%)",
@@ -421,7 +419,6 @@ export function PublicFooter() {
             </div>
           </div>
         </div>
-      </div>
     </footer>
   );
 }
