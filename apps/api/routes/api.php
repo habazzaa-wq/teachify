@@ -177,6 +177,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
+    Route::get('/public/legal', [PublicLegalController::class, 'index']);
+    Route::get('/public/footer', [PublicFooterController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Pin,
@@ -26,6 +26,9 @@ import {
   ImageIcon,
   Search,
   ClipboardCheck,
+  ShieldCheck,
+  Scale,
+  PanelBottom,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -37,6 +40,38 @@ import { cn } from "@/lib/cn";
 const COLLAPSED_WIDTH = 68;
 const MIN_WIDTH = 220;
 const MAX_WIDTH = 400;
+
+function LegalPageItems({
+  collapsed,
+  pathname,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  pathname: string;
+  onNavigate: (href: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
+  return (
+    <>
+      <StudioSidebarItem
+        icon={<ShieldCheck className="h-4 w-4" />}
+        label="سياسة الخصوصية"
+        active={pathname.startsWith(routes.teacherLegal) && tab !== "terms"}
+        collapsed={collapsed}
+        onClick={() => onNavigate(`${routes.teacherLegal}?tab=privacy`)}
+      />
+      <StudioSidebarItem
+        icon={<Scale className="h-4 w-4" />}
+        label="شروط الاستخدام"
+        active={pathname.startsWith(routes.teacherLegal) && tab === "terms"}
+        collapsed={collapsed}
+        onClick={() => onNavigate(`${routes.teacherLegal}?tab=terms`)}
+      />
+    </>
+  );
+}
 
 export function WorkspaceLeftSidebar() {
   const router = useRouter();
@@ -351,6 +386,24 @@ export function WorkspaceLeftSidebar() {
                 collapsed={leftSidebarCollapsed}
                 className="ps-7"
                 onClick={() => handleNavigate(routes.homepageCommunity)}
+              />
+            </StudioSidebarSection>
+
+            {/* Site pages (legal + footer) */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "صفحات الموقع"} collapsed={leftSidebarCollapsed}>
+              <Suspense fallback={null}>
+                <LegalPageItems
+                  collapsed={leftSidebarCollapsed}
+                  pathname={pathname}
+                  onNavigate={handleNavigate}
+                />
+              </Suspense>
+              <StudioSidebarItem
+                icon={<PanelBottom className="h-4 w-4" />}
+                label="محتوى الفوتر"
+                active={pathname.startsWith(routes.teacherFooter)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherFooter)}
               />
             </StudioSidebarSection>
           </div>

@@ -172,7 +172,7 @@ class TenantSettingController extends Controller
 
     public function update(Request $request, string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);
@@ -206,7 +206,7 @@ class TenantSettingController extends Controller
 
     public function show(string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);
