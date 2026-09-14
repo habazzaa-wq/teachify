@@ -73,9 +73,10 @@ class PublicHeroController extends Controller
      * The browser must always be able to fetch the teacher photo with a plain
      * <img src="...">. Stored values can be absolute CDN URLs (http/https)
      * that clients cannot reach directly (mixed content, expired certificates,
-     * hotlink protection) — so rewrite anything pointing at the tenant CDN host
-     * back to the same-origin HTTPS media proxy, which streams through the
-     * backend credentials and works on every browser and device.
+     * signed-token expiry, hotlink protection) — so rewrite anything that
+     * points at the tenant's media storage back to the same-origin HTTPS
+     * media proxy, which streams through the backend credentials and works on
+     * every browser and device.
      */
     private function normalizeTeacherImage(string $url, ?string $cdnBaseUrl): string
     {
@@ -85,30 +86,69 @@ class PublicHeroController extends Controller
             return $trimmed;
         }
 
-        if ($cdnBaseUrl === null || $cdnBaseUrl === '') {
+        if (! preg_match('#^[a-z][a-z0-9+.\-]*://#i', $trimmed)) {
             return $trimmed;
         }
 
-        $base = rtrim($cdnBaseUrl, '/');
-
-        // Protocol-insensitive prefix match so http vs https variants of the
-        // same CDN host are handled identically.
-        $urlNoScheme = preg_replace('#^[a-z][a-z0-9+.\-]*://#i', '', $trimmed);
-        $baseNoScheme = preg_replace('#^[a-z][a-z0-9+.\-]*://#i', '', $base);
-
-        if (! is_string($urlNoScheme) || ! is_string($baseNoScheme) || $urlNoScheme === $baseNoScheme) {
+        $host = strtolower((string) parse_url($trimmed, PHP_URL_HOST));
+        if ($host === '') {
             return $trimmed;
         }
 
-        if (str_starts_with($urlNoScheme, $baseNoScheme.'/')) {
-            $key = ltrim(substr($urlNoScheme, strlen($baseNoScheme)), '/');
+        $path = (string) parse_url($trimmed, PHP_URL_PATH);
 
-            if ($key !== '') {
-                return '/api/v1/media/serve/'.$key;
-            }
+        // Already a platform route (media proxy or local storage) expressed as
+        // an absolute URL on any host — collapse it back to the relative path
+        // so the browser fetches it from the current origin.
+        if (str_starts_with($path, '/api/') || str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+
+        // Recognize the tenant CDN host and any Bunny edge/storage host so the
+        // value is remapped regardless of how it was originally saved.
+        $knownHosts = [
+            $this->hostWithoutScheme($cdnBaseUrl),
+            // platform-wide pull-zone host
+            $this->platformCdnHost(),
+        ];
+
+        $isBunny = str_ends_with($host, '.b-cdn.net')
+            || str_ends_with($host, '.bunnycdn.com')
+            || in_array($host, array_filter($knownHosts), true);
+
+        if (! $isBunny) {
+            return $trimmed;
+        }
+
+        $key = ltrim(urldecode($path), '/');
+
+        if ($key !== '') {
+            return '/api/v1/media/serve/'.$key;
         }
 
         return $trimmed;
+    }
+
+    private function hostWithoutScheme(?string $url): ?string
+    {
+        if ($url === null || $url === '') {
+            return null;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+
+        return is_string($host) ? strtolower($host) : null;
+    }
+
+    private function platformCdnHost(): ?string
+    {
+        try {
+            $platform = \App\Models\PlatformBunnySetting::active();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $this->hostWithoutScheme($platform?->cdn_hostname);
     }
 
     private function cdnBaseUrl(int $tenantId): ?string
