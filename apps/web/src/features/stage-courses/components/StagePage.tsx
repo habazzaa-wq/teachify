@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { formatNumber } from "@/lib/format";
-import { useStage, useStageCourses } from "../hooks";
+import { useEnrolledCourses, useStage, useStageCourses } from "../hooks";
 import type { StageCourseFilters } from "../types";
 import { PRIMARY } from "../constants";
 import { StageHero } from "./StageHero";
@@ -22,6 +22,11 @@ export function StagePage({ stageId }: StagePageProps) {
   const isDark = theme === "dark";
 
   const { data: stage } = useStage(stageId);
+  const { data: enrolledCourses } = useEnrolledCourses();
+  const enrolledIds = useMemo(
+    () => new Set((enrolledCourses ?? []).map((course) => course.id)),
+    [enrolledCourses],
+  );
 
   const [filters, setFilters] = useState<StageCourseFilters>({});
   const [searchDraft, setSearchDraft] = useState("");
@@ -178,6 +183,7 @@ export function StagePage({ stageId }: StagePageProps) {
               currentPage={page}
               lastPage={data?.lastPage ?? 1}
               onPageChange={setPage}
+              enrolledIds={enrolledIds}
             />
           </div>
         </div>

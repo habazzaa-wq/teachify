@@ -79,4 +79,9 @@ export interface CatalogFilters {
   sort?: CatalogSort;
 }
 
+export interface StudentEnrolledCourse {
+  id: string;
+  slug: string;
+}
+
 export type { StageItem };
