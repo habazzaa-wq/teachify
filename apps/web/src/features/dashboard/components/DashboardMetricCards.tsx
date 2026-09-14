@@ -1,93 +1,113 @@
 "use client";
 
 import {
-  Users,
-  BookOpen,
-  ClipboardList,
+  UserPlus,
   Wallet,
-  UserCheck,
+  GraduationCap,
+  ClipboardList,
   Target,
   Gauge,
   Award,
+  CheckCircle2,
 } from "lucide-react";
 import { AppMetricCard } from "@/components/ui";
-import type { DashboardStats } from "../types";
+import type { DashboardSummary } from "../types";
 
 interface DashboardMetricCardsProps {
-  stats: DashboardStats;
+  summary: DashboardSummary;
 }
 
-export function DashboardMetricCards({ stats }: DashboardMetricCardsProps) {
-  const revenuePositive = stats.revenue_trend >= 0;
+export function DashboardMetricCards({ summary }: DashboardMetricCardsProps) {
+  const { students, enrollments, exams, revenue, certificates, completions } =
+    summary;
 
   return (
     <section aria-label="المؤشرات الرئيسية" className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <AppMetricCard
-          title="إجمالي الطلاب"
-          value={stats.students_total}
-          icon={Users}
+          title="طلاب جدد خلال الفترة"
+          value={students.new_period}
+          icon={UserPlus}
           color="primary"
-          trend={{ value: Math.abs(stats.students_trend), positive: stats.students_trend >= 0 }}
+          trend={{
+            value: Math.abs(students.change_percent),
+            positive: students.change_percent >= 0,
+          }}
           delay={0}
         />
         <AppMetricCard
-          title="الدورات"
-          value={stats.courses_total}
-          icon={BookOpen}
-          color="info"
-          trend={{ value: Math.abs(stats.courses_trend), positive: stats.courses_trend >= 0 }}
-          delay={60}
-        />
-        <AppMetricCard
-          title="الامتحانات"
-          value={stats.exams_total}
-          icon={ClipboardList}
-          color="warning"
-          trend={{ value: Math.abs(stats.exams_trend), positive: stats.exams_trend >= 0 }}
-          delay={120}
-        />
-        <AppMetricCard
-          title="إجمالي الإيرادات"
-          value={Math.round(stats.revenue_total)}
+          title="الإيرادات خلال الفترة"
+          value={Math.round(revenue.period)}
           icon={Wallet}
           color="success"
           suffix=" ج.م"
-          trend={{ value: Math.abs(stats.revenue_trend), positive: revenuePositive }}
+          trend={{
+            value: Math.abs(revenue.change_percent),
+            positive: revenue.change_percent >= 0,
+          }}
+          delay={60}
+        />
+        <AppMetricCard
+          title="تسجيلات جديدة في الدورات"
+          value={enrollments.new_period}
+          icon={GraduationCap}
+          color="info"
+          trend={{
+            value: Math.abs(enrollments.change_percent),
+            positive: enrollments.change_percent >= 0,
+          }}
+          delay={120}
+        />
+        <AppMetricCard
+          title="محاولات امتحانات (مُسلَّمة)"
+          value={exams.attempts_period}
+          icon={ClipboardList}
+          color="warning"
+          trend={{
+            value: Math.abs(exams.change_percent),
+            positive: exams.change_percent >= 0,
+          }}
           delay={180}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <AppMetricCard
-          title="الطلاب النشطون"
-          value={stats.students_active}
-          icon={UserCheck}
-          color="success"
+          title="نسبة النجاح خلال الفترة"
+          value={exams.pass_rate_period}
+          icon={Target}
+          color="primary"
+          suffix="%"
           delay={0}
         />
         <AppMetricCard
-          title="نسبة النجاح في الامتحانات"
-          value={stats.attempts_pass_rate}
-          icon={Target}
-          color="primary"
+          title="متوسط الدرجات خلال الفترة"
+          value={exams.avg_score_period}
+          icon={Gauge}
+          color="warning"
           suffix="%"
           delay={60}
         />
         <AppMetricCard
-          title="متوسط درجات الطلاب"
-          value={stats.attempts_average_score}
-          icon={Gauge}
-          color="warning"
-          suffix="%"
+          title="شهادات صادرة خلال الفترة"
+          value={certificates.issued_period}
+          icon={Award}
+          color="info"
+          trend={{
+            value: Math.abs(certificates.change_percent),
+            positive: certificates.change_percent >= 0,
+          }}
           delay={120}
         />
         <AppMetricCard
-          title="الشهادات الصادرة"
-          value={stats.certificates_total}
-          icon={Award}
-          color="info"
-          trend={{ value: Math.abs(stats.certificates_trend), positive: stats.certificates_trend >= 0 }}
+          title="دورات مكتملة خلال الفترة"
+          value={completions.period}
+          icon={CheckCircle2}
+          color="success"
+          trend={{
+            value: Math.abs(completions.change_percent),
+            positive: completions.change_percent >= 0,
+          }}
           delay={180}
         />
       </div>

@@ -9,15 +9,15 @@ import {
   AppBadge,
   AppProgress,
 } from "@/components/ui";
-import type { DashboardStats } from "../types";
+import type { DashboardSummary } from "../types";
 import { formatBytes } from "@/lib/format";
 
 interface DashboardResourcesProps {
-  stats: DashboardStats;
+  summary: DashboardSummary;
 }
 
-export function DashboardResources({ stats }: DashboardResourcesProps) {
-  const { storage, subscription } = stats;
+export function DashboardResources({ summary }: DashboardResourcesProps) {
+  const { storage, subscription, media } = summary;
   const tierVariant =
     subscription.status === "active"
       ? "success"
@@ -88,14 +88,14 @@ export function DashboardResources({ stats }: DashboardResourcesProps) {
               <Files className="h-3.5 w-3.5" />
               ملفات الوسائط
             </div>
-            <p className="text-xl font-bold tabular-nums">{stats.media_total}</p>
+            <p className="text-xl font-bold tabular-nums">{media.total}</p>
           </div>
           <div className="rounded-lg bg-muted/40 p-3">
             <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <PlaySquare className="h-3.5 w-3.5" />
               فيديوهات
             </div>
-            <p className="text-xl font-bold tabular-nums">{stats.media_videos}</p>
+            <p className="text-xl font-bold tabular-nums">{media.videos}</p>
           </div>
         </div>
       </AppCardContent>
