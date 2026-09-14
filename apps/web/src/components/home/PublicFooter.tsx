@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   GraduationCap,
@@ -12,31 +12,22 @@ import {
   Mail,
   Clock,
   ArrowUp,
+  ArrowLeft,
 } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useUiStore } from "@/stores/ui.store";
 import { useTenantStore } from "@/stores/tenant.store";
 
 /**
- * Platform footer — "الختام": the page closes like a poster, not a template.
- *
- * A single oversized wordmark drawn in the Amiri display face dominates the
- * whole footer and carries the tenant brand off-screen — the same way a book
- * ends, or a film's closing credits fade. Everything else stays quiet and on
- * one line so the typography does the talking.
- *
- * Composition (desktop, RTL):
- *   1. A closing CTA band that restates the pitch before the page ends.
- *   2. The full-bleed giant wordmark + colophon line.
- *   3. A low nav rail: nav groups as inline breadcrumbs separated by dots,
- *      plus one compact contact group — no tall link columns.
- *   4. A single legal line with the socials and a return-to-top.
- *
- * Colour logic — the deep terracotta stays the frame:
- *   - Primary (#D87B63): the backdrop, deepened with a neutral dark tone.
- *   - Secondary (#FFB50E): small tracked labels, micro-rules, the closing CTA
- *     accent, breadcrumb hovers and the legal socials. Never loud, always at
- *     the caption level so the giant wordmark stays the star.
+ * Platform footer — a floating brand panel built from the public surface's own
+ * design tokens instead of a stock template:
+ *   - a rounded, deep terracotta "flight card" over the page background, with
+ *     the signature gradient hairline along its top edge,
+ *   - nav links as glass chips (the same chip language as the navbar / mobile
+ *     nav), not bare text columns,
+ *   - contact + socials as the hero's icon circles (3px brand border fills),
+ *   - the tenant's dynamic font (`--font-sans`) is inherited from the body —
+ *     the footer never overrides it.
  */
 
 const DEVELOPER_WHATSAPP = "https://wa.me/201011245565";
@@ -96,27 +87,36 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
   واتساب: MessageCircle,
 };
 
-/* ── Background: layered warm glow + dot texture + faint letters ── */
-function FooterBackdrop() {
+const PRIMARY = "var(--brand-primary)";
+const SECONDARY = "var(--brand-secondary)";
+const CONTRAST = (isPrimary: boolean) =>
+  isPrimary ? "var(--brand-primary-contrast)" : "var(--brand-secondary-contrast)";
+
+/* ── Card surface: brand depth + warm glows + dot texture ──────── */
+function CardSurface() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Warm glow bleeding in from the top, echoing the gold above */}
+      <span
+        className="absolute inset-x-8 top-0 h-px opacity-70"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, var(--brand-primary), var(--brand-secondary), var(--brand-primary), transparent)",
+        }}
+      />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(130% 60% at 50% -20%, color-mix(in srgb, var(--brand-secondary) 16%, transparent) 0%, transparent 55%)",
+            "radial-gradient(120% 55% at 50% -15%, color-mix(in srgb, var(--brand-secondary) 16%, transparent) 0%, transparent 55%)",
         }}
       />
-      {/* Deep primary caste rising from the bottom corner */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(80% 80% at 100% 110%, color-mix(in srgb, var(--brand-primary) 30%, transparent) 0%, transparent 62%)",
+            "radial-gradient(80% 70% at 100% 110%, color-mix(in srgb, var(--brand-primary) 32%, transparent) 0%, transparent 60%)",
         }}
       />
-      {/* Dot texture, matching the editorial sections above */}
       <div
         className="absolute inset-0"
         style={{
@@ -124,25 +124,6 @@ function FooterBackdrop() {
           backgroundSize: "26px 26px",
         }}
       />
-      {/* Barely-there Arabic letters, a whisper of the hero's decor */}
-      <span
-        className="absolute bottom-16 start-[2%] hidden select-none text-8xl font-bold text-white/5 lg:block"
-        style={{ fontFamily: "var(--font-display, serif)", transform: "rotate(9deg)" }}
-      >
-        أ
-      </span>
-      <span
-        className="absolute top-24 end-[3%] hidden select-none text-6xl font-bold text-white/5 lg:block"
-        style={{ fontFamily: "var(--font-display, serif)", transform: "rotate(-11deg)" }}
-      >
-        ف
-      </span>
-      <span
-        className="absolute bottom-24 end-[26%] hidden select-none text-5xl font-bold text-white/5 lg:block"
-        style={{ fontFamily: "var(--font-display, serif)", transform: "rotate(12deg)" }}
-      >
-        س
-      </span>
     </div>
   );
 }
@@ -152,221 +133,160 @@ function BrandMark({ logo, tenantName }: { logo: string | null; tenantName: stri
   const [failed, setFailed] = useState(false);
   if (!logo || failed) {
     return (
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[var(--brand-secondary)]">
-        <GraduationCap className="h-5 w-5" />
+      <span
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[var(--brand-primary)] shadow-soft-md"
+      >
+        <GraduationCap className="h-6 w-6" />
       </span>
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={logo}
-      alt={tenantName}
-      onError={() => setFailed(true)}
-      className="h-9 w-auto max-w-[160px] object-contain"
-    />
+    <span className="flex h-12 shrink-0 items-center rounded-2xl bg-white px-3 shadow-soft-md">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={logo}
+        alt={tenantName}
+        onError={() => setFailed(true)}
+        className="h-7 w-auto max-w-[160px] object-contain"
+      />
+    </span>
   );
 }
 
-/* ── Socials as a set-text row, separated by hairlines ─────────── */
-function SocialsRow() {
+/* ── Group heading: gradient micro-rule + label ────────────────── */
+function GroupHeading({ text }: { text: string }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-0.5 gap-y-2">
+    <div className="flex items-center gap-2.5">
+      <span
+        aria-hidden="true"
+        className="h-[3px] w-6 shrink-0 rounded-full"
+        style={{ background: `linear-gradient(90deg, ${SECONDARY}, ${PRIMARY})` }}
+      />
+      <h3 className="text-[13px] font-bold text-white/85">{text}</h3>
+    </div>
+  );
+}
+
+/* ── A nav link as a glass chip (the site's chip language) ─────── */
+function NavLinkChip({ label, href }: { label: string; href: string }) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="group inline-flex w-full items-center justify-between gap-2 rounded-xl bg-white/5 px-3.5 py-2.5 text-[13px] font-medium text-white/80 ring-1 ring-white/10 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:ring-[var(--brand-secondary)] hover:shadow-soft-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+      >
+        <span className="truncate">{label}</span>
+        <ArrowLeft
+          aria-hidden="true"
+          className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-[var(--brand-secondary)] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+        />
+      </Link>
+    </li>
+  );
+}
+
+/* ── One nav group rendered as wrapping glass chips ────────────── */
+function NavGroup({ section }: { section: FooterNavSection }) {
+  return (
+    <div>
+      <GroupHeading text={section.heading} />
+      <ul className="mt-4 flex flex-wrap gap-2">
+        {section.links.map((link) => (
+          <NavLinkChip key={link.label} label={link.label} href={link.href} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ── Socials as the hero's icon circles ────────────────────────── */
+function SocialIcons() {
+  return (
+    <ul className="flex items-center gap-2">
       {footerSocials.map((social, i) => {
         const Icon = SOCIAL_ICONS[social.label];
         if (!Icon) return null;
+        const isPrimary = i % 2 === 0;
+        const color = isPrimary ? PRIMARY : SECONDARY;
         const isExternal = social.href.startsWith("http");
         return (
-          <Fragment key={social.label}>
+          <li key={social.label}>
             <a
               href={social.href}
               {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               aria-label={social.label}
               title={social.label}
-              className="group inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/60 transition-colors duration-200 hover:text-[var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+              className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] transition-all duration-300 hover:scale-110 hover:shadow-brand-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+              style={{ backgroundColor: color, borderColor: color }}
             >
-              <Icon className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
-              {social.label}
+              <Icon className="h-[17px] w-[17px]" style={{ color: CONTRAST(isPrimary) }} />
             </a>
-            {i < footerSocials.length - 1 && (
-              <span aria-hidden="true" className="mx-1 h-3 w-px bg-white/15" />
-            )}
-          </Fragment>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
-/* ── Closing CTA band: restates the pitch before the page ends ─── */
-function ClosingCta({ tenantName }: { tenantName: string }) {
-  return (
-    <div className="border-b border-white/10">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-10 pt-14 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8 lg:pb-12 lg:pt-16">
-        <div className="max-w-xl">
-          <p className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.18em] text-white/50">
-            <span
-              aria-hidden="true"
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: "var(--brand-secondary)" }}
-            />
-            تعلّم · تدرّب · تقدّم
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold leading-[1.25] tracking-tight text-white sm:text-4xl lg:text-[2.5rem] lg:leading-[1.2]">
-            جاهز تبدأ <span className="text-[var(--brand-secondary)]">رحلتك</span> التعليمية؟
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-white/60 sm:text-base">
-            انضم إلى {tenantName} الآن، شاهد الشروحات، تدرّب على التمارين وتابع
-            تقدّمك خطوة بخطوة.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link
-            href="/student/dashboard"
-            className="inline-flex items-center justify-center rounded-xl bg-[var(--brand-secondary)] px-7 py-3 text-sm font-bold text-[var(--brand-secondary-contrast)] transition-colors duration-200 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-            style={{
-              boxShadow: "0 10px 30px color-mix(in srgb, var(--brand-secondary) 35%, transparent)",
-            }}
-          >
-            سجّل الآن
-          </Link>
-          <a
-            href={DEVELOPER_WHATSAPP}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-xl bg-white/5 px-7 py-3 text-sm font-bold text-white ring-1 ring-white/25 transition-colors duration-200 hover:bg-white/10 hover:ring-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
-          >
-            تواصل معنا
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── The star: full-bleed giant wordmark + colophon line ───────── */
-function GiantWordmark({ logo, tenantName }: { logo: string | null; tenantName: string }) {
-  return (
-    <div className="w-full overflow-hidden px-4 pt-9 sm:px-7 lg:px-14 lg:pt-10">
-      <div className="flex items-center gap-3">
-        <BrandMark logo={logo} tenantName={tenantName} />
-        <span className="text-[10px] font-bold tracking-[0.25em] text-[var(--brand-secondary)]">
-          منظومة تعليمية متكاملة
-        </span>
-      </div>
-
-      <h2
-        className="mt-6 bg-clip-text text-balance text-transparent leading-[0.95] tracking-tight text-white"
-        style={{
-          fontFamily: "var(--font-display, var(--font-sans))",
-          fontSize: "clamp(3rem, 9vw, 7.5rem)",
-          backgroundImage: "linear-gradient(to bottom, #ffffff 55%, rgba(255,255,255,0.55))",
-        }}
-      >
-        {tenantName}
-      </h2>
-
-      <span
-        aria-hidden="true"
-        className="mt-6 block h-[3px] w-24 rounded-full"
-        style={{ background: "var(--brand-secondary)" }}
-      />
-    </div>
-  );
-}
-
-/* ── One nav group as an inline breadcrumb row (not a column) ──── */
-function NavGroup({ section }: { section: FooterNavSection }) {
+/* ── About block: short intro + socials ────────────────────────── */
+function AboutBlock() {
   return (
     <div>
-      <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-white/55">
-        <span
-          aria-hidden="true"
-          className="h-[3px] w-5 shrink-0 rounded-full"
-          style={{ background: "var(--brand-secondary)" }}
-        />
-        {section.heading}
-      </h3>
-      <ul className="mt-4 flex flex-wrap items-center gap-y-2">
-        {section.links.map((link, i, arr) => (
-          <Fragment key={link.label}>
-            <li>
-              <Link
-                href={link.href}
-                className="inline-flex rounded py-0.5 text-sm text-white/75 transition-colors duration-200 hover:text-[var(--brand-secondary)] focus-visible:text-[var(--brand-secondary)]"
+      <GroupHeading text="عن المنصة" />
+      <p className="mt-4 max-w-md text-sm leading-7 text-white/70">
+        منصة تعليمية عربية متكاملة تضم الطلاب والمعلمين وأولياء الأمور، وتقدّم
+        محتوى دراسيًا منظّمًا لكل المراحل الدراسية.
+      </p>
+      <div className="mt-6">
+        <SocialIcons />
+      </div>
+    </div>
+  );
+}
+
+/* ── Contact entries as the hero's icon tiles ──────────────────── */
+const CONTACT_ROWS = [
+  { label: "اتصل بنا", value: footerContact.phone, href: footerContact.phoneHref, icon: Phone },
+  { label: "راسلنا", value: footerContact.email, href: footerContact.emailHref, icon: Mail },
+  { label: "ساعات العمل", value: footerContact.hours, href: null, icon: Clock },
+] as const;
+
+function ContactStrip() {
+  return (
+    <div className="mt-12 border-t border-white/10 pt-8">
+      <ul className="flex flex-wrap items-center gap-x-9 gap-y-5">
+        {CONTACT_ROWS.map((row, i) => {
+          const Icon = row.icon;
+          const isPrimary = i % 2 === 0;
+          const color = isPrimary ? PRIMARY : SECONDARY;
+          return (
+            <li key={row.label} className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[3px] shadow-md"
+                style={{ backgroundColor: color, borderColor: color }}
               >
-                {link.label}
-              </Link>
+                <Icon className="h-[18px] w-[18px]" style={{ color: CONTRAST(isPrimary) }} />
+              </span>
+              <div className="min-w-0">
+                <span className="block text-[10px] font-bold text-white/45">{row.label}</span>
+                {row.href ? (
+                  <a
+                    href={row.href}
+                    className="mt-0.5 block truncate text-sm font-semibold text-white/85 transition-colors duration-200 hover:text-[var(--brand-secondary)]"
+                  >
+                    <span className="dir-ltr">{row.value}</span>
+                  </a>
+                ) : (
+                  <span className="mt-0.5 block text-sm font-semibold leading-6 text-white/85">
+                    {row.value}
+                  </span>
+                )}
+              </div>
             </li>
-            {i < arr.length - 1 && (
-              <li aria-hidden="true" className="px-1.5 text-white/25">
-                ·
-              </li>
-            )}
-          </Fragment>
-        ))}
+          );
+        })}
       </ul>
-    </div>
-  );
-}
-
-/* ── Compact contact group, one line per entry ─────────────────── */
-function ContactGroup() {
-  return (
-    <div>
-      <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-white/55">
-        <span
-          aria-hidden="true"
-          className="h-[3px] w-5 shrink-0 rounded-full"
-          style={{ background: "var(--brand-secondary)" }}
-        />
-        التواصل
-      </h3>
-      <ul className="mt-4 space-y-2.5">
-        <li>
-          <a
-            href={footerContact.phoneHref}
-            className="inline-flex items-center gap-2 rounded text-sm text-white/75 transition-colors duration-200 hover:text-[var(--brand-secondary)]"
-          >
-            <Phone className="h-3.5 w-3.5 shrink-0 text-[var(--brand-secondary)]" />
-            <span className="dir-ltr">{footerContact.phone}</span>
-          </a>
-        </li>
-        <li>
-          <a
-            href={footerContact.emailHref}
-            className="inline-flex items-center gap-2 rounded text-sm text-white/75 transition-colors duration-200 hover:text-[var(--brand-secondary)]"
-          >
-            <Mail className="h-3.5 w-3.5 shrink-0 text-[var(--brand-secondary)]" />
-            <span className="dir-ltr">{footerContact.email}</span>
-          </a>
-        </li>
-        <li>
-          <span className="inline-flex items-start gap-2 text-sm leading-6 text-white/75">
-            <Clock className="mt-1 h-3.5 w-3.5 shrink-0 text-[var(--brand-secondary)]" />
-            {footerContact.hours}
-          </span>
-        </li>
-      </ul>
-    </div>
-  );
-}
-
-/* ── Low nav rail: everything sits on a single line ────────────── */
-function NavRail() {
-  return (
-    <div className="border-y border-white/10">
-      <div className="mx-auto grid max-w-7xl gap-x-8 gap-y-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {footerNavSections.map((section, i) => (
-          <div key={section.heading} className={i > 0 ? "lg:border-s lg:border-white/10 lg:ps-8" : ""}>
-            <NavGroup section={section} />
-          </div>
-        ))}
-        <div className="lg:border-s lg:border-white/10 lg:ps-8">
-          <ContactGroup />
-        </div>
-      </div>
     </div>
   );
 }
@@ -386,7 +306,7 @@ function BackToTop() {
       onClick={scrollToTop}
       title="العودة للأعلى"
       aria-label="العودة للأعلى"
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/60 transition-colors duration-200 hover:border-transparent hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/60 ring-1 ring-white/20 transition-colors duration-200 hover:bg-[var(--brand-secondary)] hover:text-[var(--brand-secondary-contrast)] hover:ring-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
     >
       <ArrowUp className="h-4 w-4" />
     </button>
@@ -408,31 +328,97 @@ export function PublicFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      dir="rtl"
-      className="relative w-full overflow-hidden"
-      style={{
-        backgroundColor: "color-mix(in srgb, var(--brand-primary) 78%, #1a0f08)",
-      }}
-    >
-      <FooterBackdrop />
+    <footer dir="rtl" className="relative w-full py-8 sm:py-12 lg:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* ── The flight card ── */}
+        <div
+          className="relative overflow-hidden rounded-3xl shadow-brand-md"
+          style={{
+            border: "1px solid rgba(255,255,255,0.12)",
+            background:
+              "linear-gradient(165deg, color-mix(in srgb, var(--brand-primary) 70%, #1a0f08) 0%, color-mix(in srgb, var(--brand-primary) 85%, #1a0f08) 50%, color-mix(in srgb, var(--brand-primary) 80%, #120a06) 100%)",
+          }}
+        >
+          <CardSurface />
 
-      <div className="relative z-10">
-        <ClosingCta tenantName={tenantName} />
+          <div className="relative px-5 py-9 sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+            {/* ── Brand bar ── */}
+            <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4">
+                <BrandMark logo={logo} tenantName={tenantName} />
+                <div>
+                  <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">
+                    {tenantName}
+                  </p>
+                  <p className="mt-1 text-xs text-white/60">منظومة تعليمية متكاملة</p>
+                </div>
+              </div>
 
-        <GiantWordmark logo={logo} tenantName={tenantName} />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/student/dashboard"
+                  className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-[var(--brand-secondary)] px-6 py-3 text-sm font-bold text-[var(--brand-secondary-contrast)] transition-colors duration-200 hover:bg-white hover:text-[var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+                  style={{
+                    boxShadow:
+                      "0 12px 28px -10px color-mix(in srgb, var(--brand-secondary) 55%, transparent)",
+                  }}
+                >
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  <GraduationCap className="h-4 w-4" />
+                  <span className="relative">سجّل الآن</span>
+                </Link>
+                <a
+                  href={DEVELOPER_WHATSAPP}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-xl bg-white/5 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/25 transition-colors duration-200 hover:bg-white/10 hover:ring-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+                >
+                  تواصل معنا
+                </a>
+              </div>
+            </div>
 
-        <NavRail />
+            {/* ── Content spread ── */}
+            <div className="mt-12 grid gap-x-10 gap-y-11 lg:grid-cols-12">
+              <div className="lg:col-span-4">
+                <AboutBlock />
+              </div>
+              <div className="lg:col-span-8">
+                <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                  {footerNavSections.map((section) => (
+                    <NavGroup key={section.heading} section={section} />
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {/* ── Legal line ── */}
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-5 px-4 py-7 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
-          <p className="text-xs leading-relaxed text-white/50">
-            © {year} {tenantName}. جميع الحقوق محفوظة.
-          </p>
-          <div className="flex items-center gap-3">
-            <SocialsRow />
-            <span aria-hidden="true" className="mx-1 h-4 w-px bg-white/15" />
-            <BackToTop />
+            {/* ── Contact + legal ── */}
+            <ContactStrip />
+
+            <div className="flex flex-col items-center gap-4 border-t border-white/10 py-6 sm:flex-row sm:justify-between">
+              <p className="text-xs leading-relaxed text-white/50">
+                © {year} {tenantName}. جميع الحقوق محفوظة.
+              </p>
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+                <Link
+                  href="/marketing/privacy"
+                  className="inline-flex py-1 text-xs text-white/50 transition-colors duration-150 hover:text-[var(--brand-secondary)]"
+                >
+                  سياسة الخصوصية
+                </Link>
+                <span aria-hidden="true" className="text-white/20">
+                  ·
+                </span>
+                <Link
+                  href="/marketing/terms"
+                  className="inline-flex py-1 text-xs text-white/50 transition-colors duration-150 hover:text-[var(--brand-secondary)]"
+                >
+                  شروط الاستخدام
+                </Link>
+                <span aria-hidden="true" className="mx-1.5 h-4 w-px bg-white/15" />
+                <BackToTop />
+              </div>
+            </div>
           </div>
         </div>
       </div>
