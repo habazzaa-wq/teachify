@@ -14,29 +14,28 @@ class TenantRepository
         try {
             $result = Cache::get("tenant.{$id}");
 
-            if ($result instanceof \__PHP_Incomplete_Class) {
-                Cache::forget("tenant.{$id}");
-                $result = null;
-            }
-
-            if ($result !== null) {
+            if ($result instanceof Tenant) {
                 return $result;
             }
-        } catch (\Throwable $e) {
-            Cache::forget("tenant.{$id}");
+        } catch (\Throwable) {
         }
 
         $tenant = Tenant::query()->whereKey($id)->first();
-        Cache::put("tenant.{$id}", $tenant, 3600);
+
+        if ($tenant !== null) {
+            Cache::add("tenant.{$id}", $tenant, 3600);
+        }
 
         return $tenant;
     }
 
-    public function isActive(int|string $id): bool
+    public function isActive(Tenant|int|string $tenant): bool
     {
-        $tenant = $this->findById($id);
+        if (! $tenant instanceof Tenant) {
+            $tenant = $this->findById($tenant);
+        }
 
-        return $tenant && $tenant->status === 'active';
+        return $tenant !== null && $tenant->status === 'active';
     }
 
     public function findByDomain(string $domain): ?Tenant

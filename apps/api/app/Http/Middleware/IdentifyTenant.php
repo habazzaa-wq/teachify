@@ -22,7 +22,7 @@ class IdentifyTenant
         $tenantId = trim((string) $request->header('X-Tenant-ID', ''));
         if ($tenantId !== '') {
             $tenant = $this->tenants->findById($tenantId);
-            if ($tenant && $this->tenants->isActive((string) $tenant->id)) {
+            if ($tenant && $this->tenants->isActive($tenant)) {
                 app()->instance(Tenant::class, $tenant);
                 app()->instance('currentTenant', $tenant);
                 return $next($request);
@@ -54,7 +54,7 @@ class IdentifyTenant
             $tenant = $this->tenants->findByHostname($hostname);
         }
 
-        if (! isset($tenant) || ! $tenant || ! $this->tenants->isActive((string) $tenant->id)) {
+        if (! isset($tenant) || ! $tenant || ! $this->tenants->isActive($tenant)) {
             return response()->json([
                 'message' => 'Tenant not found or inactive.',
                 'error' => 'TENANT_NOT_FOUND'
