@@ -10,6 +10,7 @@ use App\Services\Platform\TenantCreationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 class TenantController extends Controller
 {
@@ -160,6 +161,7 @@ class TenantController extends Controller
         }
 
         $tenant->update($validated);
+        Cache::forget("tenant.{$tenant->id}");
         $tenant->load(['domains']);
 
         return response()->json([
@@ -170,6 +172,7 @@ class TenantController extends Controller
     public function destroy(Tenant $tenant): JsonResponse
     {
         $tenant->delete();
+        Cache::forget("tenant.{$tenant->id}");
 
         return response()->json(['message' => 'Tenant deleted.']);
     }
@@ -182,6 +185,10 @@ class TenantController extends Controller
         ]);
 
         Tenant::whereIn('id', $validated['ids'])->delete();
+
+        foreach ($validated['ids'] as $id) {
+            Cache::forget("tenant.{$id}");
+        }
 
         return response()->json(['message' => 'Tenants deleted.']);
     }

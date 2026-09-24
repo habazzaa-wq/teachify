@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class TenantSettingController extends Controller
@@ -105,6 +106,7 @@ class TenantSettingController extends Controller
 
         if (array_key_exists('name', $values)) {
             $tenant->update(['name' => trim((string) $values['name'])]);
+            Cache::forget("tenant.{$tenant->id}");
         }
 
         $brandingKeys = ['favicon', 'logo', 'dark_logo', 'light_logo', 'logo_type', 'logo_icon', 'logo_image', 'font', 'primary_color', 'secondary_color'];
