@@ -101,6 +101,33 @@ module.exports = {
       min_uptime: "5s",
     },
     {
+      // Teacher-driven grading of exam attempts (GradeExamAttemptJob).
+      // Runs separately from the default worker because grading is bursty and
+      // must not be starved by high-volume default-queue traffic.
+      name: "teachify-queue-grading",
+      script: "artisan",
+      interpreter: "php",
+      args:
+        "queue:work --queue=grading --sleep=3 --tries=3 --timeout=600 --max-time=3600 --max-jobs=200",
+      cwd: "./apps/api",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "256M",
+      env: {
+        APP_ENV: "production",
+        APP_DEBUG: "false",
+      },
+      error_file: "./logs/queue-grading-error.log",
+      out_file: "./logs/queue-grading-out.log",
+      merge_logs: true,
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      exp_backoff_restart_delay: 100,
+      max_restarts: 10,
+      min_uptime: "5s",
+    },
+    {
       name: "teachify-reverb",
       script: "artisan",
       interpreter: "php",
