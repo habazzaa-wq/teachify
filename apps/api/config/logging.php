@@ -2,7 +2,6 @@
 
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
-use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
@@ -71,7 +70,14 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
-            'permission' => 0664,
+            // Left null deliberately. Monolog chmod()s the target on every write
+            // when a permission is set, and the deploy layout runs Laravel under
+            // two users: PHP-FPM as www-data and the queue workers as deplo.
+            // storage/logs files are owned by www-data, so the chmod() from the
+            // queue workers fails with EPERM, Monolog rethrows, and the worker
+            // dies instead of logging the error that killed it. Skipping the
+            // chmod lets both users append to the group-writable files.
+            'permission' => null,
         ],
 
         'stderr' => [
@@ -113,7 +119,9 @@ return [
             'level' => env('LOG_BUNNY_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
-            'permission' => 0664,
+            // See the note on the 'daily' channel: null avoids the EPERM
+            // chmod() when the deplo-owned queue worker logs a Bunny error.
+            'permission' => null,
         ],
 
         'usage' => [
@@ -122,7 +130,9 @@ return [
             'level' => env('LOG_USAGE_LEVEL', env('LOG_LEVEL', 'debug')),
             'days' => 30,
             'replace_placeholders' => true,
-            'permission' => 0664,
+            // See the note on the 'daily' channel: null avoids the EPERM
+            // chmod() when the deplo-owned queue worker logs a usage error.
+            'permission' => null,
         ],
 
     ],
