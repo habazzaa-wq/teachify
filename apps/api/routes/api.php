@@ -92,6 +92,7 @@ use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainController;
+use App\Http\Controllers\Api\v1\Platform\PlatformStatsController;
 use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
@@ -103,7 +104,9 @@ use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicFooterController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
+use App\Http\Controllers\Api\v1\PublicLegalController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSeoContentController;
 use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
@@ -729,6 +732,7 @@ Route::prefix('v1')->group(function () {
 Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
     ->prefix('platform')
     ->group(function () {
+        Route::get('/stats', [PlatformStatsController::class, 'index']);
         Route::get('/tenants', [TenantController::class, 'index']);
         Route::post('/tenants', [TenantController::class, 'store']);
         Route::get('/tenants/{tenant}', [TenantController::class, 'show']);
