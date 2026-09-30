@@ -184,6 +184,15 @@ class PlatformPlanController extends Controller
 
     public function destroy(PlatformPlan $platformPlan): JsonResponse
     {
+        $assigned = $platformPlan->tenants()->count();
+
+        if ($assigned > 0) {
+            return response()->json([
+                'message' => 'Plan is assigned to one or more tenants and cannot be deleted.',
+                'assigned_tenants' => $assigned,
+            ], 409);
+        }
+
         $platformPlan->delete();
 
         return response()->json(['message' => 'Plan deleted.']);
@@ -193,8 +202,27 @@ class PlatformPlanController extends Controller
     {
         $validated = $request->validate([
             'ids' => ['required', 'array'],
-            'ids.*' => ['required', 'string'],
+            'ids.*' => ['required', 'integer', 'exists:platform_plans,id'],
         ]);
+
+        $assigned = PlatformPlan::query()
+            ->whereIn('id', $validated['ids'])
+            ->has('tenants')
+            ->withCount('tenants')
+            ->get()
+            ->map(fn (PlatformPlan $plan) => [
+                'id' => (string) $plan->getKey(),
+                'name' => $plan->name,
+                'tenants_count' => $plan->tenants_count,
+            ])
+            ->values();
+
+        if ($assigned->isNotEmpty()) {
+            return response()->json([
+                'message' => 'One or more plans are assigned to tenants and cannot be deleted.',
+                'assigned_plans' => $assigned,
+            ], 409);
+        }
 
         PlatformPlan::whereIn('id', $validated['ids'])->delete();
 

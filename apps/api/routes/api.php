@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Platform\BunnyCenter\BunnyCenterController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
+use App\Http\Controllers\Api\Platform\PlatformPlanController;
 use App\Http\Controllers\Api\Platform\Usage\UsageController;
 use App\Http\Controllers\Api\v1\Access\CourseAccessController;
 use App\Http\Controllers\Api\v1\Access\LessonAccessController;
@@ -730,6 +731,20 @@ Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])
         Route::post('/tenants/bulk/delete', [TenantController::class, 'bulkDestroy']);
         Route::get('/audit-logs', [PlatformAuditController::class, 'index']);
         Route::apiResource('admins', PlatformAdminController::class);
+
+        Route::prefix('plans')->group(function () {
+            Route::get('/', [PlatformPlanController::class, 'index']);
+            Route::post('/', [PlatformPlanController::class, 'store']);
+            Route::get('/metrics', [PlatformPlanController::class, 'metrics']);
+            Route::post('/bulk/delete', [PlatformPlanController::class, 'bulkDestroy']);
+            Route::get('/{platformPlan}', [PlatformPlanController::class, 'show']);
+            Route::put('/{platformPlan}', [PlatformPlanController::class, 'update']);
+            Route::delete('/{platformPlan}', [PlatformPlanController::class, 'destroy']);
+            Route::post('/{platformPlan}/activate', [PlatformPlanController::class, 'activate']);
+            Route::post('/{platformPlan}/deactivate', [PlatformPlanController::class, 'deactivate']);
+            Route::post('/{platformPlan}/archive', [PlatformPlanController::class, 'archive']);
+            Route::post('/{platformPlan}/duplicate', [PlatformPlanController::class, 'duplicate']);
+        });
 
         Route::prefix('bunny-settings')->group(function () {
             Route::get('/', [PlatformBunnySettingController::class, 'index']);

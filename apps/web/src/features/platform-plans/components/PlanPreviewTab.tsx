@@ -16,6 +16,7 @@ import { AppBadge, AppButton, AppDivider } from "@/components/ui";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { PLAN_BADGE_CONFIG, FEATURE_GROUPS } from "../constants";
+import { formatBytes } from "../utils/formatBytes";
 import type { PremiumPlan } from "../types";
 
 export function renderPlanIcon(iconName: string, className?: string) {
@@ -184,7 +185,7 @@ function PlanPreviewTab({ data }: PlanPreviewTabProps) {
                     <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
                       <span className="text-xs text-muted-foreground">التخزين</span>
                       <span className="text-sm font-semibold tabular-nums">
-                        {limits.storage === null ? "∞" : `${limits.storage} GB`}
+                        {limits.storage === null ? "∞" : formatBytes(limits.storage)}
                       </span>
                     </div>
                   )}
@@ -192,7 +193,7 @@ function PlanPreviewTab({ data }: PlanPreviewTabProps) {
                     <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
                       <span className="text-xs text-muted-foreground">النطاق</span>
                       <span className="text-sm font-semibold tabular-nums">
-                        {limits.bandwidth === null ? "∞" : `${limits.bandwidth} GB`}
+                        {limits.bandwidth === null ? "∞" : formatBytes(limits.bandwidth)}
                       </span>
                     </div>
                   )}

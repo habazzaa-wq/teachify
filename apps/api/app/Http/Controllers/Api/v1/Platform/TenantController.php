@@ -6,18 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\CreateTenantRequest;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
+use App\Repositories\TenantRepository;
 use App\Services\Platform\TenantCreationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\Cache;
 
 class TenantController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
         $tenants = Tenant::query()
-            ->with(['domains' => fn ($query) => $query->where('is_primary', true)])
+            ->with(['platformPlan', 'domains' => fn ($query) => $query->where('is_primary', true)])
             ->latest()
             ->paginate(25);
 
@@ -48,6 +48,7 @@ class TenantController extends Controller
     public function show(Tenant $tenant): JsonResponse
     {
         $tenant->load([
+            'platformPlan',
             'domains',
             'settings',
             'integrations',
@@ -93,7 +94,18 @@ class TenantController extends Controller
             'domain' => ['sometimes', 'nullable', 'array'],
             'subscription' => ['sometimes', 'nullable', 'array'],
             'plan' => ['sometimes', 'nullable', 'array'],
+            'platform_plan_id' => ['sometimes', 'nullable', 'integer', 'exists:platform_plans,id'],
         ]);
+
+        // The canonical plan assignment is applied separately from the mass
+        // assignment below, because `platform_plan_id` is a foreign key and must
+        // not go through the legacy JSON/attribute mass-assignment path. A
+        // request may still carry `plan`; it stays legacy compatibility data and
+        // is ignored when limits are resolved.
+        $planAssignment = array_key_exists('platform_plan_id', $validated)
+            ? $validated['platform_plan_id']
+            : false;
+        unset($validated['platform_plan_id']);
 
         // Update domain if provided
         if ($request->has('domain')) {
@@ -161,9 +173,13 @@ class TenantController extends Controller
         }
 
         $tenant->update($validated);
-        Cache::forget("tenant.{$tenant->id}");
-        $tenant->load(['domains']);
 
+        if ($planAssignment !== false) {
+            $tenant->forceFill(['platform_plan_id' => $planAssignment])->save();
+        }
+
+        app(TenantRepository::class)->forget($tenant->id);
+        $tenant->load(['domains', 'platformPlan']);
         return response()->json([
             'tenant' => new TenantResource($tenant),
         ]);
@@ -172,7 +188,7 @@ class TenantController extends Controller
     public function destroy(Tenant $tenant): JsonResponse
     {
         $tenant->delete();
-        Cache::forget("tenant.{$tenant->id}");
+        app(TenantRepository::class)->forget($tenant->id);
 
         return response()->json(['message' => 'Tenant deleted.']);
     }
@@ -187,7 +203,7 @@ class TenantController extends Controller
         Tenant::whereIn('id', $validated['ids'])->delete();
 
         foreach ($validated['ids'] as $id) {
-            Cache::forget("tenant.{$id}");
+            app(TenantRepository::class)->forget($id);
         }
 
         return response()->json(['message' => 'Tenants deleted.']);

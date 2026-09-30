@@ -34,6 +34,18 @@ class CurrentUserController extends Controller
                 'domain' => $tenant->getDefaultDomain(),
                 'branding' => $this->getBranding($tenant),
                 'platform_branding' => $this->getPlatformBranding($tenant),
+                'platform_plan_id' => $tenant->platform_plan_id,
+                // The canonical assignment, so the dashboard can show the real
+                // plan instead of guessing one from the legacy JSON columns.
+                'platform_plan' => $tenant->platformPlan?->only([
+                    'id', 'name', 'slug', 'status', 'trial_enabled', 'trial_days', 'limits',
+                ]),
+                'subscription' => is_array($tenant->subscription) ? [
+                    'plan' => $tenant->subscription['plan'] ?? null,
+                    'status' => $tenant->subscription['status'] ?? null,
+                    'started_at' => $tenant->subscription['started_at'] ?? null,
+                    'ends_at' => $tenant->subscription['ends_at'] ?? null,
+                ] : null,
             ],
             'membership' => [
                 'id' => $membership->id,

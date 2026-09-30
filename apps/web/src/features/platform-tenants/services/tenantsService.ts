@@ -181,6 +181,10 @@ export const tenantsService = {
         autoRenew: plan.autoRenew,
         invoices: [],
       },
+      // This mock has no canonical plan assignment; the wizard still writes the
+      // legacy `subscription` block above, which the API ignores for limits.
+      platformPlanId: null,
+      platformPlan: null,
       limits: selectedPlan ? {
         storage: selectedPlan.storage, storageUsed: 0,
         bandwidth: selectedPlan.bandwidth, bandwidthUsed: 0,
@@ -290,6 +294,8 @@ export const tenantsService = {
         status: "pending", price: 0, currency: "SAR",
         paymentMethod: "", autoRenew: true, invoices: [],
       },
+      platformPlanId: data.platformPlanId ?? null,
+      platformPlan: data.platformPlan ?? null,
       limits: data.limits ?? {
         storage: 0, storageUsed: 0, bandwidth: 0, bandwidthUsed: 0,
         videos: 0, videosUsed: 0, courses: 0, coursesUsed: 0,

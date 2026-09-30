@@ -1,173 +1,164 @@
+import { platformApi } from "@/services/api/platform-axios";
 import type { PremiumPlan, PlansFilterParams, PlansMetricData } from "../types";
-import { mockPlans, getPlansMetrics } from "../mock";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Wire representation of a `platform_plans` row.
+ *
+ * The API returns raw model attributes (snake_case); the plan UI works in
+ * camelCase, so every read is normalised here. `storage`, `bandwidth` and
+ * `maximumUploadSize` are byte counts, matching `tenant_usage` and the limit
+ * service, so the UI must not treat them as GB.
+ */
+interface PlatformPlanRow {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  badge: PremiumPlan["badge"];
+  monthly_price: string | number;
+  yearly_price: string | number;
+  currency: string;
+  display_order: number;
+  trial_enabled: number;
+  trial_days: number;
+  recommended: number;
+  visible: number;
+  status: PremiumPlan["status"];
+  limits: PremiumPlan["limits"] | null;
+  features: PremiumPlan["features"] | null;
+  video_storage: PremiumPlan["videoStorage"] | null;
+  branding: PremiumPlan["branding"] | null;
+  integrations: PremiumPlan["integrations"] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiEnvelope<T> {
+  data: T;
+}
+
+function toPremiumPlan(row: PlatformPlanRow): PremiumPlan {
+  return {
+    id: String(row.id),
+    name: row.name,
+    slug: row.slug,
+    description: row.description ?? "",
+    badge: row.badge ?? null,
+    monthlyPrice: Number(row.monthly_price ?? 0),
+    yearlyPrice: Number(row.yearly_price ?? 0),
+    currency: row.currency,
+    displayOrder: row.display_order,
+    trialEnabled: Boolean(row.trial_enabled),
+    trialDays: row.trial_days,
+    recommended: Boolean(row.recommended),
+    visible: Boolean(row.visible),
+    status: row.status,
+    limits: (row.limits ?? null) as PremiumPlan["limits"],
+    features: (row.features ?? null) as PremiumPlan["features"],
+    videoStorage: (row.video_storage ?? null) as PremiumPlan["videoStorage"],
+    branding: (row.branding ?? null) as PremiumPlan["branding"],
+    integrations: (row.integrations ?? null) as PremiumPlan["integrations"],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** Sort keys are whitelisted server-side by column name, not camelCase. */
+const SORT_COLUMNS: Record<string, string> = {
+  name: "name",
+  monthlyPrice: "monthly_price",
+  yearlyPrice: "yearly_price",
+  displayOrder: "display_order",
+  createdAt: "created_at",
+};
+
+/** The controller accepts these keys in camelCase; everything else is dropped. */
+function toWritePayload(data: Partial<PremiumPlan>): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.slug !== undefined) payload.slug = data.slug;
+  if (data.description !== undefined) payload.description = data.description;
+  if (data.badge !== undefined) payload.badge = data.badge;
+  if (data.monthlyPrice !== undefined) payload.monthlyPrice = data.monthlyPrice;
+  if (data.yearlyPrice !== undefined) payload.yearlyPrice = data.yearlyPrice;
+  if (data.currency !== undefined) payload.currency = data.currency;
+  if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
+  if (data.trialEnabled !== undefined) payload.trialEnabled = data.trialEnabled;
+  if (data.trialDays !== undefined) payload.trialDays = data.trialDays;
+  if (data.recommended !== undefined) payload.recommended = data.recommended;
+  if (data.visible !== undefined) payload.visible = data.visible;
+  if (data.status !== undefined) payload.status = data.status;
+  if (data.limits !== undefined) payload.limits = data.limits;
+  if (data.features !== undefined) payload.features = data.features;
+  if (data.videoStorage !== undefined) payload.videoStorage = data.videoStorage;
+  if (data.branding !== undefined) payload.branding = data.branding;
+  if (data.integrations !== undefined) payload.integrations = data.integrations;
+
+  return payload;
+}
 
 export const plansService = {
   async list(params?: PlansFilterParams): Promise<{ data: PremiumPlan[]; total: number }> {
-    await delay(400);
-    let filtered = [...mockPlans];
+    const query: Record<string, string> = {};
+    if (params?.search) query.search = params.search;
+    if (params?.status && params.status !== "all") query.status = params.status;
+    if (params?.sort) query.sort = SORT_COLUMNS[params.sort] ?? "display_order";
+    if (params?.sortDir) query.sort_dir = params.sortDir;
 
-    if (params?.search) {
-      const q = params.search.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.slug.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q),
-      );
-    }
+    const { data } = await platformApi.get<ApiEnvelope<PlatformPlanRow[]> & { total: number }>(
+      "/plans",
+      { params: query },
+    );
 
-    if (params?.status && params.status !== "all") {
-      filtered = filtered.filter((p) => p.status === params.status);
-    }
-
-    if (params?.sort) {
-      const dir = params.sortDir === "desc" ? -1 : 1;
-      filtered.sort((a, b) => {
-        const aVal = a[params.sort!];
-        const bVal = b[params.sort!];
-        if (typeof aVal === "string" && typeof bVal === "string") {
-          return aVal.localeCompare(bVal) * dir;
-        }
-        return ((aVal as number) - (bVal as number)) * dir;
-      });
-    }
-
-    return { data: filtered, total: filtered.length };
+    return { data: (data.data ?? []).map(toPremiumPlan), total: data.total ?? 0 };
   },
 
   async getById(id: string): Promise<PremiumPlan | null> {
-    await delay(200);
-    return mockPlans.find((p) => p.id === id) ?? null;
+    const { data } = await platformApi.get<ApiEnvelope<PlatformPlanRow>>(`/plans/${id}`);
+    return toPremiumPlan(data.data);
   },
 
   async getMetrics(): Promise<PlansMetricData> {
-    await delay(300);
-    return getPlansMetrics();
+    const { data } = await platformApi.get<PlansMetricData>("/plans/metrics");
+    return data;
   },
 
   async create(data: Partial<PremiumPlan>): Promise<PremiumPlan> {
-    await delay(500);
-    const plan: PremiumPlan = {
-      id: `plan_${Date.now()}`,
-      name: data.name ?? "باقة جديدة",
-      slug: data.slug ?? "new-plan",
-      description: data.description ?? "",
-      badge: data.badge ?? null,
-      monthlyPrice: data.monthlyPrice ?? 0,
-      yearlyPrice: data.yearlyPrice ?? 0,
-      currency: data.currency ?? "SAR",
-      displayOrder: data.displayOrder ?? mockPlans.length + 1,
-      trialEnabled: data.trialEnabled ?? false,
-      trialDays: data.trialDays ?? 0,
-      recommended: data.recommended ?? false,
-      visible: data.visible ?? true,
-      status: data.status ?? "draft",
-      limits: data.limits ?? {
-        admins: null, instructors: null, students: null, courses: null,
-        sections: null, lessons: null, videos: null, certificates: null,
-        quizzes: null, assignments: null, discussionThreads: null,
-        bookmarks: null, notes: null, notificationsPerMonth: null,
-        apiRequests: null, storage: null, bandwidth: null,
-        maximumUploadSize: null, maximumVideoDuration: null,
-      },
-      features: data.features ?? {
-        courses: false, certificates: false, assignments: false, quizzes: false,
-        discussions: false, notes: false, bookmarks: false,
-        basicAnalytics: false, advancedAnalytics: false,
-        bunnyStream: false, videoStreaming: false, videoDownloadProtection: false, videoAnalytics: false,
-        customBranding: false, whiteLabel: false, customDomain: false,
-        auditLogs: false, activityLogs: false, apiAccess: false, webhooks: false,
-        smtp: false, stripe: false, paypal: false, zoom: false, googleMeet: false, microsoftTeams: false,
-        aiAssistant: false, aiGrading: false, aiAnalytics: false,
-      },
-      videoStorage: data.videoStorage ?? {
-        storageLimit: 0, storageUsed: 0, bandwidthLimit: 0, bandwidthUsed: 0,
-        videosLimit: 0, videosUsed: 0, maximumUploadSize: 0, maximumVideoDuration: 0,
-        allowedFormats: ["mp4"], allowedQualities: ["720"],
-      },
-      branding: data.branding ?? {
-        color: "#6366f1", gradient: "from-indigo-500 to-purple-600", icon: "rocket",
-        recommendedRibbon: false, popularRibbon: false,
-      },
-      integrations: data.integrations ?? {
-        allowBunnyStorage: false, allowBunnyStream: false, allowSmtp: false,
-        allowStripe: false, allowPaypal: false, allowZoom: false,
-        allowMicrosoftTeams: false, allowGoogleMeet: false,
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    mockPlans.push(plan);
-    return plan;
+    const { data: response } = await platformApi.post<ApiEnvelope<PlatformPlanRow>>("/plans", toWritePayload(data));
+    return toPremiumPlan(response.data);
   },
 
-  async update(id: string, data: Partial<PremiumPlan>): Promise<PremiumPlan | null> {
-    await delay(500);
-    const index = mockPlans.findIndex((p) => p.id === id);
-    if (index === -1) return null;
-    mockPlans[index] = { ...mockPlans[index], ...data, updatedAt: new Date().toISOString() } as PremiumPlan;
-    return mockPlans[index];
+  async update(id: string, data: Partial<PremiumPlan>): Promise<PremiumPlan> {
+    const { data: response } = await platformApi.put<ApiEnvelope<PlatformPlanRow>>(
+      `/plans/${id}`,
+      toWritePayload(data),
+    );
+    return toPremiumPlan(response.data);
   },
 
-  async duplicate(id: string): Promise<PremiumPlan | null> {
-    await delay(400);
-    const original = mockPlans.find((p) => p.id === id);
-    if (!original) return null;
-    const duplicate: PremiumPlan = {
-      ...original,
-      id: `plan_${Date.now()}`,
-      name: `نسخة من ${original.name}`,
-      slug: `${original.slug}-copy-${Date.now()}`,
-      status: "draft",
-      visible: false,
-      recommended: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    mockPlans.push(duplicate);
-    return duplicate;
+  async duplicate(id: string): Promise<PremiumPlan> {
+    const { data } = await platformApi.post<ApiEnvelope<PlatformPlanRow>>(`/plans/${id}/duplicate`);
+    return toPremiumPlan(data.data);
   },
 
   async archive(id: string): Promise<void> {
-    await delay(300);
-    const plan = mockPlans.find((p) => p.id === id);
-    if (plan) {
-      plan.status = "archived";
-      plan.updatedAt = new Date().toISOString();
-    }
+    await platformApi.post(`/plans/${id}/archive`);
   },
 
   async activate(id: string): Promise<void> {
-    await delay(300);
-    const plan = mockPlans.find((p) => p.id === id);
-    if (plan) {
-      plan.status = "active";
-      plan.updatedAt = new Date().toISOString();
-    }
+    await platformApi.post(`/plans/${id}/activate`);
   },
 
   async deactivate(id: string): Promise<void> {
-    await delay(300);
-    const plan = mockPlans.find((p) => p.id === id);
-    if (plan) {
-      plan.status = "hidden";
-      plan.updatedAt = new Date().toISOString();
-    }
+    await platformApi.post(`/plans/${id}/deactivate`);
   },
 
   async delete(id: string): Promise<void> {
-    await delay(300);
-    const index = mockPlans.findIndex((p) => p.id === id);
-    if (index !== -1) mockPlans.splice(index, 1);
+    await platformApi.delete(`/plans/${id}`);
   },
 
   async bulkDelete(ids: string[]): Promise<void> {
-    await delay(600);
-    ids.forEach((id) => {
-      const index = mockPlans.findIndex((p) => p.id === id);
-      if (index !== -1) mockPlans.splice(index, 1);
-    });
+    await platformApi.post("/plans/bulk/delete", { ids: ids.map(String) });
   },
 };

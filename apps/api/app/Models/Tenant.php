@@ -7,6 +7,7 @@ use App\Models\Usage\TenantUsageHistory;
 use App\Models\Usage\TenantUsageSnapshot;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -39,6 +40,7 @@ class Tenant extends Model
         'storage_json',
         'subscription',
         'plan',
+        'platform_plan_id',
         'feature_flags',
     ];
 
@@ -63,6 +65,36 @@ class Tenant extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(TenantUser::class);
+    }
+
+    /**
+     * The tenant's assigned plan from the canonical catalogue. NULL means the
+     * tenant has no plan yet and falls back to the default limits.
+     */
+    public function platformPlan(): BelongsTo
+    {
+        return $this->belongsTo(PlatformPlan::class, 'platform_plan_id');
+    }
+
+    /**
+     * The assigned plan id without hydrating the relation.
+     *
+     * The current request's tenant instance is normally already resolved by
+     * IdentifyTenant, so prefer it over a second query.
+     */
+    public function assignedPlatformPlanId(): ?int
+    {
+        $current = app()->bound('currentTenant') ? app('currentTenant') : null;
+
+        if ($current instanceof self && $current->getKey() === $this->getKey()) {
+            return $current->platform_plan_id !== null
+                ? (int) $current->platform_plan_id
+                : null;
+        }
+
+        $id = static::query()->whereKey($this->getKey())->value('platform_plan_id');
+
+        return $id !== null ? (int) $id : null;
     }
 
     public function roles(): HasMany

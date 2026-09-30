@@ -118,6 +118,9 @@ export const platformTenantsApiService = {
       "currency", "companyName", "supportEmail", "notes", "tags", "address",
       "owner", "ownerAccount", "branding", "limits", "integrations",
       "storage", "security", "domain", "subscription",
+      // The canonical plan assignment; maps to `platform_plan_id`. Send null to
+      // unassign and fall the tenant back to the default limits.
+      "platformPlanId",
     ]);
     const filtered: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {

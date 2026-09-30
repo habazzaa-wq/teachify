@@ -4,6 +4,7 @@ import { useCallback, memo } from "react";
 import { Infinity } from "lucide-react";
 import { AppInput, AppSwitch, Label, AppCard, AppCardContent, AppCardHeader, AppCardTitle } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { BYTES_PER_GB } from "../utils/formatBytes";
 import type { PlanLimits } from "../types";
 
 interface LimitRowProps {
@@ -60,6 +61,23 @@ interface PlanLimitsTabProps {
   onChange: (limits: PlanLimits) => void;
 }
 
+/**
+ * `storage`, `bandwidth` and `maximumUploadSize` are stored in bytes: that is
+ * the unit the API compares against `tenant_usage`. This editor therefore shows
+ * a GB value and converts on the way in and out, so saving "10" means 10 GB
+ * rather than 10 bytes.
+ */
+const ByteLimitRow = memo(function ByteLimitRow({ label, value, onChange }: Omit<LimitRowProps, "suffix">) {
+  return (
+    <LimitRow
+      label={label}
+      value={value === null ? null : Math.round(value / BYTES_PER_GB)}
+      suffix="GB"
+      onChange={(next) => onChange(next === null ? null : Math.round(next * BYTES_PER_GB))}
+    />
+  );
+});
+
 function PlanLimitsTab({ limits, onChange }: PlanLimitsTabProps) {
   const updateLimit = useCallback(
     (field: keyof PlanLimits, value: number | null) => {
@@ -114,9 +132,9 @@ function PlanLimitsTab({ limits, onChange }: PlanLimitsTabProps) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <LimitRow label="الإشعارات (شهرياً)" value={limits.notificationsPerMonth} onChange={(v) => updateLimit("notificationsPerMonth", v)} />
             <LimitRow label="طلبات API" value={limits.apiRequests} onChange={(v) => updateLimit("apiRequests", v)} />
-            <LimitRow label="التخزين" value={limits.storage} onChange={(v) => updateLimit("storage", v)} suffix="GB" />
-            <LimitRow label="النطاق" value={limits.bandwidth} onChange={(v) => updateLimit("bandwidth", v)} suffix="GB" />
-            <LimitRow label="الحد الأقصى للرفع" value={limits.maximumUploadSize} onChange={(v) => updateLimit("maximumUploadSize", v)} suffix="GB" />
+            <ByteLimitRow label="التخزين" value={limits.storage} onChange={(v) => updateLimit("storage", v)} />
+            <ByteLimitRow label="النطاق" value={limits.bandwidth} onChange={(v) => updateLimit("bandwidth", v)} />
+            <ByteLimitRow label="الحد الأقصى للرفع" value={limits.maximumUploadSize} onChange={(v) => updateLimit("maximumUploadSize", v)} />
             <LimitRow label="الحد الأقصى لمدة الفيديو" value={limits.maximumVideoDuration} onChange={(v) => updateLimit("maximumVideoDuration", v)} suffix="دقيقة" />
           </div>
         </AppCardContent>

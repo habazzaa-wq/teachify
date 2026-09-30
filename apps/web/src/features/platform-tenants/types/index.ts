@@ -166,6 +166,18 @@ export interface OwnerAccount {
   status: "active" | "inactive";
 }
 
+/** The canonical plan assignment, as returned by `TenantResource.platformPlan`. */
+export interface TenantPlatformPlan {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  displayOrder: number;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  currency: string;
+}
+
 export interface Tenant {
   id: string;
   logo: string | null;
@@ -183,6 +195,9 @@ export interface Tenant {
   phone: string;
   status: TenantStatus;
   subscription: TenantSubscription;
+  /** The canonical plan id from `platform_plans`. NULL when unassigned. */
+  platformPlanId: string | null;
+  platformPlan: TenantPlatformPlan | null;
   limits: TenantLimits;
   branding: TenantBranding;
   integrations: TenantIntegration;

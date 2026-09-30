@@ -14,6 +14,7 @@ import {
 import { formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { PLAN_BADGE_CONFIG, PLAN_STATUS_CONFIG } from "../constants";
+import { formatBytes } from "../utils/formatBytes";
 import { PlanRowActions } from "./PlanRowActions";
 import type { PremiumPlan } from "../types";
 
@@ -94,10 +95,10 @@ const PlansTableRow = memo(function PlansTableRow({
       <AppTableCell className="tabular-nums">${formatNumber(plan.monthlyPrice)}</AppTableCell>
       <AppTableCell className="tabular-nums">${formatNumber(plan.yearlyPrice)}</AppTableCell>
       <AppTableCell className="tabular-nums">
-        {plan.limits.storage !== null ? `${formatNumber(plan.limits.storage)} GB` : "غير محدود"}
+        {plan.limits.storage !== null ? formatBytes(plan.limits.storage) : "غير محدود"}
       </AppTableCell>
       <AppTableCell className="tabular-nums">
-        {plan.limits.bandwidth !== null ? `${formatNumber(plan.limits.bandwidth)} GB` : "غير محدود"}
+        {plan.limits.bandwidth !== null ? formatBytes(plan.limits.bandwidth) : "غير محدود"}
       </AppTableCell>
       <AppTableCell className="tabular-nums">
         {plan.limits.videos !== null ? formatNumber(plan.limits.videos) : "∞"}

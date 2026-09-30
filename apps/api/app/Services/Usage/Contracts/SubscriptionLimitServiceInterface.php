@@ -13,5 +13,7 @@ interface SubscriptionLimitServiceInterface
     public function getFolderLimit(int $tenantId): int;
     public function getCollectionLimit(int $tenantId): int;
     public function getLimit(int $tenantId, string $key): int;
+    public function getLimitValue(int $tenantId, string $key): ?int;
+    public function isUnlimited(int $tenantId, string $key): bool;
     public function getAllLimits(int $tenantId): array;
 }

@@ -14,6 +14,13 @@ class TenantResource extends JsonResource
         $limits = $this->limits ?? [];
         $planLimits = $plan['limits'] ?? [];
 
+        // Canonical plan assignment. `tenants.plan` is legacy compatibility data
+        // and is only consulted as a fallback when no platform plan is assigned.
+        $platformPlan = $this->platformPlan;
+        $planId = $platformPlan?->getKey();
+        $planName = $platformPlan?->name;
+        $canonicalLimits = is_array($platformPlan?->limits) ? $platformPlan->limits : [];
+
         return [
             'id' => (string) $this->id,
             'name' => $this->name,
@@ -67,8 +74,8 @@ class TenantResource extends JsonResource
             'currency' => $this->currency ?? 'SAR',
             'phone' => $this->phone ?? '',
             'subscription' => $this->subscription ? [
-                'planId' => $this->subscription['plan_id'] ?? $this->subscription['planId'] ?? $plan['id'] ?? '',
-                'planName' => $this->subscription['plan_name'] ?? $this->subscription['planName'] ?? $plan['name'] ?? '',
+                'planId' => (string) ($this->subscription['plan_id'] ?? $this->subscription['planId'] ?? $planId ?? $plan['id'] ?? ''),
+                'planName' => $this->subscription['plan_name'] ?? $this->subscription['planName'] ?? $planName ?? $plan['name'] ?? '',
                 'billingCycle' => $this->subscription['billing_cycle'] ?? $this->subscription['billingCycle'] ?? 'monthly',
                 'renewal' => $this->subscription['renewal'] ?? '',
                 'startDate' => $this->subscription['start_date'] ?? $this->subscription['startDate'] ?? '',
@@ -80,20 +87,31 @@ class TenantResource extends JsonResource
                 'autoRenew' => (bool) ($this->subscription['auto_renew'] ?? $this->subscription['autoRenew'] ?? true),
                 'invoices' => $this->subscription['invoices'] ?? [],
             ] : [
-                'planId' => $plan['id'] ?? '',
-                'planName' => $plan['name'] ?? '',
+                'planId' => (string) ($planId ?? $plan['id'] ?? ''),
+                'planName' => $planName ?? $plan['name'] ?? '',
                 'billingCycle' => 'monthly',
                 'renewal' => '', 'startDate' => '', 'trialEndDate' => null,
                 'status' => $this->status, 'price' => (float) ($plan['price'] ?? 0),
                 'currency' => 'SAR',
                 'paymentMethod' => '—', 'autoRenew' => true, 'invoices' => [],
             ],
+            'platformPlanId' => $planId !== null ? (string) $planId : null,
+            'platformPlan' => $platformPlan ? [
+                'id' => (string) $platformPlan->getKey(),
+                'name' => $platformPlan->name,
+                'slug' => $platformPlan->slug,
+                'status' => $platformPlan->status,
+                'displayOrder' => (int) $platformPlan->display_order,
+                'monthlyPrice' => (float) $platformPlan->monthly_price,
+                'yearlyPrice' => (float) $platformPlan->yearly_price,
+                'currency' => $platformPlan->currency,
+            ] : null,
             'limits' => [
-                'storage' => (int) ($limits['storage'] ?? $planLimits['storage'] ?? 0),
+                'storage' => (int) ($limits['storage'] ?? $canonicalLimits['storage'] ?? $planLimits['storage'] ?? 0),
                 'storageUsed' => (int) ($limits['storageUsed'] ?? 0),
-                'bandwidth' => (int) ($limits['bandwidth'] ?? $planLimits['bandwidth'] ?? 0),
+                'bandwidth' => (int) ($limits['bandwidth'] ?? $canonicalLimits['bandwidth'] ?? $planLimits['bandwidth'] ?? 0),
                 'bandwidthUsed' => (int) ($limits['bandwidthUsed'] ?? 0),
-                'videos' => (int) ($limits['videos'] ?? $planLimits['videos'] ?? 0),
+                'videos' => (int) ($limits['videos'] ?? $canonicalLimits['videos'] ?? $planLimits['videos'] ?? 0),
                 'videosUsed' => (int) ($limits['videosUsed'] ?? 0),
                 'courses' => (int) ($limits['courses'] ?? $planLimits['courses'] ?? 0),
                 'coursesUsed' => (int) ($limits['coursesUsed'] ?? 0),
@@ -153,8 +171,8 @@ class TenantResource extends JsonResource
             ],
             'storage' => $this->storage_json ?? [
                 'currentStorage' => 0, 'currentBandwidth' => 0, 'videosCount' => 0,
-                'remainingStorage' => (int) ($planLimits['storage'] ?? 0),
-                'remainingBandwidth' => (int) ($planLimits['bandwidth'] ?? 0),
+                'remainingStorage' => (int) ($canonicalLimits['storage'] ?? $planLimits['storage'] ?? 0),
+                'remainingBandwidth' => (int) ($canonicalLimits['bandwidth'] ?? $planLimits['bandwidth'] ?? 0),
             ],
             'activity' => [],
             'logs' => [],

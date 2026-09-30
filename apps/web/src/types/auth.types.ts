@@ -31,6 +31,21 @@ export interface AuthTenant {
    *  dashboard and login. The API returns this as `platform_branding`. */
   platformBranding?: TenantBranding | null;
   platform_branding?: TenantBranding | null;
+  /** The canonical plan assignment. NULL means no plan is assigned yet and the
+   *  tenant falls back to default limits. */
+  platform_plan_id?: number | null;
+  platform_plan?: AuthTenantPlan | null;
+  subscription?: Subscription | null;
+}
+
+export interface AuthTenantPlan {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  trial_enabled: number;
+  trial_days: number;
+  limits: Record<string, number | null> | null;
 }
 
 export interface AuthBranding {
@@ -98,8 +113,8 @@ export interface AuthMembership {
 }
 
 export interface Subscription {
-  plan: string;
-  status: string;
+  plan: string | null;
+  status: string | null;
   started_at: string | null;
   ends_at: string | null;
 }

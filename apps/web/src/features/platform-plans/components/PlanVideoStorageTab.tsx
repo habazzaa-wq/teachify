@@ -4,6 +4,7 @@ import { HardDrive, Wifi, Video, Upload, Clock } from "lucide-react";
 import { AppProgress, AppCard, AppCardContent, AppCardHeader, AppCardTitle } from "@/components/ui";
 import { formatNumber } from "@/lib/format";
 import { ALLOWED_VIDEO_FORMATS, ALLOWED_VIDEO_QUALITIES } from "../constants";
+import { formatBytes } from "../utils/formatBytes";
 import type { PlanVideoStorage, VideoFormat, VideoQuality } from "../types";
 
 interface PlanVideoStorageTabProps {
@@ -125,8 +126,7 @@ function PlanVideoStorageTab({ videoStorage, onChange }: PlanVideoStorageTabProp
                 <span className="text-sm font-semibold text-foreground/90">حجم الرفع الأقصى</span>
               </div>
               <p className="text-2xl font-bold tabular-nums tracking-tight">
-                {videoStorage.maximumUploadSize}
-                <span className="text-sm font-normal text-muted-foreground mr-1">GB</span>
+                {formatBytes(videoStorage.maximumUploadSize)}
               </p>
             </div>
             <div className="rounded-xl border bg-card p-5 transition-all duration-200 hover:shadow-sm">
