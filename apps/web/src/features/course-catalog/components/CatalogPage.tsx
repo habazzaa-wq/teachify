@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { formatNumber } from "@/lib/format";
-import { useCatalogCourses, useCatalogStages } from "../hooks";
+import { useCatalogCourses, useCatalogStages, useEnrolledCourses } from "../hooks";
 import type { CatalogFilters } from "../types";
 import { PRIMARY } from "../constants";
 import { CatalogHero } from "./CatalogHero";
@@ -24,6 +24,11 @@ export function CatalogPage({
   const isDark = theme === "dark";
 
   const { data: stagesData } = useCatalogStages();
+  const { data: enrolledCourses } = useEnrolledCourses();
+  const enrolledIds = useMemo(
+    () => new Set((enrolledCourses ?? []).map((course) => course.id)),
+    [enrolledCourses],
+  );
 
   const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
   const [searchDraft, setSearchDraft] = useState(initialFilters.search ?? "");
@@ -177,6 +182,7 @@ export function CatalogPage({
               currentPage={page}
               lastPage={data?.lastPage ?? 1}
               onPageChange={setPage}
+              enrolledIds={enrolledIds}
             />
           </div>
         </div>

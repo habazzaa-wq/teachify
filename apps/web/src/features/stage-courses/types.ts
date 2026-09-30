@@ -73,6 +73,11 @@ export interface StageCourseFilters {
   sort?: StageSort;
 }
 
+export interface StudentEnrolledCourse {
+  id: string;
+  slug: string;
+}
+
 export function isStageItem(value: unknown): value is StageItem {
   return (
     typeof value === "object" &&

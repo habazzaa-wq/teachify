@@ -1,5 +1,6 @@
 export const CATALOG_QUERY_KEY = "course-catalog";
 export const CATALOG_STAGES_KEY = "catalog-stages";
+export const CATALOG_ENROLLED_KEY = "catalog-enrolled-courses";
 
 export const CATALOG_PAGE_SIZE = 12;
 

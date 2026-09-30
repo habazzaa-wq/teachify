@@ -53,6 +53,29 @@ export function formatNumber(value: number, locale = "ar"): string {
   return new Intl.NumberFormat(locale).format(value);
 }
 
+/** Format a byte count into a human-readable size (GB/MB/KB). */
+export function formatBytes(
+  value: number | null | undefined,
+  locale = "ar",
+): string {
+  if (!value || value <= 0) {
+    return "0";
+  }
+
+  const units = ["بايت", "ك.ب", "م.ب", "ج.ب"];
+  const index = Math.min(
+    Math.floor(Math.log(value) / Math.log(1024)),
+    units.length - 1,
+  );
+  const amount = value / 1024 ** index;
+
+  const formatted = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: amount >= 100 ? 0 : 1,
+  }).format(amount);
+
+  return `${formatted} ${units[index]}`;
+}
+
 /** Format an amount in EGP (جنيه) with locale-aware grouping. */
 export function formatCurrency(
   value: number | string | null | undefined,

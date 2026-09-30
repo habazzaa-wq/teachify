@@ -1,9 +1,16 @@
 import api from "./axios";
-import type { DashboardStats } from "@/features/dashboard/types";
+import type {
+  DashboardQueryParams,
+  TeacherDashboardData,
+} from "@/features/dashboard/types";
 
 export const dashboardApi = {
-  async getStats(): Promise<DashboardStats> {
-    const { data } = await api.get<DashboardStats>("/dashboard/stats");
+  async getStats(
+    params: DashboardQueryParams = {},
+  ): Promise<TeacherDashboardData> {
+    const { data } = await api.get<TeacherDashboardData>("/dashboard/stats", {
+      params,
+    });
     return data;
   },
 };

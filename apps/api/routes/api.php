@@ -120,8 +120,10 @@ use App\Http\Controllers\Api\v1\Seo\SeoLinkSearchController;
 use App\Http\Controllers\Api\v1\Seo\SeoOverviewController;
 use App\Http\Controllers\Api\v1\Seo\SeoSettingController;
 use App\Http\Controllers\Api\v1\StudentController;
+use App\Http\Controllers\Api\v1\StudentCourseController;
 use App\Http\Controllers\Api\v1\StudentDashboardController;
 use App\Http\Controllers\Api\v1\StudentProfileController;
+use App\Http\Controllers\Api\v1\TeacherDashboardController;
 use App\Http\Controllers\Api\v1\Tenant\EducationalStageController;
 use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
@@ -176,6 +178,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
+    Route::get('/public/legal', [PublicLegalController::class, 'index']);
+    Route::get('/public/footer', [PublicFooterController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
@@ -186,7 +190,7 @@ Route::prefix('v1')->group(function () {
         ->name('payments.fawaterk.webhook');
     Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
         ->where('path', '.*')
-        ->middleware('throttle:120,1')
+        ->middleware('throttle:1200,1')
         ->name('media.serve');
 
     // Public course routes (no auth required)
@@ -232,6 +236,7 @@ Route::prefix('v1')->group(function () {
 
         // Student self-service dashboard & profile
         Route::get('/student/dashboard', [StudentDashboardController::class, 'show']);
+        Route::get('/student/courses', [StudentCourseController::class, 'index']);
         Route::get('/student/profile', [StudentProfileController::class, 'profile']);
         Route::post('/student/profile/avatar', [StudentProfileController::class, 'updateAvatar']);
 
@@ -256,6 +261,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/analytics/overview', [TenantAnalyticsController::class, 'overview']);
         Route::get('/analytics/courses', [TenantAnalyticsController::class, 'courses']);
         Route::get('/analytics/learners', [TenantAnalyticsController::class, 'learners']);
+        Route::get('/dashboard/stats', [TeacherDashboardController::class, 'stats']);
         Route::get('/courses/{course}/analytics', [CourseAnalyticsController::class, 'show']);
         Route::get('/learners/{membership}/analytics', [LearnerAnalyticsController::class, 'show']);
         Route::get('/notifications', [NotificationController::class, 'index']);

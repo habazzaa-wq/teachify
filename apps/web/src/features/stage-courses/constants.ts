@@ -1,5 +1,6 @@
 export const STAGE_COURSES_QUERY_KEY = "stage-courses";
 export const STAGE_QUERY_KEY = "stage";
+export const STAGE_ENROLLED_KEY = "stage-enrolled-courses";
 
 export const STAGE_PAGE_SIZE = 12;
 

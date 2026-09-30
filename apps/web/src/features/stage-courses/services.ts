@@ -1,7 +1,8 @@
 import api from "@/services/api/axios";
+import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
 import { formatStageCourse, formatStageCoursesResponse } from "./format";
 import { buildStageCoursesParams } from "./params";
-import type { StageCourseFilters, StageCoursesResponse } from "./types";
+import type { StageCourseFilters, StageCoursesResponse, StudentEnrolledCourse } from "./types";
 
 export const stageCoursesService = {
   /** Public, unauthenticated: active educational stages for the current tenant. */
@@ -22,6 +23,19 @@ export const stageCoursesService = {
       params: buildStageCoursesParams(stageId, filters, page),
     });
     return formatStageCoursesResponse(data);
+  },
+
+  /** Authenticated student's enrolled course IDs + slugs. Falls back to an empty list for unauthenticated visitors. */
+  async getEnrolledCourses(): Promise<StudentEnrolledCourse[]> {
+    try {
+      const json = await tenantStudentFetch<{ data?: { id: string; slug: string }[] }>("/student/courses");
+      return (json.data ?? []).map((item) => ({
+        id: String(item.id),
+        slug: String(item.slug),
+      }));
+    } catch {
+      return [];
+    }
   },
 
   /** Formatter exposed for other consumers (e.g. list pages reusing the card). */

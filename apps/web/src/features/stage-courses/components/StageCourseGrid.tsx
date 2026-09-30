@@ -17,6 +17,7 @@ interface StageCourseGridProps {
   currentPage: number;
   lastPage: number;
   onPageChange: (page: number) => void;
+  enrolledIds?: ReadonlySet<string>;
 }
 
 function SkeletonCard() {
@@ -49,6 +50,7 @@ export function StageCourseGrid({
   currentPage,
   lastPage,
   onPageChange,
+  enrolledIds,
 }: StageCourseGridProps) {
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
@@ -103,7 +105,12 @@ export function StageCourseGrid({
       {/* grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {(courses ?? []).map((course, i) => (
-          <StageCourseCard key={course.id} course={course} index={i} />
+          <StageCourseCard
+            key={course.id}
+            course={course}
+            index={i}
+            enrolled={enrolledIds?.has(course.id) ?? false}
+          />
         ))}
       </div>
 

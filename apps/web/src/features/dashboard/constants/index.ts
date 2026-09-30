@@ -6,7 +6,6 @@ import {
   HardDrive,
   Wifi,
   Video,
-  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
