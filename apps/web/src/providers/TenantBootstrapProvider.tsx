@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   getHostname,
@@ -13,9 +13,14 @@ import { TenantNotFound } from "@/components/system/TenantNotFound";
 import { TenantBootstrapError } from "@/components/system/TenantBootstrapError";
 import { isSuperAdminPath } from "@/constants/routes";
 import { env } from "@/config/env";
+import {
+  classifyTenantResponse,
+  TENANT_BOOTSTRAP_ERRORS,
+} from "@/features/tenant-bootstrap/classify";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
 
 const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000;
 
 export function TenantBootstrapProvider({
   children,
@@ -30,13 +35,19 @@ export function TenantBootstrapProvider({
   const hostname = getHostname() || serverHostname || "";
   const platform = isPlatformDomain(hostname);
   const isSuperAdmin = isSuperAdminPath(pathname);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const bootstrapStatus = useTenantStore((s) => s.bootstrapStatus);
+  const bootstrapError = useTenantStore((s) => s.bootstrapError);
   const setTenantBootstrap = useTenantStore((s) => s.setTenantBootstrap);
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
+  const setBootstrapError = useTenantStore((s) => s.setBootstrapError);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
   useEffect(() => {
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
     const platformOrSuper =
       platform || isSuperAdmin || pathname === "/tenant-not-found";
 
@@ -101,41 +112,94 @@ export function TenantBootstrapProvider({
 
     if (!platform && !isSuperAdmin && !tenantContext) {
       setBootstrapStatus("loading");
+      setBootstrapError(null);
 
-      const attempt = (attempts: number) => {
-        fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`)
-          .then((res) => {
-            if (!res.ok) throw new Error("Tenant not found");
-            return res.json();
-          })
-          .then((data) => {
-            if (data && data.status === "active") {
-              setTenantBootstrap({
-                id: data.id,
-                name: data.name,
-                slug: data.slug,
-                domain: data.domain,
-                status: data.status,
-                branding: data.branding,
-                platformBranding: data.platform_branding ?? data.platformBranding ?? null,
-                subdomain: getTenantSubdomain(hostname),
-              });
-            } else {
-              setBootstrapStatus("not-found");
-            }
-          })
-          .catch(() => {
-            if (attempts < MAX_RETRIES) {
-              setTimeout(() => attempt(attempts + 1), 1000 * Math.pow(2, attempts));
-            } else {
-              setBootstrapStatus("not-found");
-            }
-          });
-      };
+      function scheduleRetry(attempts: number) {
+        retryTimer = setTimeout(
+          () => {
+            void attempt(attempts + 1);
+          },
+          RETRY_BASE_DELAY_MS * Math.pow(2, attempts),
+        );
+      }
 
-      attempt(0);
+      async function attempt(attempts: number) {
+        try {
+          const res = await fetch(
+            `/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`,
+            {
+              headers: { Accept: "application/json" },
+              cache: "no-store",
+            },
+          );
+
+          const outcome = await classifyTenantResponse(res);
+          if (cancelled) return;
+
+          if (outcome.kind === "tenant") {
+            const data = outcome.tenant;
+            setTenantBootstrap({
+              id: data.id,
+              name: data.name,
+              slug: data.slug,
+              domain: data.domain,
+              status: data.status,
+              branding: data.branding,
+              platformBranding: data.platform_branding ?? data.platformBranding ?? null,
+              subdomain: getTenantSubdomain(hostname),
+            });
+            return;
+          }
+
+          // The API answered with a proper JSON 404: the domain really isn't
+          // registered, so there is nothing to retry.
+          if (outcome.kind === "not-found") {
+            setBootstrapStatus("not-found");
+            return;
+          }
+
+          // Infrastructure failure (5xx, unreachable API, misrouted proxy):
+          // retry a few times, then surface a retryable error instead of
+          // claiming the academy does not exist.
+          if (attempts < MAX_RETRIES) {
+            scheduleRetry(attempts);
+            return;
+          }
+
+          setBootstrapError(outcome.message);
+          setBootstrapStatus("error");
+        } catch {
+          if (cancelled) return;
+
+          if (attempts < MAX_RETRIES) {
+            scheduleRetry(attempts);
+            return;
+          }
+
+          setBootstrapError(TENANT_BOOTSTRAP_ERRORS.network);
+          setBootstrapStatus("error");
+        }
+      }
+
+      void attempt(0);
     }
-  }, [platform, isSuperAdmin, tenantContext, hostname, pathname, setTenantBootstrap, setBootstrapStatus, setPlatformBranding]);
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [
+    platform,
+    isSuperAdmin,
+    tenantContext,
+    hostname,
+    pathname,
+    retryNonce,
+    setTenantBootstrap,
+    setBootstrapStatus,
+    setBootstrapError,
+    setPlatformBranding,
+  ]);
 
   if (bootstrapStatus === "loading" || bootstrapStatus === "idle") {
     return <TenantLoading />;
@@ -148,8 +212,8 @@ export function TenantBootstrapProvider({
   if (bootstrapStatus === "error") {
     return (
       <TenantBootstrapError
-        error={useTenantStore.getState().bootstrapError ?? "حدث خطأ في تحميل بيانات الأكاديمية"}
-        onRetry={() => window.location.reload()}
+        error={bootstrapError ?? "حدث خطأ في تحميل بيانات الأكاديمية"}
+        onRetry={() => setRetryNonce((nonce) => nonce + 1)}
       />
     );
   }
