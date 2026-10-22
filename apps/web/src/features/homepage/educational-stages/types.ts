@@ -10,10 +10,17 @@ export interface PublicStagesResponse {
   items: StageItem[];
 }
 
-/** Real, derived stats for a stage (reused from the public courses API). */
 export interface StageStats {
   coursesCount: number;
   teachersCount: number;
+}
+
+export interface StageStatsItem extends StageStats {
+  id: number;
+}
+
+export interface PublicStagesStatsResponse {
+  items: StageStatsItem[];
 }
 
 export interface EducationalStageRecord {

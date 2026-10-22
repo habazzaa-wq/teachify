@@ -145,7 +145,7 @@ export default async function RootLayout({
           <NextIntlClientProvider messages={messages}>
             <AppProviders 
               serverHostname={serverHostname}
-              tenantContext={tenantContext}
+              tenantContext={tenantContext ?? tenant}
             >
               <TenantDocumentMeta />
               {children}

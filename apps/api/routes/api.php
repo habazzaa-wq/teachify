@@ -184,6 +184,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/legal', [PublicLegalController::class, 'index']);
     Route::get('/public/footer', [PublicFooterController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
+    Route::get('/public/educational-stages/stats', [PublicEducationalStageController::class, 'stats']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);

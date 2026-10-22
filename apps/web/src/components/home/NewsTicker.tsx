@@ -78,18 +78,24 @@ export function NewsTicker({
   const enabled = config.enabled;
   const isBottom = config.position === "bottom";
 
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [collapsed, setCollapsed] = useState(false);
+  const [pulling, setPulling] = useState(false);
+
+  useEffect(() => {
     // On phones the ticker must be open on arrival so the news is visible
     // right away, regardless of any previously saved "collapsed" state.
-    if (window.matchMedia("(max-width: 768px)").matches) return false;
-    try {
-      return localStorage.getItem("news-ticker-collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const [pulling, setPulling] = useState(false);
+    if (window.matchMedia("(max-width: 768px)").matches) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        setCollapsed(localStorage.getItem("news-ticker-collapsed") === "true");
+      } catch {
+        // Ignore unavailable storage.
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const dragStartY = useRef<number | null>(null);
   const dragMoved = useRef(false);
 

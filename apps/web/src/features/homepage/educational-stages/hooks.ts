@@ -44,29 +44,36 @@ export function useStageStatsQueries(stageIds: number[], enabled: boolean) {
   });
 }
 
-/** Stats map + set of ids still loading (first fetch). */
+/** Stats map + set of ids still loading (first fetch), from one batched request. */
 export function useStageStatsState(
   stageIds: number[],
   enabled: boolean,
 ): { statsById: Map<number, StageStats>; loadingIds: Set<number> } {
-  const results = useStageStatsQueries(stageIds, enabled);
+  const { data, isLoading } = useQuery({
+    queryKey: stagesKeys.statsAll,
+    queryFn: educationalStagesService.getAllStageStats,
+    enabled,
+    staleTime: 120_000,
+    gcTime: 10 * 60_000,
+  });
 
   return useMemo(() => {
     const statsById = new Map<number, StageStats>();
-    const loadingIds = new Set<number>();
 
-    stageIds.forEach((id, index) => {
-      const result = results[index];
-      if (result?.data) {
-        statsById.set(id, result.data);
-      }
-      if (result?.isLoading) {
-        loadingIds.add(id);
-      }
-    });
+    for (const item of data?.items ?? []) {
+      statsById.set(item.id, {
+        coursesCount: item.coursesCount,
+        teachersCount: item.teachersCount,
+      });
+    }
+
+    const loadingIds = new Set<number>();
+    if (isLoading) {
+      stageIds.forEach((id) => loadingIds.add(id));
+    }
 
     return { statsById, loadingIds };
-  }, [stageIds, results]);
+  }, [stageIds, data, isLoading]);
 }
 
 export function useEducationalStagesList(params?: { inactive?: boolean }) {

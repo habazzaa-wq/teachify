@@ -7,14 +7,10 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { newsService } from "./services";
+import { newsKeys } from "./keys";
 import type { NewsInput, TickerConfig } from "./types";
 
-export const newsKeys = {
-  public: ["news", "public"] as const,
-  list: ["news", "list"] as const,
-  detail: (id: number) => ["news", "detail", id] as const,
-  ticker: ["news", "ticker"] as const,
-};
+export { newsKeys } from "./keys";
 
 export function usePublicNews() {
   return useQuery({

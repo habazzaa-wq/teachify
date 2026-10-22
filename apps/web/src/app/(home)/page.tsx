@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { HeroSection } from "@/components/home/HeroSection";
-import { LazyMount } from "@/components/home/LazyMount";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { heroKeys } from "@/features/homepage/hero/query-keys";
 import { heroServerService } from "@/features/homepage/hero/server-services";
@@ -81,14 +80,16 @@ export async function generateMetadata(): Promise<Metadata> {
 async function HomePage() {
   const queryClient = getQueryClient();
 
-  const [hero, whyChooseUs, stages, communitySection, tenant, origin] = await Promise.all([
-    heroServerService.getPublicHero(),
-    whyChooseUsServerService.getPublicWhyChooseUs(),
-    stagesServerService.getPublicStages(),
-    communitySectionServerService.getPublicCommunitySection(),
-    getTenantSeoContext(),
-    getRequestOrigin(),
-  ]);
+  const [hero, whyChooseUs, stages, stageStats, communitySection, tenant, origin] =
+    await Promise.all([
+      heroServerService.getPublicHero(),
+      whyChooseUsServerService.getPublicWhyChooseUs(),
+      stagesServerService.getPublicStages(),
+      stagesServerService.getPublicStagesStats(),
+      communitySectionServerService.getPublicCommunitySection(),
+      getTenantSeoContext(),
+      getRequestOrigin(),
+    ]);
 
   if (hero) {
     queryClient.setQueryData(heroKeys.public, hero);
@@ -99,6 +100,9 @@ async function HomePage() {
   if (stages) {
     queryClient.setQueryData(stagesKeys.public, stages);
   }
+  if (stageStats) {
+    queryClient.setQueryData(stagesKeys.statsAll, stageStats);
+  }
   queryClient.setQueryData(communitySectionKeys.public, communitySection);
 
   return (
@@ -106,21 +110,15 @@ async function HomePage() {
       <JsonLd data={organizationJsonLd(tenant, origin)} />
       <JsonLd data={webSiteJsonLd(tenant, origin)} />
       <HeroSection />
-      <LazyMount minHeight="520px">
-        <Suspense fallback={<SectionFallback />}>
-          <WhyChooseUsOrbit />
-        </Suspense>
-      </LazyMount>
-      <LazyMount minHeight="720px">
-        <Suspense fallback={<SectionFallback />}>
-          <EducationalStagesSection />
-        </Suspense>
-      </LazyMount>
-      <LazyMount minHeight="520px">
-        <Suspense fallback={<SectionFallback />}>
-          <PublicCommunitySection />
-        </Suspense>
-      </LazyMount>
+      <Suspense fallback={<SectionFallback />}>
+        <WhyChooseUsOrbit />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <EducationalStagesSection />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <PublicCommunitySection />
+      </Suspense>
     </HydrationBoundary>
   );
 }

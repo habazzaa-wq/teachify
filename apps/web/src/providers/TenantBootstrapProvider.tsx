@@ -37,6 +37,12 @@ export function TenantBootstrapProvider({
   const isSuperAdmin = isSuperAdminPath(pathname);
   const [retryNonce, setRetryNonce] = useState(0);
 
+  const platformOrSuper =
+    platform || isSuperAdmin || pathname === "/tenant-not-found";
+  // The tenant is already resolved on the server, so render the page in the
+  // initial HTML instead of waiting for a client bootstrap round-trip.
+  const serverResolved = platformOrSuper || Boolean(tenantContext);
+
   const bootstrapStatus = useTenantStore((s) => s.bootstrapStatus);
   const bootstrapError = useTenantStore((s) => s.bootstrapError);
   const setTenantBootstrap = useTenantStore((s) => s.setTenantBootstrap);
@@ -47,9 +53,6 @@ export function TenantBootstrapProvider({
   useEffect(() => {
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const platformOrSuper =
-      platform || isSuperAdmin || pathname === "/tenant-not-found";
 
     // ألوان المنصة (platformBranding) بتتم إدارتها بالكامل من BrandThemeProvider
     // (تحميل ذاتي مستقل عن البوتستراب/تسجيل الدخول). هنا بنكتفي ببذرها من سياق
@@ -191,6 +194,7 @@ export function TenantBootstrapProvider({
   }, [
     platform,
     isSuperAdmin,
+    platformOrSuper,
     tenantContext,
     hostname,
     pathname,
@@ -201,15 +205,20 @@ export function TenantBootstrapProvider({
     setPlatformBranding,
   ]);
 
-  if (bootstrapStatus === "loading" || bootstrapStatus === "idle") {
+  const effectiveStatus =
+    serverResolved && (bootstrapStatus === "loading" || bootstrapStatus === "idle")
+      ? ("resolved" as const)
+      : bootstrapStatus;
+
+  if (effectiveStatus === "loading" || effectiveStatus === "idle") {
     return <TenantLoading />;
   }
 
-  if (bootstrapStatus === "not-found") {
+  if (effectiveStatus === "not-found") {
     return <TenantNotFound />;
   }
 
-  if (bootstrapStatus === "error") {
+  if (effectiveStatus === "error") {
     return (
       <TenantBootstrapError
         error={bootstrapError ?? "حدث خطأ في تحميل بيانات الأكاديمية"}
