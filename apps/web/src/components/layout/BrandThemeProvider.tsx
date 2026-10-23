@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useTenantStore } from "@/stores/tenant.store";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import {
   BRAND_THEME_STYLE_ID,
   buildBrandThemeCss,
@@ -27,7 +28,7 @@ import {
  * (الموجودة في globals.css) مكانها قبل ما توصل الألوان — وده كان سبب الوميض.
  */
 export function BrandThemeProvider() {
-  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const platformBranding = usePlatformBranding();
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
   const loadRef = useRef(false);
 

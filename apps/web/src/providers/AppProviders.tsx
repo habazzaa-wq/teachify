@@ -12,6 +12,10 @@ import { BrandThemeProvider } from "@/components/layout/BrandThemeProvider";
 import { ActiveExamProvider } from "@/features/exam-session/providers/ActiveExamProvider";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
 import { InstallPromptBridge } from "@/components/pwa/InstallPromptBridge";
+import {
+  tenantSeedPlatformBranding,
+  tenantSeedToActiveTenant,
+} from "@/lib/tenant-seed";
 
 const Toaster = dynamic(
   () => import("@/components/system/Toaster").then((m) => m.Toaster),
@@ -54,6 +58,9 @@ export function AppProviders({
   serverHostname?: string;
   tenantContext?: TenantByDomainResponse | null;
 }) {
+  const initialTenant = tenantSeedToActiveTenant(tenantContext);
+  const initialPlatformBranding = tenantSeedPlatformBranding(tenantContext);
+
   return (
     <MotionConfig
       reducedMotion="user"
@@ -65,7 +72,10 @@ export function AppProviders({
             serverHostname={serverHostname}
             tenantContext={tenantContext}
           >
-            <TenantProvider>
+            <TenantProvider
+              initialTenant={initialTenant}
+              initialPlatformBranding={initialPlatformBranding}
+            >
               <PauseAnimationsWhileScrolling />
               <InstallPromptBridge />
               <TenantFontProvider />

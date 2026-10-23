@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useTenantStore } from "@/stores/tenant.store";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
 
 const LINK_ID = "tenant-dynamic-font";
@@ -13,9 +14,12 @@ const LINK_ID = "tenant-dynamic-font";
  * teacher saves a new font) without a full page reload.
  */
 export function TenantFontProvider() {
-  const font = useTenantStore(
-    (s) => s.activeTenant?.branding?.font ?? s.branding?.font ?? null,
-  );
+  const { tenant } = useActiveTenant();
+  const storeFont = useTenantStore((s) => s.branding?.font ?? null);
+  // `tenant` falls back to the server-resolved payload, so on the first client
+  // render this equals the font the server already applied. Without that, the
+  // effect below used to strip the SSR font for a moment (font flash).
+  const font = tenant?.branding?.font ?? storeFont;
 
   useEffect(() => {
     const root = document.documentElement;

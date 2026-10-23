@@ -3,21 +3,40 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AUTH_EVENTS } from "@/constants/auth-events";
 import { useTenantStore } from "@/stores/tenant.store";
+import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 import type { ActiveTenant } from "@/types/tenant.types";
 
 interface TenantProviderValue {
   activeTenant: ActiveTenant | null;
+  platformBranding: TenantBranding | null;
   hydrated: boolean;
   setActiveTenant: (tenant: ActiveTenant | null) => void;
 }
 
 const TenantContext = createContext<TenantProviderValue | null>(null);
 
-export function TenantProvider({ children }: { children: React.ReactNode }) {
-  const activeTenant = useTenantStore((state) => state.activeTenant);
+export function TenantProvider({
+  children,
+  initialTenant = null,
+  initialPlatformBranding = null,
+}: {
+  children: React.ReactNode;
+  /**
+   * Tenant payload resolved on the server. Used until the client store is
+   * populated so the first HTML paint already shows the tenant's real name,
+   * logo, colors and font instead of the platform defaults.
+   */
+  initialTenant?: ActiveTenant | null;
+  initialPlatformBranding?: TenantBranding | null;
+}) {
+  const storeActiveTenant = useTenantStore((state) => state.activeTenant);
+  const storePlatformBranding = useTenantStore((state) => state.platformBranding);
   const setActiveTenant = useTenantStore((state) => state.setActiveTenant);
   const clear = useTenantStore((state) => state.clear);
   const [hydrated, setHydrated] = useState(false);
+
+  const activeTenant = storeActiveTenant ?? initialTenant;
+  const platformBranding = storePlatformBranding ?? initialPlatformBranding;
 
   useEffect(() => {
     setHydrated(true);
@@ -39,8 +58,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   }, [clear]);
 
   const value = useMemo<TenantProviderValue>(
-    () => ({ activeTenant, hydrated, setActiveTenant }),
-    [activeTenant, hydrated, setActiveTenant],
+    () => ({ activeTenant, platformBranding, hydrated, setActiveTenant }),
+    [activeTenant, platformBranding, hydrated, setActiveTenant],
   );
 
   return (

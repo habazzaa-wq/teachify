@@ -15,8 +15,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { useUiStore } from "@/stores/ui.store";
-import { useTenantStore } from "@/stores/tenant.store";
 import { useMergedPublicFooter } from "@/features/footer/hooks";
 import { toWhatsAppUrl, type FooterLink, type FooterLinkGroup } from "@/features/footer/types";
 import { routes } from "@/constants/routes";
@@ -321,7 +321,7 @@ function BackToTop() {
 export function PublicFooter() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
-  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const platformBranding = usePlatformBranding();
   const { data: footer } = useMergedPublicFooter();
 
   const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;

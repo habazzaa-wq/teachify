@@ -1,7 +1,7 @@
 "use client";
 
-import { useTenantStore } from "@/stores/tenant.store";
 import { resolveBrandHexColors } from "@/lib/brand";
+import { usePlatformBranding } from "./usePlatformBranding";
 
 /**
  * Reactive access to the configured *platform* brand colors (hex strings,
@@ -13,6 +13,6 @@ import { resolveBrandHexColors } from "@/lib/brand";
 export function useBrandColors() {
   // ألوان "المنصة" بس (platformBranding) — من غير ألوان مظهر المدرس عشان متسرّبش
   // للمنصة كلها. مظهر المدرس مقتصر على صفحة الدخول ولوحة تحكم المدرس (.tenant-theme).
-  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const platformBranding = usePlatformBranding();
   return resolveBrandHexColors(null, platformBranding);
 }

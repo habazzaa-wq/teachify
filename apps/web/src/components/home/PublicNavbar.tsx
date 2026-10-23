@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { AuthContext } from "@/providers/AuthProvider";
@@ -502,7 +503,7 @@ export function PublicNavbar() {
   // not the teacher dashboard appearance. Falls back to the tenant's legacy
   // appearance branding so the navbar never breaks when platform branding is
   // partially configured.
-  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const platformBranding = usePlatformBranding();
   const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
   const logo = toAbsoluteAssetUrl(theme === "dark"
     ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
