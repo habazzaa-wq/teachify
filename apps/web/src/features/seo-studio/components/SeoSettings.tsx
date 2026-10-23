@@ -25,6 +25,7 @@ import {
   Label,
   PermissionGuard,
 } from "@/components/ui";
+import { normalizeApiError } from "@/services/api";
 import { useSeoSettings, useUpdateSeoSettings } from "../hooks";
 import { SEO_ROBOTS_POLICY_OPTIONS } from "../constants";
 import type { SeoRobotsPolicy } from "../types";
@@ -137,6 +138,9 @@ function SeoSettings() {
         onSuccess: () => {
           toast.success(t("settingsSaved"));
           setDirty(false);
+        },
+        onError: (error) => {
+          toast.error(normalizeApiError(error).message || t("error"));
         },
       },
     );

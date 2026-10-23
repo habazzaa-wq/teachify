@@ -400,9 +400,19 @@ class SeoStudioFeatureTest extends TestCase
             'organization_name' => 'أكاديمية النور',
             'default_robots_policy' => 'index_follow',
             'sitemap_include_default' => true,
+            'google_verification' => 'google-token-123',
+            'bing_verification' => 'bing-token-456',
         ], $this->tenantHeader($tenant))
             ->assertOk()
-            ->assertJsonPath('data.organizationName', 'أكاديمية النور');
+            ->assertJsonPath('data.organizationName', 'أكاديمية النور')
+            ->assertJsonPath('data.googleVerification', 'google-token-123')
+            ->assertJsonPath('data.bingVerification', 'bing-token-456');
+
+        $this->assertDatabaseHas('seo_settings', [
+            'tenant_id' => $tenant->id,
+            'google_verification' => 'google-token-123',
+            'bing_verification' => 'bing-token-456',
+        ]);
     }
 
     public function test_link_search_is_tenant_scoped(): void
