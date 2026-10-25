@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { addApiRequestContextReader } from "@/services/api/request-context";
 import type {
   ActiveTenant,
@@ -98,7 +99,8 @@ interface TenantState {
 }
 
 export const useTenantStore = create<TenantState>()(
-  (set) => ({
+  persist(
+    (set) => ({
     activeTenant: null,
     membership: null,
     roles: [],
@@ -297,7 +299,24 @@ export const useTenantStore = create<TenantState>()(
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),
-  }),
+    }),
+    {
+      name: "tenant-state",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeTenant: state.activeTenant,
+        membership: state.membership,
+        roles: state.roles,
+        permissions: state.permissions,
+        abilities: state.abilities,
+        navigation: state.navigation,
+        domain: state.domain,
+        subdomain: state.subdomain,
+        branding: state.branding,
+        platformBranding: state.platformBranding,
+      }),
+    },
+  ),
 );
 
 // Provide tenant request context lazily to the API layer at request time.

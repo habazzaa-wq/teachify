@@ -150,8 +150,8 @@ Route::prefix('platform')->group(function () {
 Route::prefix('v1')->group(function () {
     Route::prefix('tenant')->group(function () {
         Route::prefix('auth')->group(function () {
-            Route::post('/login', [TenantAuthController::class, 'login'])->middleware('throttle:5,1');
-            Route::post('/refresh', [TenantAuthController::class, 'refresh'])->middleware('throttle:10,1');
+            Route::post('/login', [TenantAuthController::class, 'login'])->middleware('throttle:tenant-login');
+            Route::post('/refresh', [TenantAuthController::class, 'refresh'])->middleware('throttle:tenant-refresh');
             Route::post('/forgot-password', [TenantAuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
             Route::post('/reset-password', [TenantAuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
@@ -212,8 +212,8 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('auth')->group(function () {
-        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-        Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:10,1');
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:tenant-login');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('throttle:tenant-refresh');
         Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:5,1');
         Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:5,1');
         Route::post('/invitations/accept', [InvitationController::class, 'accept'])->middleware('throttle:10,1');

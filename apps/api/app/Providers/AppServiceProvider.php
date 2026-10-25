@@ -30,6 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -62,6 +63,25 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Dedicated limiter for tenant authentication. Allows 20 attempts per minute
+        // per identifier+IP and 40 attempts per minute per IP, protecting against brute
+        // force while avoiding accidental lockouts on typos or rapid retries.
+        RateLimiter::for('tenant-login', function (Request $request) {
+            $identifier = (string) ($request->input('email') ?? $request->input('phone') ?? '');
+            $key = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
+
+            return [
+                Limit::perMinute(20)->by($key),
+                Limit::perMinute(40)->by($request->ip()),
+            ];
+        });
+
+        // Dedicated limiter for token refresh calls. SPA tabs or concurrent requests
+        // may refresh tokens; 60 requests/min accommodates healthy client lifecycle.
+        RateLimiter::for('tenant-refresh', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
         // Resumable chunk PUTs are exempt from the global api limiter (one

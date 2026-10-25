@@ -16,6 +16,7 @@ import {
   resolveStudentSession,
 } from "@/services/api/tenant-student-fetch";
 import { isSuperAdminPath, routes } from "@/constants/routes";
+import { useTenantContext } from "@/providers/TenantProvider";
 
 interface AuthProviderValue {
   status: ReturnType<typeof useAuthStore.getState>["status"];
@@ -90,7 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setAccessToken = useAuthStore((state) => state.setAccessToken);
   const clearAuth = useAuthStore((state) => state.clear);
 
-  const activeTenant = useTenantStore((state) => state.activeTenant);
+  const { activeTenant: contextTenant } = useTenantContext();
+  const storeActiveTenant = useTenantStore((state) => state.activeTenant);
+  const activeTenant = storeActiveTenant ?? contextTenant;
   const setTenantContext = useTenantStore((state) => state.setTenantContext);
   const clearTenant = useTenantStore((state) => state.clear);
 
@@ -129,8 +132,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           predicate: (query) => !isPublicQueryKey(query.queryKey),
         });
         return true;
-      } catch {
-        handleStaleSession();
+      } catch (err: unknown) {
+        const errorStatus =
+          (err as { status?: number; response?: { status?: number } })?.status ??
+          (err as { response?: { status?: number } })?.response?.status;
+        // Only clear credentials on genuine auth rejections (401 / 403).
+        // Transient errors (429 Too Many Attempts, 5xx server issues, or offline)
+        // must NOT destroy the session.
+        if (errorStatus === 401 || errorStatus === 403) {
+          handleStaleSession();
+        } else {
+          console.warn("Session refresh transient failure, keeping tokens:", err);
+        }
         return false;
       }
     })();
@@ -144,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const bootstrap = useCallback(async () => {
     if (!activeTenant) {
-      setStatus("unauthenticated");
+      // Do not mark unauthenticated while tenant context is still resolving.
       return;
     }
 
@@ -184,29 +197,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         navigation: context.navigation,
       });
       setUser(context.user);
-    } catch {
-      // Token might be expired, try refresh
-      try {
-        const refreshed = await refreshSession();
-        if (!refreshed) {
-          return;
+    } catch (err: unknown) {
+      const errorStatus =
+        (err as { status?: number; response?: { status?: number } })?.status ??
+        (err as { response?: { status?: number } })?.response?.status;
+
+      if (errorStatus === 401) {
+        // Token might be expired, try refresh
+        try {
+          const refreshed = await refreshSession();
+          if (!refreshed) {
+            return;
+          }
+          // Retry bootstrap with new token
+          const context = await tenantService.resolveContext();
+          setTenantContext({
+            tenant: context.tenant,
+            membership: context.membership,
+            roles: context.roles,
+            permissions: context.permissions,
+            abilities: context.abilities,
+            navigation: context.navigation,
+          });
+          setUser(context.user);
+        } catch {
+          // Refresh succeeded but the retried /auth/me failed transiently
+          // (rate limit, 5xx, network). The session is still valid
+          setStatus("authenticated");
         }
-        // Retry bootstrap with new token
-        const context = await tenantService.resolveContext();
-        setTenantContext({
-          tenant: context.tenant,
-          membership: context.membership,
-          roles: context.roles,
-          permissions: context.permissions,
-          abilities: context.abilities,
-          navigation: context.navigation,
-        });
-        setUser(context.user);
-      } catch {
-        // Refresh succeeded but the retried /auth/me failed transiently
-        // (rate limit, 5xx, network). The session is still valid — keep it
-        // instead of logging the user out.
-        setStatus("authenticated");
+      } else {
+        // Transient error (429 Rate Limit, 5xx, or network glitch)
+        // If we already hold user data in the persisted store, keep authenticated.
+        if (useAuthStore.getState().user) {
+          setStatus("authenticated");
+        } else {
+          setStatus("unauthenticated");
+        }
       }
     }
   }, [activeTenant, accessToken, refreshToken, pathname, setStatus, setUser, setTenantContext, refreshSession, setTokens]);
@@ -271,17 +297,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       pathname === "/tenant-not-found";
 
     if (status === "idle") {
-      // A signed-in teacher may open /tenant-login directly (new tab, manual
-      // URL, refresh). Re-bootstrap with the persisted token so TenantGuestRoute
-      // can send them straight back to the dashboard instead of showing the
-      // login form again. Guest routes without a stored token stay guests.
-      const canResumeSession =
-        pathname === routes.tenantLogin && Boolean(useAuthStore.getState().accessToken);
+      const hasToken = Boolean(useAuthStore.getState().accessToken);
 
-      if (activeTenant && (!isGuestRoute || canResumeSession)) {
-        void bootstrap();
+      if (hasToken) {
+        // A persisted token exists: bootstrap as soon as activeTenant is available.
+        // If activeTenant is still loading, wait for it rather than prematurely
+        // marking unauthenticated and triggering an unwanted redirect.
+        if (activeTenant) {
+          void bootstrap();
+        }
       } else {
-        setStatus("unauthenticated");
+        // Genuine guest session (no token in storage)
+        if (isGuestRoute) {
+          setStatus("unauthenticated");
+        } else if (activeTenant) {
+          // Protected route with no token and tenant already known
+          setStatus("unauthenticated");
+        }
       }
     }
   }, [activeTenant, bootstrap, isSuperAdminRoute, pathname, status, setStatus]);

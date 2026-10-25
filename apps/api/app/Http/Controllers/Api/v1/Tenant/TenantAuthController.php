@@ -20,6 +20,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -43,6 +45,13 @@ class TenantAuthController extends Controller
         $identifier = $request->input('email') ?? $request->input('phone') ?? '';
 
         $result = $auth->login($tenant, $identifier, $request->input('password'));
+
+        // Clear rate limit counter on successful login
+        $rateLimitKey = Str::transliterate(Str::lower((string) $identifier).'|'.$request->ip());
+        RateLimiter::clear(md5('tenant-login'.$rateLimitKey));
+        RateLimiter::clear(md5('tenant-login'.$request->ip()));
+        RateLimiter::clear('tenant-login:'.$rateLimitKey);
+        RateLimiter::clear('tenant-login:'.$request->ip());
 
         // Re-apply remember me preference
         Auth::login($result['user'], $remember);
