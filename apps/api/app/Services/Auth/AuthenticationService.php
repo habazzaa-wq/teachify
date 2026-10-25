@@ -52,10 +52,15 @@ class AuthenticationService
             ]);
         }
 
-        // Revoke existing tokens for this tenant session
+        // Revoke only EXPIRED tokens for this tenant session instead of all of them
+        // to avoid killing concurrent sessions (like multi-tab usage).
+        // New tokens will still be generated and returned.
         $user->tokens()
-            ->where('name', 'access_token')
-            ->orWhere('name', 'refresh_token')
+            ->where(function ($query) {
+                $query->where('name', 'access_token')
+                    ->orWhere('name', 'refresh_token');
+            })
+            ->where('expires_at', '<', now())
             ->delete();
 
         $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));

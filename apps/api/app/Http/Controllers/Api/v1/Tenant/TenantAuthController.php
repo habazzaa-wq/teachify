@@ -52,6 +52,11 @@ class TenantAuthController extends Controller
         RateLimiter::clear(md5('tenant-login'.$request->ip()));
         RateLimiter::clear('tenant-login:'.$rateLimitKey);
         RateLimiter::clear('tenant-login:'.$request->ip());
+        // Standard Laravel throttle middleware key format
+        RateLimiter::clear('tenant-login:'.$rateLimitKey);
+        RateLimiter::clear('tenant-login:'.$request->ip());
+        // Just in case, try to clear by identifier directly
+        RateLimiter::clear('tenant-login:'.Str::lower((string) $identifier));
 
         // Re-apply remember me preference
         Auth::login($result['user'], $remember);

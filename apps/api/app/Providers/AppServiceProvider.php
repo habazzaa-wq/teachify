@@ -65,16 +65,16 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Dedicated limiter for tenant authentication. Allows 20 attempts per minute
-        // per identifier+IP and 40 attempts per minute per IP, protecting against brute
+        // Dedicated limiter for tenant authentication. Allows 100 attempts per minute
+        // per identifier+IP and 200 attempts per minute per IP, protecting against brute
         // force while avoiding accidental lockouts on typos or rapid retries.
         RateLimiter::for('tenant-login', function (Request $request) {
             $identifier = (string) ($request->input('email') ?? $request->input('phone') ?? '');
             $key = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
 
             return [
-                Limit::perMinute(20)->by($key),
-                Limit::perMinute(40)->by($request->ip()),
+                Limit::perMinute(100)->by($key),
+                Limit::perMinute(200)->by($request->ip()),
             ];
         });
 
