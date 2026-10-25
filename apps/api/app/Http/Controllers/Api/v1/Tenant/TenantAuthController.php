@@ -58,9 +58,6 @@ class TenantAuthController extends Controller
         // Just in case, try to clear by identifier directly
         RateLimiter::clear('tenant-login:'.Str::lower((string) $identifier));
 
-        // Re-apply remember me preference
-        Auth::login($result['user'], $remember);
-
         $membership = $result['membership']->load('roles.permissions');
 
         return $this->authenticatedResponse(

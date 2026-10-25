@@ -66,10 +66,6 @@ class AuthenticationService
         $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));
         $refreshToken = $user->createToken('refresh_token', ['refresh:token'], now()->addDays(30));
 
-        Auth::login($user);
-        if (request()->hasSession()) {
-            request()->session()->regenerate();
-        }
         $this->memberships->touchLastAccessed($membership);
 
         event(new LoginSucceeded($tenant->id, $user->id));
@@ -145,7 +141,12 @@ class AuthenticationService
     public function logout(?User $user = null): void
     {
         if ($user) {
-            $user->tokens()->delete();
+            // Revoke the current access token and the associated refresh token
+            // if we can identify them, instead of killing all sessions.
+            $token = $user->currentAccessToken();
+            if ($token) {
+                $token->delete();
+            }
         }
 
         Auth::guard('web')->logout();
