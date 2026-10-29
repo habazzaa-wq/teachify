@@ -7,6 +7,7 @@ use App\Http\Resources\CourseLessonResource;
 use App\Models\Course;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
+use App\Services\Instructors\InstructorCourseAuthorization;
 use App\Services\Courses\CourseLessonService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -274,7 +275,12 @@ class CourseLessonController extends Controller
             'slug' => ['sometimes', 'string', 'max:255', 'alpha_dash:ascii'],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
-            'lesson_type' => [$required, Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio'])],
+            'lesson_type' => [
+                $required,
+                Rule::notIn(app(InstructorCourseAuthorization::class)
+                    ->isInstructorAccount($request->user(), currentTenant()) ? ['exam'] : []),
+                Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio']),
+            ],
             'status' => ['sometimes', Rule::in(['draft', 'review', 'published', 'scheduled', 'archived'])],
             'visibility' => ['sometimes', Rule::in(['private', 'preview', 'public'])],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
@@ -287,7 +293,13 @@ class CourseLessonController extends Controller
             'notes' => ['nullable', 'string'],
             'color' => ['nullable', 'string', 'max:20'],
             'icon' => ['nullable', 'string', 'max:100'],
-            'exam_id' => ['nullable', 'integer', 'exists:exams,id'],
+            'exam_id' => [
+                'nullable',
+                Rule::prohibitedIf(fn (): bool => app(InstructorCourseAuthorization::class)
+                    ->isInstructorAccount($request->user(), currentTenant())),
+                'integer',
+                'exists:exams,id',
+            ],
         ]);
     }
 

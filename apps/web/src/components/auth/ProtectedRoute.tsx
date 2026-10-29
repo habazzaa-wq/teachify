@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTenantContext } from "@/providers/TenantProvider";
+import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { isStudentOnly } from "@/lib/tenant-access";
 import { routes } from "@/constants/routes";
@@ -18,14 +19,37 @@ import { AppLoadingState } from "@/components/ui/AppLoadingState";
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { status } = useAuth();
+  const { status, isHydrated, isBootstrapping } = useAuth();
   const { activeTenant, hydrated } = useTenantContext();
   const hasTenant = activeTenant !== null;
 
   useEffect(() => {
+    // If we haven't hydrated the auth store yet, don't make any decisions.
+    if (!isHydrated) {
+      return;
+    }
+
+    const storeToken = useAuthStore.getState().accessToken;
+    const storageData = typeof window !== "undefined" ? localStorage.getItem("auth-state") : null;
+    const storageToken = storageData ? JSON.parse(storageData)?.state?.accessToken : null;
+    const token = storeToken || storageToken;
+
+    // truly unauthenticated or hydrated with no token? wait until we are SURE.
     if (status === "unauthenticated") {
-      // An unauthenticated dashboard session belongs on the teacher login
-      // page, not the public storefront home page.
+      // If we have any sign of a token OR we are still bootstrapping, WAIT.
+      if (token || isBootstrapping) {
+        console.warn("[ProtectedRoute] status is unauthenticated but token exists or bootstrapping. Waiting.");
+        return;
+      }
+
+      // If tenant is not yet resolved, we can't safely redirect to tenantLogin
+      if (!activeTenant) {
+        console.warn("[ProtectedRoute] status is unauthenticated and no token, but tenant not ready. Waiting.");
+        return;
+      }
+
+      // Truly unauthenticated: redirect to login
+      console.log("[ProtectedRoute] Redirecting to login because status is unauthenticated and NO token found.");
       router.replace(routes.tenantLogin);
       return;
     }
@@ -38,10 +62,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         router.replace(routes.studentDashboard);
       }
     }
-  }, [router, status, pathname]);
+  }, [router, status, pathname, isHydrated, activeTenant]);
 
-  // Bootstrap in flight.
-  if (status === "idle" || status === "loading") {
+  // Bootstrap in flight or token found but not yet verified.
+  const storeToken = useAuthStore.getState().accessToken;
+  const storageData = typeof window !== "undefined" ? localStorage.getItem("auth-state") : null;
+  const storageToken = storageData ? JSON.parse(storageData)?.state?.accessToken : null;
+  const hasToken = Boolean(storeToken || storageToken);
+
+  if (!isHydrated || !activeTenant || isBootstrapping || status === "idle" || status === "loading" || (status === "unauthenticated" && hasToken)) {
     return <AppLoadingState className="min-h-screen" />;
   }
 

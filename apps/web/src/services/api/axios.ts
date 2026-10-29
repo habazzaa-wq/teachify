@@ -92,15 +92,19 @@ api.interceptors.response.use(
 
     if (typeof window !== "undefined") {
       if (normalized.status === 401) {
+        console.warn("[Axios Interceptor] 401 Unauthorized detected.");
         // Check if we have a token - if so, it might be expired
         const { accessToken } = readRequestContext();
         if (accessToken) {
+          console.log("[Axios Interceptor] Token exists, dispatching tokenExpired event.");
           // Try refresh before dispatching unauthorized
           window.dispatchEvent(new CustomEvent(AUTH_EVENTS.tokenExpired));
         } else {
+          console.error("[Axios Interceptor] No token found, dispatching unauthorized event.");
           window.dispatchEvent(new CustomEvent(AUTH_EVENTS.unauthorized));
         }
       } else if (isTenantMismatch(normalized)) {
+        console.error("[Axios Interceptor] Tenant mismatch detected.");
         window.dispatchEvent(new CustomEvent(AUTH_EVENTS.tenantInvalid));
       }
     }

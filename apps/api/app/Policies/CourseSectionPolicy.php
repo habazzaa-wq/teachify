@@ -6,6 +6,8 @@ use App\Models\CourseSection;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Instructors\InstructorCourseAuthorization;
+use App\Models\Course;
 
 class CourseSectionPolicy
 {
@@ -20,7 +22,7 @@ class CourseSectionPolicy
             return false;
         }
 
-        return $this->auth()->hasPermission($user, currentTenant(), 'sections.view');
+        return $this->canAccessSection($user, $section, 'sections.view');
     }
 
     public function create(User $user): bool
@@ -31,25 +33,25 @@ class CourseSectionPolicy
     public function update(User $user, CourseSection $section): bool
     {
         return $section->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'sections.update');
+            && $this->canAccessSection($user, $section, 'sections.update');
     }
 
     public function delete(User $user, CourseSection $section): bool
     {
         return $section->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'sections.delete');
+            && $this->canAccessSection($user, $section, 'sections.delete');
     }
 
     public function publish(User $user, CourseSection $section): bool
     {
         return $section->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'sections.publish');
+            && $this->canAccessSection($user, $section, 'sections.publish');
     }
 
     public function feature(User $user, CourseSection $section): bool
     {
         return $section->tenant_id === currentTenant()->id
-            && $this->auth()->hasPermission($user, currentTenant(), 'sections.feature');
+            && $this->canAccessSection($user, $section, 'sections.feature');
     }
 
     public function reorder(User $user): bool
@@ -57,13 +59,44 @@ class CourseSectionPolicy
         return $this->auth()->hasPermission($user, currentTenant(), 'sections.reorder');
     }
 
+    public function reorderForCourse(User $user, Course $course): bool
+    {
+        return $course->tenant_id === currentTenant()->id
+            && app(InstructorCourseAuthorization::class)->canAccessCourse($user, $course)
+            && $this->auth()->hasPermission($user, currentTenant(), 'sections.reorder');
+    }
+
     public function restore(User $user): bool
     {
+        if (app(InstructorCourseAuthorization::class)->isInstructorAccount($user, currentTenant())) {
+            return $this->auth()->hasPermission($user, currentTenant(), 'sections.update');
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'sections.delete');
     }
 
     private function auth(): TenantAuthorizationService
     {
         return app(TenantAuthorizationService::class);
+    }
+
+    private function canAccessSection(User $user, CourseSection $section, string $permission): bool
+    {
+        if (app(InstructorCourseAuthorization::class)->isInstructorAccount($user, currentTenant())) {
+            if (in_array($permission, ['sections.delete', 'sections.publish'], true)) {
+                $permission = 'sections.update';
+            }
+
+            return app(InstructorCourseAuthorization::class)->canAccessCourse($user, $section->course)
+                && $this->auth()->hasPermission($user, currentTenant(), $permission);
+        }
+
+        $membership = $this->auth()->membershipFor($user, currentTenant());
+        if ($membership && app(InstructorCourseAuthorization::class)
+            ->legacyInstructorAccessRevoked($user, $section->course, $membership)) {
+            return false;
+        }
+
+        return $this->auth()->hasPermission($user, currentTenant(), $permission);
     }
 }

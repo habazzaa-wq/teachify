@@ -40,6 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'any-role' => \App\Http\Middleware\AnyRoleMiddleware::class,
             'upload.quota' => \App\Http\Middleware\UploadQuotaMiddleware::class,
+            'instructor.context' => \App\Http\Middleware\EnsureInstructorContext::class,
+            'instructor.course' => \App\Http\Middleware\EnsureAssignedInstructorCourse::class,
         ]);
         $middleware->redirectGuestsTo(fn () => url('/'));
     })

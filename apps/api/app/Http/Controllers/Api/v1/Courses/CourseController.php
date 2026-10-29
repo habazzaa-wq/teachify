@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Repositories\CourseRepository;
 use App\Repositories\CourseSectionRepository;
 use App\Services\Courses\CourseService;
+use App\Services\Instructors\InstructorCourseAuthorization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -42,7 +43,12 @@ class CourseController extends Controller
     {
         Gate::authorize('create', Course::class);
 
-        $validated = $this->validateCourse($request);
+        $validated = $this->isInstructor($request)
+            ? $this->validateInstructorCourse($request)
+            : $this->validateCourse($request);
+        if (array_key_exists('primary_instructor_tenant_user_id', $validated)) {
+            Gate::authorize('assignInstructors', new Course(['tenant_id' => currentTenant()->id]));
+        }
         $course = $this->service->create(currentTenant(), currentTenantUser(), $validated);
 
         return response()->json([
@@ -66,7 +72,12 @@ class CourseController extends Controller
         abort_if($course->tenant_id !== currentTenant()->id, 404);
         Gate::authorize('update', $course);
 
-        $validated = $this->validateCourse($request, true);
+        $validated = $this->isInstructor($request)
+            ? $this->validateInstructorCourse($request, true)
+            : $this->validateCourse($request, true);
+        if (array_key_exists('primary_instructor_tenant_user_id', $validated)) {
+            Gate::authorize('assignInstructors', $course);
+        }
         $course = $this->service->update(currentTenant(), $course, $validated);
 
         return response()->json([
@@ -83,6 +94,32 @@ class CourseController extends Controller
         $this->repository->delete($course);
 
         return response()->json(['message' => 'Course deleted successfully.']);
+    }
+
+    public function assignInstructor(Request $request, Course $course): JsonResponse
+    {
+        abort_if($course->tenant_id !== currentTenant()->id, 404);
+        Gate::authorize('assignInstructors', $course);
+
+        $validated = $request->validate([
+            'tenant_user_id' => [
+                'present',
+                'nullable',
+                'integer',
+                Rule::exists('tenant_users', 'id')
+                    ->where('tenant_id', currentTenant()->id)
+                    ->where('status', 'active'),
+            ],
+        ]);
+
+        $course = $this->service->update(currentTenant(), $course, [
+            'primary_instructor_tenant_user_id' => $validated['tenant_user_id'] ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'Course instructor assignment updated.',
+            'data' => new CourseResource($course),
+        ]);
     }
 
     public function updateStatus(Request $request, Course $course): JsonResponse
@@ -410,5 +447,34 @@ class CourseController extends Controller
             'tag_ids' => ['sometimes', 'array'],
             'tag_ids.*' => ['integer'],
         ]);
+    }
+
+    private function validateInstructorCourse(Request $request, bool $partial = false): array
+    {
+        $rules = [
+            'title' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
+            'slug' => ['sometimes', 'string', 'max:255', 'alpha_dash:ascii'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:500'],
+            'description' => ['nullable', 'string'],
+            'full_description' => ['nullable', 'string'],
+            'difficulty' => ['sometimes', Rule::in(['beginner', 'intermediate', 'advanced', 'all_levels'])],
+            'language' => ['sometimes', 'string', 'max:10'],
+        ];
+        $unsupported = array_diff(array_keys($request->all()), array_keys($rules));
+        if ($unsupported !== []) {
+            throw ValidationException::withMessages(array_fill_keys(
+                $unsupported,
+                'This field cannot be changed by instructors.',
+            ));
+        }
+
+        return $request->validate($rules);
+    }
+
+    private function isInstructor(Request $request): bool
+    {
+        return app(InstructorCourseAuthorization::class)
+            ->isInstructorAccount($request->user(), currentTenant());
     }
 }

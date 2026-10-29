@@ -6,6 +6,8 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Repositories\TenantUserRepository;
 use App\Services\Security\AuditLogger;
+use App\Services\Instructors\InstructorFeature;
+use App\Services\Instructors\InstructorMembershipGuard;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -37,6 +39,7 @@ class TenantUserService
         $existingUser = User::where('email', $email)->first();
 
         if ($existingUser) {
+            app(InstructorMembershipGuard::class)->assertNotInstructorIdentity($existingUser);
             $existingMembership = TenantUser::query()
                 ->where('tenant_id', currentTenant()->id)
                 ->where('user_id', $existingUser->id)
@@ -48,6 +51,8 @@ class TenantUserService
                 ]);
             }
         }
+
+        $this->rejectGenericInstructorRole($data['role_ids'] ?? []);
 
         $user = $existingUser ?? User::create([
             'name' => $data['name'],
@@ -88,6 +93,15 @@ class TenantUserService
     public function update(int $id, array $data): TenantUser
     {
         $tenantUser = $this->repository->findByIdOrFail($id);
+
+        if (array_key_exists('role_ids', $data)) {
+            if ($tenantUser->is_instructor) {
+                throw ValidationException::withMessages([
+                    'role_ids' => ['Instructor roles must be managed through the instructor account flow.'],
+                ]);
+            }
+            $this->rejectGenericInstructorRole($data['role_ids']);
+        }
 
         $userData = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'avatar', 'locale', 'timezone']));
         if (! empty($userData)) {
@@ -140,6 +154,19 @@ class TenantUserService
 
     public function restore(int $id): TenantUser
     {
+        $trashed = TenantUser::onlyTrashed()
+            ->where('tenant_id', currentTenant()->id)
+            ->whereKey($id)
+            ->first();
+        if ($trashed?->is_instructor && TenantUser::withTrashed()
+            ->where('user_id', $trashed->user_id)
+            ->where('id', '!=', $trashed->id)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'membership' => ['This instructor already has a membership in another tenant.'],
+            ]);
+        }
+
         $tenantUser = $this->repository->restore($id);
 
         if (! $tenantUser) {
@@ -367,6 +394,28 @@ class TenantUserService
 
         if ($token) {
             $token->delete();
+        }
+    }
+
+    /**
+     * @param  list<int>  $roleIds
+     */
+    private function rejectGenericInstructorRole(array $roleIds): void
+    {
+        if ($roleIds === [] || ! app(InstructorFeature::class)->isEnabled(currentTenant())) {
+            return;
+        }
+
+        $isInstructorRole = \App\Models\Role::query()
+            ->where('tenant_id', currentTenant()->id)
+            ->whereIn('id', $roleIds)
+            ->where('slug', 'instructor')
+            ->exists();
+
+        if ($isInstructorRole) {
+            throw ValidationException::withMessages([
+                'role_ids' => ['Use instructor account provisioning to create an instructor.'],
+            ]);
         }
     }
 }

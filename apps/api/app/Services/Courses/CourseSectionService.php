@@ -3,6 +3,7 @@
 namespace App\Services\Courses;
 
 use App\Models\Course;
+use App\Models\CourseModule;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
 use App\Repositories\CourseSectionRepository;
@@ -30,6 +31,10 @@ class CourseSectionService
     public function create(Course $course, array $data): CourseSection
     {
         return DB::transaction(function () use ($course, $data): CourseSection {
+            if (isset($data['course_module_id'])) {
+                $this->ensureModuleBelongsToCourse($course, (int) $data['course_module_id']);
+            }
+
             $section = $this->repository->create([
                 'tenant_id' => $course->tenant_id,
                 'course_id' => $course->id,
@@ -149,6 +154,7 @@ class CourseSectionService
         $data = [];
 
         if ($moduleId !== null) {
+            $this->ensureModuleBelongsToCourse($course, $moduleId);
             $data['course_module_id'] = $moduleId;
         }
 
@@ -377,6 +383,19 @@ class CourseSectionService
         if ($section->tenant_id !== $course->tenant_id || $section->course_id !== $course->id) {
             throw ValidationException::withMessages([
                 'section' => ['The selected section is invalid for this course.'],
+            ]);
+        }
+    }
+
+    private function ensureModuleBelongsToCourse(Course $course, int $moduleId): void
+    {
+        if (! CourseModule::query()
+            ->where('tenant_id', $course->tenant_id)
+            ->where('course_id', $course->id)
+            ->whereKey($moduleId)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'course_module_id' => ['The selected module is invalid for this course.'],
             ]);
         }
     }

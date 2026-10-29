@@ -118,6 +118,7 @@ export const platformTenantsApiService = {
       "currency", "companyName", "supportEmail", "notes", "tags", "address",
       "owner", "ownerAccount", "branding", "limits", "integrations",
       "storage", "security", "domain", "subscription",
+      "featureFlags",
       // The canonical plan assignment; maps to `platform_plan_id`. Send null to
       // unassign and fall the tenant back to the default limits.
       "platformPlanId",
@@ -129,6 +130,12 @@ export const platformTenantsApiService = {
       }
     }
     const payload = mapToSnakeCase(filtered);
+    const featureFlags = filtered.featureFlags;
+    if (featureFlags && typeof featureFlags === "object" && "hasInstructors" in featureFlags) {
+      payload.feature_flags = {
+        has_instructors: featureFlags.hasInstructors,
+      };
+    }
     const response = await platformApi.put<{ tenant: Tenant }>(`/tenants/${id}`, payload);
     return response.data.tenant;
   },

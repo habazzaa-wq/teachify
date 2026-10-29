@@ -15,7 +15,7 @@ import {
   AppButton,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { Building2, Globe, CreditCard, UserCog, Palette, FileText, Save, Loader2 } from "lucide-react";
+import { Building2, Globe, CreditCard, UserCog, Palette, FileText, Save, Loader2, Users } from "lucide-react";
 import {
   wizardSection1Schema,
   wizardSection2Schema,
@@ -55,6 +55,7 @@ type FormData = {
   companyName: string; logo: string | null; primaryColor: string; secondaryColor: string;
   supportEmail: string; favicon: string | null;
   notes: string; tags: string[];
+  hasInstructors: boolean;
 };
 
 const DEFAULT_FORM: FormData = {
@@ -70,6 +71,7 @@ const DEFAULT_FORM: FormData = {
   companyName: "", logo: null, primaryColor: "#6366f1", secondaryColor: "#8b5cf6",
   supportEmail: "", favicon: null,
   notes: "", tags: [],
+  hasInstructors: false,
 };
 
 const TABS = [
@@ -79,6 +81,7 @@ const TABS = [
   { value: "owner", label: "حساب المالك", icon: UserCog },
   { value: "branding", label: "العلامة التجارية", icon: Palette },
   { value: "notes", label: "ملاحظات", icon: FileText },
+  { value: "features", label: "الميزات", icon: Users },
 ];
 
 function tenantToFormData(tenant: Tenant | null | undefined): FormData {
@@ -116,6 +119,7 @@ function tenantToFormData(tenant: Tenant | null | undefined): FormData {
     favicon: tenant.branding?.favicon ?? null,
     notes: tenant.notes ?? "",
     tags: tenant.tags ?? [],
+    hasInstructors: tenant.featureFlags?.hasInstructors ?? false,
   };
 }
 
@@ -381,6 +385,9 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
         autoRenew: form.autoRenew,
         invoices: [],
       },
+      featureFlags: {
+        hasInstructors: form.hasInstructors,
+      },
     };
 
     onSave(updateData);
@@ -522,6 +529,25 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                   errors={errors}
                   onChange={handleChange}
                 />
+              )}
+            </AppTabsContent>
+
+            <AppTabsContent value="features" className="mt-0">
+              {mountedTabs.has("features") && (
+                <label className="flex items-start gap-3 rounded-lg border p-4">
+                  <input
+                    type="checkbox"
+                    checked={form.hasInstructors}
+                    onChange={(event) => handleChange("hasInstructors", event.target.checked)}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span className="space-y-1">
+                    <span className="block font-medium">تفعيل حسابات المدرّسين</span>
+                    <span className="block text-sm text-muted-foreground">
+                      يتيح للمسؤول إنشاء حسابات مدرّسين مستقلة وإدارة إسناد المقررات.
+                    </span>
+                  </span>
+                </label>
               )}
             </AppTabsContent>
           </div>

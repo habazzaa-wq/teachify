@@ -149,26 +149,17 @@ export function WorkspaceLeftSidebar() {
   }, [leftSidebarOpen, setLeftSidebarCollapsed]);
 
   return (
-    <AnimatePresence mode="popLayout">
-      <motion.aside
-        initial={false}
-        animate={{
-          width: currentWidth,
-          opacity: 1,
-        }}
-        transition={{
-          duration: 0.25,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        className={cn(
-          "relative flex h-full flex-col overflow-hidden border-l border-studio-border bg-studio-glass-sidebar backdrop-blur-xl",
-          isResizing && "select-none",
-        )}
-        role="navigation"
-        aria-label="القائمة الجانبية"
-        onKeyDown={handleKeyDown}
-        dir="auto"
-      >
+    <aside
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden border-l border-studio-border bg-studio-glass-sidebar backdrop-blur-xl transition-[width] duration-300 ease-in-out",
+        isResizing && "select-none",
+      )}
+      style={{ width: currentWidth }}
+      role="navigation"
+      aria-label="القائمة الجانبية"
+      onKeyDown={handleKeyDown}
+      dir="auto"
+    >
         {/* Resize handle (only when expanded) */}
         {!leftSidebarCollapsed && (
           <div
@@ -408,7 +399,6 @@ export function WorkspaceLeftSidebar() {
             </StudioSidebarSection>
           </div>
         </div>
-      </motion.aside>
-    </AnimatePresence>
+    </aside>
   );
 }

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Access\AccessEvaluationService;
 use App\Services\Assignments\AssignmentService;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Instructors\InstructorCourseAuthorization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -126,6 +127,12 @@ class LessonAssignmentController extends Controller
 
     private function canManageAssignment(User $user, Course $course): bool
     {
+        $instructorAuthorization = app(InstructorCourseAuthorization::class);
+        if ($instructorAuthorization->isInstructorAccount($user, currentTenant())) {
+            return $instructorAuthorization->canAccessCourse($user, $course)
+                && app(TenantAuthorizationService::class)->hasPermission($user, currentTenant(), 'courses.update');
+        }
+
         $authorization = app(TenantAuthorizationService::class);
         $tenant = currentTenant();
 
@@ -136,6 +143,10 @@ class LessonAssignmentController extends Controller
         $membership = $authorization->membershipFor($user, $tenant);
 
         if (! $membership || $membership->status !== 'active') {
+            return false;
+        }
+
+        if ($instructorAuthorization->legacyInstructorAccessRevoked($user, $course, $membership)) {
             return false;
         }
 

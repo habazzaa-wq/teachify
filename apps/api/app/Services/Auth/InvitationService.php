@@ -10,6 +10,8 @@ use App\Models\TenantInvitation;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Security\AuditLogger;
+use App\Services\Instructors\InstructorFeature;
+use App\Services\Instructors\InstructorMembershipGuard;
 use App\Services\Support\EmailNormalizer;
 use App\Services\Notifications\NotificationEventService;
 use Illuminate\Support\Collection;
@@ -41,6 +43,18 @@ class InvitationService
             throw ValidationException::withMessages([
                 'role_ids' => ['One or more roles are invalid for this tenant.'],
             ]);
+        }
+
+        if ($roles->contains(fn (Role $role): bool => $role->slug === 'instructor')
+            && app(InstructorFeature::class)->isEnabled($tenant)) {
+            throw ValidationException::withMessages([
+                'role_ids' => ['Use instructor account provisioning instead of invitations.'],
+            ]);
+        }
+
+        $existingUser = User::query()->where('email', $normalizedEmail)->first();
+        if ($existingUser) {
+            app(InstructorMembershipGuard::class)->assertNotInstructorIdentity($existingUser);
         }
 
         if ($this->hasPendingInvitation($tenant, $normalizedEmail)) {
@@ -102,6 +116,13 @@ class InvitationService
             throw ValidationException::withMessages(['token' => ['This invitation is invalid.']]);
         }
 
+        if ($invitation->roles()->where('roles.slug', 'instructor')->exists()
+            && app(InstructorFeature::class)->isEnabled($tenant)) {
+            throw ValidationException::withMessages([
+                'role_ids' => ['Use instructor account provisioning instead of invitations.'],
+            ]);
+        }
+
         $user = $authenticatedUser ?? User::query()
             ->where('email', $invitation->normalized_email)
             ->first();
@@ -114,6 +135,8 @@ class InvitationService
             if (! $authenticatedUser && (! $password || ! Hash::check($password, $user->password))) {
                 throw ValidationException::withMessages(['password' => ['The provided credentials are incorrect.']]);
             }
+
+            app(InstructorMembershipGuard::class)->assertNotInstructorIdentity($user);
         } else {
             if (! $name || ! $password) {
                 throw ValidationException::withMessages([

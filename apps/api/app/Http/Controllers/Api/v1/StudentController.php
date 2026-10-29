@@ -8,6 +8,7 @@ use App\Models\LearnerAnalytics;
 use App\Models\Role;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Services\Instructors\InstructorMembershipGuard;
 use App\Services\AvatarGenerator;
 use App\Services\Auth\InvitationService;
 use Illuminate\Http\JsonResponse;
@@ -264,6 +265,7 @@ class StudentController extends Controller
         $existingUser = User::where('email', $email)->first();
 
         if ($existingUser) {
+            app(InstructorMembershipGuard::class)->assertNotInstructorIdentity($existingUser);
             $existingMembership = TenantUser::query()
                 ->where('tenant_id', $tenantId)
                 ->where('user_id', $existingUser->id)

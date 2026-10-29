@@ -27,6 +27,9 @@ class TenantResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description ?? '',
             'status' => $this->status,
+            'featureFlags' => [
+                'hasInstructors' => (bool) ($this->feature_flags['has_instructors'] ?? false),
+            ],
             'domain' => $primaryDomain ? [
                 'platformSubdomain' => $primaryDomain->subdomain ?? '',
                 'customDomain' => $primaryDomain->type === 'custom' ? $primaryDomain->domain : null,

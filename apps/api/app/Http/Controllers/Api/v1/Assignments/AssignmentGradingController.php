@@ -10,6 +10,7 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Assignments\AssignmentGradingService;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Instructors\InstructorCourseAuthorization;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -47,6 +48,12 @@ class AssignmentGradingController extends Controller
 
     private function canGradeAssignment(User $user, Course $course): bool
     {
+        $instructorAuthorization = app(InstructorCourseAuthorization::class);
+        if ($instructorAuthorization->isInstructorAccount($user, currentTenant())) {
+            return $instructorAuthorization->canAccessCourse($user, $course)
+                && app(TenantAuthorizationService::class)->hasPermission($user, currentTenant(), 'courses.update');
+        }
+
         $authorization = app(TenantAuthorizationService::class);
         $tenant = currentTenant();
 
@@ -57,6 +64,10 @@ class AssignmentGradingController extends Controller
         $membership = $authorization->membershipFor($user, $tenant);
 
         if (! $membership || $membership->status !== 'active') {
+            return false;
+        }
+
+        if ($instructorAuthorization->legacyInstructorAccessRevoked($user, $course, $membership)) {
             return false;
         }
 

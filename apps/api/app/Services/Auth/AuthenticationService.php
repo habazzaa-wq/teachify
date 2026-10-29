@@ -9,6 +9,7 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Security\AuditLogger;
 use App\Services\Support\EmailNormalizer;
+use App\Services\Instructors\InstructorFeature;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -49,6 +50,14 @@ class AuthenticationService
             $this->audit->record('login_rejected_membership', ['tenant_id' => $tenant->id, 'user_id' => $user->id]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if ($membership->is_instructor
+            || (app(InstructorFeature::class)->isEnabled($tenant)
+                && $membership->roles()->where('roles.slug', 'instructor')->exists())) {
+            throw ValidationException::withMessages([
+                'email' => ['Use the instructor sign-in page for this account.'],
             ]);
         }
 
@@ -118,6 +127,14 @@ class AuthenticationService
         if (! $membership) {
             throw ValidationException::withMessages([
                 'email' => ['No active membership found.'],
+            ]);
+        }
+
+        if ($membership->is_instructor
+            || (app(InstructorFeature::class)->isEnabled($tenant)
+                && $membership->roles()->where('roles.slug', 'instructor')->exists())) {
+            throw ValidationException::withMessages([
+                'refresh_token' => ['Use the instructor sign-in flow for this account.'],
             ]);
         }
 

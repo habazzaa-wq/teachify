@@ -12,6 +12,7 @@ use App\Models\TenantSetting;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Security\AuditLogger;
+use App\Services\Instructors\InstructorMembershipGuard;
 use App\Services\Support\EmailNormalizer;
 use App\Support\DefaultRolePermissions;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,10 @@ class TenantCreationService
         return DB::transaction(function () use ($data, $createdBy): array {
             $slug = Str::slug($data['academy_slug']);
             $ownerEmail = $this->emails->normalize($data['owner_email']);
+            $existingOwner = User::query()->where('email', $ownerEmail)->first();
+            if ($existingOwner) {
+                app(InstructorMembershipGuard::class)->assertNotInstructorIdentity($existingOwner);
+            }
 
             $owner = User::firstOrCreate(
                 ['email' => $ownerEmail],

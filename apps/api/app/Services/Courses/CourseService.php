@@ -9,6 +9,7 @@ use App\Models\CourseSetting;
 use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\TenantUser;
+use App\Services\Instructors\InstructorFeature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -21,16 +22,21 @@ class CourseService
     public function create(Tenant $tenant, TenantUser $creator, array $data): Course
     {
         return DB::transaction(function () use ($tenant, $creator, $data): Course {
-            $primaryInstructor = $this->membershipForTenant(
-                $tenant,
-                $data['primary_instructor_tenant_user_id'] ?? $creator->id,
-                'primary_instructor_tenant_user_id',
-            );
+            $primaryInstructorId = $data['primary_instructor_tenant_user_id'] ?? null;
+            if (! array_key_exists('primary_instructor_tenant_user_id', $data)) {
+                $primaryInstructorId = app(InstructorFeature::class)->isEnabled($tenant)
+                    ? ($creator->is_instructor ? $creator->id : null)
+                    : $creator->id;
+            }
+            $primaryInstructor = $primaryInstructorId === null
+                ? null
+                : $this->membershipForAssignment($tenant, (int) $primaryInstructorId);
 
             $course = Course::create([
                 'tenant_id' => $tenant->id,
                 'created_by_tenant_user_id' => $creator->id,
-                'primary_instructor_tenant_user_id' => $primaryInstructor->id,
+                'primary_instructor_tenant_user_id' => $primaryInstructor?->id,
+                'instructor_assignment_managed' => array_key_exists('primary_instructor_tenant_user_id', $data),
                 'title' => $data['title'],
                 'slug' => $this->uniqueCourseSlug($data['slug'] ?? $data['title']),
                 'subtitle' => $data['subtitle'] ?? null,
@@ -63,7 +69,9 @@ class CourseService
                 'target_audience' => $data['target_audience'] ?? null,
             ]);
 
-            $this->upsertInstructor($course, $primaryInstructor, 'primary', true, 0);
+            if ($primaryInstructor) {
+                $this->upsertInstructor($course, $primaryInstructor, 'primary', true, 0);
+            }
             $this->syncTaxonomy($course, $data['category_ids'] ?? [], $data['tag_ids'] ?? []);
             $this->createDefaultSettings($course);
 
@@ -77,15 +85,31 @@ class CourseService
     public function update(Tenant $tenant, Course $course, array $data): Course
     {
         return DB::transaction(function () use ($tenant, $course, $data): Course {
-            if (array_key_exists('primary_instructor_tenant_user_id', $data)) {
-                $primaryInstructor = $this->membershipForTenant(
-                    $tenant,
-                    $data['primary_instructor_tenant_user_id'],
-                    'primary_instructor_tenant_user_id',
-                );
+            $course = Course::query()
+                ->where('tenant_id', $tenant->id)
+                ->whereKey($course->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-                $data['primary_instructor_tenant_user_id'] = $primaryInstructor->id;
-                $this->upsertInstructor($course, $primaryInstructor, 'primary', true, 0);
+            if (array_key_exists('primary_instructor_tenant_user_id', $data)) {
+                $previousPrimaryId = $course->primary_instructor_tenant_user_id;
+                $primaryInstructor = $data['primary_instructor_tenant_user_id'] === null
+                    ? null
+                    : $this->membershipForAssignment($tenant, (int) $data['primary_instructor_tenant_user_id']);
+
+                $data['primary_instructor_tenant_user_id'] = $primaryInstructor?->id;
+                if ($previousPrimaryId !== null && $previousPrimaryId !== $primaryInstructor?->id) {
+                    $course->instructors()
+                        ->where('tenant_id', $tenant->id)
+                        ->where('tenant_user_id', $previousPrimaryId)
+                        ->where('role', 'primary')
+                        ->delete();
+                }
+
+                if ($primaryInstructor) {
+                    $this->upsertInstructor($course, $primaryInstructor, 'primary', true, 0);
+                }
+                $data['instructor_assignment_managed'] = true;
             }
 
             if (array_key_exists('slug', $data)) {
@@ -94,6 +118,7 @@ class CourseService
 
             $course->fill(collect($data)->only([
                 'primary_instructor_tenant_user_id',
+                'instructor_assignment_managed',
                 'title',
                 'slug',
                 'subtitle',
@@ -262,15 +287,41 @@ class CourseService
      */
     public function attachInstructor(Tenant $tenant, Course $course, array $data): CourseInstructor
     {
-        $membership = $this->membershipForTenant($tenant, $data['tenant_user_id'], 'tenant_user_id');
+        return DB::transaction(function () use ($tenant, $course, $data): CourseInstructor {
+            $course = Course::query()
+                ->where('tenant_id', $tenant->id)
+                ->whereKey($course->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $membership = $this->membershipForTenant($tenant, $data['tenant_user_id'], 'tenant_user_id');
+            $role = $data['role'] ?? 'co_instructor';
 
-        return $this->upsertInstructor(
-            $course,
-            $membership,
-            $data['role'] ?? 'co_instructor',
-            $data['is_visible'] ?? true,
-            $data['sort_order'] ?? 0,
-        );
+            if ($role === 'primary') {
+                $this->update($tenant, $course, [
+                    'primary_instructor_tenant_user_id' => $membership->id,
+                ]);
+
+                return CourseInstructor::query()
+                    ->where('tenant_id', $tenant->id)
+                    ->where('course_id', $course->id)
+                    ->where('tenant_user_id', $membership->id)
+                    ->firstOrFail();
+            }
+
+            if ($membership->id === $course->primary_instructor_tenant_user_id) {
+                throw ValidationException::withMessages([
+                    'role' => ['The primary instructor must remain assigned the primary role.'],
+                ]);
+            }
+
+            return $this->upsertInstructor(
+                $course,
+                $membership,
+                $role,
+                $data['is_visible'] ?? true,
+                $data['sort_order'] ?? 0,
+            );
+        });
     }
 
     public function detachInstructor(Course $course, CourseInstructor $assignment): void
@@ -409,6 +460,22 @@ class CourseService
         if (! $membership) {
             throw ValidationException::withMessages([
                 $field => ['The selected tenant membership is invalid.'],
+            ]);
+        }
+
+        return $membership;
+    }
+
+    private function membershipForAssignment(Tenant $tenant, int $membershipId): TenantUser
+    {
+        $membership = $this->membershipForTenant($tenant, $membershipId, 'primary_instructor_tenant_user_id');
+
+        if (app(InstructorFeature::class)->isEnabled($tenant)
+            && (! $membership->is_instructor
+                || $membership->roles()->count() !== 1
+                || ! $membership->roles()->where('roles.slug', 'instructor')->exists())) {
+            throw ValidationException::withMessages([
+                'primary_instructor_tenant_user_id' => ['The selected membership is not an Instructor in this tenant.'],
             ]);
         }
 

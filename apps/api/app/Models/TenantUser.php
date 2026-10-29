@@ -21,6 +21,8 @@ class TenantUser extends Model
         'tenant_id',
         'user_id',
         'status',
+        'is_instructor',
+        'must_change_password',
         'phone',
         'avatar',
         'locale',
@@ -38,6 +40,8 @@ class TenantUser extends Model
     {
         return [
             'joined_at' => 'datetime',
+            'is_instructor' => 'boolean',
+            'must_change_password' => 'boolean',
             'last_accessed_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];

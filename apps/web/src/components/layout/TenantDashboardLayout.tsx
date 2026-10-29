@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
@@ -53,18 +52,9 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
           aria-label="مساحة العمل الرئيسية"
         >
           <div className="flex-1 overflow-y-auto studio-scrollbar">
-            <AnimatePresence mode="popLayout">
-              <motion.div
-                key="workspace-content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+            <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
+              {children}
+            </div>
           </div>
         </main>
 
@@ -81,33 +71,23 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
       <WorkspaceGlobalSearch />
 
       {/* Mobile overlay: sidebar as drawer */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-studio-overlay md:hidden"
-              onClick={handleCloseMobile}
-              aria-hidden="true"
-            />
-            <motion.aside
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 right-0 z-50 w-[280px] md:hidden"
-              role="dialog"
-              aria-modal="true"
-              aria-label="القائمة الجانبية"
-            >
-              <WorkspaceLeftSidebar />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-studio-overlay md:hidden"
+            onClick={handleCloseMobile}
+            aria-hidden="true"
+          />
+          <aside
+            className="fixed inset-y-0 right-0 z-50 w-[280px] md:hidden shadow-2xl transition-transform duration-300 ease-in-out"
+            role="dialog"
+            aria-modal="true"
+            aria-label="القائمة الجانبية"
+          >
+            <WorkspaceLeftSidebar />
+          </aside>
+        </>
+      )}
     </div>
   );
 }

@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\v1\Auth\InvitationController;
 use App\Http\Controllers\Api\v1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\v1\Auth\RoleController;
 use App\Http\Controllers\Api\v1\Auth\TenantUserController;
+use App\Http\Controllers\Api\v1\Instructor\InstructorAuthController;
+use App\Http\Controllers\Api\v1\Instructor\InstructorController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateVerificationController;
@@ -163,6 +165,110 @@ Route::prefix('v1')->group(function () {
         });
     });
 
+    Route::prefix('instructor/auth')->name('instructor.auth.')->group(function () {
+        Route::post('/login', [InstructorAuthController::class, 'login'])
+            ->middleware('throttle:tenant-login')
+            ->name('login');
+        Route::post('/refresh', [InstructorAuthController::class, 'refresh'])
+            ->middleware('throttle:tenant-refresh')
+            ->name('refresh');
+        Route::middleware(['auth:sanctum', 'instructor.context'])->group(function () {
+            Route::get('/me', [InstructorAuthController::class, 'me'])->name('me');
+            Route::post('/change-password', [InstructorAuthController::class, 'changePassword'])
+                ->middleware('throttle:10,1')
+                ->name('change-password');
+            Route::post('/logout', [InstructorAuthController::class, 'logout'])->name('logout');
+        });
+    });
+
+    Route::prefix('instructor')->middleware(['auth:sanctum', 'instructor.context'])->group(function () {
+        Route::get('/courses', [CourseController::class, 'index']);
+        Route::post('/courses', [CourseController::class, 'store']);
+        Route::get('/courses/{course}', [CourseController::class, 'show']);
+        Route::put('/courses/{course}', [CourseController::class, 'update']);
+        Route::patch('/courses/{course}/status', [CourseController::class, 'updateStatus']);
+        Route::patch('/courses/{course}/publish', [CourseController::class, 'publish']);
+        Route::patch('/courses/{course}/archive', [CourseController::class, 'archive']);
+
+        Route::prefix('courses/{course}')
+            ->middleware('instructor.course')
+            ->group(function () {
+                Route::get('/modules', [CourseModuleController::class, 'index']);
+                Route::post('/modules', [CourseModuleController::class, 'store']);
+                Route::get('/modules/export', [CourseModuleController::class, 'export']);
+                Route::post('/modules/reorder', [CourseModuleController::class, 'reorder']);
+                Route::get('/modules/{module}', [CourseModuleController::class, 'show']);
+                Route::put('/modules/{module}', [CourseModuleController::class, 'update']);
+                Route::patch('/modules/{module}/status', [CourseModuleController::class, 'updateStatus']);
+                Route::patch('/modules/{module}/publish', [CourseModuleController::class, 'publish']);
+                Route::patch('/modules/{module}/archive', [CourseModuleController::class, 'archive']);
+                Route::post('/modules/{module}/feature', [CourseModuleController::class, 'toggleFeature']);
+                Route::post('/modules/{module}/restore', [CourseModuleController::class, 'restore']);
+                Route::post('/modules/{module}/duplicate', [CourseModuleController::class, 'duplicate']);
+                Route::delete('/modules/{module}', [CourseModuleController::class, 'destroy']);
+
+                Route::get('/sections', [CourseSectionController::class, 'index']);
+                Route::post('/sections', [CourseSectionController::class, 'store']);
+                Route::get('/sections/export', [CourseSectionController::class, 'export']);
+                Route::post('/sections/reorder', [CourseSectionController::class, 'reorder']);
+                Route::get('/sections/{section}', [CourseSectionController::class, 'show']);
+                Route::put('/sections/{section}', [CourseSectionController::class, 'update']);
+                Route::patch('/sections/{section}/status', [CourseSectionController::class, 'updateStatus']);
+                Route::patch('/sections/{section}/publish', [CourseSectionController::class, 'publish']);
+                Route::patch('/sections/{section}/unpublish', [CourseSectionController::class, 'unpublish']);
+                Route::patch('/sections/{section}/archive', [CourseSectionController::class, 'archive']);
+                Route::post('/sections/{section}/feature', [CourseSectionController::class, 'toggleFeature']);
+                Route::post('/sections/{section}/restore', [CourseSectionController::class, 'restore']);
+                Route::post('/sections/{section}/duplicate', [CourseSectionController::class, 'duplicate']);
+                Route::post('/sections/{section}/move', [CourseSectionController::class, 'move']);
+                Route::delete('/sections/{section}', [CourseSectionController::class, 'destroy']);
+
+                Route::get('/sections/{section}/lessons', [CourseLessonController::class, 'index']);
+                Route::get('/sections/{section}/lessons/export', [CourseLessonController::class, 'export']);
+                Route::post('/sections/{section}/lessons', [CourseLessonController::class, 'store']);
+                Route::post('/sections/{section}/lessons/reorder', [CourseLessonController::class, 'reorder']);
+                Route::get('/sections/{section}/lessons/{lesson}', [CourseLessonController::class, 'show']);
+                Route::put('/sections/{section}/lessons/{lesson}', [CourseLessonController::class, 'update']);
+                Route::patch('/sections/{section}/lessons/{lesson}/status', [CourseLessonController::class, 'updateStatus']);
+                Route::patch('/sections/{section}/lessons/{lesson}/publish', [CourseLessonController::class, 'publish']);
+                Route::patch('/sections/{section}/lessons/{lesson}/archive', [CourseLessonController::class, 'archive']);
+                Route::post('/sections/{section}/lessons/{lesson}/feature', [CourseLessonController::class, 'feature']);
+                Route::post('/sections/{section}/lessons/{lesson}/move', [CourseLessonController::class, 'move']);
+                Route::post('/sections/{section}/lessons/{lesson}/restore', [CourseLessonController::class, 'restore']);
+                Route::post('/sections/{section}/lessons/{lesson}/duplicate', [CourseLessonController::class, 'duplicate']);
+                Route::delete('/sections/{section}/lessons/{lesson}', [CourseLessonController::class, 'destroy']);
+
+                Route::get('/sections/{section}/lessons/{lesson}/video', [LessonVideoController::class, 'show']);
+                Route::post('/sections/{section}/lessons/{lesson}/video', [LessonVideoController::class, 'store']);
+                Route::match(['put', 'patch'], '/sections/{section}/lessons/{lesson}/video', [LessonVideoController::class, 'update']);
+                Route::delete('/sections/{section}/lessons/{lesson}/video', [LessonVideoController::class, 'destroy']);
+                Route::get('/sections/{section}/lessons/{lesson}/files', [LessonFileController::class, 'index']);
+                Route::post('/sections/{section}/lessons/{lesson}/files', [LessonFileController::class, 'store']);
+                Route::match(['put', 'patch'], '/sections/{section}/lessons/{lesson}/files/{file}', [LessonFileController::class, 'update']);
+                Route::delete('/sections/{section}/lessons/{lesson}/files/{file}', [LessonFileController::class, 'destroy']);
+                Route::get('/sections/{section}/lessons/{lesson}/text', [LessonTextController::class, 'show']);
+                Route::post('/sections/{section}/lessons/{lesson}/text', [LessonTextController::class, 'store']);
+                Route::match(['put', 'patch'], '/sections/{section}/lessons/{lesson}/text', [LessonTextController::class, 'update']);
+                Route::delete('/sections/{section}/lessons/{lesson}/text', [LessonTextController::class, 'destroy']);
+
+                Route::get('/sections/{section}/lessons/{lesson}/quiz', [LessonQuizController::class, 'show']);
+                Route::post('/sections/{section}/lessons/{lesson}/quiz', [LessonQuizController::class, 'store']);
+                Route::put('/sections/{section}/lessons/{lesson}/quiz', [LessonQuizController::class, 'update']);
+                Route::patch('/sections/{section}/lessons/{lesson}/quiz/status', [LessonQuizController::class, 'updateStatus']);
+                Route::delete('/sections/{section}/lessons/{lesson}/quiz', [LessonQuizController::class, 'destroy']);
+                Route::get('/sections/{section}/lessons/{lesson}/assignment', [LessonAssignmentController::class, 'show']);
+                Route::post('/sections/{section}/lessons/{lesson}/assignment', [LessonAssignmentController::class, 'store']);
+                Route::put('/sections/{section}/lessons/{lesson}/assignment', [LessonAssignmentController::class, 'update']);
+                Route::patch('/sections/{section}/lessons/{lesson}/assignment/status', [LessonAssignmentController::class, 'updateStatus']);
+                Route::delete('/sections/{section}/lessons/{lesson}/assignment', [LessonAssignmentController::class, 'destroy']);
+            });
+
+        Route::post('/quizzes/{quiz}/questions', [QuizQuestionController::class, 'store']);
+        Route::put('/quizzes/{quiz}/questions/{question}', [QuizQuestionController::class, 'update']);
+        Route::delete('/quizzes/{quiz}/questions/{question}', [QuizQuestionController::class, 'destroy']);
+        Route::put('/assignments/{assignment}/submissions/{submission}/grade', [AssignmentGradingController::class, 'grade']);
+    });
+
     // Public routes
     Route::get('/health', function () {
         return response()->json(['status' => 'ok', 'version' => 'v1']);
@@ -227,6 +333,9 @@ Route::prefix('v1')->group(function () {
 
     // Authenticated routes
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
+        Route::get('/instructors', [InstructorController::class, 'index']);
+        Route::post('/instructors', [InstructorController::class, 'store'])->middleware('throttle:10,1');
+
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
@@ -262,6 +371,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/courses/{course}/duplicate', [CourseController::class, 'duplicate']);
         Route::post('/courses/{course}/feature', [CourseController::class, 'feature']);
         Route::apiResource('courses', CourseController::class);
+        Route::put('/courses/{course}/instructor', [CourseController::class, 'assignInstructor']);
         Route::get('/analytics/overview', [TenantAnalyticsController::class, 'overview']);
         Route::get('/analytics/courses', [TenantAnalyticsController::class, 'courses']);
         Route::get('/analytics/learners', [TenantAnalyticsController::class, 'learners']);

@@ -1,0 +1,7 @@
+# Instructor assignment management
+
+`instructor_assignment_managed` is an explicit-assignment marker, not an access grant. The migration adds it with a `false` default and does not backfill existing courses to `true`. With the Instructor feature enabled, Instructor course access is determined only by `courses.primary_instructor_tenant_user_id` matching the active tenant's current Instructor membership. Creator attribution and `course_instructors` rows, including `role = primary`, do not grant that access by themselves.
+
+With the feature disabled, existing legacy creator, primary-field, and pivot-based course permissions remain available while the marker is `false`. A primary assignment or unassignment through an explicit assignment path sets the marker to `true`; for non-admin legacy Instructor authorization, the current primary assignment then supersedes creator and pivot attribution. Tenant Admin permissions remain governed by their existing permissions.
+
+The migration is part of the ordinary migration set, so a fresh install runs it with the other migrations and an upgrade runs it while pending. Rolling it back drops the marker only; it does not change primary assignments or pivot rows. This loses the explicit-assignment history and can restore legacy creator/pivot authorization for a former Instructor while the feature is disabled. Treat rollback as an authorization change, not just schema cleanup.

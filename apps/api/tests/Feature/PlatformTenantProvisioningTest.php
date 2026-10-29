@@ -140,6 +140,55 @@ class PlatformTenantProvisioningTest extends TestCase
             ->assertJsonPath('tenant.id', (string) $tenant->id);
     }
 
+    public function test_platform_super_admin_can_toggle_instructors_without_replacing_other_feature_flags(): void
+    {
+        $platformAdmin = User::factory()->create();
+        PlatformAdmin::factory()->create(['user_id' => $platformAdmin->id]);
+        $tenant = Tenant::factory()->create([
+            'feature_flags' => ['existing_feature' => true],
+        ]);
+
+        Sanctum::actingAs($platformAdmin, ['platform:access']);
+
+        $this->putJson("/api/platform/tenants/{$tenant->id}", [
+            'feature_flags' => ['has_instructors' => true],
+        ])
+            ->assertOk()
+            ->assertJsonPath('tenant.featureFlags.hasInstructors', true);
+
+        $tenant->refresh();
+        $this->assertSame([
+            'existing_feature' => true,
+            'has_instructors' => true,
+        ], $tenant->feature_flags);
+        $this->assertTrue(app(\App\Services\Instructors\InstructorFeature::class)->isEnabled($tenant));
+
+        $this->putJson("/api/platform/tenants/{$tenant->id}", [
+            'feature_flags' => ['has_instructors' => false],
+        ])
+            ->assertOk()
+            ->assertJsonPath('tenant.featureFlags.hasInstructors', false);
+
+        $this->assertFalse(app(\App\Services\Instructors\InstructorFeature::class)->isEnabled($tenant->refresh()));
+    }
+
+    public function test_instructor_feature_is_disabled_by_default_and_requires_a_boolean_flag(): void
+    {
+        $platformAdmin = User::factory()->create();
+        PlatformAdmin::factory()->create(['user_id' => $platformAdmin->id]);
+        $tenant = Tenant::factory()->create();
+
+        Sanctum::actingAs($platformAdmin, ['platform:access']);
+
+        $this->assertFalse(app(\App\Services\Instructors\InstructorFeature::class)->isEnabled($tenant));
+
+        $this->putJson("/api/platform/tenants/{$tenant->id}", [
+            'feature_flags' => ['has_instructors' => 'enabled'],
+        ])->assertUnprocessable();
+
+        $this->assertFalse(app(\App\Services\Instructors\InstructorFeature::class)->isEnabled($tenant->refresh()));
+    }
+
     private function createTenantThroughPlatform(): Tenant
     {
         $platformAdmin = User::factory()->create();

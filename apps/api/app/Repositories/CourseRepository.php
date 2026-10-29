@@ -20,9 +20,20 @@ class CourseRepository
 
     public function query(): Builder
     {
-        return Course::query()
+        $query = Course::query()
             ->where('tenant_id', currentTenant()->id)
             ->with($this->defaultEagerLoads());
+
+        $user = request()->user();
+        if ($user) {
+            $instructor = app(\App\Services\Instructors\InstructorCourseAuthorization::class)
+                ->membership($user, currentTenant());
+            if ($instructor) {
+                $query->where('primary_instructor_tenant_user_id', $instructor->id);
+            }
+        }
+
+        return $query;
     }
 
     protected function defaultEagerLoads(): array

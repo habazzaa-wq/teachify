@@ -167,6 +167,7 @@ export const tenantsService = {
       currency: s1.currency,
       phone: s4.phone,
       status: s1.status,
+      featureFlags: { hasInstructors: false },
       subscription: {
         planId: plan.planId,
         planName: selectedPlan?.name ?? "",
@@ -288,6 +289,7 @@ export const tenantsService = {
       currency: data.currency ?? "SAR",
       phone: data.phone ?? "",
       status: data.status ?? "pending",
+      featureFlags: data.featureFlags ?? { hasInstructors: false },
       subscription: data.subscription ?? {
         planId: "", planName: "", billingCycle: "monthly",
         renewal: "", startDate: "", trialEndDate: null,

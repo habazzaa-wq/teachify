@@ -71,6 +71,10 @@ class IdentifyTenant
     {
         $path = $request->path();
 
+        if ($request->is('api/v1/instructor/auth/*')) {
+            return false;
+        }
+
         return $request->is('api/platform/*')
             || $request->is('api/v1/platform/*')
             || $request->is('api/v1/certificates/verify/*')

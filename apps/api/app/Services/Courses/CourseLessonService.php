@@ -199,7 +199,7 @@ class CourseLessonService
     {
         $this->ensureSectionBelongsToCourse($course, $section);
 
-        DB::transaction(function () use ($section, $lessons): void {
+        DB::transaction(function () use ($course, $section, $lessons): void {
             $ids = collect($lessons)->pluck('id')->unique()->values();
 
             if ($ids->count() !== count($lessons)) {
@@ -209,6 +209,8 @@ class CourseLessonService
             }
 
             $existing = CourseLesson::query()
+                ->where('tenant_id', $course->tenant_id)
+                ->where('course_id', $course->id)
                 ->where('course_section_id', $section->id)
                 ->whereIn('id', $ids->all())
                 ->pluck('id');
@@ -221,6 +223,8 @@ class CourseLessonService
 
             foreach ($lessons as $lesson) {
                 CourseLesson::query()
+                    ->where('tenant_id', $course->tenant_id)
+                    ->where('course_id', $course->id)
                     ->where('course_section_id', $section->id)
                     ->whereKey($lesson['id'])
                     ->update(['sort_order' => $lesson['sort_order']]);
@@ -238,6 +242,7 @@ class CourseLessonService
         $this->ensureLessonBelongsToSection($course, $section, $lesson);
 
         $targetSection = CourseSection::query()
+            ->where('tenant_id', $course->tenant_id)
             ->where('course_id', $course->id)
             ->whereKey($targetSectionId)
             ->first();

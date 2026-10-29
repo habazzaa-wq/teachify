@@ -47,16 +47,25 @@ class TenantAuthController extends Controller
         $result = $auth->login($tenant, $identifier, $request->input('password'));
 
         // Clear rate limit counter on successful login
-        $rateLimitKey = Str::transliterate(Str::lower((string) $identifier).'|'.$request->ip());
-        RateLimiter::clear(md5('tenant-login'.$rateLimitKey));
-        RateLimiter::clear(md5('tenant-login'.$request->ip()));
-        RateLimiter::clear('tenant-login:'.$rateLimitKey);
-        RateLimiter::clear('tenant-login:'.$request->ip());
-        // Standard Laravel throttle middleware key format
-        RateLimiter::clear('tenant-login:'.$rateLimitKey);
-        RateLimiter::clear('tenant-login:'.$request->ip());
-        // Just in case, try to clear by identifier directly
-        RateLimiter::clear('tenant-login:'.Str::lower((string) $identifier));
+        $identifier = (string) ($request->input('email') ?? $request->input('phone') ?? '');
+        $rateLimitKey = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
+
+        $keysToClear = [
+            'tenant-login:'.$rateLimitKey,
+            'tenant-login:'.$request->ip(),
+            'tenant-login:'.Str::lower($identifier),
+            md5('tenant-login'.$rateLimitKey),
+            md5('tenant-login'.$request->ip()),
+            // Laravel default throttle keys
+            Str::transliterate(Str::lower($identifier).'|'.$request->ip()),
+            $request->ip(),
+        ];
+
+        foreach ($keysToClear as $key) {
+            RateLimiter::clear($key);
+            // Some middleware prefixes the key
+            RateLimiter::clear('throttle:'.$key);
+        }
 
         $membership = $result['membership']->load('roles.permissions');
 

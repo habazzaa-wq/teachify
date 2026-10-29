@@ -6,6 +6,8 @@ use App\Models\Course;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Instructors\InstructorCourseAuthorization;
+use App\Services\Instructors\InstructorFeature;
 
 class CoursePolicy
 {
@@ -31,6 +33,13 @@ class CoursePolicy
 
     public function create(User $user): bool
     {
+        $membership = $this->auth()->membershipFor($user, currentTenant());
+        if (app(InstructorFeature::class)->isEnabled(currentTenant())
+            && $membership?->roles()->where('roles.slug', 'instructor')->exists()) {
+            return app(InstructorCourseAuthorization::class)->membership($user, currentTenant()) !== null
+                && $this->auth()->hasPermission($user, currentTenant(), 'courses.create');
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'courses.create');
     }
 
@@ -72,8 +81,7 @@ class CoursePolicy
             return $this->auth()->hasPermission($user, currentTenant(), 'courses.delete');
         }
 
-        return $this->isAssignedInstructor($user, $course)
-            && $this->auth()->hasPermission($user, currentTenant(), 'courses.update');
+        return false;
     }
 
     public function archive(User $user, Course $course): bool
@@ -117,9 +125,17 @@ class CoursePolicy
 
     private function isAssignedInstructor(User $user, Course $course): bool
     {
+        if (app(InstructorFeature::class)->isEnabled(currentTenant())) {
+            return app(InstructorCourseAuthorization::class)->canAccessCourse($user, $course);
+        }
+
         $membership = $this->auth()->membershipFor($user, currentTenant());
 
         if (! $membership || $membership->status !== 'active') {
+            return false;
+        }
+
+        if (app(InstructorCourseAuthorization::class)->legacyInstructorAccessRevoked($user, $course, $membership)) {
             return false;
         }
 

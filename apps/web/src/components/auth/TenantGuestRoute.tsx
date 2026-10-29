@@ -12,26 +12,33 @@ import { AppLoadingState } from "@/components/ui/AppLoadingState";
 
 function TenantGuestRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { status } = useAuth();
+  const { status, isHydrated, isBootstrapping } = useAuth();
   const { activeTenant } = useTenantContext();
 
   useEffect(() => {
-    if (status === "authenticated" && activeTenant) {
+    // Wait for hydration and tenant before making redirect decisions
+    if (!isHydrated || !activeTenant) return;
+
+    if (status === "authenticated") {
       const roles = useTenantStore.getState().roles;
+      console.log("[TenantGuestRoute] Authenticated, redirecting to dashboard.");
       router.replace(hasStaffAccess(roles) ? routes.dashboard : routes.studentDashboard);
     }
-  }, [status, activeTenant, router]);
+  }, [status, activeTenant, router, isHydrated]);
 
-  // While re-validating a persisted teacher session on the login page (see
-  // AuthProvider bootstrap), don't flash the login form.
-  if (
-    status === "loading" ||
-    (status === "idle" && Boolean(useAuthStore.getState().accessToken))
-  ) {
+  // If we are authenticated, we are already redirecting (see useEffect).
+  // Show loader to prevent flashing the login form.
+  if (status === "authenticated" && activeTenant) {
     return <AppLoadingState className="min-h-screen" />;
   }
 
-  if (status === "authenticated" && activeTenant) {
+  // While re-validating a persisted session (bootstrap), don't flash the login form.
+  const storeToken = useAuthStore.getState().accessToken;
+  const storageData = typeof window !== "undefined" ? localStorage.getItem("auth-state") : null;
+  const storageToken = storageData ? JSON.parse(storageData)?.state?.accessToken : null;
+  const hasToken = Boolean(storeToken || storageToken);
+
+  if (!isHydrated || isBootstrapping || status === "loading" || (status === "idle" && hasToken)) {
     return <AppLoadingState className="min-h-screen" />;
   }
 

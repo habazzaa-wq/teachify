@@ -95,7 +95,11 @@ class TenantController extends Controller
             'subscription' => ['sometimes', 'nullable', 'array'],
             'plan' => ['sometimes', 'nullable', 'array'],
             'platform_plan_id' => ['sometimes', 'nullable', 'integer', 'exists:platform_plans,id'],
+            'feature_flags.has_instructors' => ['sometimes', 'boolean'],
         ]);
+
+        $featureFlags = $validated['feature_flags'] ?? null;
+        unset($validated['feature_flags']);
 
         // The canonical plan assignment is applied separately from the mass
         // assignment below, because `platform_plan_id` is a foreign key and must
@@ -173,6 +177,11 @@ class TenantController extends Controller
         }
 
         $tenant->update($validated);
+
+        if ($featureFlags !== null) {
+            $tenant->feature_flags = array_merge($tenant->feature_flags ?? [], $featureFlags);
+            $tenant->save();
+        }
 
         if ($planAssignment !== false) {
             $tenant->forceFill(['platform_plan_id' => $planAssignment])->save();

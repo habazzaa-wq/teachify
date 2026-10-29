@@ -194,6 +194,9 @@ export interface Tenant {
   currency: TenantCurrency;
   phone: string;
   status: TenantStatus;
+  featureFlags: {
+    hasInstructors: boolean;
+  };
   subscription: TenantSubscription;
   /** The canonical plan id from `platform_plans`. NULL when unassigned. */
   platformPlanId: string | null;

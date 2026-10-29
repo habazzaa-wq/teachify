@@ -10,6 +10,7 @@ use App\Models\Quiz;
 use App\Models\User;
 use App\Services\Access\AccessEvaluationService;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Instructors\InstructorCourseAuthorization;
 use App\Services\Quizzes\QuizService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -135,6 +136,12 @@ class LessonQuizController extends Controller
 
     private function canManageQuiz(User $user, Course $course): bool
     {
+        $instructorAuthorization = app(InstructorCourseAuthorization::class);
+        if ($instructorAuthorization->isInstructorAccount($user, currentTenant())) {
+            return $instructorAuthorization->canAccessCourse($user, $course)
+                && app(TenantAuthorizationService::class)->hasPermission($user, currentTenant(), 'courses.update');
+        }
+
         $authorization = app(TenantAuthorizationService::class);
         $tenant = currentTenant();
 
