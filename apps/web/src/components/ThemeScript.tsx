@@ -1,5 +1,3 @@
-import Script from "next/script";
-
 const THEME_SCRIPT = `
 (function() {
   var root = document.documentElement;
@@ -27,8 +25,6 @@ const THEME_SCRIPT = `
 
 export function ThemeScript() {
   return (
-    <Script id="theme-bootstrap" strategy="beforeInteractive">
-      {THEME_SCRIPT}
-    </Script>
+    <script id="theme-bootstrap" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
   );
 }

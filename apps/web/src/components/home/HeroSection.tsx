@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useUiStore } from "@/stores/ui.store";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -217,7 +216,7 @@ const MOBILE_DECOR = {
   ],
 };
 
-function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" | "arabic" | "english" }) {
+function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" }) {
   const desktopSymbols = bgStyle === "arabic" ? DESKTOP_ARABIC : bgStyle === "english" ? DESKTOP_ENGLISH : DESKTOP_MATH;
   const mobileSymbols = MOBILE_DECOR[bgStyle] || MOBILE_DECOR.math;
 
@@ -227,7 +226,7 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
       <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block" aria-hidden="true">
         {/* Static geometric shapes */}
         {DESKTOP_SHAPES.map((s, i) => (
-          <div key={`shape-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.35 }}>
+          <div key={`shape-${i}`} className="hero-decoration absolute" style={{ left: s.x, top: s.y }}>
             <ShapeElement shape={s.shape} size={s.size} color={s.color} />
           </div>
         ))}
@@ -236,13 +235,12 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
         {desktopSymbols.map((m, i) => (
           <span
             key={`math-${i}`}
-            className="absolute select-none font-bold"
+            className="hero-symbol absolute select-none font-bold"
             style={{
               left: m.x,
               top: m.y,
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
-              color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
               fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
@@ -254,14 +252,13 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
         {DESKTOP_DOTS.map((d, i) => (
           <div
             key={`dot-${i}`}
-            className="absolute rounded-full"
+            className="hero-decoration absolute rounded-full"
             style={{
               left: d.x,
               top: d.y,
               width: d.size,
               height: d.size,
               backgroundColor: d.color,
-              opacity: isDark ? 0.18 : 0.35,
             }}
           />
         ))}
@@ -271,14 +268,14 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
           <path
             d="M 0 200 Q 200 100 400 180 T 800 160"
             fill="none"
-            stroke={isDark ? "rgba(200,170,140,0.10)" : "rgba(160,130,100,0.28)"}
+            className="hero-background-line-primary"
             strokeWidth="1.5"
             strokeDasharray="8 12"
           />
           <path
             d="M 200 0 Q 150 180 350 280 T 700 500"
             fill="none"
-            stroke={isDark ? "rgba(200,170,140,0.06)" : "rgba(160,130,100,0.20)"}
+            className="hero-background-line-secondary"
             strokeWidth="1.2"
             strokeDasharray="4 8"
           />
@@ -286,7 +283,7 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
 
         {/* Static stars */}
         {DESKTOP_STARS.map((s, i) => (
-          <div key={`star-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.32 }}>
+          <div key={`star-${i}`} className="hero-decoration hero-star absolute" style={{ left: s.x, top: s.y }}>
             <svg width={s.size} height={s.size} viewBox="0 0 16 16">
               <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" style={{ fill: s.color }} />
             </svg>
@@ -295,7 +292,7 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
 
         {/* Static plus marks */}
         {DESKTOP_PLUS.map((p, i) => (
-          <div key={`plus-${i}`} className="absolute" style={{ left: p.x, top: p.y, opacity: isDark ? 0.12 : 0.22, transform: `rotate(${p.rotate}deg)` }}>
+          <div key={`plus-${i}`} className="hero-decoration hero-plus absolute" style={{ left: p.x, top: p.y, transform: `rotate(${p.rotate}deg)` }}>
             <svg width={p.size} height={p.size} viewBox="0 0 10 10">
               <line x1="5" y1="0" x2="5" y2="10" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
               <line x1="0" y1="5" x2="10" y2="5" style={{ stroke: neutralDeco }} strokeWidth="1.2" />
@@ -309,32 +306,30 @@ function HeroBackground({ isDark, bgStyle }: { isDark: boolean; bgStyle: "math" 
         {MOBILE_DECOR.dots.map((d, i) => (
           <div
             key={`dot-${i}`}
-            className="absolute rounded-full"
+            className="hero-decoration absolute rounded-full"
             style={{
               left: d.x,
               top: d.y,
               width: d.size,
               height: d.size,
               backgroundColor: d.color,
-              opacity: isDark ? 0.18 : 0.35,
             }}
           />
         ))}
         {MOBILE_DECOR.shapes.map((s, i) => (
-          <div key={`shape-${i}`} className="absolute" style={{ left: s.x, top: s.y, opacity: isDark ? 0.18 : 0.35 }}>
+          <div key={`shape-${i}`} className="hero-decoration absolute" style={{ left: s.x, top: s.y }}>
             <ShapeElement shape={s.shape} size={s.size} color={s.color} />
           </div>
         ))}
         {mobileSymbols.map((m, i) => (
           <span
             key={`math-${i}`}
-            className="absolute select-none font-bold"
+            className="hero-symbol absolute select-none font-bold"
             style={{
               left: m.x,
               top: m.y,
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
-              color: isDark ? "rgba(200,170,140,0.15)" : "rgba(140,110,80,0.22)",
               fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
             }}
           >
@@ -378,9 +373,7 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
 export function HeroSection() {
   const { data: hero } = usePublicHero();
   const { tenant } = useActiveTenant();
-  const theme = useUiStore((s) => s.theme);
   const tenantName = tenant?.name ?? "";
-  const isDark = theme === "dark";
 
   const sectionRef = useRef<HTMLElement>(null);
   const [heroOffscreen, setHeroOffscreen] = useState(false);
@@ -406,11 +399,6 @@ export function HeroSection() {
 
   if (hero && !hero.isActive) return null;
 
-  const lightBg =
-    "radial-gradient(ellipse at 50% 30%, #FAF8F5 0%, #F7F4EF 40%, #F3EFE8 80%, #EFEAE1 100%)";
-  const darkBg =
-    "radial-gradient(ellipse at 50% 30%, #121418 0%, #14161a 40%, #16181d 80%, #181a1f 100%)";
-
   return (
     <section
       ref={sectionRef}
@@ -419,11 +407,8 @@ export function HeroSection() {
       style={{ minHeight: 620 }}
     >
       {/* ── Background ── */}
-      <div
-        className="absolute inset-0 transition-colors duration-500"
-        style={{ background: isDark ? darkBg : lightBg }}
-      />
-      <HeroBackground isDark={isDark} bgStyle={bgStyle} />
+      <div className="hero-backdrop absolute inset-0" />
+      <HeroBackground bgStyle={bgStyle} />
 
       {/* ── Content ── */}
       <div className="relative z-10 mx-auto flex flex-col items-center px-4 pt-2 pb-12 sm:pt-4 sm:pb-20 lg:pt-4 lg:pb-24">
@@ -592,16 +577,7 @@ export function HeroSection() {
             {hero?.badge2Text && (
               <div className="home-enter-badge-top z-20 sm:absolute sm:top-4 sm:start-4 lg:top-5 lg:start-6" style={{ animationDelay: "0.1s" }}>
                 <div
-                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                    isDark
-                      ? "border-white/10 bg-white/10"
-                      : "border-white/50 bg-white/80"
-                  }`}
-                  style={{
-                    boxShadow: isDark
-                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                  }}
+                  className="hero-badge-pill glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs"
                 >
                   <div
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"
@@ -620,16 +596,7 @@ export function HeroSection() {
             {hero?.badge1Text && (
               <div className="home-enter-badge-bottom z-20 sm:absolute sm:bottom-4 sm:end-4 lg:bottom-5 lg:end-6" style={{ animationDelay: "0.2s" }}>
                 <div
-                  className={`glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs ${
-                    isDark
-                      ? "border-white/10 bg-white/10"
-                      : "border-white/50 bg-white/80"
-                  }`}
-                  style={{
-                    boxShadow: isDark
-                      ? `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)`
-                      : `0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.8)`,
-                  }}
+                  className="hero-badge-pill glass-touch-solid group flex items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-4 sm:py-2.5 sm:text-xs"
                 >
                   <div
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8"

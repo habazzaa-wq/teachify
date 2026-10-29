@@ -9,6 +9,70 @@ html.theme-initializing *::after {
   transition: none !important;
 }
 
+.hero-backdrop {
+  background: radial-gradient(ellipse at 50% 30%, #faf8f5 0%, #f7f4ef 40%, #f3efe8 80%, #efeae1 100%);
+}
+
+.dark .hero-backdrop {
+  background: radial-gradient(ellipse at 50% 30%, #121418 0%, #14161a 40%, #16181d 80%, #181a1f 100%);
+}
+
+.hero-decoration {
+  opacity: 0.35;
+}
+
+.dark .hero-decoration {
+  opacity: 0.18;
+}
+
+.hero-symbol {
+  color: rgba(140, 110, 80, 0.22);
+}
+
+.dark .hero-symbol {
+  color: rgba(200, 170, 140, 0.15);
+}
+
+.hero-background-line-primary {
+  stroke: rgba(160, 130, 100, 0.28);
+}
+
+.dark .hero-background-line-primary {
+  stroke: rgba(200, 170, 140, 0.1);
+}
+
+.hero-background-line-secondary {
+  stroke: rgba(160, 130, 100, 0.2);
+}
+
+.dark .hero-background-line-secondary {
+  stroke: rgba(200, 170, 140, 0.06);
+}
+
+.hero-star {
+  opacity: 0.32;
+}
+
+.hero-plus {
+  opacity: 0.22;
+}
+
+.dark .hero-plus {
+  opacity: 0.12;
+}
+
+.hero-badge-pill {
+  border-color: rgb(255 255 255 / 50%);
+  background-color: rgb(255 255 255 / 80%);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 18%), inset 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+.dark .hero-badge-pill {
+  border-color: rgb(255 255 255 / 10%);
+  background-color: rgb(255 255 255 / 10%);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
 @layer base {
   :root {
     --background: 42 20% 96%;
