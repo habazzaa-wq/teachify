@@ -99,6 +99,10 @@ export default async function RootLayout({
   const messages = await getMessages();
   const headersList = await headers();
   const serverHostname = headersList.get("x-hostname") ?? "";
+  const savedTheme = headersList
+    .get("cookie")
+    ?.match(/(?:^|;\s*)teachify-theme=(dark|light)(?:;|$)/)?.[1];
+  const initialTheme = savedTheme === "dark" ? "dark" : "light";
   const tenantContextRaw = headersList.get("x-tenant-context");
   let tenantContext = null;
 
@@ -119,11 +123,13 @@ export default async function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${cairo.variable} ${almarai.variable} h-full`}
+      className={`${cairo.variable} ${almarai.variable} h-full theme-initializing${initialTheme === "dark" ? " dark" : ""}`}
+      data-theme={initialTheme}
       style={
-        fontStack
-          ? ({ "--font-sans": fontStack } as React.CSSProperties)
-          : undefined
+        {
+          ...(fontStack ? { "--font-sans": fontStack } : {}),
+          colorScheme: initialTheme,
+        } as React.CSSProperties
       }
       suppressHydrationWarning
     >

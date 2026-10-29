@@ -5,6 +5,14 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 export type ThemeMode = "light" | "dark";
 
+function saveThemeCookie(theme: ThemeMode): void {
+  if (typeof document === "undefined") return;
+
+  document.cookie = `teachify-theme=${theme}; Path=/; Max-Age=31536000; SameSite=Lax${
+    window.location.protocol === "https:" ? "; Secure" : ""
+  }`;
+}
+
 /**
  * UI state: sidebar collapse on desktop, mobile drawer open state, and the
  * preferred theme mode. Theme application (the <html> class) is handled by the
@@ -36,9 +44,12 @@ export const useUiStore = create<UiState>()(
       setMobileSidebarOpen: (mobileSidebarOpen) => set({ mobileSidebarOpen }),
       setTheme: (theme) => {
         set({ theme });
+        saveThemeCookie(theme);
       },
       toggleTheme: () => {
-        set((state) => ({ theme: state.theme === "light" ? "dark" : "light" }));
+        const theme = get().theme === "light" ? "dark" : "light";
+        set({ theme });
+        saveThemeCookie(theme);
       },
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
@@ -48,13 +59,21 @@ export const useUiStore = create<UiState>()(
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<UiState> | undefined;
         const storedTheme = persisted?.theme;
-        const theme =
-          storedTheme === "dark" || storedTheme === "light"
-            ? storedTheme
+        const cookieTheme =
+          typeof document !== "undefined"
+            ? document.cookie.match(/(?:^|;\s*)teachify-theme=(dark|light)(?:;|$)/)?.[1]
+            : undefined;
+        const preferredTheme =
+          cookieTheme === "dark" || cookieTheme === "light"
+            ? cookieTheme
             : typeof window !== "undefined" &&
                 window.matchMedia("(prefers-color-scheme: dark)").matches
               ? "dark"
               : currentState.theme;
+        const theme =
+          storedTheme === "dark" || storedTheme === "light"
+            ? storedTheme
+            : preferredTheme;
 
         return { ...currentState, ...persisted, theme };
       },
