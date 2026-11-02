@@ -29,9 +29,10 @@ interface StudentTableProps {
   onSelectToggle: (id: string) => void;
   onSelectAll: () => void;
   onView: (student: Student) => void;
-  onActivate: (student: Student) => void;
-  onSuspend: (student: Student) => void;
-  onDelete: (student: Student) => void;
+  onActivate?: (student: Student) => void;
+  onSuspend?: (student: Student) => void;
+  onDelete?: (student: Student) => void;
+  readOnly?: boolean;
 }
 
 const StudentTableRow = memo(function StudentTableRow({
@@ -42,25 +43,27 @@ const StudentTableRow = memo(function StudentTableRow({
   onActivate,
   onSuspend,
   onDelete,
+  readOnly,
 }: {
   student: Student;
   isSelected: boolean;
   onSelectToggle: (id: string) => void;
   onView: (student: Student) => void;
-  onActivate: (student: Student) => void;
-  onSuspend: (student: Student) => void;
-  onDelete: (student: Student) => void;
+  onActivate?: (student: Student) => void;
+  onSuspend?: (student: Student) => void;
+  onDelete?: (student: Student) => void;
+  readOnly: boolean;
 }) {
   const statusConfig = STUDENT_STATUS_CONFIG[student.status];
 
   return (
     <AppTableRow className={isSelected ? "bg-muted/50" : ""}>
       <AppTableCell onClick={(e) => e.stopPropagation()}>
-        <AppCheckbox
+        {!readOnly && <AppCheckbox
           checked={isSelected}
           onCheckedChange={() => onSelectToggle(student.id)}
           aria-label={`تحديد ${student.fullName}`}
-        />
+        />}
       </AppTableCell>
       <AppTableCell className="cursor-pointer" onClick={() => onView(student)}>
         <div className="flex items-center gap-3 min-w-0">
@@ -125,22 +128,22 @@ const StudentTableRow = memo(function StudentTableRow({
               <Eye className="h-4 w-4" />
               عرض التفاصيل
             </AppDropdownMenuItem>
-            {student.status !== "active" && (
-              <AppDropdownMenuItem onClick={() => onActivate(student)}>
+            {!readOnly && student.status !== "active" && (
+              <AppDropdownMenuItem onClick={() => onActivate?.(student)}>
                 <CheckCircle className="h-4 w-4" />
                 تفعيل
               </AppDropdownMenuItem>
             )}
-            {student.status === "active" && (
-              <AppDropdownMenuItem onClick={() => onSuspend(student)} className="text-destructive focus:text-destructive">
+            {!readOnly && student.status === "active" && (
+              <AppDropdownMenuItem onClick={() => onSuspend?.(student)} className="text-destructive focus:text-destructive">
                 <Ban className="h-4 w-4" />
                 إيقاف
               </AppDropdownMenuItem>
             )}
-            <AppDropdownMenuItem onClick={() => onDelete(student)} className="text-destructive focus:text-destructive">
+            {!readOnly && <AppDropdownMenuItem onClick={() => onDelete?.(student)} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4" />
               حذف
-            </AppDropdownMenuItem>
+            </AppDropdownMenuItem>}
           </AppDropdownMenuContent>
         </AppDropdownMenu>
       </AppTableCell>
@@ -157,6 +160,7 @@ function StudentTable({
   onActivate,
   onSuspend,
   onDelete,
+  readOnly = false,
 }: StudentTableProps) {
   const allSelected = students.length > 0 && students.every((s) => selectedIds.has(s.id));
 
@@ -170,11 +174,12 @@ function StudentTable({
         <AppTableHeader>
           <AppTableRow>
             <AppTableHead className="w-10">
+              {!readOnly &&
               <AppCheckbox
                 checked={allSelected}
                 onCheckedChange={handleSelectAll}
                 aria-label="تحديد الكل"
-              />
+              />}
             </AppTableHead>
             <AppTableHead>الطالب</AppTableHead>
             <AppTableHead>الهاتف</AppTableHead>
@@ -197,6 +202,7 @@ function StudentTable({
               onActivate={onActivate}
               onSuspend={onSuspend}
               onDelete={onDelete}
+              readOnly={readOnly}
             />
           ))}
         </AppTableBody>

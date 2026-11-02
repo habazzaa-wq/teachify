@@ -5,22 +5,126 @@ namespace Tests\Feature;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\CourseInstructor;
 use App\Models\CourseLesson;
 use App\Models\CourseSection;
 use App\Models\Permission;
+use App\Models\Exam;
+use App\Models\MediaAsset;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Instructors\InstructorFeature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class InstructorCourseAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_instructor_workspace_data_is_scoped_to_owned_and_shared_courses_and_owned_assets(): void
+    {
+        [$tenant, $adminMembership, $instructorMembership, , $instructorToken] = $this->courseFixture();
+        $headers = [
+            'X-Tenant-ID' => (string) $tenant->id,
+            'Authorization' => 'Bearer '.$instructorToken,
+        ];
+
+        $ownedCourse = $this->course($tenant, $adminMembership, $instructorMembership);
+        $sharedCourse = $this->course($tenant, $adminMembership, $adminMembership);
+        $sharedCourse->forceFill(['instructor_assignment_managed' => true])->save();
+        CourseInstructor::query()->create([
+            'tenant_id' => $tenant->id,
+            'course_id' => $sharedCourse->id,
+            'tenant_user_id' => $instructorMembership->id,
+            'role' => 'co_instructor',
+        ]);
+        $otherInstructor = $this->instructorMembership($tenant);
+        $otherCourse = $this->course($tenant, $adminMembership, $otherInstructor);
+
+        $student = $this->workspaceStudent($tenant);
+        $student->user()->update(['name' => 'Scoped Learner']);
+        $otherStudent = $this->workspaceStudent($tenant);
+        foreach ([$ownedCourse, $sharedCourse] as $course) {
+            CourseEnrollment::query()->create([
+                'tenant_id' => $tenant->id,
+                'course_id' => $course->id,
+                'tenant_user_id' => $student->id,
+                'status' => 'active',
+                'enrolled_at' => now(),
+            ]);
+        }
+        CourseEnrollment::query()->create([
+            'tenant_id' => $tenant->id,
+            'course_id' => $otherCourse->id,
+            'tenant_user_id' => $otherStudent->id,
+            'status' => 'active',
+            'enrolled_at' => now(),
+        ]);
+        $this->workspaceSubmission($tenant, $ownedCourse, $student);
+        $this->workspaceSubmission($tenant, $otherCourse, $otherStudent);
+
+        $this->workspaceAsset($tenant, $instructorMembership);
+        $this->workspaceAsset($tenant, $otherInstructor);
+        Exam::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructorMembership->id,
+            'title' => 'My exam',
+        ]);
+        Exam::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $otherInstructor->id,
+            'title' => 'Other exam',
+        ]);
+
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/courses')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/students')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $student->id)
+            ->assertJsonPath('data.0.fullName', 'Scoped Learner')
+            ->assertJsonPath('data.0.enrolledCoursesCount', 2);
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/students?search=Scoped%20Learner&per_page=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('total', 1);
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/students/metrics')
+            ->assertOk()
+            ->assertJsonPath('data.totalStudents', 1)
+            ->assertJsonPath('data.enrolledStudents', 1);
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/media-library/assets')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/exams')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'My exam');
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/grading/queue')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.student.id', (string) $student->id);
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/workspace')
+            ->assertOk()
+            ->assertJsonPath('data.courses', 2)
+            ->assertJsonPath('data.students', 1)
+            ->assertJsonPath('data.media', 1)
+            ->assertJsonPath('data.exams', 1);
+    }
 
     public function test_instructors_can_only_edit_and_publish_courses_currently_assigned_to_them(): void
     {
@@ -300,7 +404,7 @@ class InstructorCourseAuthorizationTest extends TestCase
         $this->assertSoftDeleted('courses', ['id' => $course->id]);
     }
 
-    public function test_primary_pivot_assignment_uses_the_primary_field_and_cannot_diverge(): void
+    public function test_primary_assignment_stays_synchronized_and_co_instructors_retain_access(): void
     {
         [$tenant, , $former, , $formerToken, $admin] = $this->courseFixture();
         $current = $this->instructorMembership($tenant);
@@ -310,6 +414,28 @@ class InstructorCourseAuthorizationTest extends TestCase
         )->plainTextToken;
         $course = $this->course($tenant, $former, $former);
         $adminHeaders = ['X-Tenant-ID' => (string) $tenant->id];
+        $coInstructorOnlyCourse = Course::query()->create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $former->id,
+            'title' => 'Co-instructor-only assignment',
+            'slug' => 'co-instructor-only-assignment',
+            'status' => 'draft',
+        ]);
+
+        Sanctum::actingAs($admin);
+        $this->postJson('/api/v1/courses/'.$coInstructorOnlyCourse->id.'/instructors', [
+            'tenant_user_id' => $former->id,
+            'role' => 'co_instructor',
+        ], $adminHeaders)->assertCreated();
+        $this->assertTrue($coInstructorOnlyCourse->fresh()->instructor_assignment_managed);
+
+        $this->app['auth']->forgetGuards();
+        $this->withHeaders([
+            'X-Tenant-ID' => (string) $tenant->id,
+            'Authorization' => 'Bearer '.$formerToken,
+        ])->putJson('/api/v1/instructor/courses/'.$coInstructorOnlyCourse->id, [
+            'title' => 'Updated by co-instructor',
+        ])->assertOk();
 
         Sanctum::actingAs($admin);
         $this->postJson('/api/v1/courses/'.$course->id.'/instructors', [
@@ -358,7 +484,7 @@ class InstructorCourseAuthorizationTest extends TestCase
         ];
         $this->withHeaders($formerHeaders)
             ->putJson('/api/v1/instructor/courses/'.$course->id, ['title' => 'Former creator denied'])
-            ->assertForbidden();
+            ->assertOk();
         $this->app['auth']->forgetGuards();
         $this->withHeaders($currentHeaders)
             ->putJson('/api/v1/instructor/courses/'.$course->id, ['title' => 'Current primary allowed'])
@@ -381,7 +507,7 @@ class InstructorCourseAuthorizationTest extends TestCase
             ->assertOk();
     }
 
-    public function test_unassigned_creator_and_legacy_pivot_cannot_edit_or_grade_assignments(): void
+    public function test_explicit_co_instructor_can_access_course_but_other_paths_remain_restricted(): void
     {
         [$tenant, $adminMembership, $instructorMembership, , $instructorToken, $admin] = $this->courseFixture();
         $course = $this->course($tenant, $instructorMembership, $instructorMembership);
@@ -486,21 +612,21 @@ class InstructorCourseAuthorizationTest extends TestCase
         $this->app['auth']->forgetGuards();
         $this->withHeaders($headers)
             ->putJson("/api/v1/instructor/courses/{$course->id}", [
-                'title' => 'Unauthorized edit',
+                'title' => 'Co-instructor edit',
             ])
-            ->assertForbidden();
+            ->assertOk();
 
         $this->withHeaders($headers)
             ->putJson("/api/v1/instructor/courses/{$course->id}/modules/{$module->id}", [
-                'title' => 'Unauthorized nested edit',
+                'title' => 'Co-instructor module edit',
             ])
-            ->assertForbidden();
+            ->assertOk();
 
         $this->withHeaders($headers)
             ->putJson("/api/v1/instructor/courses/{$course->id}/sections/{$section->id}/lessons/{$lesson->id}/assignment", [
-                'title' => 'Unauthorized edit',
+                'title' => 'Co-instructor lesson assignment edit',
             ])
-            ->assertForbidden();
+            ->assertOk();
 
         $this->withHeaders($headers)
             ->putJson("/api/v1/courses/{$course->id}/sections/{$section->id}/lessons/{$lesson->id}/assignment", [
@@ -512,15 +638,31 @@ class InstructorCourseAuthorizationTest extends TestCase
             ->putJson("/api/v1/instructor/assignments/{$assignment->id}/submissions/{$submission->id}/grade", [
                 'score' => 8,
             ])
-            ->assertForbidden();
+            ->assertOk();
 
         $this->withHeaders($headers)
             ->getJson("/api/v1/lessons/{$lesson->id}/access")
             ->assertForbidden();
 
+        $this->assertTrue(app(\App\Services\Authorization\AuthorizationService::class)
+            ->hasPermission($instructorMembership->user, 'media.view', $tenant));
         $this->withHeaders($headers)
             ->getJson('/api/v1/media-library/assets')
             ->assertForbidden();
+
+        Storage::fake('public');
+        $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/media-library/assets')
+            ->assertOk();
+        $this->withHeaders($headers)
+            ->post('/api/v1/instructor/media-library/upload/file', [
+                'file' => UploadedFile::fake()->image('instructor-upload.jpg'),
+            ])
+            ->assertCreated();
+        $this->assertDatabaseHas('media_assets', [
+            'tenant_id' => $tenant->id,
+            'original_filename' => 'instructor-upload.jpg',
+        ]);
 
         $this->withHeaders($headers)
             ->getJson('/api/v1/exam-bank/banks')
@@ -533,25 +675,26 @@ class InstructorCourseAuthorizationTest extends TestCase
         $this->assertNull($course->fresh()->primary_instructor_tenant_user_id);
 
         $this->app['auth']->forgetGuards();
-        foreach ([$headers, $currentHeaders] as $instructorHeaders) {
+        foreach ([[$headers, 200], [$currentHeaders, 403]] as [$instructorHeaders, $expectedStatus]) {
+            $this->app['auth']->forgetGuards();
             $this->withHeaders($instructorHeaders)
                 ->putJson("/api/v1/instructor/courses/{$course->id}", ['title' => 'Unassigned edit'])
-                ->assertForbidden();
+                ->assertStatus($expectedStatus, 'Unexpected course edit access after primary unassignment.');
             $this->withHeaders($instructorHeaders)
                 ->putJson("/api/v1/instructor/courses/{$course->id}/modules/{$module->id}", [
                     'title' => 'Unassigned module edit',
                 ])
-                ->assertForbidden();
+                ->assertStatus($expectedStatus, 'Unexpected module edit access after primary unassignment.');
             $this->withHeaders($instructorHeaders)
                 ->putJson("/api/v1/instructor/courses/{$course->id}/sections/{$section->id}/lessons/{$lesson->id}/assignment", [
                     'title' => 'Unassigned assignment edit',
                 ])
-                ->assertForbidden();
+                ->assertStatus($expectedStatus, 'Unexpected assignment edit access after primary unassignment.');
             $this->withHeaders($instructorHeaders)
                 ->putJson("/api/v1/instructor/assignments/{$assignment->id}/submissions/{$submission->id}/grade", [
                     'score' => 8,
                 ])
-                ->assertForbidden();
+                ->assertStatus($expectedStatus, 'Unexpected grading access after primary unassignment.');
         }
 
         Sanctum::actingAs($admin);
@@ -994,6 +1137,7 @@ class InstructorCourseAuthorizationTest extends TestCase
             'modules.view', 'modules.create', 'modules.update', 'modules.reorder',
             'sections.view', 'sections.create', 'sections.update', 'sections.reorder',
             'lessons.view', 'lessons.create', 'lessons.update', 'lessons.reorder',
+            'media.view', 'media.upload',
         ]);
         $membership->roles()->attach($role, ['tenant_id' => $tenant->id]);
 
@@ -1036,6 +1180,81 @@ class InstructorCourseAuthorizationTest extends TestCase
             'title' => 'Course '.$tenant->id.'-'.$creator->id.'-'.($primary?->id ?? 'none'),
             'slug' => 'course-'.$tenant->id.'-'.$creator->id.'-'.($primary?->id ?? 'none'),
             'status' => 'draft',
+        ]);
+    }
+
+    private function workspaceStudent(Tenant $tenant): TenantUser
+    {
+        $membership = TenantUser::factory()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => User::factory()->create()->id,
+            'status' => 'active',
+            'is_instructor' => false,
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['tenant_id' => $tenant->id, 'slug' => 'student'],
+            ['name' => 'Student'],
+        );
+        $membership->roles()->attach($role, ['tenant_id' => $tenant->id]);
+
+        return $membership;
+    }
+
+    private function workspaceAsset(Tenant $tenant, TenantUser $creator): MediaAsset
+    {
+        return MediaAsset::withoutEvents(fn () => MediaAsset::query()->create([
+            'tenant_id' => $tenant->id,
+            'provider' => 'local',
+            'provider_service' => 'storage',
+            'type' => 'document',
+            'status' => 'ready',
+            'visibility' => 'private',
+            'storage_key' => 'tenants/'.$tenant->id.'/instructor-'.$creator->id.'.pdf',
+            'original_filename' => 'instructor-'.$creator->id.'.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 1000,
+            'metadata' => [],
+            'created_by_tenant_user_id' => $creator->id,
+        ]));
+    }
+
+    private function workspaceSubmission(Tenant $tenant, Course $course, TenantUser $student): AssignmentSubmission
+    {
+        $section = CourseSection::query()->create([
+            'tenant_id' => $tenant->id,
+            'course_id' => $course->id,
+            'title' => 'Workspace section '.$course->id,
+            'slug' => 'workspace-section-'.$course->id,
+            'sort_order' => 0,
+        ]);
+        $lesson = CourseLesson::query()->create([
+            'tenant_id' => $tenant->id,
+            'course_id' => $course->id,
+            'course_section_id' => $section->id,
+            'title' => 'Workspace assignment lesson '.$course->id,
+            'slug' => 'workspace-assignment-'.$course->id,
+            'type' => 'text',
+            'lesson_type' => 'assignment',
+            'status' => 'published',
+            'visibility' => 'private',
+            'sort_order' => 0,
+        ]);
+        $assignment = Assignment::query()->create([
+            'tenant_id' => $tenant->id,
+            'course_id' => $course->id,
+            'course_section_id' => $section->id,
+            'course_lesson_id' => $lesson->id,
+            'title' => 'Workspace assignment '.$course->id,
+            'max_score' => 10,
+            'status' => 'published',
+        ]);
+
+        return AssignmentSubmission::query()->create([
+            'tenant_id' => $tenant->id,
+            'assignment_id' => $assignment->id,
+            'tenant_user_id' => $student->id,
+            'submitted_at' => now(),
+            'status' => 'submitted',
         ]);
     }
 

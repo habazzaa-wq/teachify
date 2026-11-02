@@ -32,6 +32,12 @@ import type {
 
 export const EXAM_BANK_QUERY_KEY = "exam-bank";
 
+export function getExamBankQueryKey(): string {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/")
+    ? "instructor-exam-bank"
+    : EXAM_BANK_QUERY_KEY;
+}
+
 export const QUESTION_FORMAT_CONFIG: Record<
   QuestionFormat,
   { label: string; description: string; icon: LucideIcon; color: string; bg: string }

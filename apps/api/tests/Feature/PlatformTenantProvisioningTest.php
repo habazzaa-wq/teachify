@@ -165,6 +165,12 @@ class PlatformTenantProvisioningTest extends TestCase
 
         $this->putJson("/api/platform/tenants/{$tenant->id}", [
             'feature_flags' => ['has_instructors' => false],
+        ])->assertUnprocessable();
+        $this->assertTrue(app(\App\Services\Instructors\InstructorFeature::class)->isEnabled($tenant->refresh()));
+
+        $this->putJson("/api/platform/tenants/{$tenant->id}", [
+            'feature_flags' => ['has_instructors' => false],
+            'instructor_disable_mode' => 'retain',
         ])
             ->assertOk()
             ->assertJsonPath('tenant.featureFlags.hasInstructors', false);

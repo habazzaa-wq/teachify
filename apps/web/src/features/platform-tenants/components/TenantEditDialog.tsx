@@ -56,6 +56,7 @@ type FormData = {
   supportEmail: string; favicon: string | null;
   notes: string; tags: string[];
   hasInstructors: boolean;
+  instructorDisableMode: "retain" | "purge" | "";
 };
 
 const DEFAULT_FORM: FormData = {
@@ -72,6 +73,7 @@ const DEFAULT_FORM: FormData = {
   supportEmail: "", favicon: null,
   notes: "", tags: [],
   hasInstructors: false,
+  instructorDisableMode: "",
 };
 
 const TABS = [
@@ -120,6 +122,7 @@ function tenantToFormData(tenant: Tenant | null | undefined): FormData {
     notes: tenant.notes ?? "",
     tags: tenant.tags ?? [],
     hasInstructors: tenant.featureFlags?.hasInstructors ?? false,
+    instructorDisableMode: "",
   };
 }
 
@@ -322,6 +325,17 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
     }
     setErrors({});
 
+    if (
+      dataSource?.featureFlags?.hasInstructors &&
+      !form.hasInstructors &&
+      !form.instructorDisableMode
+    ) {
+      setErrors({ instructorDisableMode: "اختر طريقة إيقاف ميزة المدربين أولاً." });
+      setActiveTab("features");
+      setMountedTabs((prev) => new Set(prev).add("features"));
+      return;
+    }
+
     // Map form data to Tenant structure for update
     const updateData: Partial<Tenant> = {
       name: form.name,
@@ -388,10 +402,13 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
       featureFlags: {
         hasInstructors: form.hasInstructors,
       },
+      ...(dataSource?.featureFlags?.hasInstructors && !form.hasInstructors
+        ? { instructorDisableMode: form.instructorDisableMode as "retain" | "purge" }
+        : {}),
     };
 
     onSave(updateData);
-  }, [allErrors, tabHasErrors, form, onSave]);
+  }, [allErrors, tabHasErrors, form, onSave, dataSource]);
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
@@ -538,7 +555,10 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                   <input
                     type="checkbox"
                     checked={form.hasInstructors}
-                    onChange={(event) => handleChange("hasInstructors", event.target.checked)}
+                    onChange={(event) => {
+                      handleChange("hasInstructors", event.target.checked);
+                      if (event.target.checked) handleChange("instructorDisableMode", "");
+                    }}
                     className="mt-1 h-4 w-4"
                   />
                   <span className="space-y-1">
@@ -548,6 +568,32 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                     </span>
                   </span>
                 </label>
+              )}
+              {dataSource?.featureFlags?.hasInstructors && !form.hasInstructors && (
+                <fieldset className="mt-4 space-y-3 rounded-lg border border-destructive/30 p-4">
+                  <legend className="px-1 text-sm font-semibold">اختر طريقة إيقاف الميزة (مطلوب)</legend>
+                  <label className="flex items-start gap-3 text-sm">
+                    <input
+                      type="radio"
+                      name="instructorDisableMode"
+                      checked={form.instructorDisableMode === "retain"}
+                      onChange={() => handleChange("instructorDisableMode", "retain")}
+                      className="mt-1"
+                    />
+                    <span><strong>إيقاف مؤقت مع الاحتفاظ بالبيانات</strong><br />تُمنع عمليات الدخول والعرض، ويمكن إعادة التفعيل لاحقاً دون فقد البيانات.</span>
+                  </label>
+                  <label className="flex items-start gap-3 text-sm">
+                    <input
+                      type="radio"
+                      name="instructorDisableMode"
+                      checked={form.instructorDisableMode === "purge"}
+                      onChange={() => handleChange("instructorDisableMode", "purge")}
+                      className="mt-1"
+                    />
+                    <span><strong>إيقاف وتنظيف بيانات المدربين</strong><br />تُزال هويات المدربين وملفاتهم وإسناداتهم وتُلغى جلساتهم. تبقى محتويات الدورات نفسها لتجنب حذف محتوى تعليمي أو سجلات طلاب.</span>
+                  </label>
+                  {errors.instructorDisableMode && <p role="alert" className="text-sm text-destructive">{errors.instructorDisableMode}</p>}
+                </fieldset>
               )}
             </AppTabsContent>
           </div>

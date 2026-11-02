@@ -119,7 +119,7 @@ export function InstructorAuthProvider({ children }: { children: React.ReactNode
     if (!hasHydrated) return;
     if (pathname === LOGIN_PATH) {
       if (accessToken && membership) {
-        router.replace(mustChangePassword ? PASSWORD_PATH : "/instructor/courses");
+        router.replace(mustChangePassword ? PASSWORD_PATH : "/instructor");
       }
       return;
     }
@@ -130,7 +130,7 @@ export function InstructorAuthProvider({ children }: { children: React.ReactNode
     if (mustChangePassword && pathname !== PASSWORD_PATH) {
       router.replace(PASSWORD_PATH);
     } else if (!mustChangePassword && pathname === PASSWORD_PATH) {
-      router.replace("/instructor/courses");
+      router.replace("/instructor");
     }
   }, [accessToken, hasHydrated, membership, mustChangePassword, pathname, router]);
 

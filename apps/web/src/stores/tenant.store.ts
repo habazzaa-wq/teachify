@@ -89,6 +89,7 @@ interface TenantState {
     slug: string;
     domain: string;
     status: string;
+    feature_flags?: { has_instructors?: boolean } | null;
     branding: TenantBranding;
     platformBranding?: TenantBranding | null;
     subdomain?: string | null;
@@ -232,6 +233,7 @@ export const useTenantStore = create<TenantState>()(
             slug: data.slug,
             status: data.status,
             domain: data.domain,
+            feature_flags: data.feature_flags ?? state.activeTenant?.feature_flags ?? null,
             branding: normalizeBranding({
               logo: incoming.logo ?? prev?.logo ?? null,
               favicon: incoming.favicon ?? prev?.favicon ?? null,

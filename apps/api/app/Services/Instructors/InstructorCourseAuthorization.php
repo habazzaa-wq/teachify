@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Services\Authorization\TenantAuthorizationService;
 
@@ -50,7 +51,26 @@ class InstructorCourseAuthorization
         $membership = $this->membership($user, currentTenant());
 
         return $membership !== null
-            && $course->primary_instructor_tenant_user_id === $membership->id;
+            && ($course->primary_instructor_tenant_user_id === $membership->id
+                || ($course->instructor_assignment_managed && $course->instructors()
+                    ->where('tenant_user_id', $membership->id)
+                    ->whereIn('role', ['co_instructor', 'assistant'])
+                    ->exists()));
+    }
+
+    public function accessibleCoursesQuery(TenantUser $membership): Builder
+    {
+        return Course::query()
+            ->where('tenant_id', $membership->tenant_id)
+            ->where(function (Builder $query) use ($membership): void {
+                $query->where('primary_instructor_tenant_user_id', $membership->id)
+                    ->orWhere(function (Builder $shared) use ($membership): void {
+                        $shared->where('instructor_assignment_managed', true)
+                            ->whereHas('instructors', fn (Builder $instructors) => $instructors
+                                ->where('tenant_user_id', $membership->id)
+                                ->whereIn('role', ['co_instructor', 'assistant']));
+                    });
+            });
     }
 
     public function isInstructorAccount(User $user, Tenant $tenant): bool

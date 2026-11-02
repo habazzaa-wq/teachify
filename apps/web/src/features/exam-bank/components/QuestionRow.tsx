@@ -10,8 +10,8 @@ import {
   AppDropdownMenuItem,
   AppDropdownMenuSeparator,
   AppCheckbox,
-  PermissionGuard,
 } from "@/components/ui";
+import { ExamPermissionGuard } from "./ExamPermissionGuard";
 import { StudioSurfaceCard, StudioStatusChip, StudioChip } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import {
@@ -148,7 +148,7 @@ function QuestionRowBase({
                   </AppDropdownMenuTrigger>
                   <AppDropdownMenuContent align="end" className="w-44">
                     {onDuplicate && (
-                      <PermissionGuard permission="questions.create">
+                      <ExamPermissionGuard permission="questions.create">
                         <AppDropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
@@ -158,10 +158,10 @@ function QuestionRowBase({
                           <Copy className="h-4 w-4" />
                           نسخ
                         </AppDropdownMenuItem>
-                      </PermissionGuard>
+                      </ExamPermissionGuard>
                     )}
                     {!isPublished && onPublish && (
-                      <PermissionGuard permission="questions.publish">
+                      <ExamPermissionGuard permission="questions.publish">
                         <AppDropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
@@ -171,10 +171,10 @@ function QuestionRowBase({
                           <Upload className="h-4 w-4" />
                           نشر
                         </AppDropdownMenuItem>
-                      </PermissionGuard>
+                      </ExamPermissionGuard>
                     )}
                     {!isArchived && onArchive && (
-                      <PermissionGuard permission="questions.archive">
+                      <ExamPermissionGuard permission="questions.archive">
                         <AppDropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
@@ -184,12 +184,12 @@ function QuestionRowBase({
                           <Archive className="h-4 w-4" />
                           أرشفة
                         </AppDropdownMenuItem>
-                      </PermissionGuard>
+                      </ExamPermissionGuard>
                     )}
                     {onDelete && (
                       <>
                         <AppDropdownMenuSeparator />
-                        <PermissionGuard permission="questions.delete">
+                        <ExamPermissionGuard permission="questions.delete">
                           <AppDropdownMenuItem
                             className="text-studio-danger focus:text-studio-danger"
                             onClick={(e) => {
@@ -200,7 +200,7 @@ function QuestionRowBase({
                             <Trash2 className="h-4 w-4" />
                             حذف
                           </AppDropdownMenuItem>
-                        </PermissionGuard>
+                        </ExamPermissionGuard>
                       </>
                     )}
                   </AppDropdownMenuContent>

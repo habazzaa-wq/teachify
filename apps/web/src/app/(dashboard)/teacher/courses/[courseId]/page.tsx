@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { CourseStudio } from "@/features/course-studio";
+import { CourseInstructorAssignments } from "@/features/courses/components/CourseInstructorAssignments";
 import { useCourse, usePublishCourse } from "@/features/courses/hooks";
 
 function CourseWorkspacePage() {
@@ -28,16 +29,19 @@ function CourseWorkspacePage() {
   }
 
   return (
-    <CourseStudio
-      mode="ready"
-      courseId={course.id}
-      courseName={course.title}
-      courseStatus={course.status}
-      courseVisibility={course.visibility}
-      studentsCount={course.studentsCount}
-      isSaved
-      onPublish={course.status !== "published" ? handlePublish : undefined}
-    />
+    <>
+      <CourseStudio
+        mode="ready"
+        courseId={course.id}
+        courseName={course.title}
+        courseStatus={course.status}
+        courseVisibility={course.visibility}
+        studentsCount={course.studentsCount}
+        isSaved
+        onPublish={course.status !== "published" ? handlePublish : undefined}
+      />
+      <CourseInstructorAssignments course={course} />
+    </>
   );
 }
 

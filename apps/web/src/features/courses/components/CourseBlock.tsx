@@ -457,22 +457,22 @@ function CourseBlock({
 
           {/* Instructor + date */}
           <div className="flex items-center justify-between gap-2">
-            {course.instructor ? (
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[9px] font-medium text-tenant-accent">
-                  {course.instructor.avatar ? (
-                    <img
-                      src={course.instructor.avatar}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    course.instructor.name.charAt(0)
-                  )}
-                </div>
-                <span className="truncate text-xs font-medium text-tenant-fg-muted/70">
-                  {course.instructor.name}
-                </span>
+            {course.instructors?.length || course.instructor ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                {(course.instructors?.length ? course.instructors : [course.instructor!]).map((instructor) => (
+                  <span key={instructor.id} className="flex min-w-0 items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[9px] font-medium text-tenant-accent">
+                      {instructor.avatar ? (
+                        <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        instructor.name.charAt(0)
+                      )}
+                    </span>
+                    <span className="max-w-28 truncate text-xs font-medium text-tenant-fg-muted/70">
+                      {instructor.name}
+                    </span>
+                  </span>
+                ))}
               </div>
             ) : (
               <span className="text-xs text-tenant-fg-muted/30">

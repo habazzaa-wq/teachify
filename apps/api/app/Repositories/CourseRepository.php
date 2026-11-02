@@ -29,7 +29,15 @@ class CourseRepository
             $instructor = app(\App\Services\Instructors\InstructorCourseAuthorization::class)
                 ->membership($user, currentTenant());
             if ($instructor) {
-                $query->where('primary_instructor_tenant_user_id', $instructor->id);
+                $query->where(function (Builder $scope) use ($instructor): void {
+                    $scope->where('primary_instructor_tenant_user_id', $instructor->id)
+                        ->orWhere(function (Builder $shared) use ($instructor): void {
+                            $shared->where('instructor_assignment_managed', true)
+                                ->whereHas('instructors', fn (Builder $assignments) => $assignments
+                                    ->where('tenant_user_id', $instructor->id)
+                                    ->whereIn('role', ['co_instructor', 'assistant']));
+                        });
+                });
             }
         }
 

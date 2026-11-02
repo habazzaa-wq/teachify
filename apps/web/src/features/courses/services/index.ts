@@ -51,6 +51,15 @@ function formatCourse(raw: any): Course {
     learningOutcomes: raw.learningOutcomes ?? [],
     targetAudience: raw.targetAudience ?? [],
     instructor: raw.instructor ? { id: String(raw.instructor.id), name: raw.instructor.name, avatar: raw.instructor.avatar ?? null } : null,
+    instructors: Array.isArray(raw.instructors)
+      ? raw.instructors.map((instructor: any) => ({
+          id: String(instructor.id),
+          assignmentId: instructor.assignmentId == null ? undefined : Number(instructor.assignmentId),
+          name: instructor.name ?? "",
+          avatar: instructor.avatar ?? null,
+          role: instructor.role ?? "co_instructor",
+        }))
+      : [],
     educationalStage: raw.educationalStage ? { id: String(raw.educationalStage.id), name: raw.educationalStage.name } : null,
     subject: raw.subject ? { id: String(raw.subject.id), name: raw.subject.name } : null,
     category: raw.category ? { id: String(raw.category.id), name: raw.category.name, slug: raw.category.slug } : null,
@@ -100,6 +109,18 @@ export const coursesService = {
   async getById(id: string): Promise<Course | null> {
     const { data } = await api.get(`/courses/${id}`);
     return data.data ? formatCourse(data.data) : null;
+  },
+
+  async assignInstructor(courseId: string, tenantUserId: number, role: "co_instructor" | "assistant"): Promise<void> {
+    await api.post(`/courses/${courseId}/instructors`, {
+      tenant_user_id: tenantUserId,
+      role,
+      is_visible: true,
+    });
+  },
+
+  async removeInstructor(courseId: string, assignmentId: number): Promise<void> {
+    await api.delete(`/courses/${courseId}/instructors/${assignmentId}`);
   },
 
   async getMetrics(): Promise<CourseMetricData> {

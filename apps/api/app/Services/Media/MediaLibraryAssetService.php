@@ -401,26 +401,38 @@ class MediaLibraryAssetService
         return $count;
     }
 
-    public function metrics(Tenant $tenant): array
+    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null): array
     {
-        return $this->assets->metrics($tenant);
+        return $this->assets->metrics($tenant, $ownerTenantUserId);
     }
 
-    public function recent(Tenant $tenant, int $limit = 10): Collection
+    public function recent(Tenant $tenant, int $limit = 10, ?int $ownerTenantUserId = null): Collection
     {
-        return MediaAsset::query()
+        $query = MediaAsset::query()
             ->where('tenant_id', $tenant->id)
             ->whereNull('archived_at')
             ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
+            ->limit($limit);
+        if ($ownerTenantUserId !== null) {
+            $query->where(function ($owner) use ($ownerTenantUserId): void {
+                $owner->where('created_by_tenant_user_id', $ownerTenantUserId)
+                    ->orWhere('uploader_id', $ownerTenantUserId);
+            });
+        }
+
+        return $query->get();
     }
 
-    public function storageUsage(Tenant $tenant): array
+    public function storageUsage(Tenant $tenant, ?int $ownerTenantUserId = null): array
     {
-        $totalBytes = MediaAsset::query()
-            ->where('tenant_id', $tenant->id)
-            ->sum('size_bytes');
+        $query = MediaAsset::query()->where('tenant_id', $tenant->id);
+        if ($ownerTenantUserId !== null) {
+            $query->where(function ($owner) use ($ownerTenantUserId): void {
+                $owner->where('created_by_tenant_user_id', $ownerTenantUserId)
+                    ->orWhere('uploader_id', $ownerTenantUserId);
+            });
+        }
+        $totalBytes = $query->sum('size_bytes');
 
         $maxBytes = $tenant->config['storage_limit_bytes'] ?? 5_368_709_120;
 

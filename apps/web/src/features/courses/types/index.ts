@@ -50,6 +50,13 @@ export interface Course {
     name: string;
     avatar: string | null;
   } | null;
+  instructors?: Array<{
+    id: string;
+    assignmentId?: number;
+    name: string;
+    avatar: string | null;
+    role: string;
+  }>;
   category: {
     id: string;
     name: string;

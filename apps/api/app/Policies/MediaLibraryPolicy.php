@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
+use App\Models\TenantUser;
 use App\Services\Authorization\AuthorizationService;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -17,27 +18,28 @@ class MediaLibraryPolicy
 
     public function view(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.view');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.view');
     }
 
     public function create(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.create');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.create');
     }
 
     public function update(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.update');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.update');
     }
 
     public function delete(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.delete');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.delete');
     }
 
     public function upload(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.upload')
+        return $this->isInstructor()
+            || $this->auth->hasPermission($user, 'media.upload')
             || $this->auth->hasPermission($user, 'media.create')
             || $this->auth->hasPermission($user, 'courses.update')
             || $this->auth->hasPermission($user, 'courses.create');
@@ -45,16 +47,25 @@ class MediaLibraryPolicy
 
     public function download(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.download');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.download');
     }
 
     public function archive(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.archive');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.archive');
     }
 
     public function manage(User $user): bool
     {
-        return $this->auth->hasPermission($user, 'media.manage');
+        return $this->isInstructor() || $this->auth->hasPermission($user, 'media.manage');
+    }
+
+    private function isInstructor(): bool
+    {
+        $membership = app()->bound('currentTenantMembership')
+            ? app('currentTenantMembership')
+            : null;
+
+        return $membership instanceof TenantUser && $membership->is_instructor;
     }
 }

@@ -1,7 +1,8 @@
-import { api } from "@/services/api";
+import { api as tenantApi } from "@/services/api";
 import { resolveApiBaseUrl } from "@/config/env";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
+import { instructorApi } from "@/features/instructors/api";
 import type {
   MediaAsset,
   MediaCaption,
@@ -16,6 +17,40 @@ import type {
 
 type RawAsset = Record<string, unknown>;
 type RawFolder = Record<string, unknown>;
+
+export function isInstructorMediaWorkspace(): boolean {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/");
+}
+
+function instructorMediaRequest<T>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  path: string,
+  data?: unknown,
+  config?: {
+    params?: Record<string, string | number | boolean | string[] | number[] | boolean[]>;
+    signal?: AbortSignal;
+    timeout?: number;
+  },
+): Promise<{ data: T }> {
+  if (!isInstructorMediaWorkspace()) {
+    return tenantApi.request<T>({ url: path, method, data, ...config });
+  }
+
+  return instructorApi
+    .mediaLibraryRequest<T>(path.replace(/^\/media-library\//, ""), method, { data, ...config })
+    .then((response) => ({ data: response }));
+}
+
+const api = {
+  get: <T = any>(path: string, config?: Parameters<typeof instructorMediaRequest>[3]) =>
+    instructorMediaRequest<T>("GET", path, undefined, config),
+  post: <T = any>(path: string, data?: unknown, config?: Parameters<typeof instructorMediaRequest>[3]) =>
+    instructorMediaRequest<T>("POST", path, data, config),
+  put: <T = any>(path: string, data?: unknown, config?: Parameters<typeof instructorMediaRequest>[3]) =>
+    instructorMediaRequest<T>("PUT", path, data, config),
+  delete: <T = any>(path: string, config?: Parameters<typeof instructorMediaRequest>[3]) =>
+    instructorMediaRequest<T>("DELETE", path, undefined, config),
+};
 
 function num(raw: unknown, fallback = 0): number {
   return typeof raw === "number" ? raw : fallback;

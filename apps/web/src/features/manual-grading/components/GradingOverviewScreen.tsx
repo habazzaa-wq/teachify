@@ -8,7 +8,7 @@ import { StudioButton, StudioChip, StudioEmptyState, StudioSurfaceCard, StudioWo
 import { useGradingOverview } from "../hooks";
 import { normalizeApiError } from "@/services/api/errors";
 
-export function GradingOverviewScreen() {
+export function GradingOverviewScreen({ basePath = "/teacher" }: { basePath?: string }) {
   const router = useRouter();
   const overviewQuery = useGradingOverview();
   const items = overviewQuery.data ?? [];
@@ -82,7 +82,7 @@ export function GradingOverviewScreen() {
               <button
                 key={item.examId}
                 type="button"
-                onClick={() => router.push(`/teacher/exams/${item.examId}/grading`)}
+                onClick={() => router.push(`${basePath}/exams/${item.examId}/grading`)}
                 className="group flex w-full items-center gap-3 rounded-2xl border border-studio-border bg-studio-surface p-4 text-start transition-colors hover:border-studio-accent-border hover:bg-studio-soft/60"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-studio-soft text-studio-fg-muted">

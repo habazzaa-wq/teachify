@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
+import type { HeroSettings } from "@/features/homepage/hero/types";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
@@ -363,6 +364,7 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
       src={src}
       alt={alt}
       loading="eager"
+      fetchPriority="high"
       decoding="async"
       className="h-full w-full object-cover"
       onError={() => setStage(stage === "direct" ? "optimized" : "fallback")}
@@ -370,8 +372,13 @@ function HeroTeacherPhoto({ imageUrl, alt }: { imageUrl: string | null; alt: str
   );
 }
 
-export function HeroSection() {
-  const { data: hero } = usePublicHero();
+export function HeroSection({
+  initialHero,
+}: {
+  initialHero?: HeroSettings | null;
+}) {
+  const { data: fetchedHero } = usePublicHero();
+  const hero = fetchedHero ?? initialHero ?? null;
   const { tenant } = useActiveTenant();
   const tenantName = tenant?.name ?? "";
 

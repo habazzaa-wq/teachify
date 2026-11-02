@@ -2,13 +2,17 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { mediaLibraryService } from "../services";
+import { isInstructorMediaWorkspace, mediaLibraryService } from "../services";
 import { MEDIA_QUERY_KEY } from "../constants";
 import type { MediaAsset, MediaFilterParams } from "../types";
 
+function mediaQueryKey(...key: unknown[]) {
+  return [MEDIA_QUERY_KEY, isInstructorMediaWorkspace() ? "instructor" : "tenant", ...key];
+}
+
 export function useMediaAssets(params?: MediaFilterParams) {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "assets", "list", params],
+    queryKey: mediaQueryKey("assets", "list", params),
     queryFn: () => mediaLibraryService.listAssets(params),
   });
 }
@@ -17,14 +21,14 @@ export function useMediaAsset(id: number | null) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "assets", "detail", id],
+    queryKey: mediaQueryKey("assets", "detail", id),
     queryFn: () => mediaLibraryService.getAsset(id!),
     enabled: !!id,
   });
 
   const assetFromCache = id
     ? queryClient
-        .getQueriesData<{ data: MediaAsset[] }>({ queryKey: [MEDIA_QUERY_KEY, "assets", "list"] })
+        .getQueriesData<{ data: MediaAsset[] }>({ queryKey: mediaQueryKey("assets", "list") })
         .flatMap(([, d]) => d?.data ?? [])
         .find((a) => a.id === id) ?? null
     : null;
@@ -37,21 +41,21 @@ export function useMediaAsset(id: number | null) {
 
 export function useFolderTree() {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "folders", "tree"],
+    queryKey: mediaQueryKey("folders", "tree"),
     queryFn: () => mediaLibraryService.getFolderTree(),
   });
 }
 
 export function useFolders(parentId?: number | null) {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "folders", "list", parentId],
+    queryKey: mediaQueryKey("folders", "list", parentId),
     queryFn: () => mediaLibraryService.getFolders(parentId),
   });
 }
 
 export function useFolderBreadcrumbs(folderId: number | null) {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "folders", "breadcrumbs", folderId],
+    queryKey: mediaQueryKey("folders", "breadcrumbs", folderId),
     queryFn: () => mediaLibraryService.getFolderBreadcrumbs(folderId!),
     enabled: !!folderId,
   });
@@ -59,27 +63,27 @@ export function useFolderBreadcrumbs(folderId: number | null) {
 
 export function useMediaMetrics() {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "metrics"],
+    queryKey: mediaQueryKey("metrics"),
     queryFn: () => mediaLibraryService.getMetrics(),
   });
 }
 
 export function useMediaStorage() {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "storage"],
+    queryKey: mediaQueryKey("storage"),
     queryFn: () => mediaLibraryService.getStorage(),
   });
 }
 
 export function useRecentAssets(limit?: number) {
   return useQuery({
-    queryKey: [MEDIA_QUERY_KEY, "recent", limit],
+    queryKey: mediaQueryKey("recent", limit),
     queryFn: () => mediaLibraryService.getRecent(limit),
   });
 }
 
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
-  qc.invalidateQueries({ queryKey: [MEDIA_QUERY_KEY] });
+  qc.invalidateQueries({ queryKey: mediaQueryKey() });
 }
 
 export function useCreateFolder() {

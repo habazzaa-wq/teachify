@@ -1,15 +1,11 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   motion,
   useReducedMotion,
-  useScroll,
-  useTransform,
-  type Variants,
 } from "framer-motion";
-import { cn } from "@/lib/cn";
 import { useUiStore } from "@/stores/ui.store";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
@@ -33,11 +29,6 @@ const DEFAULT_TITLE_EMPHASIS = "الدراسية";
 const FOOTER_NOTE = "ابدأ الرحلة من حيث يناسب سِنّه";
 
 const arabicNumber = (n: number) => new Intl.NumberFormat("ar-EG").format(n);
-
-const containerVariants: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.08 } },
-};
 
 /**
  * Deterministic bento span for a stage, so the mosaic stays intentional and
@@ -97,18 +88,9 @@ export function EducationalStagesSection({
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
 
-  const ref = useRef<HTMLElement | null>(null);
   const { ref: inViewRef, inView } = useInViewOnce<HTMLElement>({
     rootMargin: "0px 0px -15% 0px",
   });
-
-  // Scroll-linked parallax for the section's ambient depth (light mode only
-  // animation tunnel). Reduced-motion users get a static, calm background.
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const glowY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
 
   const { data, isLoading } = usePublicStages();
   const fetched = useMemo<EducationalStage[]>(
@@ -131,41 +113,36 @@ export function EducationalStagesSection({
 
   return (
     <section
-      ref={(node) => {
-        ref.current = node;
-        inViewRef.current = node;
-      }}
+      id="educational-stages"
+      ref={inViewRef}
       dir="rtl"
       aria-labelledby="stages-title"
-      className="relative w-full overflow-hidden py-16 sm:py-20 lg:py-24"
+      className="relative w-full scroll-mt-16 overflow-hidden py-16 sm:py-20 lg:py-24"
       style={{
         background: isDark
           ? "linear-gradient(170deg, #0e0c14 0%, #17121c 55%, #0e0c14 100%)"
           : "linear-gradient(170deg, #fdfbf7 0%, #f6efe3 55%, #fdfbf7 100%)",
       }}
     >
-      {/* ruled-paper + fine dot texture */}
+      {/* Keep the background static to avoid scroll-time repaint work. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage: isDark
-            ? `repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(255,255,255,0.04) 0.6px, transparent 0.6px)`
-            : `repeating-linear-gradient(to bottom, rgba(120,80,40,0.03) 0, rgba(120,80,40,0.03) 1px, transparent 1px, transparent 30px), radial-gradient(rgba(120,80,40,0.05) 0.6px, transparent 0.6px)`,
-          backgroundSize: "100% 100%, 26px 26px",
+            ? "radial-gradient(rgba(255,255,255,0.035) 0.6px, transparent 0.6px)"
+            : "radial-gradient(rgba(120,80,40,0.045) 0.6px, transparent 0.6px)",
+          backgroundSize: "24px 24px",
         }}
       />
 
-      {/* ambient brand glows — parallax against scroll (gated by reduced-motion) */}
-      <motion.div
+      <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
-        style={reduce ? undefined : { y: glowY }}
-      >
-        <div className="absolute -top-24 end-[4%] h-[26rem] w-[26rem] rounded-full bg-[var(--brand-primary)] opacity-[0.14] blur-3xl" />
-        <div className="absolute -bottom-28 start-[2%] h-[30rem] w-[30rem] rounded-full bg-[var(--brand-secondary)] opacity-[0.12] blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-[24rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--brand-primary)] opacity-[0.05] blur-3xl" />
-      </motion.div>
+        style={{
+          backgroundImage: `radial-gradient(ellipse at 88% 12%, color-mix(in srgb, var(--brand-primary) 10%, transparent), transparent 38%), radial-gradient(ellipse at 12% 88%, color-mix(in srgb, var(--brand-secondary) 9%, transparent), transparent 40%)`,
+        }}
+      />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* ─────────────────────────  header  ───────────────────────── */}
@@ -234,30 +211,21 @@ export function EducationalStagesSection({
         {/* ─────────────────────────  bento mosaic  ───────────────────────── */}
         <div className="mt-12 sm:mt-16">
           {showSkeleton ? (
-            <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
-              <div className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:col-span-2 sm:w-auto sm:max-w-none sm:shrink xl:col-span-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
+              <div className="sm:col-span-2 xl:col-span-2">
                 <StageWorldSkeleton variant="hero" />
               </div>
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className={cn(
-                    "w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink",
-                    i === 2 ? "xl:col-span-2" : "",
-                  )}
+                  className={i === 2 ? "xl:col-span-2" : ""}
                 >
                   <StageWorldSkeleton variant="standard" />
                 </div>
               ))}
             </div>
           ) : (
-            <motion.div
-              variants={containerVariants}
-              initial={reduce ? false : "hidden"}
-              whileInView={reduce ? undefined : "show"}
-              viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-              className="[-ms-overflow-style:none] -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:snap-none sm:grid-flow-dense sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 sm:items-stretch [&::-webkit-scrollbar]:hidden lg:grid-cols-3 lg:gap-7 xl:grid-cols-4"
-            >
+            <div className="grid grid-cols-1 gap-4 sm:grid-flow-dense sm:grid-cols-2 sm:gap-6 sm:items-stretch lg:grid-cols-3 lg:gap-7 xl:grid-cols-4">
               {stages.map((stage, i) => {
                 const variant = variantFor(i);
                 return (
@@ -270,14 +238,11 @@ export function EducationalStagesSection({
                     priority={i < priorityCount}
                     stats={statsById.get(Number(stage.id)) ?? null}
                     active={inView}
-                    className={cn(
-                      "w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink",
-                      spanClass(i, variant),
-                    )}
+                    className={spanClass(i, variant)}
                   />
                 );
               })}
-            </motion.div>
+            </div>
           )}
         </div>
 

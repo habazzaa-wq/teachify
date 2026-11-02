@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Question;
 use App\Models\Tenant;
+use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Authorization\TenantAuthorizationService;
 
@@ -11,6 +12,10 @@ class QuestionPolicy
 {
     public function viewAny(User $user): bool
     {
+        if ($this->instructorMembership()) {
+            return true;
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'questions.view');
     }
 
@@ -18,6 +23,10 @@ class QuestionPolicy
     {
         if ($question->tenant_id !== currentTenant()->id) {
             return false;
+        }
+
+        if ($instructor = $this->instructorMembership()) {
+            return $question->created_by_tenant_user_id === $instructor->id;
         }
 
         if ($this->isTenantOperator($user, currentTenant()) || $this->isOwner($user, $question)) {
@@ -31,6 +40,10 @@ class QuestionPolicy
 
     public function create(User $user): bool
     {
+        if ($this->instructorMembership()) {
+            return true;
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'questions.create');
     }
 
@@ -38,6 +51,10 @@ class QuestionPolicy
     {
         if ($question->tenant_id !== currentTenant()->id) {
             return false;
+        }
+
+        if ($instructor = $this->instructorMembership()) {
+            return $question->created_by_tenant_user_id === $instructor->id;
         }
 
         if ($this->isTenantOperator($user, currentTenant())) {
@@ -50,6 +67,11 @@ class QuestionPolicy
 
     public function publish(User $user, Question $question): bool
     {
+        if ($instructor = $this->instructorMembership()) {
+            return $question->tenant_id === currentTenant()->id
+                && $question->created_by_tenant_user_id === $instructor->id;
+        }
+
         return $question->tenant_id === currentTenant()->id
             && $this->isTenantOperator($user, currentTenant())
             && $this->auth()->hasPermission($user, currentTenant(), 'questions.publish');
@@ -57,13 +79,29 @@ class QuestionPolicy
 
     public function delete(User $user, Question $question): bool
     {
+        if ($instructor = $this->instructorMembership()) {
+            return $question->tenant_id === currentTenant()->id
+                && $question->created_by_tenant_user_id === $instructor->id;
+        }
+
         return $question->tenant_id === currentTenant()->id
             && $this->auth()->hasPermission($user, currentTenant(), 'questions.delete');
     }
 
     public function restore(User $user): bool
     {
+        if ($this->instructorMembership()) {
+            return true;
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'questions.update');
+    }
+
+    private function instructorMembership(): ?TenantUser
+    {
+        $membership = request()->attributes->get('instructorMembership');
+
+        return $membership instanceof TenantUser ? $membership : null;
     }
 
     private function isTenantOperator(User $user, Tenant $tenant): bool

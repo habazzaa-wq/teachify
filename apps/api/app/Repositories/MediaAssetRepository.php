@@ -91,6 +91,13 @@ class MediaAssetRepository
             $query->where('uploader_id', $params['uploader_id']);
         }
 
+        if (isset($params['owner_tenant_user_id'])) {
+            $query->where(function (Builder $owner) use ($params): void {
+                $owner->where('created_by_tenant_user_id', $params['owner_tenant_user_id'])
+                    ->orWhere('uploader_id', $params['owner_tenant_user_id']);
+            });
+        }
+
         if (! empty($params['tags']) && is_array($params['tags'])) {
             foreach ($params['tags'] as $tag) {
                 $query->whereJsonContains('tags', $tag);
@@ -125,9 +132,15 @@ class MediaAssetRepository
         return $this->query($tenant)->findOrFail($id);
     }
 
-    public function metrics(Tenant $tenant): array
+    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null): array
     {
         $query = MediaAsset::query()->where('tenant_id', $tenant->id);
+        if ($ownerTenantUserId !== null) {
+            $query->where(function (Builder $owner) use ($ownerTenantUserId): void {
+                $owner->where('created_by_tenant_user_id', $ownerTenantUserId)
+                    ->orWhere('uploader_id', $ownerTenantUserId);
+            });
+        }
 
         $total = (clone $query)->count();
         $totalSize = (clone $query)->sum('size_bytes');

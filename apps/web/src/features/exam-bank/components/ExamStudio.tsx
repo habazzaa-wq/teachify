@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive,
@@ -17,7 +17,6 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { ChevronStartIcon } from "@/components/ui/icons";
-import { PermissionGuard } from "@/components/ui";
 import {
   StudioWorkspaceHeader,
   StudioButton,
@@ -47,6 +46,7 @@ import type { Exam, ExamQuestion, ExamStatus } from "@/features/exam-bank/types"
 import { ExamStudioNavigator } from "./ExamStudioNavigator";
 import { ExamStudioBuilder } from "./ExamStudioBuilder";
 import { ExamStudioInspector } from "./ExamStudioInspector";
+import { ExamPermissionGuard } from "./ExamPermissionGuard";
 import { ExamSettingsDialog } from "./ExamSettingsDialog";
 import { AddQuestionDialog } from "./AddQuestionDialog";
 import { CreateQuestionDialog } from "./CreateQuestionDialog";
@@ -72,6 +72,7 @@ function getIsRtl() {
 
 export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const store = useExamStudioStore();
 
   const { data: exam, isLoading } = useExam(examId);
@@ -285,7 +286,7 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
               <PanelRight className="h-4 w-4" />
             </StudioButton>
             <div className="mx-1 h-6 w-px bg-studio-border" />
-            <PermissionGuard permission="exams.update">
+            <ExamPermissionGuard permission="exams.update">
               <StudioButton
                 variant={exam.pinned ? "soft" : "ghost"}
                 size="icon"
@@ -304,9 +305,9 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
               >
                 <Star className={cn("h-4 w-4", exam.favorite && "fill-current")} />
               </StudioButton>
-            </PermissionGuard>
+            </ExamPermissionGuard>
             {exam.status !== "published" && (
-              <PermissionGuard permission="exams.publish">
+              <ExamPermissionGuard permission="exams.publish">
                 <StudioButton
                   variant="success"
                   size="sm"
@@ -315,10 +316,10 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
                 >
                   نشر
                 </StudioButton>
-              </PermissionGuard>
+              </ExamPermissionGuard>
             )}
             {exam.status !== "archived" && (
-              <PermissionGuard permission="exams.archive">
+              <ExamPermissionGuard permission="exams.archive">
                 <StudioButton
                   variant="secondary"
                   size="sm"
@@ -327,18 +328,20 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
                 >
                   أرشفة
                 </StudioButton>
-              </PermissionGuard>
+              </ExamPermissionGuard>
             )}
-            <PermissionGuard permission="exams.update">
+            <ExamPermissionGuard permission="exams.update">
               <StudioButton
                 variant="soft"
                 size="sm"
                 icon={<ClipboardCheck className="h-4 w-4" />}
-                onClick={() => router.push(`/teacher/exams/${exam.id}/grading`)}
+                onClick={() => router.push(
+                  pathname.startsWith("/instructor/") ? "/instructor/grading" : `/teacher/exams/${exam.id}/grading`,
+                )}
               >
                 تصحيح يدوي
               </StudioButton>
-            </PermissionGuard>
+            </ExamPermissionGuard>
             <StudioButton
               variant="ghost"
               size="icon"
@@ -347,7 +350,7 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
             >
               <Settings className="h-4 w-4" />
             </StudioButton>
-            <PermissionGuard permission="exams.delete">
+            <ExamPermissionGuard permission="exams.delete">
               <StudioButton
                 variant="ghost"
                 size="icon"
@@ -365,7 +368,7 @@ export function ExamStudio({ examId, mode = "ready", onBack }: ExamStudioProps) 
               >
                 <Trash2 className="h-4 w-4" />
               </StudioButton>
-            </PermissionGuard>
+            </ExamPermissionGuard>
             <StudioButton
               variant="ghost"
               size="sm"

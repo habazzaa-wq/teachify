@@ -45,9 +45,13 @@ class AuthenticationFoundationTest extends TestCase
         ], ['X-Tenant-ID' => (string) $tenant->id])
             ->assertOk()
             ->assertJsonPath('user.email', 'member@example.com')
-            ->assertJsonPath('membership.id', $membership->id);
+            ->assertJsonPath('membership.id', $membership->id)
+            ->assertJsonStructure(['access_token', 'refresh_token']);
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_id' => $user->id,
+            'name' => 'access_token',
+        ]);
         $this->assertNotNull($membership->refresh()->last_accessed_at);
     }
 

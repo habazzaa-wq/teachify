@@ -1609,20 +1609,20 @@ function ContinueCourseCard({ course }: ContinueCourseCardProps) {
             <h3 className="line-clamp-2 text-sm font-bold leading-snug text-tenant-fg transition-colors duration-300 group-hover:text-tenant-accent">
               {course.title}
             </h3>
-            {course.instructor && (
-              <div className="flex items-center gap-1.5 text-[11px] text-tenant-fg-muted/60">
-                <div className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 text-[7px] font-medium text-tenant-accent">
-                  {course.instructor.avatar ? (
-                    <img
-                      src={course.instructor.avatar}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    course.instructor.name.charAt(0)
-                  )}
-                </div>
-                <span className="truncate">{course.instructor.name}</span>
+            {(course.instructors?.length || course.instructor) && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-tenant-fg-muted/60">
+                {(course.instructors?.length ? course.instructors : [course.instructor!]).map((instructor) => (
+                  <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 text-[7px] font-medium text-tenant-accent">
+                      {instructor.avatar ? (
+                        <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        instructor.name.charAt(0)
+                      )}
+                    </span>
+                    <span className="max-w-28 truncate">{instructor.name}</span>
+                  </span>
+                ))}
               </div>
             )}
           </div>

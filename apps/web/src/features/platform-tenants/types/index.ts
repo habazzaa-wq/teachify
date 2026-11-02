@@ -197,6 +197,7 @@ export interface Tenant {
   featureFlags: {
     hasInstructors: boolean;
   };
+  instructorDisableMode?: "retain" | "purge";
   subscription: TenantSubscription;
   /** The canonical plan id from `platform_plans`. NULL when unassigned. */
   platformPlanId: string | null;

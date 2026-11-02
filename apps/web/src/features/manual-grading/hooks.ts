@@ -3,17 +3,23 @@ import { MANUAL_GRADING_QUERY_KEY } from "./constants";
 import { manualGradingService } from "./services";
 import type { GradeResult, GradingAnswer } from "./types";
 
+function actorKey(): string {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/")
+    ? "instructor"
+    : "teacher";
+}
+
 function queueKey(examId: string | number | null) {
-  return [MANUAL_GRADING_QUERY_KEY, "queue", examId];
+  return [MANUAL_GRADING_QUERY_KEY, actorKey(), "queue", examId];
 }
 
 function answerKey(attemptId: string | number | null, examQuestionId: string | number | null) {
-  return [MANUAL_GRADING_QUERY_KEY, "answer", attemptId, examQuestionId];
+  return [MANUAL_GRADING_QUERY_KEY, actorKey(), "answer", attemptId, examQuestionId];
 }
 
 export function useGradingOverview() {
   return useQuery({
-    queryKey: [MANUAL_GRADING_QUERY_KEY, "overview"],
+    queryKey: [MANUAL_GRADING_QUERY_KEY, actorKey(), "overview"],
     queryFn: () => manualGradingService.gradingOverview(),
     staleTime: 30 * 1000,
   });
@@ -21,7 +27,7 @@ export function useGradingOverview() {
 
 export function useGradingQueue(examId: string | number | null) {
   return useQuery({
-    queryKey: [MANUAL_GRADING_QUERY_KEY, "queue", examId],
+    queryKey: queueKey(examId),
     queryFn: () => manualGradingService.gradingQueue(examId as string | number),
     enabled: examId !== null && examId !== undefined,
   });
@@ -53,6 +59,7 @@ export function useSaveGrade() {
       // The saved answer drops out of the pending queue (or its grading status
       // changes) - refetch so the list reflects the latest server state.
       qc.invalidateQueries({ queryKey: queueKey(variables.examId) });
+      qc.invalidateQueries({ queryKey: [MANUAL_GRADING_QUERY_KEY, actorKey(), "overview"] });
       // Patch the open answer in place so the form shows the fresh grading
       // state (grader identity / gradedAt) without a stale local copy.
       qc.setQueryData<GradingAnswer>(answerKey(variables.attemptId, variables.examQuestionId), (old) =>

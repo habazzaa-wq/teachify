@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -53,17 +52,19 @@ function supportsHover(): boolean {
 function AnimatedNumber({
   value,
   active,
+  animate,
   className,
 }: {
   value: number;
   active: boolean;
+  animate: boolean;
   className?: string;
 }) {
   const reduce = useReducedMotion();
   const [display, setDisplay] = useState(reduce ? value : 0);
 
   useEffect(() => {
-    if (!active || reduce) return;
+    if (!active || !animate || reduce) return;
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -74,9 +75,13 @@ function AnimatedNumber({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [active, reduce, value]);
+  }, [active, animate, reduce, value]);
 
-  return <span className={cn("tabular-nums", className)}>{arabicNumber(display)}</span>;
+  return (
+    <span className={cn("tabular-nums", className)}>
+      {arabicNumber(!animate || reduce ? value : display)}
+    </span>
+  );
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -120,6 +125,14 @@ function TiltSurface({
     rx.set(0);
     ry.set(0);
   };
+
+  if (!tiltEnabled) {
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -167,7 +180,13 @@ export function StageWorld({
   const src = resolveImageSrc(stage.image);
   const hasImage = Boolean(src) && !failed;
 
-  const hoverCapable = useMemo(() => supportsHover(), []);
+  const [hoverCapable, setHoverCapable] = useState(false);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setHoverCapable(supportsHover());
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const tiltEnabled = !reduce && hoverCapable;
   const showCourses = Boolean(stats && stats.coursesCount > 0);
@@ -176,12 +195,12 @@ export function StageWorld({
 
   return (
     <motion.article
-      initial={reduce ? false : { opacity: 0, y: 40, rotateX: reduce ? 0 : 10, scale: 0.96 }}
-      whileInView={reduce ? undefined : { opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+      initial={reduce ? false : { opacity: 0, y: 16 }}
+      whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className={cn("group relative [perspective:1200px]", className)}
-      style={accent.style && { ...accent.style, transformStyle: "preserve-3d" }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className={cn("group relative", className)}
+      style={accent.style}
     >
       <TiltSurface
         tiltEnabled={tiltEnabled}
@@ -239,7 +258,7 @@ export function StageWorld({
                   draggable={false}
                   className={cn(
                     "absolute inset-0 h-full w-full object-cover transition-transform duration-[1.2s] ease-brand hoverable:group-hover:scale-[1.06]",
-                    isHero && priority && "animate-slow-zoom",
+                    isHero && priority && hoverCapable && "animate-slow-zoom",
                   )}
                   onError={() => setFailed(true)}
                 />
@@ -267,7 +286,7 @@ export function StageWorld({
                 className={cn(
                   "font-sans absolute -bottom-4 -start-1 z-[3] select-none font-extrabold leading-none text-[var(--stage-fg)] opacity-[0.16] drop-shadow-sm",
                   isHero ? "text-[7rem]" : "text-[5rem]",
-                  reduce ? "" : "animate-drift",
+                  !reduce && hoverCapable ? "animate-drift" : "",
                 )}
                 style={{ ["--drift-rot" as string]: "-6deg" }}
               >
@@ -324,14 +343,14 @@ export function StageWorld({
                 {showCourses ? (
                   <span className="inline-flex items-center gap-1.5 text-sm font-extrabold">
                     <BookOpen className="h-4 w-4 text-[var(--stage-color)]" aria-hidden="true" />
-                    <AnimatedNumber value={stats.coursesCount} active={active} className="text-foreground" />
+                    <AnimatedNumber value={stats.coursesCount} active={active} animate={hoverCapable} className="text-foreground" />
                     <span className="text-xs font-bold text-muted-foreground">منهج</span>
                   </span>
                 ) : null}
                 {showTeachers ? (
                   <span className="inline-flex items-center gap-1.5 text-sm font-extrabold">
                     <Users className="h-4 w-4 text-[var(--stage-color)]" aria-hidden="true" />
-                    <AnimatedNumber value={stats.teachersCount} active={active} className="text-foreground" />
+                    <AnimatedNumber value={stats.teachersCount} active={active} animate={hoverCapable} className="text-foreground" />
                     <span className="text-xs font-bold text-muted-foreground">معلم</span>
                   </span>
                 ) : null}

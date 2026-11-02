@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon,
+  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon, Users,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useUiStore } from "@/stores/ui.store";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { cn } from "@/lib/cn";
 
 const primary = "var(--brand-primary)";
@@ -34,6 +35,10 @@ const navLinks: NavLink[] = [
 export function MobileSecondaryNav() {
   const pathname = usePathname();
   const reduced = prefersReducedMotion();
+  const { tenant } = useActiveTenant();
+  const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
+    ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
+    : navLinks;
   const { data: hero } = usePublicHero();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
@@ -93,7 +98,7 @@ export function MobileSecondaryNav() {
 
           {/* ── Nav items ── */}
           <div className="flex-1 flex items-center gap-0.5 overflow-x-auto">
-            {navLinks.map((link) => {
+            {visibleNavLinks.map((link) => {
               const isActive = pathname === link.href;
               const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
                 if (link.scrollTarget && pathname === "/") {

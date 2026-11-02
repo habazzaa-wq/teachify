@@ -9,8 +9,8 @@ import {
   AppSelectValue,
   AppSelectContent,
   AppSelectItem,
-  PermissionGuard,
 } from "@/components/ui";
+import { ExamPermissionGuard } from "./ExamPermissionGuard";
 import { StudioButton } from "@/components/studio";
 import { useCategoryTree } from "@/features/exam-bank/hooks";
 import { cn } from "@/lib/cn";
@@ -53,36 +53,36 @@ export function QuestionBulkBar({
 
         {!showMove && (
           <div className="flex flex-wrap items-center gap-2">
-            <PermissionGuard permission="questions.create">
+            <ExamPermissionGuard permission="questions.create">
               <StudioButton variant="secondary" size="sm" onClick={onDuplicate}>
                 <Copy className="h-3.5 w-3.5" />
                 نسخ
               </StudioButton>
-            </PermissionGuard>
-            <PermissionGuard permission="questions.archive">
+            </ExamPermissionGuard>
+            <ExamPermissionGuard permission="questions.archive">
               <StudioButton variant="secondary" size="sm" onClick={onArchive}>
                 <Archive className="h-3.5 w-3.5" />
                 أرشفة
               </StudioButton>
-            </PermissionGuard>
-            <PermissionGuard permission="questions.restore">
+            </ExamPermissionGuard>
+            <ExamPermissionGuard permission="questions.restore">
               <StudioButton variant="secondary" size="sm" onClick={onRestore}>
                 <RotateCcw className="h-3.5 w-3.5" />
                 استرجاع
               </StudioButton>
-            </PermissionGuard>
-            <PermissionGuard permission="questions.update">
+            </ExamPermissionGuard>
+            <ExamPermissionGuard permission="questions.update">
               <StudioButton variant="secondary" size="sm" onClick={() => setShowMove(true)}>
                 <FolderInput className="h-3.5 w-3.5" />
                 نقل
               </StudioButton>
-            </PermissionGuard>
-            <PermissionGuard permission="questions.delete">
+            </ExamPermissionGuard>
+            <ExamPermissionGuard permission="questions.delete">
               <StudioButton variant="danger" size="sm" onClick={onDelete}>
                 <Trash2 className="h-3.5 w-3.5" />
                 حذف
               </StudioButton>
-            </PermissionGuard>
+            </ExamPermissionGuard>
           </div>
         )}
 

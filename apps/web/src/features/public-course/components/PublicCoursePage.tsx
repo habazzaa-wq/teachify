@@ -22,7 +22,7 @@ import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
 import { isFileLesson } from "../utils";
-import type { PublicCourseLesson } from "../types";
+import type { PublicCourse, PublicCourseLesson } from "../types";
 
 const PublicLoginCard = dynamic(
   () =>
@@ -34,6 +34,7 @@ const PublicLoginCard = dynamic(
 
 interface Props {
   slug: string;
+  initialCourse?: PublicCourse;
 }
 
 function CoursePageSkeleton() {
@@ -59,7 +60,7 @@ function CoursePageSkeleton() {
   );
 }
 
-export function PublicCoursePage({ slug }: Props) {
+export function PublicCoursePage({ slug, initialCourse }: Props) {
   const router = useRouter();
   const { isAuthenticated } = useCurrentUser();
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
@@ -68,7 +69,8 @@ export function PublicCoursePage({ slug }: Props) {
   const [activeLesson, setActiveLesson] = useState<PublicCourseLesson | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
+  const { data: fetchedCourse, isLoading: courseLoading } = usePublicCourse(slug);
+  const course = fetchedCourse ?? initialCourse;
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
   const { data: relatedCourses } = useRelatedCourses(slug);
   const { data: enrollment } = useEnrollmentCheck(slug, isAuthenticated);
@@ -132,7 +134,7 @@ export function PublicCoursePage({ slug }: Props) {
     />
   ) : null;
 
-  if (courseLoading || !course) {
+  if ((courseLoading && !initialCourse) || !course) {
     return <CoursePageSkeleton />;
   }
 
@@ -184,6 +186,11 @@ export function PublicCoursePage({ slug }: Props) {
             <CourseStats course={course} modules={modules} />
 
             {course.instructor && <InstructorCard instructor={course.instructor} />}
+            {course.instructors
+              ?.filter((instructor) => instructor.id !== course.instructor?.id)
+              .map((instructor) => (
+                <InstructorCard key={instructor.id} instructor={instructor} />
+              ))}
 
             {!isEnrolled && curriculumSection}
 

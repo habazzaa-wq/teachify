@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { EXAM_BANK_QUERY_KEY } from "../constants";
+import { getExamBankQueryKey } from "../constants";
 import { examBankService } from "../services";
 import type {
   Exam,
@@ -15,7 +15,7 @@ import type {
 } from "../types";
 
 function invalidateAll(qc: ReturnType<typeof useQueryClient>, keys: string[] = []) {
-  qc.invalidateQueries({ queryKey: [EXAM_BANK_QUERY_KEY, ...keys] });
+  qc.invalidateQueries({ queryKey: [getExamBankQueryKey(), ...keys] });
 }
 
 type ExamToggleField = "pinned" | "featured" | "favorite";
@@ -47,9 +47,9 @@ function optimisticToggleExam(
 ) {
   return {
     onMutate: async (id: string | number) => {
-      await qc.cancelQueries({ queryKey: [EXAM_BANK_QUERY_KEY, "exams"] });
-      const previous = qc.getQueriesData({ queryKey: [EXAM_BANK_QUERY_KEY, "exams"] });
-      qc.setQueriesData({ queryKey: [EXAM_BANK_QUERY_KEY, "exams"] }, (old: unknown) =>
+      await qc.cancelQueries({ queryKey: [getExamBankQueryKey(), "exams"] });
+      const previous = qc.getQueriesData({ queryKey: [getExamBankQueryKey(), "exams"] });
+      qc.setQueriesData({ queryKey: [getExamBankQueryKey(), "exams"] }, (old: unknown) =>
         flipExamField(old, id, field),
       );
       return { previous };
@@ -68,14 +68,14 @@ function optimisticToggleExam(
 // ---------------- Exams ----------------
 export function useExams(params?: ExamFilterParams) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "list", params],
+    queryKey: [getExamBankQueryKey(), "exams", "list", params],
     queryFn: () => examBankService.listExams(params),
   });
 }
 
 export function useExam(id: string | number | null) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "detail", id],
+    queryKey: [getExamBankQueryKey(), "exams", "detail", id],
     queryFn: () => examBankService.getExam(id as string | number),
     enabled: id !== null && id !== undefined,
   });
@@ -83,28 +83,28 @@ export function useExam(id: string | number | null) {
 
 export function useRecentExams() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "recent"],
+    queryKey: [getExamBankQueryKey(), "exams", "recent"],
     queryFn: () => examBankService.recentExams(),
   });
 }
 
 export function usePinnedExams() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "pinned"],
+    queryKey: [getExamBankQueryKey(), "exams", "pinned"],
     queryFn: () => examBankService.pinnedExams(),
   });
 }
 
 export function useFavoriteExams() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "favorites"],
+    queryKey: [getExamBankQueryKey(), "exams", "favorites"],
     queryFn: () => examBankService.favoriteExams(),
   });
 }
 
 export function useExamMetrics() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "metrics"],
+    queryKey: [getExamBankQueryKey(), "exams", "metrics"],
     queryFn: () => examBankService.examMetrics(),
   });
 }
@@ -222,7 +222,7 @@ export function useBulkExamAction() {
 // ---------------- Exam questions ----------------
 export function useExamQuestions(examId: string | number | null) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "exams", "questions", examId],
+    queryKey: [getExamBankQueryKey(), "exams", "questions", examId],
     queryFn: () => examBankService.getExamQuestions(examId as string | number),
     enabled: examId !== null && examId !== undefined,
   });
@@ -276,14 +276,14 @@ export function useRemoveExamQuestion() {
 // ---------------- Questions ----------------
 export function useQuestions(params?: QuestionFilterParams) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "questions", "list", params],
+    queryKey: [getExamBankQueryKey(), "questions", "list", params],
     queryFn: () => examBankService.listQuestions(params),
   });
 }
 
 export function useQuestion(id: string | number | null) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "questions", "detail", id],
+    queryKey: [getExamBankQueryKey(), "questions", "detail", id],
     queryFn: () => examBankService.getQuestion(id as string | number),
     enabled: id !== null && id !== undefined,
   });
@@ -291,7 +291,7 @@ export function useQuestion(id: string | number | null) {
 
 export function useQuestionMetrics() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "questions", "metrics"],
+    queryKey: [getExamBankQueryKey(), "questions", "metrics"],
     queryFn: () => examBankService.questionMetrics(),
   });
 }
@@ -404,14 +404,14 @@ export function useBulkQuestionAction() {
 // ---------------- Categories ----------------
 export function useCategories(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "categories", "list", params],
+    queryKey: [getExamBankQueryKey(), "categories", "list", params],
     queryFn: () => examBankService.listCategories(params),
   });
 }
 
 export function useCategoryTree() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "categories", "tree"],
+    queryKey: [getExamBankQueryKey(), "categories", "tree"],
     queryFn: () => examBankService.categoryTree(),
   });
 }
@@ -452,7 +452,7 @@ export function useRestoreCategory() {
 // ---------------- Banks ----------------
 export function useBanks(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "banks", "list", params],
+    queryKey: [getExamBankQueryKey(), "banks", "list", params],
     queryFn: () => examBankService.listBanks(params),
   });
 }
@@ -485,14 +485,14 @@ export function useDeleteBank() {
 // ---------------- Analytics ----------------
 export function useExamAnalyticsOverview() {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "analytics", "overview"],
+    queryKey: [getExamBankQueryKey(), "analytics", "overview"],
     queryFn: () => examBankService.analyticsOverview(),
   });
 }
 
 export function useExamAnalytics(id: string | number | null) {
   return useQuery({
-    queryKey: [EXAM_BANK_QUERY_KEY, "analytics", "exam", id],
+    queryKey: [getExamBankQueryKey(), "analytics", "exam", id],
     queryFn: () => examBankService.examAnalytics(id as string | number),
     enabled: id !== null && id !== undefined,
   });

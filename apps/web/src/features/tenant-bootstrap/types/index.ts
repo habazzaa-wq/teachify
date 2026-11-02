@@ -59,6 +59,9 @@ export interface TenantByDomainResponse {
   slug: string;
   domain: string;
   status: string;
+  feature_flags?: {
+    has_instructors?: boolean;
+  } | null;
   branding: TenantBranding;
   /** Platform-level brand colors (the "platform colors" field). Distinct from
    *  `branding`, which is the teacher appearance applied only to the teacher

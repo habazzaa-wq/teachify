@@ -74,9 +74,19 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
           <h3 className="line-clamp-2 text-sm font-extrabold leading-snug text-foreground transition-colors group-hover:text-[var(--brand-primary)]">
             {course.title}
           </h3>
-          {course.instructor && (
-            <p className="text-xs font-medium text-muted-foreground">{course.instructor.name}</p>
-          )}
+          {(course.instructors.length > 0 ? course.instructors : course.instructor ? [course.instructor] : []).map((instructor) => (
+            <div key={instructor.id} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              {instructor.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={instructor.avatar} alt="" className="h-5 w-5 rounded-full object-cover" />
+              ) : (
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-muted text-[10px]">
+                  {instructor.name.charAt(0)}
+                </span>
+              )}
+              <span className="truncate">{instructor.name}</span>
+            </div>
+          ))}
 
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">

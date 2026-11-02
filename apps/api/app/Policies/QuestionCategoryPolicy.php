@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\QuestionCategory;
+use App\Models\TenantUser;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Authorization\TenantAuthorizationService;
@@ -11,6 +12,10 @@ class QuestionCategoryPolicy
 {
     public function viewAny(User $user): bool
     {
+        if (request()->attributes->get('instructorMembership') instanceof TenantUser) {
+            return true;
+        }
+
         return $this->auth()->hasPermission($user, currentTenant(), 'questions.view');
     }
 

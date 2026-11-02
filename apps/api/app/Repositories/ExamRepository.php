@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\Question;
+use App\Models\TenantUser;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -17,8 +19,14 @@ class ExamRepository
 
     public function query(): Builder
     {
-        return Exam::query()
+        $query = Exam::query()
             ->where('tenant_id', currentTenant()->id);
+
+        if ($instructor = $this->instructorMembership()) {
+            $query->where('created_by_tenant_user_id', $instructor->id);
+        }
+
+        return $query;
     }
 
     public function list(array $params = []): LengthAwarePaginator
@@ -89,6 +97,8 @@ class ExamRepository
             ->withTrashed()
             ->where('tenant_id', currentTenant()->id)
             ->where('id', $id)
+            ->when($this->instructorMembership(), fn (Builder $query, TenantUser $instructor) => $query
+                ->where('created_by_tenant_user_id', $instructor->id))
             ->first();
 
         if ($exam) {
@@ -151,27 +161,41 @@ class ExamRepository
 
     public function countByStatus(string $status): int
     {
-        return Exam::query()
-            ->where('tenant_id', currentTenant()->id)
-            ->where('status', $status)
-            ->count();
+        return $this->query()->where('status', $status)->count();
     }
 
     public function metricTotals(): array
     {
         $tenantId = currentTenant()->id;
+        $questions = Question::query()->where('tenant_id', $tenantId);
+        $attempts = ExamAttempt::query()->where('tenant_id', $tenantId)
+            ->whereHas('exam', fn (Builder $query) => $query
+                ->where('tenant_id', $tenantId)
+                ->when($this->instructorMembership(), fn (Builder $query, TenantUser $instructor) => $query
+                    ->where('created_by_tenant_user_id', $instructor->id)));
+
+        if ($instructor = $this->instructorMembership()) {
+            $questions->where('created_by_tenant_user_id', $instructor->id);
+        }
 
         return [
-            'total' => Exam::query()->where('tenant_id', $tenantId)->whereNull('deleted_at')->count(),
-            'published' => Exam::query()->where('tenant_id', $tenantId)->where('status', 'published')->count(),
-            'draft' => Exam::query()->where('tenant_id', $tenantId)->where('status', 'draft')->count(),
-            'archived' => Exam::query()->where('tenant_id', $tenantId)->where('status', 'archived')->count(),
+            'total' => $this->query()->count(),
+            'published' => $this->query()->where('status', 'published')->count(),
+            'draft' => $this->query()->where('status', 'draft')->count(),
+            'archived' => $this->query()->where('status', 'archived')->count(),
             'pinned' => $this->pinned()->count(),
             'featured' => $this->featured()->count(),
             'favorites' => $this->favoritesCount(),
-            'questions' => \App\Models\Question::query()->where('tenant_id', $tenantId)->whereNull('deleted_at')->count(),
-            'attempts' => ExamAttempt::query()->where('tenant_id', $tenantId)->count(),
+            'questions' => $questions->count(),
+            'attempts' => $attempts->count(),
         ];
+    }
+
+    private function instructorMembership(): ?TenantUser
+    {
+        $membership = request()->attributes->get('instructorMembership');
+
+        return $membership instanceof TenantUser ? $membership : null;
     }
 
     protected function withCounts(Builder $query): Builder

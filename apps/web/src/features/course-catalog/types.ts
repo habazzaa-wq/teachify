@@ -22,6 +22,12 @@ export interface CatalogCourse {
     name: string | null;
     avatar: string | null;
   } | null;
+  instructors: Array<{
+    id: string;
+    name: string | null;
+    avatar: string | null;
+    role: string;
+  }>;
   educationalStage: { id: string; name: string } | null;
   subject: { id: string; name: string } | null;
   category: { id: string; name: string; slug: string } | null;

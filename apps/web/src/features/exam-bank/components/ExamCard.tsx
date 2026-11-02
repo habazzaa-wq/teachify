@@ -26,8 +26,8 @@ import {
   AppDropdownMenuContent,
   AppDropdownMenuItem,
   AppDropdownMenuSeparator,
-  PermissionGuard,
 } from "@/components/ui";
+import { ExamPermissionGuard } from "./ExamPermissionGuard";
 import {
   StudioSurfaceCard,
   StudioStatusChip,
@@ -276,29 +276,29 @@ function ExamCardBase({
                 </AppDropdownMenuTrigger>
                 <AppDropdownMenuContent align="end" className="w-44">
                   {exam.status !== "published" ? (
-                    <PermissionGuard permission="exams.publish">
+                    <ExamPermissionGuard permission="exams.publish">
                       <AppDropdownMenuItem onClick={() => onPublish?.(exam.id)}>
                         <Send className="h-4 w-4" />
                         نشر
                       </AppDropdownMenuItem>
-                    </PermissionGuard>
+                    </ExamPermissionGuard>
                   ) : null}
-                  <PermissionGuard permission="exams.create">
+                  <ExamPermissionGuard permission="exams.create">
                     <AppDropdownMenuItem onClick={() => onDuplicate?.(exam.id)}>
                       <Copy className="h-4 w-4" />
                       نسخ
                     </AppDropdownMenuItem>
-                  </PermissionGuard>
+                  </ExamPermissionGuard>
                   {exam.status !== "archived" ? (
-                    <PermissionGuard permission="exams.archive">
+                    <ExamPermissionGuard permission="exams.archive">
                       <AppDropdownMenuItem onClick={() => onArchive?.(exam.id)}>
                         <ArchiveIcon className="h-4 w-4" />
                         أرشفة
                       </AppDropdownMenuItem>
-                    </PermissionGuard>
+                    </ExamPermissionGuard>
                   ) : null}
                   <AppDropdownMenuSeparator />
-                  <PermissionGuard permission="exams.delete">
+                  <ExamPermissionGuard permission="exams.delete">
                     <AppDropdownMenuItem
                       className="text-studio-danger focus:text-studio-danger"
                       onClick={() => onDelete?.(exam.id)}
@@ -306,7 +306,7 @@ function ExamCardBase({
                       <Trash2 className="h-4 w-4" />
                       حذف
                     </AppDropdownMenuItem>
-                  </PermissionGuard>
+                  </ExamPermissionGuard>
                 </AppDropdownMenuContent>
               </AppDropdownMenu>
             </div>

@@ -23,8 +23,6 @@ use App\Http\Controllers\Api\v1\Auth\InvitationController;
 use App\Http\Controllers\Api\v1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\v1\Auth\RoleController;
 use App\Http\Controllers\Api\v1\Auth\TenantUserController;
-use App\Http\Controllers\Api\v1\Instructor\InstructorAuthController;
-use App\Http\Controllers\Api\v1\Instructor\InstructorController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateTemplateController;
 use App\Http\Controllers\Api\v1\Certificates\CertificateVerificationController;
@@ -70,6 +68,9 @@ use App\Http\Controllers\Api\v1\ExamBank\QuestionCategoryController;
 use App\Http\Controllers\Api\v1\ExamBank\QuestionController;
 use App\Http\Controllers\Api\v1\ExamBank\ScannedQuestionController;
 use App\Http\Controllers\Api\v1\HealthController;
+use App\Http\Controllers\Api\v1\Instructor\InstructorAuthController;
+use App\Http\Controllers\Api\v1\Instructor\InstructorController;
+use App\Http\Controllers\Api\v1\Instructor\InstructorWorkspaceController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
@@ -104,6 +105,7 @@ use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
+use App\Http\Controllers\Api\v1\Public\PublicInstructorController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
 use App\Http\Controllers\Api\v1\PublicFooterController;
@@ -140,7 +142,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('platform')->group(function () {
     Route::prefix('auth')->group(function () {
-        Route::post('/login', [PlatformAuthController::class, 'login'])->middleware('throttle:5,1');
+        Route::post('/login', [PlatformAuthController::class, 'login'])->middleware('throttle:platform-login');
 
         Route::middleware(['auth:sanctum', 'platform.token', 'platform.admin'])->group(function () {
             Route::post('/logout', [PlatformAuthController::class, 'logout']);
@@ -174,6 +176,7 @@ Route::prefix('v1')->group(function () {
             ->name('refresh');
         Route::middleware(['auth:sanctum', 'instructor.context'])->group(function () {
             Route::get('/me', [InstructorAuthController::class, 'me'])->name('me');
+            Route::put('/profile', [InstructorAuthController::class, 'updateProfile'])->name('profile');
             Route::post('/change-password', [InstructorAuthController::class, 'changePassword'])
                 ->middleware('throttle:10,1')
                 ->name('change-password');
@@ -182,6 +185,92 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('instructor')->middleware(['auth:sanctum', 'instructor.context'])->group(function () {
+        Route::get('/workspace', [InstructorWorkspaceController::class, 'dashboard']);
+        Route::get('/students', [InstructorWorkspaceController::class, 'students']);
+        Route::get('/students/metrics', [InstructorWorkspaceController::class, 'studentMetrics']);
+        Route::get('/exams', [InstructorWorkspaceController::class, 'exams']);
+        Route::prefix('exam-bank')->name('instructor.exam-bank.')->group(function () {
+            Route::get('/exams/{exam}/grading-queue', [ExamManualGradingController::class, 'pendingQueue']);
+            Route::get('/exam-attempts/{attempt}/answers/{examQuestion}/pages', [ExamAnswerPageReadController::class, 'index'])
+                ->name('answer-pages.index');
+            Route::get('/exam-attempts/{attempt}/answers/{examQuestion}/pages/{page}', [ExamAnswerPageReadController::class, 'show'])
+                ->name('answer-pages.show');
+            Route::get('/exams/metrics', [ExamController::class, 'metrics']);
+            Route::get('/exams/recent', [ExamController::class, 'recent']);
+            Route::get('/exams/pinned', [ExamController::class, 'pinned']);
+            Route::get('/exams/favorites', [ExamController::class, 'favorites']);
+            Route::post('/exams/bulk/delete', [ExamController::class, 'bulkDelete']);
+            Route::post('/exams/bulk/restore', [ExamController::class, 'bulkRestore']);
+            Route::post('/exams/bulk/duplicate', [ExamController::class, 'bulkDuplicate']);
+            Route::post('/exams/bulk/archive', [ExamController::class, 'bulkArchive']);
+            Route::post('/exams/bulk/publish', [ExamController::class, 'bulkPublish']);
+            Route::get('/exams/{exam}/questions', [ExamController::class, 'questions']);
+            Route::post('/exams/{exam}/questions', [ExamController::class, 'addQuestion']);
+            Route::put('/exams/{exam}/questions', [ExamController::class, 'setQuestions']);
+            Route::post('/exams/{exam}/questions/reorder', [ExamController::class, 'reorderQuestions']);
+            Route::put('/exams/{exam}/questions/{question}', [ExamController::class, 'updateQuestionLink']);
+            Route::delete('/exams/{exam}/questions/{question}', [ExamController::class, 'removeQuestion']);
+            Route::patch('/exams/{exam}/status', [ExamController::class, 'updateStatus']);
+            Route::patch('/exams/{exam}/publish', [ExamController::class, 'publish']);
+            Route::patch('/exams/{exam}/archive', [ExamController::class, 'archive']);
+            Route::post('/exams/{exam}/restore', [ExamController::class, 'restore']);
+            Route::post('/exams/{exam}/duplicate', [ExamController::class, 'duplicate']);
+            Route::post('/exams/{exam}/pin', [ExamController::class, 'togglePinned']);
+            Route::post('/exams/{exam}/feature', [ExamController::class, 'toggleFeatured']);
+            Route::post('/exams/{exam}/favorite', [ExamController::class, 'toggleFavorite']);
+            Route::get('/exams/{exam}/analytics', [ExamAnalyticsController::class, 'exam']);
+            Route::apiResource('exams', ExamController::class);
+
+            Route::get('/questions/metrics', [QuestionController::class, 'metrics']);
+            Route::post('/questions/bulk/delete', [QuestionController::class, 'bulkDelete']);
+            Route::post('/questions/bulk/restore', [QuestionController::class, 'bulkRestore']);
+            Route::post('/questions/bulk/duplicate', [QuestionController::class, 'bulkDuplicate']);
+            Route::post('/questions/bulk/archive', [QuestionController::class, 'bulkArchive']);
+            Route::post('/questions/bulk/move-category', [QuestionController::class, 'bulkMoveCategory']);
+            Route::post('/questions/{question}/scan', [ScannedQuestionController::class, 'store']);
+            Route::delete('/questions/{question}/scan', [ScannedQuestionController::class, 'destroy']);
+            Route::apiResource('questions', QuestionController::class);
+
+            Route::get('/categories/tree', [QuestionCategoryController::class, 'tree']);
+            Route::get('/categories', [QuestionCategoryController::class, 'index']);
+            Route::get('/banks', [QuestionBankController::class, 'index']);
+            Route::get('/analytics/overview', [ExamAnalyticsController::class, 'overview']);
+        });
+        Route::get('/grading/queue', [InstructorWorkspaceController::class, 'gradingQueue']);
+        Route::get('/grading/exam-answers', [InstructorWorkspaceController::class, 'examGradingQueue']);
+        Route::get('/grading/overview', [ExamManualGradingController::class, 'overview']);
+        Route::put('/grading/exam-attempts/{attempt}/answers/{answer}', [InstructorWorkspaceController::class, 'gradeExamAnswer'])
+            ->middleware('throttle:60,1');
+        Route::get('/media-library/assets', [MediaLibraryController::class, 'index']);
+        Route::get('/media-library/assets/{id}', [MediaLibraryController::class, 'show']);
+        Route::put('/media-library/assets/{id}', [MediaLibraryController::class, 'update']);
+        Route::delete('/media-library/assets/{id}', [MediaLibraryController::class, 'destroy']);
+        Route::post('/media-library/assets/{id}/restore', [MediaLibraryController::class, 'restore']);
+        Route::post('/media-library/assets/{id}/duplicate', [MediaLibraryController::class, 'duplicate']);
+        Route::put('/media-library/assets/{id}/rename', [MediaLibraryController::class, 'rename']);
+        Route::put('/media-library/assets/{id}/move', [MediaLibraryController::class, 'move']);
+        Route::post('/media-library/assets/{id}/favorite', [MediaLibraryController::class, 'favorite']);
+        Route::post('/media-library/assets/{id}/pin', [MediaLibraryController::class, 'pin']);
+        Route::post('/media-library/assets/{id}/archive', [MediaLibraryController::class, 'archiveAsset']);
+        Route::post('/media-library/assets/bulk/delete', [MediaLibraryController::class, 'bulkDelete']);
+        Route::post('/media-library/assets/bulk/restore', [MediaLibraryController::class, 'bulkRestore']);
+        Route::post('/media-library/assets/bulk/move', [MediaLibraryController::class, 'bulkMove']);
+        Route::post('/media-library/assets/bulk/tag', [MediaLibraryController::class, 'bulkTag']);
+        Route::get('/media-library/folders/tree', [MediaLibraryFolderController::class, 'tree']);
+        Route::get('/media-library/folders', [MediaLibraryFolderController::class, 'index']);
+        Route::post('/media-library/folders', [MediaLibraryFolderController::class, 'store']);
+        Route::get('/media-library/folders/{id}', [MediaLibraryFolderController::class, 'show']);
+        Route::put('/media-library/folders/{id}', [MediaLibraryFolderController::class, 'update']);
+        Route::put('/media-library/folders/{id}/move', [MediaLibraryFolderController::class, 'move']);
+        Route::delete('/media-library/folders/{id}', [MediaLibraryFolderController::class, 'destroy']);
+        Route::get('/media-library/folders/{id}/breadcrumbs', [MediaLibraryFolderController::class, 'breadcrumbs']);
+        Route::get('/media-library/metrics', [MediaLibraryMetricsController::class, 'index']);
+        Route::get('/media-library/storage', [MediaLibraryMetricsController::class, 'storage']);
+        Route::get('/media-library/recent', [MediaLibraryMetricsController::class, 'recent']);
+        Route::post('/media-library/upload/intent', [MediaLibraryUploadController::class, 'uploadIntent']);
+        Route::post('/media-library/upload/{session}/confirm', [MediaLibraryUploadController::class, 'confirmUpload']);
+        Route::post('/media-library/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
+
         Route::get('/courses', [CourseController::class, 'index']);
         Route::post('/courses', [CourseController::class, 'store']);
         Route::get('/courses/{course}', [CourseController::class, 'show']);
@@ -304,6 +393,9 @@ Route::prefix('v1')->group(function () {
         ->name('media.serve');
 
     // Public course routes (no auth required)
+    Route::get('/public/instructors', [PublicInstructorController::class, 'index']);
+    Route::get('/public/instructors/{instructor}', [PublicInstructorController::class, 'show'])
+        ->whereNumber('instructor');
     Route::get('/public/courses', [PublicCourseController::class, 'index']);
     Route::get('/public/courses/{slug}', [PublicCourseController::class, 'show']);
     Route::get('/public/courses/{slug}/modules', [PublicCourseController::class, 'modules']);
@@ -333,8 +425,12 @@ Route::prefix('v1')->group(function () {
 
     // Authenticated routes
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
+        Route::get('/instructors/options', [InstructorController::class, 'options']);
         Route::get('/instructors', [InstructorController::class, 'index']);
         Route::post('/instructors', [InstructorController::class, 'store'])->middleware('throttle:10,1');
+        Route::delete('/instructors/{instructor}', [InstructorController::class, 'destroy']);
+        Route::patch('/instructors/{instructor}/status', [InstructorController::class, 'updateStatus']);
+        Route::post('/instructors/{instructor}/reset-password', [InstructorController::class, 'resetPassword'])->middleware('throttle:10,1');
 
         Route::get('/user', function (Request $request) {
             return $request->user();

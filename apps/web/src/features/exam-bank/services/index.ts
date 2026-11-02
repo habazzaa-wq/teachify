@@ -1,4 +1,5 @@
 import { api } from "@/services/api";
+import { instructorApi } from "@/features/instructors/api";
 import type {
   Exam,
   ExamAnalytics,
@@ -12,6 +13,49 @@ import type {
   QuestionFilterParams,
   QuestionType,
 } from "../types";
+
+type ExamBankRequestOptions = {
+  params?: Record<string, string | number | boolean | string[] | number[] | boolean[]>;
+  headers?: Record<string, string>;
+};
+
+function isInstructorExamBankPage(): boolean {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/");
+}
+
+async function requestExamBank<T>(
+  path: string,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  data?: unknown,
+  options?: ExamBankRequestOptions,
+): Promise<{ data: T }> {
+  if (isInstructorExamBankPage()) {
+    return {
+      data: await instructorApi.examBankRequest<T>(path, method, {
+        data,
+        params: options?.params,
+        multipart: options?.headers?.["Content-Type"] === "multipart/form-data",
+      }),
+    };
+  }
+
+  const response = await api.request<T>({
+    url: path,
+    method,
+    data,
+    params: options?.params,
+    headers: options?.headers,
+  });
+  return { data: response.data };
+}
+
+const examBankApi = {
+  get: <T = any>(path: string, options?: ExamBankRequestOptions) => requestExamBank<T>(path, "GET", undefined, options),
+  post: <T = any>(path: string, data?: unknown, options?: ExamBankRequestOptions) => requestExamBank<T>(path, "POST", data, options),
+  put: <T = any>(path: string, data?: unknown, options?: ExamBankRequestOptions) => requestExamBank<T>(path, "PUT", data, options),
+  patch: <T = any>(path: string, data?: unknown, options?: ExamBankRequestOptions) => requestExamBank<T>(path, "PATCH", data, options),
+  delete: <T = any>(path: string, options?: ExamBankRequestOptions) => requestExamBank<T>(path, "DELETE", undefined, options),
+};
 
 function buildParams(params?: Record<string, unknown>): Record<string, string> {
   const q: Record<string, string> = {};
@@ -32,7 +76,7 @@ function buildParams(params?: Record<string, unknown>): Record<string, string> {
 export const examBankService = {
   // ---- Exams ----
   async listExams(params?: ExamFilterParams): Promise<PaginatedList<Exam>> {
-    const { data } = await api.get("/exam-bank/exams", { params: buildParams(params as Record<string, unknown>) });
+    const { data } = await examBankApi.get("/exam-bank/exams", { params: buildParams(params as Record<string, unknown>) });
     return {
       data: (data.data ?? []).map((e: Exam) => e),
       total: Number(data.total ?? 0),
@@ -42,106 +86,106 @@ export const examBankService = {
     };
   },
   async getExam(id: string | number): Promise<Exam> {
-    const { data } = await api.get(`/exam-bank/exams/${id}`);
+    const { data } = await examBankApi.get(`/exam-bank/exams/${id}`);
     return data.data as Exam;
   },
   async createExam(payload: Record<string, unknown>): Promise<Exam> {
-    const { data } = await api.post("/exam-bank/exams", payload);
+    const { data } = await examBankApi.post("/exam-bank/exams", payload);
     return data.data as Exam;
   },
   async updateExam(id: string | number, payload: Record<string, unknown>): Promise<Exam> {
-    const { data } = await api.put(`/exam-bank/exams/${id}`, payload);
+    const { data } = await examBankApi.put(`/exam-bank/exams/${id}`, payload);
     return data.data as Exam;
   },
   async deleteExam(id: string | number): Promise<void> {
-    await api.delete(`/exam-bank/exams/${id}`);
+    await examBankApi.delete(`/exam-bank/exams/${id}`);
   },
   async setExamStatus(id: string | number, status: string): Promise<Exam> {
-    const { data } = await api.patch(`/exam-bank/exams/${id}/status`, { status });
+    const { data } = await examBankApi.patch(`/exam-bank/exams/${id}/status`, { status });
     return data.data as Exam;
   },
   async publishExam(id: string | number): Promise<Exam> {
-    const { data } = await api.patch(`/exam-bank/exams/${id}/publish`);
+    const { data } = await examBankApi.patch(`/exam-bank/exams/${id}/publish`);
     return data.data as Exam;
   },
   async archiveExam(id: string | number): Promise<Exam> {
-    const { data } = await api.patch(`/exam-bank/exams/${id}/archive`);
+    const { data } = await examBankApi.patch(`/exam-bank/exams/${id}/archive`);
     return data.data as Exam;
   },
   async restoreExam(id: string | number): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/restore`);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/restore`);
     return data.data as Exam;
   },
   async duplicateExam(id: string | number): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/duplicate`);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/duplicate`);
     return data.data as Exam;
   },
   async togglePinned(id: string | number): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/pin`);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/pin`);
     return data.data as Exam;
   },
   async toggleFeatured(id: string | number): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/feature`);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/feature`);
     return data.data as Exam;
   },
   async toggleFavorite(id: string | number): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/favorite`);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/favorite`);
     return data.data as Exam;
   },
   async bulkDeleteExams(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/exams/bulk/delete", { ids });
+    await examBankApi.post("/exam-bank/exams/bulk/delete", { ids });
   },
   async bulkRestoreExams(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/exams/bulk/restore", { ids });
+    await examBankApi.post("/exam-bank/exams/bulk/restore", { ids });
   },
   async bulkDuplicateExams(ids: number[]): Promise<Exam[]> {
-    const { data } = await api.post("/exam-bank/exams/bulk/duplicate", { ids });
+    const { data } = await examBankApi.post("/exam-bank/exams/bulk/duplicate", { ids });
     return (data.data ?? []).map((e: Exam) => e);
   },
   async bulkArchiveExams(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/exams/bulk/archive", { ids });
+    await examBankApi.post("/exam-bank/exams/bulk/archive", { ids });
   },
   async bulkPublishExams(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/exams/bulk/publish", { ids });
+    await examBankApi.post("/exam-bank/exams/bulk/publish", { ids });
   },
   async recentExams(): Promise<Exam[]> {
-    const { data } = await api.get("/exam-bank/exams/recent");
+    const { data } = await examBankApi.get("/exam-bank/exams/recent");
     return (data.data ?? []).map((e: Exam) => e);
   },
   async pinnedExams(): Promise<Exam[]> {
-    const { data } = await api.get("/exam-bank/exams/pinned");
+    const { data } = await examBankApi.get("/exam-bank/exams/pinned");
     return (data.data ?? []).map((e: Exam) => e);
   },
   async favoriteExams(): Promise<Exam[]> {
-    const { data } = await api.get("/exam-bank/exams/favorites");
+    const { data } = await examBankApi.get("/exam-bank/exams/favorites");
     return (data.data ?? []).map((e: Exam) => e);
   },
   async examMetrics(): Promise<Record<string, number>> {
-    const { data } = await api.get("/exam-bank/exams/metrics");
+    const { data } = await examBankApi.get("/exam-bank/exams/metrics");
     return (data.data ?? {}) as Record<string, number>;
   },
 
   // ---- Exam questions ----
   async getExamQuestions(id: string | number): Promise<ExamQuestion[]> {
-    const { data } = await api.get(`/exam-bank/exams/${id}/questions`);
+    const { data } = await examBankApi.get(`/exam-bank/exams/${id}/questions`);
     return (data.data ?? []).map((q: ExamQuestion) => q);
   },
   async addExamQuestion(
     id: string | number,
     payload: { question_id: number; section?: string; points?: number },
   ): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/questions`, payload);
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/questions`, payload);
     return data.data as Exam;
   },
   async setExamQuestions(
     id: string | number,
     items: Array<{ question_id: number; section?: string; points?: number }>,
   ): Promise<Exam> {
-    const { data } = await api.put(`/exam-bank/exams/${id}/questions`, { items });
+    const { data } = await examBankApi.put(`/exam-bank/exams/${id}/questions`, { items });
     return data.data as Exam;
   },
   async reorderExamQuestions(id: string | number, order: number[]): Promise<Exam> {
-    const { data } = await api.post(`/exam-bank/exams/${id}/questions/reorder`, { order });
+    const { data } = await examBankApi.post(`/exam-bank/exams/${id}/questions/reorder`, { order });
     return data.data as Exam;
   },
   async updateExamQuestionLink(
@@ -149,17 +193,17 @@ export const examBankService = {
     questionId: string | number,
     payload: { section?: string; points?: number; order?: number },
   ): Promise<Exam> {
-    const { data } = await api.put(`/exam-bank/exams/${id}/questions/${questionId}`, payload);
+    const { data } = await examBankApi.put(`/exam-bank/exams/${id}/questions/${questionId}`, payload);
     return data.data as Exam;
   },
   async removeExamQuestion(id: string | number, questionId: string | number): Promise<Exam> {
-    const { data } = await api.delete(`/exam-bank/exams/${id}/questions/${questionId}`);
+    const { data } = await examBankApi.delete(`/exam-bank/exams/${id}/questions/${questionId}`);
     return data.data as Exam;
   },
 
   // ---- Questions ----
   async listQuestions(params?: QuestionFilterParams): Promise<PaginatedList<Question>> {
-    const { data } = await api.get("/exam-bank/questions", { params: buildParams(params as Record<string, unknown>) });
+    const { data } = await examBankApi.get("/exam-bank/questions", { params: buildParams(params as Record<string, unknown>) });
     return {
       data: (data.data ?? []).map((q: Question) => q),
       total: Number(data.total ?? 0),
@@ -169,78 +213,78 @@ export const examBankService = {
     };
   },
   async getQuestion(id: string | number): Promise<Question> {
-    const { data } = await api.get(`/exam-bank/questions/${id}`);
+    const { data } = await examBankApi.get(`/exam-bank/questions/${id}`);
     return data.data as Question;
   },
   async createQuestion(payload: Record<string, unknown>): Promise<Question> {
-    const { data } = await api.post("/exam-bank/questions", payload);
+    const { data } = await examBankApi.post("/exam-bank/questions", payload);
     return data.data as Question;
   },
   async updateQuestion(id: string | number, payload: Record<string, unknown>): Promise<Question> {
-    const { data } = await api.put(`/exam-bank/questions/${id}`, payload);
+    const { data } = await examBankApi.put(`/exam-bank/questions/${id}`, payload);
     return data.data as Question;
   },
   async deleteQuestion(id: string | number): Promise<void> {
-    await api.delete(`/exam-bank/questions/${id}`);
+    await examBankApi.delete(`/exam-bank/questions/${id}`);
   },
   async setQuestionStatus(id: string | number, status: string): Promise<Question> {
-    const { data } = await api.patch(`/exam-bank/questions/${id}/status`, { status });
+    const { data } = await examBankApi.patch(`/exam-bank/questions/${id}/status`, { status });
     return data.data as Question;
   },
   async publishQuestion(id: string | number): Promise<Question> {
-    const { data } = await api.patch(`/exam-bank/questions/${id}/publish`);
+    const { data } = await examBankApi.patch(`/exam-bank/questions/${id}/publish`);
     return data.data as Question;
   },
   async archiveQuestion(id: string | number): Promise<Question> {
-    const { data } = await api.patch(`/exam-bank/questions/${id}/archive`);
+    const { data } = await examBankApi.patch(`/exam-bank/questions/${id}/archive`);
     return data.data as Question;
   },
   async restoreQuestion(id: string | number): Promise<Question> {
-    const { data } = await api.post(`/exam-bank/questions/${id}/restore`);
+    const { data } = await examBankApi.post(`/exam-bank/questions/${id}/restore`);
     return data.data as Question;
   },
   async duplicateQuestion(id: string | number): Promise<Question> {
-    const { data } = await api.post(`/exam-bank/questions/${id}/duplicate`);
+    const { data } = await examBankApi.post(`/exam-bank/questions/${id}/duplicate`);
     return data.data as Question;
   },
   async bulkDeleteQuestions(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/questions/bulk/delete", { ids });
+    await examBankApi.post("/exam-bank/questions/bulk/delete", { ids });
   },
   async bulkRestoreQuestions(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/questions/bulk/restore", { ids });
+    await examBankApi.post("/exam-bank/questions/bulk/restore", { ids });
   },
   async bulkDuplicateQuestions(ids: number[]): Promise<Question[]> {
-    const { data } = await api.post("/exam-bank/questions/bulk/duplicate", { ids });
+    const { data } = await examBankApi.post("/exam-bank/questions/bulk/duplicate", { ids });
     return (data.data ?? []).map((q: Question) => q);
   },
   async bulkArchiveQuestions(ids: number[]): Promise<void> {
-    await api.post("/exam-bank/questions/bulk/archive", { ids });
+    await examBankApi.post("/exam-bank/questions/bulk/archive", { ids });
   },
   async bulkMoveQuestions(ids: number[], categoryId: number, bankId?: number | null): Promise<void> {
-    await api.post("/exam-bank/questions/bulk/move-category", { ids, category_id: categoryId, bank_id: bankId ?? null });
+    await examBankApi.post("/exam-bank/questions/bulk/move-category", { ids, category_id: categoryId, bank_id: bankId ?? null });
   },
   async uploadScan(id: string | number, file: File, mode?: string): Promise<Question> {
     const formData = new FormData();
     formData.append("file", file);
     if (mode) formData.append("mode", mode);
-    const { data } = await api.post(`/exam-bank/questions/${id}/scan`, formData, {
+    const { data } = await examBankApi.post(`/exam-bank/questions/${id}/scan`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return data.data as Question;
   },
   async removeScan(id: string | number): Promise<Question> {
-    const { data } = await api.delete(`/exam-bank/questions/${id}/scan`);
+    const { data } = await examBankApi.delete(`/exam-bank/questions/${id}/scan`);
     return data.data as Question;
   },
 
   async questionMetrics(): Promise<{ total: number; published: number; draft: number; archived: number; byType: Record<string, number> }> {
-    const { data } = await api.get("/exam-bank/questions/metrics");
+    const { data } = await examBankApi.get("/exam-bank/questions/metrics");
     return (data.data ?? { byType: {} }) as { total: number; published: number; draft: number; archived: number; byType: Record<string, number> };
   },
 
   // ---- Categories ----
   async listCategories(params?: Record<string, unknown>): Promise<PaginatedList<QuestionCategory>> {
-    const { data } = await api.get("/exam-bank/categories", { params: buildParams(params) });
+    const { data } = await examBankApi.get("/exam-bank/categories", { params: buildParams(params) });
     return {
       data: (data.data ?? []).map((c: QuestionCategory) => c),
       total: Number(data.total ?? 0),
@@ -250,28 +294,28 @@ export const examBankService = {
     };
   },
   async categoryTree(): Promise<QuestionCategory[]> {
-    const { data } = await api.get("/exam-bank/categories/tree");
+    const { data } = await examBankApi.get("/exam-bank/categories/tree");
     return (data.data ?? []).map((c: QuestionCategory) => c);
   },
   async createCategory(payload: Record<string, unknown>): Promise<QuestionCategory> {
-    const { data } = await api.post("/exam-bank/categories", payload);
+    const { data } = await examBankApi.post("/exam-bank/categories", payload);
     return data.data as QuestionCategory;
   },
   async updateCategory(id: string | number, payload: Record<string, unknown>): Promise<QuestionCategory> {
-    const { data } = await api.put(`/exam-bank/categories/${id}`, payload);
+    const { data } = await examBankApi.put(`/exam-bank/categories/${id}`, payload);
     return data.data as QuestionCategory;
   },
   async deleteCategory(id: string | number): Promise<void> {
-    await api.delete(`/exam-bank/categories/${id}`);
+    await examBankApi.delete(`/exam-bank/categories/${id}`);
   },
   async restoreCategory(id: string | number): Promise<QuestionCategory> {
-    const { data } = await api.post(`/exam-bank/categories/${id}/restore`);
+    const { data } = await examBankApi.post(`/exam-bank/categories/${id}/restore`);
     return data.data as QuestionCategory;
   },
 
   // ---- Banks ----
   async listBanks(params?: Record<string, unknown>): Promise<PaginatedList<QuestionBank>> {
-    const { data } = await api.get("/exam-bank/banks", { params: buildParams(params) });
+    const { data } = await examBankApi.get("/exam-bank/banks", { params: buildParams(params) });
     return {
       data: (data.data ?? []).map((b: QuestionBank) => b),
       total: Number(data.total ?? 0),
@@ -281,32 +325,32 @@ export const examBankService = {
     };
   },
   async createBank(payload: Record<string, unknown>): Promise<QuestionBank> {
-    const { data } = await api.post("/exam-bank/banks", payload);
+    const { data } = await examBankApi.post("/exam-bank/banks", payload);
     return data.data as QuestionBank;
   },
   async updateBank(id: string | number, payload: Record<string, unknown>): Promise<QuestionBank> {
-    const { data } = await api.put(`/exam-bank/banks/${id}`, payload);
+    const { data } = await examBankApi.put(`/exam-bank/banks/${id}`, payload);
     return data.data as QuestionBank;
   },
   async setBankStatus(id: string | number, status: string): Promise<QuestionBank> {
-    const { data } = await api.patch(`/exam-bank/banks/${id}/status`, { status });
+    const { data } = await examBankApi.patch(`/exam-bank/banks/${id}/status`, { status });
     return data.data as QuestionBank;
   },
   async deleteBank(id: string | number): Promise<void> {
-    await api.delete(`/exam-bank/banks/${id}`);
+    await examBankApi.delete(`/exam-bank/banks/${id}`);
   },
   async restoreBank(id: string | number): Promise<QuestionBank> {
-    const { data } = await api.post(`/exam-bank/banks/${id}/restore`);
+    const { data } = await examBankApi.post(`/exam-bank/banks/${id}/restore`);
     return data.data as QuestionBank;
   },
 
   // ---- Analytics ----
   async analyticsOverview(): Promise<ExamAnalyticsOverview> {
-    const { data } = await api.get("/exam-bank/analytics/overview");
+    const { data } = await examBankApi.get("/exam-bank/analytics/overview");
     return (data.data ?? { exams: {}, attempts: {}, questions: { total: 0, byType: {} } }) as ExamAnalyticsOverview;
   },
   async examAnalytics(id: string | number): Promise<ExamAnalytics> {
-    const { data } = await api.get(`/exam-bank/exams/${id}/analytics`);
+    const { data } = await examBankApi.get(`/exam-bank/exams/${id}/analytics`);
     return data.data as ExamAnalytics;
   },
 };

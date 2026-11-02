@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\ExamBank;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ExamResource;
 use App\Models\Exam;
+use App\Models\Question;
 use App\Repositories\ExamRepository;
 use App\Services\ExamBank\ExamService;
 use Illuminate\Http\JsonResponse;
@@ -89,7 +90,7 @@ class ExamController extends Controller
         Gate::authorize('view', $exam);
 
         return response()->json([
-            'data' => new ExamResource($exam->load(['examQuestions.question.category', 'creator.user'])),
+            'data' => new ExamResource($this->loadExamQuestions($exam)->load('creator.user')),
         ]);
     }
 
@@ -235,9 +236,16 @@ class ExamController extends Controller
         abort_if($exam->tenant_id !== currentTenant()->id, 404);
         Gate::authorize('view', $exam);
 
+        $instructor = request()->attributes->get('instructorMembership');
+        $questions = $exam->examQuestions()->with('question.category');
+        if ($instructor) {
+            $questions->whereHas('question', fn ($query) => $query
+                ->where('created_by_tenant_user_id', $instructor->id));
+        }
+
         return response()->json([
             'data' => \App\Http\Resources\ExamQuestionResource::collection(
-                $exam->examQuestions()->with('question.category')->get()
+                $questions->get()
             ),
         ]);
     }
@@ -252,6 +260,7 @@ class ExamController extends Controller
             'section' => ['nullable', 'string', 'max:120'],
             'points' => ['nullable', 'integer', 'min:0'],
         ]);
+        $this->assertInstructorQuestionOwnership($request, [$validated['question_id']]);
 
         $exam = $this->service->addQuestion(
             $exam,
@@ -262,7 +271,7 @@ class ExamController extends Controller
 
         return response()->json([
             'message' => 'Question added to exam.',
-            'data' => new ExamResource($exam->load('examQuestions.question.category')),
+            'data' => new ExamResource($this->loadExamQuestions($exam)),
         ]);
     }
 
@@ -276,25 +285,27 @@ class ExamController extends Controller
             'points' => ['nullable', 'integer', 'min:0'],
             'order' => ['nullable', 'integer', 'min:1'],
         ]);
+        $this->assertInstructorQuestionOwnership($request, [(int) $question->id]);
 
         $exam = $this->service->updateQuestionLink($exam, (int) $question->id, $validated);
 
         return response()->json([
             'message' => 'Exam question updated.',
-            'data' => new ExamResource($exam->load('examQuestions.question.category')),
+            'data' => new ExamResource($this->loadExamQuestions($exam)),
         ]);
     }
 
-    public function removeQuestion(Exam $exam, Question $question): JsonResponse
+    public function removeQuestion(Request $request, Exam $exam, Question $question): JsonResponse
     {
         abort_if($exam->tenant_id !== currentTenant()->id, 404);
         Gate::authorize('update', $exam);
+        $this->assertInstructorQuestionOwnership($request, [(int) $question->id]);
 
         $exam = $this->service->removeQuestion($exam, (int) $question->id);
 
         return response()->json([
             'message' => 'Question removed from exam.',
-            'data' => new ExamResource($exam->load('examQuestions.question.category')),
+            'data' => new ExamResource($this->loadExamQuestions($exam)),
         ]);
     }
 
@@ -312,7 +323,7 @@ class ExamController extends Controller
 
         return response()->json([
             'message' => 'Exam questions reordered.',
-            'data' => new ExamResource($exam->load('examQuestions.question.category')),
+            'data' => new ExamResource($this->loadExamQuestions($exam)),
         ]);
     }
 
@@ -327,12 +338,16 @@ class ExamController extends Controller
             'items.*.section' => ['nullable', 'string', 'max:120'],
             'items.*.points' => ['nullable', 'integer', 'min:0'],
         ]);
+        $this->assertInstructorQuestionOwnership(
+            $request,
+            array_column($validated['items'], 'question_id'),
+        );
 
         $exam = $this->service->setQuestions($exam, $validated['items']);
 
         return response()->json([
             'message' => 'Exam questions set.',
-            'data' => new ExamResource($exam->load('examQuestions.question.category')),
+            'data' => new ExamResource($this->loadExamQuestions($exam)),
         ]);
     }
 
@@ -451,5 +466,32 @@ class ExamController extends Controller
             'pinned' => ['sometimes', 'boolean'],
             'featured' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    private function assertInstructorQuestionOwnership(Request $request, array $questionIds): void
+    {
+        $instructor = $request->attributes->get('instructorMembership');
+        if (! $instructor) {
+            return;
+        }
+
+        $ownedCount = Question::query()
+            ->where('tenant_id', currentTenant()->id)
+            ->where('created_by_tenant_user_id', $instructor->id)
+            ->whereIn('id', array_unique($questionIds))
+            ->count();
+
+        abort_unless($ownedCount === count(array_unique($questionIds)), 404);
+    }
+
+    private function loadExamQuestions(Exam $exam): Exam
+    {
+        $questions = $exam->examQuestions()->with('question.category');
+        if ($instructor = request()->attributes->get('instructorMembership')) {
+            $questions->whereHas('question', fn ($query) => $query
+                ->where('created_by_tenant_user_id', $instructor->id));
+        }
+
+        return $exam->setRelation('examQuestions', $questions->get());
     }
 }

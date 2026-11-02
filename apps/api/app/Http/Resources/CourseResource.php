@@ -13,6 +13,24 @@ class CourseResource extends JsonResource
     public function toArray(Request $request): array
     {
         $primaryInstructor = $this->primaryInstructor;
+        $instructorAttribution = collect($this->instructor_attribution ?? []);
+        $instructors = $this->instructors
+            ->where('is_visible', true)
+            ->map(fn ($assignment) => [
+                'id' => (string) $assignment->membership?->id,
+                'assignmentId' => $assignment->id,
+                'name' => $assignment->membership?->user?->name ?? '',
+                'avatar' => $assignment->membership?->avatar ?? $assignment->membership?->user?->avatar,
+                'role' => $assignment->role,
+            ])
+            ->concat($instructorAttribution)
+            ->unique(fn (array $instructor) => $instructor['id'] ?? $instructor['name'])
+            ->values();
+        $primaryInstructorData = $primaryInstructor ? [
+            'id' => (string) $primaryInstructor->id,
+            'name' => $primaryInstructor->user?->name ?? '',
+            'avatar' => $primaryInstructor->avatar ?? $primaryInstructor->user?->avatar,
+        ] : $instructorAttribution->first();
 
         return [
             'id' => (string) $this->id,
@@ -52,11 +70,8 @@ class CourseResource extends JsonResource
             'requirements' => $this->requirements ?? [],
             'learningOutcomes' => $this->learning_outcomes ?? [],
             'targetAudience' => $this->target_audience ?? [],
-            'instructor' => $primaryInstructor ? [
-                'id' => (string) $primaryInstructor->id,
-                'name' => $primaryInstructor->user?->name,
-                'avatar' => $primaryInstructor->avatar ?? $primaryInstructor->user?->avatar,
-            ] : null,
+            'instructor' => $primaryInstructorData,
+            'instructors' => $instructors,
             'educationalStage' => $this->educationalStage ? [
                 'id' => (string) $this->educationalStage->id,
                 'name' => $this->educationalStage->name,

@@ -36,6 +36,7 @@ export interface AuthTenant {
   platform_plan_id?: number | null;
   platform_plan?: AuthTenantPlan | null;
   subscription?: Subscription | null;
+  feature_flags?: FeatureFlags | null;
 }
 
 export interface AuthTenantPlan {

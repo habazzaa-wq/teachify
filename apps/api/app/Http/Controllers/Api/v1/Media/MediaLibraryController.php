@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\v1\Media;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MediaLibraryAssetResource;
 use App\Models\MediaAsset;
+use App\Models\Tenant;
+use App\Models\TenantUser;
 use App\Services\Media\MediaLibraryAssetService;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
@@ -47,6 +49,11 @@ class MediaLibraryController extends Controller
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
+        $instructor = $request->attributes->get('instructorMembership');
+        if ($instructor) {
+            $params['owner_tenant_user_id'] = $instructor->id;
+        }
+
         $result = $this->assets->list($tenant, $params);
 
         return response()->json([
@@ -67,7 +74,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('view', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
 
         return response()->json([
             'data' => new MediaLibraryAssetResource($asset),
@@ -79,7 +86,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('update', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
 
         $data = $request->validate([
             'title' => 'nullable|string|max:255',
@@ -99,12 +106,12 @@ class MediaLibraryController extends Controller
         ]);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
         Gate::authorize('delete', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
 
         $this->assets->softDelete($tenant, $asset);
 
@@ -116,10 +123,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('delete', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = MediaAsset::query()
-            ->where('tenant_id', $tenant->id)
-            ->onlyTrashed()
-            ->findOrFail($id);
+        $asset = $this->assetQuery($request, $tenant, true)->findOrFail($id);
 
         $this->assets->restore($tenant, $asset);
 
@@ -133,7 +137,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('create', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
 
         $this->guard->guardFileUpload($tenant, $asset->size_bytes, $asset->mime_type);
 
@@ -153,7 +157,7 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
         $this->assets->rename($tenant, $asset, $data['title']);
 
         return response()->json([
@@ -170,7 +174,7 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
         $this->assets->move($tenant, $asset, $data['folder_id']);
 
         return response()->json([
@@ -183,7 +187,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('update', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
         $this->assets->toggleFavorite($tenant, $asset);
 
         return response()->json([
@@ -196,7 +200,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('update', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
         $this->assets->togglePin($tenant, $asset);
 
         return response()->json([
@@ -209,7 +213,7 @@ class MediaLibraryController extends Controller
         Gate::authorize('archive', MediaAsset::class);
 
         $tenant = currentTenant();
-        $asset = $this->assets->findOrFail($tenant, $id);
+        $asset = $this->assetQuery($request, $tenant)->findOrFail($id);
         $this->assets->archive($tenant, $asset);
 
         return response()->json([
@@ -227,6 +231,7 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
+        $this->assertOwnedIds($request, $tenant, $data['ids']);
 
         try {
             $result = $this->assets->bulkDelete($tenant, $data['ids']);
@@ -285,6 +290,7 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
+        $this->assertOwnedIds($request, $tenant, $data['ids'], true);
         $count = $this->assets->bulkRestore($tenant, $data['ids']);
 
         return response()->json(['message' => "{$count} assets restored successfully."]);
@@ -301,6 +307,7 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
+        $this->assertOwnedIds($request, $tenant, $data['ids']);
         $count = $this->assets->bulkMove($tenant, $data['ids'], $data['folder_id']);
 
         return response()->json(['message' => "{$count} assets moved successfully."]);
@@ -318,8 +325,40 @@ class MediaLibraryController extends Controller
         ]);
 
         $tenant = currentTenant();
+        $this->assertOwnedIds($request, $tenant, $data['ids']);
         $count = $this->assets->bulkTag($tenant, $data['ids'], $data['tags']);
 
         return response()->json(['message' => "{$count} assets tagged successfully."]);
+    }
+
+    private function assetQuery(Request $request, Tenant $tenant, bool $trashed = false)
+    {
+        $query = MediaAsset::query()->where('tenant_id', $tenant->id);
+        if ($trashed) {
+            $query->onlyTrashed();
+        }
+
+        $instructor = $request->attributes->get('instructorMembership');
+        if ($instructor instanceof TenantUser) {
+            $query->where(function ($owner) use ($instructor): void {
+                $owner->where('created_by_tenant_user_id', $instructor->id)
+                    ->orWhere('uploader_id', $instructor->id);
+            });
+        }
+
+        return $query;
+    }
+
+    private function assertOwnedIds(Request $request, Tenant $tenant, array $ids, bool $trashed = false): void
+    {
+        if (! $request->attributes->get('instructorMembership')) {
+            return;
+        }
+
+        $uniqueIds = array_values(array_unique($ids));
+        abort_unless(
+            $this->assetQuery($request, $tenant, $trashed)->whereIn('id', $uniqueIds)->count() === count($uniqueIds),
+            404,
+        );
     }
 }

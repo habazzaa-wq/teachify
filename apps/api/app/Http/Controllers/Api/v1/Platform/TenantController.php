@@ -8,6 +8,7 @@ use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
 use App\Repositories\TenantRepository;
 use App\Services\Platform\TenantCreationService;
+use App\Services\Instructors\InstructorFeatureManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -68,7 +69,7 @@ class TenantController extends Controller
         ]);
     }
 
-    public function update(Request $request, Tenant $tenant): JsonResponse
+    public function update(Request $request, Tenant $tenant, InstructorFeatureManagementService $instructorFeatures): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -96,10 +97,24 @@ class TenantController extends Controller
             'plan' => ['sometimes', 'nullable', 'array'],
             'platform_plan_id' => ['sometimes', 'nullable', 'integer', 'exists:platform_plans,id'],
             'feature_flags.has_instructors' => ['sometimes', 'boolean'],
+            'instructor_disable_mode' => ['sometimes', 'required', 'in:retain,purge'],
         ]);
 
         $featureFlags = $validated['feature_flags'] ?? null;
+        $instructorDisableMode = $validated['instructor_disable_mode'] ?? null;
         unset($validated['feature_flags']);
+        unset($validated['instructor_disable_mode']);
+
+        $isDisablingInstructors = $featureFlags !== null
+            && array_key_exists('has_instructors', $featureFlags)
+            && ! $featureFlags['has_instructors']
+            && (bool) ($tenant->feature_flags['has_instructors'] ?? false);
+
+        if ($isDisablingInstructors && $instructorDisableMode === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'instructor_disable_mode' => ['Choose whether to retain or purge instructor data before disabling the feature.'],
+            ]);
+        }
 
         // The canonical plan assignment is applied separately from the mass
         // assignment below, because `platform_plan_id` is a foreign key and must
@@ -178,7 +193,9 @@ class TenantController extends Controller
 
         $tenant->update($validated);
 
-        if ($featureFlags !== null) {
+        if ($isDisablingInstructors) {
+            $instructorFeatures->disable($tenant, $instructorDisableMode);
+        } elseif ($featureFlags !== null) {
             $tenant->feature_flags = array_merge($tenant->feature_flags ?? [], $featureFlags);
             $tenant->save();
         }

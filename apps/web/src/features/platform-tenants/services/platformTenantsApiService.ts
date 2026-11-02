@@ -119,6 +119,7 @@ export const platformTenantsApiService = {
       "owner", "ownerAccount", "branding", "limits", "integrations",
       "storage", "security", "domain", "subscription",
       "featureFlags",
+      "instructorDisableMode",
       // The canonical plan assignment; maps to `platform_plan_id`. Send null to
       // unassign and fall the tenant back to the default limits.
       "platformPlanId",
@@ -131,6 +132,9 @@ export const platformTenantsApiService = {
     }
     const payload = mapToSnakeCase(filtered);
     const featureFlags = filtered.featureFlags;
+    if (typeof filtered.instructorDisableMode === "string") {
+      payload.instructor_disable_mode = filtered.instructorDisableMode;
+    }
     if (featureFlags && typeof featureFlags === "object" && "hasInstructors" in featureFlags) {
       payload.feature_flags = {
         has_instructors: featureFlags.hasInstructors,

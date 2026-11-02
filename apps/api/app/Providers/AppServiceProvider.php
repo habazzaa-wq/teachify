@@ -78,6 +78,18 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Platform administrators often share an office/VPN IP. Keep a firm
+        // brute-force limit while allowing normal retries and shared networks.
+        RateLimiter::for('platform-login', function (Request $request) {
+            $identifier = (string) $request->input('email', '');
+            $key = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
+
+            return [
+                Limit::perMinute(30)->by($key),
+                Limit::perMinute(60)->by($request->ip()),
+            ];
+        });
+
         // Dedicated limiter for token refresh calls. SPA tabs or concurrent requests
         // may refresh tokens; 60 requests/min accommodates healthy client lifecycle.
         RateLimiter::for('tenant-refresh', function (Request $request) {

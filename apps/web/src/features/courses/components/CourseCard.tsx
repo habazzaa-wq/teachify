@@ -159,6 +159,11 @@ function CourseCard({
   const statusConfig = COURSE_STATUS_CONFIG[course.status];
   const difficultyConfig = COURSE_DIFFICULTY_CONFIG[course.difficulty];
   const visibilityConfig = COURSE_VISIBILITY_CONFIG[course.visibility];
+  const instructors = course.instructors?.length
+    ? course.instructors
+    : course.instructor
+      ? [{ ...course.instructor, role: "primary" }]
+      : [];
 
   const handleClick = useCallback(() => {
     router.push(`/teacher/courses/${course.id}`);
@@ -486,16 +491,20 @@ function CourseCard({
                   {course.title}
                 </h3>
               </div>
-              {course.instructor && (
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
-                  <div className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-[7px] font-medium text-primary">
-                    {course.instructor.avatar ? (
-                      <img src={course.instructor.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      course.instructor.name.charAt(0)
-                    )}
-                  </div>
-                  <span className="truncate">{course.instructor.name}</span>
+              {instructors.length > 0 && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground/60">
+                  {instructors.map((instructor) => (
+                    <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-[7px] font-medium text-primary">
+                        {instructor.avatar ? (
+                          <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          instructor.name.charAt(0)
+                        )}
+                      </span>
+                      <span className="max-w-28 truncate">{instructor.name}</span>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
@@ -575,16 +584,20 @@ function CourseCard({
                 {course.title}
               </h3>
               <div className="flex items-center justify-between mt-1.5">
-                {course.instructor ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
-                      {course.instructor.avatar ? (
-                        <img src={course.instructor.avatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        course.instructor.name.charAt(0)
-                      )}
-                    </div>
-                    <span className="truncate text-[11px] text-muted-foreground/70">{course.instructor.name}</span>
+                {instructors.length > 0 ? (
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    {instructors.map((instructor) => (
+                      <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
+                          {instructor.avatar ? (
+                            <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            instructor.name.charAt(0)
+                          )}
+                        </span>
+                        <span className="max-w-28 truncate text-[11px] text-muted-foreground/70">{instructor.name}</span>
+                      </span>
+                    ))}
                   </div>
                 ) : (
                   <span className="text-[11px] text-muted-foreground/30">بدون مدرب</span>
@@ -608,16 +621,20 @@ function CourseCard({
                 {course.title}
               </h3>
               <div className="flex items-center justify-between">
-                {course.instructor ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
-                      {course.instructor.avatar ? (
-                        <img src={course.instructor.avatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        course.instructor.name.charAt(0)
-                      )}
-                    </div>
-                    <span className="truncate text-[11px] text-muted-foreground/70">{course.instructor.name}</span>
+                {instructors.length > 0 ? (
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    {instructors.map((instructor) => (
+                      <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
+                          {instructor.avatar ? (
+                            <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            instructor.name.charAt(0)
+                          )}
+                        </span>
+                        <span className="max-w-28 truncate text-[11px] text-muted-foreground/70">{instructor.name}</span>
+                      </span>
+                    ))}
                   </div>
                 ) : (
                   <span className="text-[11px] text-muted-foreground/30">بدون مدرب</span>

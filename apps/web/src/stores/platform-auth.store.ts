@@ -53,7 +53,13 @@ export const usePlatformAuthStore = create<PlatformAuthState>()(
     {
       name: "platform-auth",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token }),
+      // Keep the last verified profile so transient API/network errors during
+      // session bootstrap do not make the route guard discard a valid token.
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        platformAdmin: state.platformAdmin,
+      }),
     },
   ),
 );

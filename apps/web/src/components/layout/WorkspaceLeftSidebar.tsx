@@ -36,6 +36,7 @@ import { StudioSidebarItem } from "@/components/studio/navigation/StudioSidebarI
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { routes } from "@/constants/routes";
 import { cn } from "@/lib/cn";
+import { useTenantContext } from "@/providers/TenantProvider";
 
 const COLLAPSED_WIDTH = 68;
 const MIN_WIDTH = 220;
@@ -76,6 +77,8 @@ function LegalPageItems({
 export function WorkspaceLeftSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { activeTenant } = useTenantContext();
+  const instructorsEnabled = activeTenant?.feature_flags?.has_instructors === true;
   const {
     leftSidebarOpen,
     leftSidebarWidth,
@@ -227,6 +230,15 @@ export function WorkspaceLeftSidebar() {
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/courses")}
               />
+              {instructorsEnabled && (
+                <StudioSidebarItem
+                  icon={<GraduationCap className="h-4 w-4" />}
+                  label="المدربون"
+                  active={pathname.startsWith(routes.tenantInstructors)}
+                  collapsed={leftSidebarCollapsed}
+                  onClick={() => handleNavigate(routes.tenantInstructors)}
+                />
+              )}
               <StudioSidebarItem
                 icon={<Images className="h-4 w-4" />}
                 label="مكتبة الوسائط"

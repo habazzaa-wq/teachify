@@ -10,6 +10,8 @@ export interface InstructorMembership {
   tenant_id: number;
   status?: string;
   must_change_password?: boolean;
+  job_title?: string | null;
+  department?: string | null;
 }
 
 export interface InstructorCourse {

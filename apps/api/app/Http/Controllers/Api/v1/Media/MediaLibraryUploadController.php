@@ -197,6 +197,19 @@ class MediaLibraryUploadController extends Controller
     public function confirmUpload(Request $request, MediaUploadSession $session): JsonResponse
     {
         Gate::authorize('upload', MediaAsset::class);
+        $instructor = $request->attributes->get('instructorMembership');
+        if ($instructor instanceof \App\Models\TenantUser) {
+            abort_unless(
+                $session->created_by_tenant_user_id === $instructor->id
+                    && $session->asset()
+                        ->where(function ($owner) use ($instructor): void {
+                            $owner->where('created_by_tenant_user_id', $instructor->id)
+                                ->orWhere('uploader_id', $instructor->id);
+                        })
+                        ->exists(),
+                404,
+            );
+        }
 
         $data = $request->validate([
             'size_bytes' => 'nullable|integer|min:0',

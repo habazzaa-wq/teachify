@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Sun, Moon, GraduationCap, LogIn,
+  Sun, Moon, GraduationCap, LogIn, Users,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
   LayoutDashboard,
@@ -253,6 +253,9 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
+    ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
+    : navLinks;
   const pathname = usePathname();
   const router = useRouter();
   const auth = useContext(AuthContext);
@@ -565,7 +568,7 @@ export function PublicNavbar() {
               role="navigation"
               aria-label="القائمة الرئيسية"
             >
-              {navLinks.map((link) => (
+              {visibleNavLinks.map((link) => (
                 <NavLinkItem
                   key={link.href}
                   href={link.href}

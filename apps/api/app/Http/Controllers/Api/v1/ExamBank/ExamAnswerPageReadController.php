@@ -114,11 +114,17 @@ class ExamAnswerPageReadController extends Controller
                 'width' => $page->width,
                 'height' => $page->height,
                 'mimeType' => $page->mediaAsset?->mime_type,
-                'url' => route('exam-bank.answer-pages.show', [
-                    'attempt' => $attempt->id,
-                    'examQuestion' => $examQuestion->id,
-                    'page' => $page->id,
-                ]),
+                'url' => route(
+                    request()->attributes->has('instructorMembership')
+                        ? 'instructor.exam-bank.answer-pages.show'
+                        : 'exam-bank.answer-pages.show',
+                    [
+                        'attempt' => $attempt->id,
+                        'examQuestion' => $examQuestion->id,
+                        'page' => $page->id,
+                    ],
+                    false,
+                ),
             ])->values()->all(),
         ];
 

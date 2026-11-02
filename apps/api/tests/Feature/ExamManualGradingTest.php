@@ -492,6 +492,64 @@ class ExamManualGradingTest extends TestCase
         $this->assertSame([], $overview);
     }
 
+    public function test_instructor_can_only_list_and_grade_answers_for_exams_they_created(): void
+    {
+        [$tenant, , , , $exam, $attemptId, $essayAnswerId, $shortAnswerId] = $this->gradingFixture();
+        $tenant->forceFill(['feature_flags' => ['has_instructors' => true]])->save();
+        app(\App\Repositories\TenantRepository::class)->forget($tenant->id);
+        $instructor = $this->memberWithRole($tenant, 'instructor');
+        $instructor->forceFill(['is_instructor' => true, 'must_change_password' => false])->save();
+        Exam::query()->whereKey($exam)->update(['created_by_tenant_user_id' => $instructor->id]);
+        $token = $instructor->user->createToken('instructor_access_token', [
+            'instructor:access',
+            'instructor:tenant:'.$tenant->id,
+        ])->plainTextToken;
+        $headers = [
+            'X-Tenant-ID' => (string) $tenant->id,
+            'Authorization' => 'Bearer '.$token,
+        ];
+
+        $this->app['auth']->forgetGuards();
+        $queueResponse = $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/grading/exam-answers');
+        $this->assertSame(200, $queueResponse->status(), $queueResponse->getContent());
+        $queueResponse
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.exam.id', (string) $exam);
+
+        $gradeResponse = $this->withHeaders($headers)
+            ->putJson("/api/v1/instructor/grading/exam-attempts/{$attemptId}/answers/{$essayAnswerId}", [
+                'manual_score' => 8,
+                'feedback' => 'Clear reasoning.',
+            ]);
+        $this->assertSame(200, $gradeResponse->status(), $gradeResponse->getContent());
+        $gradeResponse
+            ->assertJsonPath('data.answer.gradingStatus', 'graded')
+            ->assertJsonPath('data.attempt.score', 18);
+
+        $otherInstructor = $this->memberWithRole($tenant, 'instructor');
+        $otherInstructor->forceFill(['is_instructor' => true, 'must_change_password' => false])->save();
+        $otherToken = $otherInstructor->user->createToken('instructor_access_token', [
+            'instructor:access',
+            'instructor:tenant:'.$tenant->id,
+        ])->plainTextToken;
+        $otherHeaders = [
+            'X-Tenant-ID' => (string) $tenant->id,
+            'Authorization' => 'Bearer '.$otherToken,
+        ];
+
+        $this->app['auth']->forgetGuards();
+        $this->withHeaders($otherHeaders)
+            ->getJson('/api/v1/instructor/grading/exam-answers')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+        $this->withHeaders($otherHeaders)
+            ->putJson("/api/v1/instructor/grading/exam-attempts/{$attemptId}/answers/{$shortAnswerId}", [
+                'manual_score' => 7,
+            ])
+            ->assertNotFound();
+    }
+
     public function test_unauthenticated_grade_is_denied(): void
     {
         [$tenant, $admin, $student, $lesson, $exam, $attemptId, $essayAnswerId, $shortAnswerId, $mcqQuestionId] = $this->gradingFixture();

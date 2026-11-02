@@ -2,25 +2,147 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\CourseResource;
+use App\Models\Course;
+use App\Models\Exam;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantInvitation;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Repositories\TenantRepository;
-use App\Services\Auth\InvitationService;
 use App\Services\Auth\AuthenticationService;
+use App\Services\Auth\InvitationService;
 use App\Services\Instructors\InstructorAccountService;
 use App\Services\Tenant\TenantUserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\Sanctum;
 use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class InstructorAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_admin_can_transfer_instructor_content_to_another_instructor_before_removal(): void
+    {
+        [$tenant, $admin] = $this->tenantWithAdmin();
+        $instructor = app(InstructorAccountService::class)->create($tenant, 'Leaving Instructor', 'leaving@example.test')['membership'];
+        $replacement = app(InstructorAccountService::class)->create($tenant, 'Replacement Instructor', 'replacement@example.test')['membership'];
+        $course = Course::create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructor->id,
+            'primary_instructor_tenant_user_id' => $instructor->id,
+            'title' => 'Transferred Course',
+            'slug' => 'transferred-course',
+            'status' => 'draft',
+            'visibility' => 'private',
+            'pricing_type' => 'free',
+        ]);
+        $course->instructors()->create([
+            'tenant_id' => $tenant->id,
+            'tenant_user_id' => $instructor->id,
+            'role' => 'primary',
+            'is_visible' => true,
+        ]);
+        $exam = Exam::create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructor->id,
+            'title' => 'Transferred Exam',
+            'slug' => 'transferred-exam',
+        ]);
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson('/api/v1/instructors/'.$instructor->id, [
+            'strategy' => 'transfer_to_instructor',
+            'target_instructor_id' => $replacement->id,
+        ], ['X-Tenant-ID' => (string) $tenant->id])->assertOk();
+
+        $this->assertSame($replacement->id, $course->fresh()->created_by_tenant_user_id);
+        $this->assertSame($replacement->id, $course->fresh()->primary_instructor_tenant_user_id);
+        $this->assertSame($replacement->id, $course->fresh()->instructors()->firstOrFail()->tenant_user_id);
+        $this->assertSame($replacement->id, $exam->fresh()->created_by_tenant_user_id);
+        $this->assertSoftDeleted('tenant_users', ['id' => $instructor->id]);
+    }
+
+    public function test_admin_can_transfer_instructor_content_to_tenant_and_keep_public_course_attribution(): void
+    {
+        [$tenant, $admin] = $this->tenantWithAdmin();
+        $adminMembership = TenantUser::query()->where('user_id', $admin->id)->firstOrFail();
+        $instructor = app(InstructorAccountService::class)->create($tenant, 'Archived Instructor', 'archived@example.test')['membership'];
+        $course = Course::create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructor->id,
+            'primary_instructor_tenant_user_id' => $instructor->id,
+            'title' => 'Preserved Course',
+            'slug' => 'preserved-course',
+            'status' => 'published',
+            'visibility' => 'public',
+            'pricing_type' => 'free',
+        ]);
+        $course->instructors()->create([
+            'tenant_id' => $tenant->id,
+            'tenant_user_id' => $instructor->id,
+            'role' => 'primary',
+            'is_visible' => true,
+        ]);
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson('/api/v1/instructors/'.$instructor->id, [
+            'strategy' => 'transfer_to_tenant',
+        ], ['X-Tenant-ID' => (string) $tenant->id])->assertOk();
+
+        $course->refresh();
+        $this->assertSame($adminMembership->id, $course->created_by_tenant_user_id);
+        $this->assertNull($course->primary_instructor_tenant_user_id);
+        $this->assertSame('Archived Instructor', $course->instructor_attribution[0]['name']);
+        $this->assertSame('public', $course->visibility);
+        $resource = (new CourseResource(
+            Course::query()->with(['primaryInstructor.user', 'instructors.membership.user'])->findOrFail($course->id),
+        ))->resolve();
+        $this->assertSame('Archived Instructor', $resource['instructor']['name']);
+        $this->assertContains('Archived Instructor', array_column($resource['instructors']->all(), 'name'));
+    }
+
+    public function test_admin_can_remove_instructor_content_and_preserve_shared_courses(): void
+    {
+        [$tenant, $admin] = $this->tenantWithAdmin();
+        $instructor = app(InstructorAccountService::class)->create($tenant, 'Removed Instructor', 'removed@example.test')['membership'];
+        $coInstructor = app(InstructorAccountService::class)->create($tenant, 'Co Instructor', 'co-instructor@example.test')['membership'];
+        $course = Course::create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructor->id,
+            'primary_instructor_tenant_user_id' => $instructor->id,
+            'title' => 'Shared Course',
+            'slug' => 'shared-course',
+            'status' => 'published',
+            'visibility' => 'public',
+            'pricing_type' => 'free',
+        ]);
+        $course->instructors()->createMany([
+            ['tenant_id' => $tenant->id, 'tenant_user_id' => $instructor->id, 'role' => 'primary', 'is_visible' => true],
+            ['tenant_id' => $tenant->id, 'tenant_user_id' => $coInstructor->id, 'role' => 'co_instructor', 'is_visible' => true],
+        ]);
+        $exam = Exam::create([
+            'tenant_id' => $tenant->id,
+            'created_by_tenant_user_id' => $instructor->id,
+            'title' => 'Removed Exam',
+            'slug' => 'removed-exam',
+        ]);
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson('/api/v1/instructors/'.$instructor->id, [
+            'strategy' => 'delete_content',
+        ], ['X-Tenant-ID' => (string) $tenant->id])->assertOk();
+
+        $this->assertNull($course->fresh()->deleted_at);
+        $this->assertSame($coInstructor->id, $course->fresh()->primary_instructor_tenant_user_id);
+        $this->assertSoftDeleted('exams', ['id' => $exam->id]);
+        $this->assertSoftDeleted('tenant_users', ['id' => $instructor->id]);
+    }
 
     public function test_tenant_admin_can_provision_an_exclusive_instructor_identity(): void
     {
@@ -57,6 +179,46 @@ class InstructorAuthenticationTest extends TestCase
         ], $headers)->assertUnprocessable();
 
         $this->assertSame(1, TenantUser::query()->where('user_id', $existingUser->id)->count());
+    }
+
+    public function test_tenant_admin_can_manage_instructor_status_and_reset_password(): void
+    {
+        [$tenant, $admin] = $this->tenantWithAdmin();
+        $account = app(InstructorAccountService::class)->create($tenant, 'Instructor', 'managed@example.test');
+        Sanctum::actingAs($admin);
+        $headers = ['X-Tenant-ID' => (string) $tenant->id];
+
+        $this->getJson('/api/v1/instructors', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'active')
+            ->assertJsonPath('data.0.courses', []);
+        $this->getJson('/api/v1/instructors/options', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $account['membership']->id);
+
+        $oldToken = $account['membership']->user->createToken('test-token')->plainTextToken;
+        $reset = $this->postJson('/api/v1/instructors/'.$account['membership']->id.'/reset-password', [], $headers)
+            ->assertOk()
+            ->assertJsonPath('must_change_password', true);
+        $temporaryPassword = $reset->json('temporary_password');
+        $this->assertNotSame($account['temporary_password'], $temporaryPassword);
+        $this->assertTrue(Hash::check($temporaryPassword, $account['membership']->user->fresh()->password));
+        $this->assertTrue($account['membership']->fresh()->must_change_password);
+        $this->assertNull(PersonalAccessToken::findToken($oldToken));
+
+        $this->patchJson('/api/v1/instructors/'.$account['membership']->id.'/status', [
+            'status' => 'suspended',
+        ], $headers)->assertOk()->assertJsonPath('data.status', 'suspended');
+        $this->getJson('/api/v1/instructors', $headers)
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'suspended');
+
+        $this->patchJson('/api/v1/instructors/'.$account['membership']->id.'/status', [
+            'status' => 'invalid',
+        ], $headers)->assertUnprocessable();
+        $this->patchJson('/api/v1/instructors/999999/status', [
+            'status' => 'active',
+        ], $headers)->assertNotFound();
     }
 
     public function test_instructor_login_forces_password_change_and_isolated_token_context(): void
@@ -142,6 +304,49 @@ class InstructorAuthenticationTest extends TestCase
             'email' => 'instructor@example.test',
             'password' => 'permanent-password',
         ], $headers)->assertNotFound();
+    }
+
+    public function test_instructor_can_update_tenant_profile_details_and_avatar(): void
+    {
+        $tenant = $this->instructorTenant();
+        $account = app(InstructorAccountService::class)->create($tenant, 'Instructor', 'profile@example.test');
+        $headers = ['X-Tenant-ID' => (string) $tenant->id];
+        $login = $this->postJson('/api/v1/instructor/auth/login', [
+            'email' => 'profile@example.test',
+            'password' => $account['temporary_password'],
+        ], $headers)->assertOk();
+        $temporaryToken = $login->json('access_token');
+
+        $passwordChange = $this->withHeaders($headers + ['Authorization' => 'Bearer '.$temporaryToken])
+            ->postJson('/api/v1/instructor/auth/change-password', [
+                'password' => 'profile-password',
+                'password_confirmation' => 'profile-password',
+            ])
+            ->assertOk();
+        $this->app['auth']->forgetGuards();
+        $accessToken = $passwordChange->json('access_token');
+
+        $this->withHeaders($headers + ['Authorization' => 'Bearer '.$accessToken])
+            ->putJson('/api/v1/instructor/auth/profile', [
+                'name' => 'Updated Instructor',
+                'avatar' => 'https://cdn.example.test/instructor.jpg',
+                'job_title' => 'Senior Instructor',
+                'department' => 'Mathematics',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.name', 'Updated Instructor')
+            ->assertJsonPath('membership.job_title', 'Senior Instructor');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $account['membership']->user_id,
+            'name' => 'Updated Instructor',
+        ]);
+        $this->assertDatabaseHas('tenant_users', [
+            'id' => $account['membership']->id,
+            'avatar' => 'https://cdn.example.test/instructor.jpg',
+            'job_title' => 'Senior Instructor',
+            'department' => 'Mathematics',
+        ]);
     }
 
     public function test_generic_membership_paths_cannot_create_or_upgrade_instructor_accounts(): void
@@ -294,11 +499,15 @@ class InstructorAuthenticationTest extends TestCase
             'name' => 'Tenant Admin',
             'slug' => 'tenant_owner',
         ]);
-        $permission = \App\Models\Permission::query()->firstOrCreate(
-            ['slug' => 'users.manage'],
-            ['name' => 'Manage Users'],
-        );
-        $role->permissions()->attach($permission);
+        $permissions = collect([
+            ['slug' => 'users.manage', 'name' => 'Manage Users'],
+            ['slug' => 'users.view', 'name' => 'View Users'],
+            ['slug' => 'courses.assign_instructors', 'name' => 'Assign Course Instructors'],
+        ])->map(fn (array $permission) => Permission::query()->firstOrCreate(
+            ['slug' => $permission['slug']],
+            ['name' => $permission['name']],
+        ));
+        $role->permissions()->attach($permissions);
         $membership->roles()->attach($role, ['tenant_id' => $tenant->id]);
 
         return [$tenant, $admin];

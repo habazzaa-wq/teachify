@@ -26,8 +26,14 @@ export function TenantFontProvider() {
     const cssUrl = getFontCssUrl(font);
     const fontStack = buildFontStack(font);
 
-    if (!cssUrl || !fontStack) {
+    if (!fontStack) {
       root.style.removeProperty("--font-sans");
+      document.getElementById(LINK_ID)?.remove();
+      return;
+    }
+
+    if (!cssUrl) {
+      root.style.setProperty("--font-sans", fontStack);
       document.getElementById(LINK_ID)?.remove();
       return;
     }

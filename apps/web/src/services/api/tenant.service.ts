@@ -8,7 +8,10 @@ export const tenantService = {
 
     return {
       user: data.user,
-      tenant: data.tenant,
+      tenant: {
+        ...data.tenant,
+        feature_flags: data.feature_flags ?? data.tenant.feature_flags ?? null,
+      },
       membership: data.membership,
       roles: data.roles,
       permissions: data.permissions,
@@ -23,7 +26,10 @@ export const tenantService = {
   async resolveFromLogin(loginData: CurrentUserResponse): Promise<TenantContext> {
     return {
       user: loginData.user,
-      tenant: loginData.tenant,
+      tenant: {
+        ...loginData.tenant,
+        feature_flags: loginData.feature_flags ?? loginData.tenant.feature_flags ?? null,
+      },
       membership: loginData.membership,
       roles: loginData.roles,
       permissions: loginData.permissions,

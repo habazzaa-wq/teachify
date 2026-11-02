@@ -14,6 +14,7 @@ import { platformAuthService } from "@/services/api/platform-auth.service";
 import { usePlatformAuthStore } from "@/stores/platform-auth.store";
 import type { PlatformLoginRequest } from "@/types/platform-auth.types";
 import { routes } from "@/constants/routes";
+import type { ApiError } from "@/types/common.types";
 
 const BOOTSTRAP_TIMEOUT_MS = 20_000;
 
@@ -47,6 +48,7 @@ export function PlatformAuthProvider({
 
   const bootstrapPromiseRef = useRef<Promise<void> | null>(null);
   const bootstrapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bootstrapRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const bootstrap = useCallback(async () => {
     if (!token) {
@@ -79,12 +81,27 @@ export function PlatformAuthProvider({
           user: data.user,
           platformAdmin: data.platform_admin,
         });
-      } catch {
+      } catch (error) {
         if (bootstrapTimeoutRef.current) {
           clearTimeout(bootstrapTimeoutRef.current);
           bootstrapTimeoutRef.current = null;
         }
-        clear();
+        const apiError = error as Partial<ApiError>;
+        if (apiError.status === 401 || apiError.status === 403) {
+          clear();
+        } else if (usePlatformAuthStore.getState().platformAdmin) {
+          // Network errors, rate limits, and server errors are not proof that
+          // the token is invalid. Keep the cached session available.
+          setStatus("authenticated");
+        } else {
+          // Older saved sessions contain only a token. Keep the guard waiting
+          // and retry when the API is reachable instead of dropping that token.
+          setStatus("loading");
+          bootstrapRetryRef.current = setTimeout(() => {
+            bootstrapRetryRef.current = null;
+            void bootstrap();
+          }, 5_000);
+        }
       } finally {
         bootstrapPromiseRef.current = null;
       }
@@ -118,7 +135,11 @@ export function PlatformAuthProvider({
   }, [clear, router]);
 
   useEffect(() => {
-    if (token && status === "idle") {
+    if (
+      token &&
+      status !== "loading" &&
+      status !== "authenticated"
+    ) {
       void bootstrap();
       return;
     }
@@ -150,6 +171,9 @@ export function PlatformAuthProvider({
     return () => {
       if (bootstrapTimeoutRef.current) {
         clearTimeout(bootstrapTimeoutRef.current);
+      }
+      if (bootstrapRetryRef.current) {
+        clearTimeout(bootstrapRetryRef.current);
       }
     };
   }, []);

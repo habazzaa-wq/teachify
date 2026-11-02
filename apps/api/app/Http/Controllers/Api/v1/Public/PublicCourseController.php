@@ -25,7 +25,7 @@ class PublicCourseController extends Controller
             ->where('tenant_id', $tenantId)
             ->where('status', 'published')
             ->where('visibility', 'public')
-            ->with(['primaryInstructor.user', 'tags', 'categories', 'educationalStage', 'subject'])
+            ->with(['primaryInstructor.user', 'instructors.membership.user', 'tags', 'categories', 'educationalStage', 'subject'])
             ->withCount(['enrollments', 'sections', 'lessons']);
 
         if ($stageId = $request->integer('educational_stage_id')) {
@@ -153,6 +153,7 @@ class PublicCourseController extends Controller
             ->where('visibility', 'public')
             ->with([
                 'primaryInstructor.user',
+                'instructors.membership.user',
                 'tags',
                 'categories',
                 'modules.sections.lessons.files',
@@ -220,7 +221,7 @@ class PublicCourseController extends Controller
             ->whereHas('categories', function ($query) use ($categoryIds) {
                 $query->whereIn('categories.id', $categoryIds);
             })
-            ->with(['primaryInstructor.user', 'tags', 'categories'])
+            ->with(['primaryInstructor.user', 'instructors.membership.user', 'tags', 'categories'])
             ->withCount(['enrollments', 'sections', 'lessons'])
             ->limit(6)
             ->get();

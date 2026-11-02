@@ -37,6 +37,11 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
   const hasDiscount = course.discountPrice !== null && course.discountPrice > 0;
   const isFree = course.pricingType === "free";
   const currency = course.currency ?? "ر.س";
+  const instructors = course.instructors?.length
+    ? course.instructors
+    : course.instructor
+      ? [course.instructor]
+      : [];
 
   const card = (
     <div
@@ -152,28 +157,31 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
 
         <div className="flex-1" />
 
-        {/* instructor */}
-        {course.instructor?.name && (
-          <div className="flex items-center gap-2.5">
-            {course.instructor.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={course.instructor.avatar}
-                alt={course.instructor.name}
-                className="h-7 w-7 rounded-full object-cover ring-2"
-                style={{ "--tw-ring-color": isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" } as React.CSSProperties}
-              />
-            ) : (
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: "var(--brand-primary)" }}
-              >
-                {initialsOf(course.instructor.name)}
+        {instructors.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {instructors.map((instructor) => (
+              <div key={instructor.id} className="flex items-center gap-2">
+                {instructor.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={instructor.avatar}
+                    alt={instructor.name ?? ""}
+                    className="h-7 w-7 rounded-full object-cover ring-2"
+                    style={{ "--tw-ring-color": isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" } as React.CSSProperties}
+                  />
+                ) : (
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ background: "var(--brand-primary)" }}
+                  >
+                    {initialsOf(instructor.name ?? "مدرب")}
+                  </div>
+                )}
+                <span className="text-xs font-medium" style={{ color: isDark ? "#a09898" : "#6B7280" }}>
+                  {instructor.name}
+                </span>
               </div>
-            )}
-            <span className="text-xs font-medium" style={{ color: isDark ? "#a09898" : "#6B7280" }}>
-              {course.instructor.name}
-            </span>
+            ))}
           </div>
         )}
 

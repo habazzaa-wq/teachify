@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { preload } from "react-dom";
 import type { Metadata } from "next";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -23,6 +24,7 @@ import {
 import { organizationJsonLd, webSiteJsonLd } from "@/lib/seo/jsonld";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 const WhyChooseUsOrbit = dynamic(
   () => import("@/components/home/WhyChooseUsOrbit").then((m) => m.WhyChooseUsOrbit),
@@ -91,6 +93,13 @@ async function HomePage() {
       getRequestOrigin(),
     ]);
 
+  // Start fetching the above-the-fold teacher portrait while React streams the
+  // rest of the page. HeroTeacherPhoto uses this exact URL in its first render.
+  const heroImage = toAbsoluteAssetUrl(hero?.teacherImage);
+  if (heroImage) {
+    preload(heroImage, { as: "image", fetchPriority: "high" });
+  }
+
   if (hero) {
     queryClient.setQueryData(heroKeys.public, hero);
   }
@@ -109,7 +118,7 @@ async function HomePage() {
     <HydrationBoundary state={dehydrate(queryClient)}>
       <JsonLd data={organizationJsonLd(tenant, origin)} />
       <JsonLd data={webSiteJsonLd(tenant, origin)} />
-      <HeroSection />
+      <HeroSection initialHero={hero} />
       <Suspense fallback={<SectionFallback />}>
         <WhyChooseUsOrbit />
       </Suspense>

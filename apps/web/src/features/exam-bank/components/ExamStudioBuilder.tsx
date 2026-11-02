@@ -22,7 +22,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useExamStudioStore } from "@/features/exam-bank/store";
 import { useQuestion } from "@/features/exam-bank/hooks";
-import { EXAM_BANK_QUERY_KEY } from "@/features/exam-bank/constants";
+import { getExamBankQueryKey } from "@/features/exam-bank/constants";
 import type { Exam, ExamQuestion } from "@/features/exam-bank/types";
 import { formatNumber } from "@/lib/format";
 import QuestionBuilder from "./QuestionBuilder";
@@ -153,7 +153,7 @@ export function ExamStudioBuilder({
   const handleScanUploaded = useCallback((payload: { scanUrl: string; scanAssetId: string }) => {
     if (!selectedQuestionId) return;
     qc.setQueryData(
-      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
+      [getExamBankQueryKey(), "questions", "detail", selectedQuestionId],
       (old: unknown) => {
         if (!old || typeof old !== "object") return old;
         return { ...old, scanUrl: payload.scanUrl, scanAssetId: payload.scanAssetId };
@@ -164,7 +164,7 @@ export function ExamStudioBuilder({
   const handleScanRemoved = useCallback(() => {
     if (!selectedQuestionId) return;
     qc.setQueryData(
-      [EXAM_BANK_QUERY_KEY, "questions", "detail", selectedQuestionId],
+      [getExamBankQueryKey(), "questions", "detail", selectedQuestionId],
       (old: unknown) => {
         if (!old || typeof old !== "object") return old;
         return { ...old, scanUrl: null, scanAssetId: null };

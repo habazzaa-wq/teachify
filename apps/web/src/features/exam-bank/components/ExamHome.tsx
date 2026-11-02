@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { Plus, FilePlus2, SearchX } from "lucide-react";
 import { StudioButton, StudioChip, StudioWorkspaceHeader } from "@/components/studio";
@@ -68,6 +68,8 @@ function SectionShell({
 
 export function ExamHome() {
   const router = useRouter();
+  const pathname = usePathname();
+  const examsBasePath = pathname.startsWith("/instructor/") ? "/instructor/exams" : "/teacher/exams";
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<QuickFilter>("all");
@@ -132,8 +134,8 @@ export function ExamHome() {
   const showSection = (key: QuickFilter) => showAll || activeFilter === key;
 
   const handleExamClick = useCallback(
-    (exam: Exam) => router.push(`/teacher/exams/${exam.id}`),
-    [router],
+    (exam: Exam) => router.push(`${examsBasePath}/${exam.id}`),
+    [examsBasePath, router],
   );
 
   const handleStatusFilterChange = (value: ExamStatus | "all") => {
@@ -156,8 +158,8 @@ export function ExamHome() {
   );
 
   const handleCreate = useCallback(
-    (exam: Exam) => router.push(`/teacher/exams/${exam.id}`),
-    [router],
+    (exam: Exam) => router.push(`${examsBasePath}/${exam.id}`),
+    [examsBasePath, router],
   );
 
   const statsText = metrics

@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Question;
+use App\Models\TenantUser;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,8 +17,14 @@ class QuestionRepository
 
     public function query(): Builder
     {
-        return Question::query()
+        $query = Question::query()
             ->where('tenant_id', currentTenant()->id);
+
+        if ($instructor = $this->instructorMembership()) {
+            $query->where('created_by_tenant_user_id', $instructor->id);
+        }
+
+        return $query;
     }
 
     public function list(array $params = []): LengthAwarePaginator
@@ -94,6 +101,8 @@ class QuestionRepository
             ->withTrashed()
             ->where('tenant_id', currentTenant()->id)
             ->where('id', $id)
+            ->when($this->instructorMembership(), fn (Builder $query, TenantUser $instructor) => $query
+                ->where('created_by_tenant_user_id', $instructor->id))
             ->first();
 
         if ($question) {
@@ -108,21 +117,26 @@ class QuestionRepository
 
     public function countByStatus(string $status): int
     {
-        return Question::query()
-            ->where('tenant_id', currentTenant()->id)
+        return $this->query()
             ->where('status', $status)
             ->count();
     }
 
     public function countByType(): array
     {
-        return Question::query()
-            ->where('tenant_id', currentTenant()->id)
+        return $this->query()
             ->whereNull('deleted_at')
             ->selectRaw('type, count(*) as total')
             ->groupBy('type')
             ->pluck('total', 'type')
             ->all();
+    }
+
+    private function instructorMembership(): ?TenantUser
+    {
+        $membership = request()->attributes->get('instructorMembership');
+
+        return $membership instanceof TenantUser ? $membership : null;
     }
 
     protected function applySearch(Builder $query, ?string $search): Builder

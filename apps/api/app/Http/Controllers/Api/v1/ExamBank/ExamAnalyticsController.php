@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\v1\ExamBank;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
-use App\Models\Question;
 use App\Repositories\ExamRepository;
 use App\Repositories\QuestionRepository;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +25,10 @@ class ExamAnalyticsController extends Controller
         $tenantId = currentTenant()->id;
 
         $attempts = ExamAttempt::query()->where('tenant_id', $tenantId);
+        if ($instructor = $request->attributes->get('instructorMembership')) {
+            $attempts->whereHas('exam', fn ($query) => $query
+                ->where('created_by_tenant_user_id', $instructor->id));
+        }
         $submitted = (clone $attempts)->where('status', 'submitted')->count();
         $passed = (clone $attempts)->where('passed', true)->count();
         $totalAttempts = (clone $attempts)->count();
@@ -59,7 +62,7 @@ class ExamAnalyticsController extends Controller
                     'averageScorePercent' => $avgPassing ? round((float) $avgPassing, 1) : 0,
                 ],
                 'questions' => [
-                    'total' => Question::query()->where('tenant_id', $tenantId)->whereNull('deleted_at')->count(),
+                    'total' => $this->questionRepository->query()->count(),
                     'byType' => $this->questionRepository->countByType(),
                 ],
             ],

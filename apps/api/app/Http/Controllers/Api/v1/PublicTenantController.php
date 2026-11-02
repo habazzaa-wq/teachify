@@ -50,6 +50,9 @@ class PublicTenantController extends Controller
             'slug' => $tenant->slug,
             'domain' => $domainRecord?->domain ?? $domain,
             'status' => $tenant->status,
+            'feature_flags' => [
+                'has_instructors' => (bool) ($tenant->feature_flags['has_instructors'] ?? false),
+            ],
             'branding' => $branding,
             'platform_branding' => $this->resolvePlatformBranding($tenant),
             'seo' => $this->resolveSeo($tenant),

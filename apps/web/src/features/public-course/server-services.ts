@@ -91,6 +91,15 @@ function formatCourse(raw: Raw): PublicCourse {
             : [],
         }
       : null,
+    instructors: Array.isArray(raw.instructors)
+      ? raw.instructors.map((instructor: Raw) => ({
+          id: String(instructor.id),
+          name: instructor.name ?? "",
+          avatar: instructor.avatar ?? null,
+          bio: instructor.bio ?? null,
+          title: instructor.title ?? null,
+        }))
+      : [],
     educationalStage: raw.educationalStage
       ? { id: String(raw.educationalStage.id), name: raw.educationalStage.name }
       : null,
@@ -190,6 +199,15 @@ function formatRelated(raw: Raw): RelatedCourse {
       name: raw.instructor.name,
       avatar: raw.instructor.avatar ?? null,
     } : null,
+    instructors: Array.isArray(raw.instructors)
+      ? raw.instructors.map((instructor: Raw) => ({
+          id: String(instructor.id),
+          name: instructor.name ?? "",
+          avatar: instructor.avatar ?? null,
+          bio: instructor.bio ?? null,
+          title: instructor.title ?? null,
+        }))
+      : [],
     category: raw.category ? {
       id: String(raw.category.id),
       name: raw.category.name,

@@ -70,6 +70,44 @@ class InstructorAuthController extends Controller
                 'id' => $membership->id,
                 'tenant_id' => $membership->tenant_id,
                 'must_change_password' => $membership->must_change_password,
+                'job_title' => $membership->job_title,
+                'department' => $membership->department,
+            ],
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        /** @var TenantUser $membership */
+        $membership = $request->attributes->get('instructorMembership');
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'avatar' => ['sometimes', 'nullable', 'url', 'max:2048'],
+            'job_title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'department' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]);
+
+        $request->user()->forceFill(['name' => $validated['name']])->save();
+        $membership->forceFill(collect($validated)->only([
+            'avatar',
+            'job_title',
+            'department',
+        ])->all())->save();
+
+        return response()->json([
+            'message' => 'Profile updated.',
+            'user' => [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'email' => $request->user()->email,
+                'avatar' => $membership->avatar ?? $request->user()->avatar,
+            ],
+            'membership' => [
+                'id' => $membership->id,
+                'tenant_id' => $membership->tenant_id,
+                'must_change_password' => $membership->must_change_password,
+                'job_title' => $membership->job_title,
+                'department' => $membership->department,
             ],
         ]);
     }

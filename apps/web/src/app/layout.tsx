@@ -25,7 +25,7 @@ import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/goo
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
-  variable: "--font-sans",
+  variable: "--font-cairo-local",
   display: "swap",
 });
 
@@ -117,7 +117,9 @@ export default async function RootLayout({
   const tenant = await getTenantSeoContext();
   const tenantFont = tenant?.branding?.font ?? null;
   const fontCssUrl = getFontCssUrl(tenantFont);
-  const fontStack = buildFontStack(tenantFont);
+  const fontStack =
+    buildFontStack(tenantFont) ??
+    'var(--font-cairo-local), "Cairo", "system-ui", "sans-serif"';
 
   return (
     <html
@@ -127,7 +129,7 @@ export default async function RootLayout({
       data-theme={initialTheme}
       style={
         {
-          ...(fontStack ? { "--font-sans": fontStack } : {}),
+          "--font-sans": fontStack,
           colorScheme: initialTheme,
         } as React.CSSProperties
       }
@@ -138,7 +140,12 @@ export default async function RootLayout({
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-            <link id="tenant-dynamic-font" rel="stylesheet" href={fontCssUrl} />
+            <link
+              id="tenant-dynamic-font"
+              rel="stylesheet"
+              href={fontCssUrl}
+              fetchPriority="high"
+            />
           </>
         )}
         <ThemeScript />

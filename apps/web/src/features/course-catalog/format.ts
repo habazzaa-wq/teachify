@@ -34,6 +34,14 @@ export function formatCatalogCourse(raw: Raw): CatalogCourse {
           avatar: raw.instructor.avatar ?? null,
         }
       : null,
+    instructors: Array.isArray(raw.instructors)
+      ? raw.instructors.map((instructor: Raw) => ({
+          id: String(instructor.id),
+          name: instructor.name ?? null,
+          avatar: instructor.avatar ?? null,
+          role: instructor.role ?? "co_instructor",
+        }))
+      : [],
     educationalStage: raw.educationalStage
       ? { id: String(raw.educationalStage.id), name: raw.educationalStage.name }
       : null,

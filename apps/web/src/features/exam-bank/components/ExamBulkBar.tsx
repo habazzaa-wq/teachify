@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Copy, Archive, Trash2, Send, X } from "lucide-react";
 import { StudioButton } from "@/components/studio";
 import { studioAnimationVariants } from "@/components/studio";
-import { PermissionGuard } from "@/components/ui";
+import { ExamPermissionGuard } from "./ExamPermissionGuard";
 import { cn } from "@/lib/cn";
 
 interface ExamBulkBarProps {
@@ -45,30 +45,30 @@ export function ExamBulkBar({
         <span className="mx-1 hidden h-5 w-px bg-studio-border sm:block" />
 
         <div className="flex flex-wrap items-center gap-2">
-          <PermissionGuard permission="exams.publish">
+          <ExamPermissionGuard permission="exams.publish">
             <StudioButton variant="soft" size="sm" onClick={onPublish} className="gap-1.5">
               <Send className="h-3.5 w-3.5" />
               نشر
             </StudioButton>
-          </PermissionGuard>
-          <PermissionGuard permission="exams.create">
+          </ExamPermissionGuard>
+          <ExamPermissionGuard permission="exams.create">
             <StudioButton variant="soft" size="sm" onClick={onDuplicate} className="gap-1.5">
               <Copy className="h-3.5 w-3.5" />
               نسخ
             </StudioButton>
-          </PermissionGuard>
-          <PermissionGuard permission="exams.archive">
+          </ExamPermissionGuard>
+          <ExamPermissionGuard permission="exams.archive">
             <StudioButton variant="soft" size="sm" onClick={onArchive} className="gap-1.5">
               <Archive className="h-3.5 w-3.5" />
               أرشفة
             </StudioButton>
-          </PermissionGuard>
-          <PermissionGuard permission="exams.delete">
+          </ExamPermissionGuard>
+          <ExamPermissionGuard permission="exams.delete">
             <StudioButton variant="danger" size="sm" onClick={onDelete} className="gap-1.5">
               <Trash2 className="h-3.5 w-3.5" />
               حذف
             </StudioButton>
-          </PermissionGuard>
+          </ExamPermissionGuard>
         </div>
 
         <StudioButton

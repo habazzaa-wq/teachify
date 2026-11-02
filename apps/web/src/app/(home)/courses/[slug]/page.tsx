@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { getQueryClient } from "@/lib/get-query-client";
@@ -12,6 +13,7 @@ import { buildSeoMetadata, getSiteName } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, courseJsonLd } from "@/lib/seo/jsonld";
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { canonicalUrl, getRequestOrigin } from "@/lib/seo/url";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -64,6 +66,11 @@ export default async function CourseSlugPage({ params }: PageProps) {
     notFound();
   }
 
+  const instructorAvatar = toAbsoluteAssetUrl(course.instructor?.avatar);
+  if (instructorAvatar) {
+    preload(instructorAvatar, { as: "image", fetchPriority: "high" });
+  }
+
   const queryClient = getQueryClient();
 
   await Promise.all([
@@ -109,7 +116,7 @@ export default async function CourseSlugPage({ params }: PageProps) {
         <Breadcrumbs items={breadcrumbNodes} />
       </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <PublicCoursePage slug={slug} />
+        <PublicCoursePage slug={slug} initialCourse={course} />
       </HydrationBoundary>
     </>
   );

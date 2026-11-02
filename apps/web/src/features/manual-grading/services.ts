@@ -1,17 +1,29 @@
 import { api } from "@/services/api";
+import { instructorApi } from "@/features/instructors/api";
 import { mapGradeResult, mapGradingAnswer, mapOverviewItem, mapQueueItem } from "./mappers";
 import type { GradeResult, GradingAnswer, GradingOverviewItem, GradingQueueItem } from "./types";
+
+function isInstructorGradingPage(): boolean {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/");
+}
 
 export const manualGradingService = {
   /** Pending / partially-graded manual-review items for an exam. */
   async gradingQueue(examId: string | number): Promise<GradingQueueItem[]> {
-    const { data } = await api.get(`/exams/${examId}/grading-queue`);
+    const { data } = isInstructorGradingPage()
+      ? await instructorApi.examBankRequest<{ data: Record<string, unknown>[] }>(
+          `exam-bank/exams/${examId}/grading-queue`,
+          "GET",
+        )
+      : await api.get(`/exams/${examId}/grading-queue`);
     return (data.data ?? []).map((item: Record<string, unknown>) => mapQueueItem(item));
   },
 
   /** Exams with answers awaiting teacher review, each with its pending count. */
   async gradingOverview(): Promise<GradingOverviewItem[]> {
-    const { data } = await api.get("/exam-bank/grading/overview");
+    const { data } = isInstructorGradingPage()
+      ? await instructorApi.examBankRequest<{ data: Record<string, unknown>[] }>("grading/overview", "GET")
+      : await api.get("/exam-bank/grading/overview");
     return (data.data ?? []).map((item: Record<string, unknown>) => mapOverviewItem(item));
   },
 
@@ -20,7 +32,12 @@ export const manualGradingService = {
     attemptId: string | number,
     examQuestionId: string | number,
   ): Promise<GradingAnswer> {
-    const { data } = await api.get(`/exam-attempts/${attemptId}/answers/${examQuestionId}/pages`);
+    const { data } = isInstructorGradingPage()
+      ? await instructorApi.examBankRequest<{ data: Record<string, unknown> }>(
+          `exam-bank/exam-attempts/${attemptId}/answers/${examQuestionId}/pages`,
+          "GET",
+        )
+      : await api.get(`/exam-attempts/${attemptId}/answers/${examQuestionId}/pages`);
     return mapGradingAnswer(data.data);
   },
 
@@ -30,12 +47,22 @@ export const manualGradingService = {
     answerId: string | number,
     payload: { manual_score: number; feedback?: string | null },
   ): Promise<GradeResult> {
-    const { data } = await api.put(`/exam-attempts/${attemptId}/answers/${answerId}/grade`, payload);
+    const { data } = isInstructorGradingPage()
+      ? await instructorApi.examBankRequest<{ data: Record<string, unknown> }>(
+          `grading/exam-attempts/${attemptId}/answers/${answerId}`,
+          "PUT",
+          { data: payload },
+        )
+      : await api.put(`/exam-attempts/${attemptId}/answers/${answerId}/grade`, payload);
     return mapGradeResult(data.data);
   },
 
   /** Fetch one answer page as a blob for display (authenticated media route). */
   async fetchPageBlob(url: string): Promise<Blob> {
+    if (isInstructorGradingPage()) {
+      return instructorApi.fetchAnswerPage(url);
+    }
+
     const { data } = await api.get(url, { responseType: "blob", timeout: 60_000 });
     return data as Blob;
   },

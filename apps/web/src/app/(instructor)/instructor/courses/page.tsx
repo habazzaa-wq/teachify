@@ -41,9 +41,14 @@ export default function InstructorCoursesPage() {
           <p className="text-sm text-muted-foreground">مساحة المدرّس</p>
           <h1 className="mt-1 text-2xl font-bold">مرحباً، {user?.name}</h1>
         </div>
-        <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => void logout()}>
-          تسجيل الخروج
-        </button>
+        <div className="flex gap-2">
+          <Link className="rounded-lg border px-4 py-2 text-sm" href="/instructor/profile">
+            الملف الشخصي
+          </Link>
+          <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => void logout()}>
+            تسجيل الخروج
+          </button>
+        </div>
       </header>
 
       <section>
@@ -51,15 +56,20 @@ export default function InstructorCoursesPage() {
           <div>
             <h2 className="text-xl font-semibold">الدورات المعيّنة لك</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              تظهر هنا الدورات التي يعيّنك عليها مسؤول الأكاديمية حالياً.
+              تظهر هنا الدورات التي تشارك في تدريسها أو أنشأتها.
             </p>
           </div>
-          <button className="rounded-lg border px-3 py-2 text-sm" onClick={() => {
-            setLoading(true);
-            setReloadKey((key) => key + 1);
-          }}>
-            تحديث
-          </button>
+          <div className="flex gap-2">
+            <Link className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground" href="/instructor/courses/new">
+              إنشاء دورة
+            </Link>
+            <button className="rounded-lg border px-3 py-2 text-sm" onClick={() => {
+              setLoading(true);
+              setReloadKey((key) => key + 1);
+            }}>
+              تحديث
+            </button>
+          </div>
         </div>
         {error && <p role="alert" className="mb-4 text-sm text-destructive">{error}</p>}
         {loading ? (

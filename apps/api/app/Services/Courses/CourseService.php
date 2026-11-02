@@ -314,13 +314,19 @@ class CourseService
                 ]);
             }
 
-            return $this->upsertInstructor(
+            $assignment = $this->upsertInstructor(
                 $course,
                 $membership,
                 $role,
                 $data['is_visible'] ?? true,
                 $data['sort_order'] ?? 0,
             );
+
+            if (! $course->instructor_assignment_managed) {
+                $course->forceFill(['instructor_assignment_managed' => true])->save();
+            }
+
+            return $assignment;
         });
     }
 

@@ -274,6 +274,10 @@ export function getFontOption(family: string | null | undefined): GoogleFontOpti
 
 /** Google Fonts stylesheet URL for a saved family, or null when unset/unknown. */
 export function getFontCssUrl(family: string | null | undefined): string | null {
+  // Cairo and Almarai are already bundled locally by the root layout. Loading
+  // their Google stylesheet again causes a visible swap from system-ui.
+  const normalized = family?.trim().toLowerCase();
+  if (normalized === "cairo" || normalized === "almarai") return null;
   const option = getFontOption(family);
   return option?.cssUrl ?? null;
 }
@@ -285,5 +289,12 @@ export function getFontCssUrl(family: string | null | undefined): string | null 
 export function buildFontStack(family: string | null | undefined): string | null {
   const option = getFontOption(family);
   if (!option) return null;
+  const normalized = option.family.toLowerCase();
+  if (normalized === "cairo") {
+    return 'var(--font-cairo-local), "Cairo", "system-ui", "sans-serif"';
+  }
+  if (normalized === "almarai") {
+    return 'var(--font-display), "Almarai", "system-ui", "sans-serif"';
+  }
   return `"${option.family}", "system-ui", "sans-serif"`;
 }
