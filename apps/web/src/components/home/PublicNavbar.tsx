@@ -253,6 +253,7 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
   const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
     ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
     : navLinks;
@@ -622,7 +623,7 @@ export function PublicNavbar() {
                 {isLoggedIn ? (
                   <div className="relative" ref={dropdownRef}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />
+                      {walletEnabled && <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />}
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -791,7 +792,7 @@ export function PublicNavbar() {
                               <span className="relative z-10">تغيير كلمة المرور</span>
                             </button>
 
-                            <button
+                            {walletEnabled && <button
                               type="button"
                               onClick={() => {
                                 setProfileDropdownOpen(false);
@@ -809,9 +810,9 @@ export function PublicNavbar() {
                               />
                               <Wallet className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">شحن المحفظة بالكود</span>
-                            </button>
+                            </button>}
 
-                            <button
+                            {walletEnabled && <button
                               type="button"
                               onClick={() => {
                                 setProfileDropdownOpen(false);
@@ -829,9 +830,9 @@ export function PublicNavbar() {
                               />
                               <CreditCard className="h-4 w-4 relative z-10 text-muted-foreground/70 group-hover:text-[var(--brand-primary)] transition-colors" />
                               <span className="relative z-10">شحن المحفظة أونلاين</span>
-                            </button>
+                            </button>}
 
-                            <div className="my-1.5 mx-1 border-t" style={{ borderColor: "hsl(var(--border))" }} />
+                            {walletEnabled && <div className="my-1.5 mx-1 border-t" style={{ borderColor: "hsl(var(--border))" }} />}
 
                             <button
                               type="button"
@@ -933,12 +934,12 @@ export function PublicNavbar() {
       />
 
       <RechargeWalletModal
-        open={rechargeWalletOpen}
+        open={walletEnabled && rechargeWalletOpen}
         onClose={() => setRechargeWalletOpen(false)}
       />
 
       <OnlineRechargeModal
-        open={onlineRechargeOpen}
+        open={walletEnabled && onlineRechargeOpen}
         onClose={() => setOnlineRechargeOpen(false)}
       />
 

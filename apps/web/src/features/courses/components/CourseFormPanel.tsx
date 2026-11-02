@@ -19,8 +19,17 @@ import { CourseImageUploader } from "./CourseImageUploader";
 import { useCourseTags } from "../hooks/useCourseTags";
 import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
 import { useSubjectsList } from "@/features/subjects/hooks";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 const nonLangOptions = LANGUAGE_OPTIONS.filter((l) => l.value !== "all");
+const REGIONAL_COUNTRIES = [
+  { code: "SA", name: "السعودية", currency: "SR" },
+  { code: "AE", name: "الإمارات", currency: "AED" },
+  { code: "KW", name: "الكويت", currency: "KWD" },
+  { code: "QA", name: "قطر", currency: "QAR" },
+  { code: "BH", name: "البحرين", currency: "BHD" },
+  { code: "US", name: "الولايات المتحدة", currency: "USD" },
+];
 
 const EMPTY_FORM: CreateCoursePayload = {
   title: "",
@@ -34,7 +43,7 @@ const EMPTY_FORM: CreateCoursePayload = {
   language: "ar",
   pricingType: "free",
   price: 0,
-  currency: "SAR",
+  currency: "EGP",
   tagIds: [],
   requirements: [],
   learningOutcomes: [],
@@ -133,6 +142,8 @@ function CourseFormPanel({
   const { data: tags = [] } = useCourseTags();
   const { data: stagesData } = useEducationalStagesList();
   const { data: subjectsData } = useSubjectsList();
+  const { tenant } = useActiveTenant();
+  const regionalPricingEnabled = tenant?.feature_flags?.has_regional_pricing === true;
   const stages = stagesData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
   const [formData, setFormData] = useState<CreateCoursePayload>(EMPTY_FORM);
@@ -145,12 +156,27 @@ function CourseFormPanel({
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const updateRegionalPrice = useCallback((countryCode: string, value: number | null) => {
+    setFormData((previous) => {
+      const regionalPrices = { ...(previous.regionalPrices ?? {}) };
+      if (value === null || value <= 0) {
+        delete regionalPrices[countryCode];
+      } else {
+        regionalPrices[countryCode] = value;
+      }
+      return { ...previous, regionalPrices };
+    });
+  }, []);
+
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   const handleSave = useCallback(() => {
     if (!onSave) return;
-    onSave(formData);
-  }, [onSave, formData]);
+    onSave({
+      ...formData,
+      regionalPrices: regionalPricingEnabled ? formData.regionalPrices ?? {} : undefined,
+    });
+  }, [onSave, formData, regionalPricingEnabled]);
 
   const isValid = formData.title.length > 0;
 
@@ -411,19 +437,59 @@ function CourseFormPanel({
                       placeholder="0"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="form-currency">العملة</Label>
-                    <AppInput
-                      id="form-currency"
-                      value={formData.currency ?? "SAR"}
-                      onChange={(e) => updateField("currency", e.target.value)}
-                      placeholder="SAR"
-                      maxLength={3}
-                    />
-                  </div>
+                  {regionalPricingEnabled ? (
+                    <div className="space-y-2">
+                      <Label>العملة الأساسية</Label>
+                      <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                        جنيه مصري (EGP)
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="form-currency">العملة</Label>
+                      <AppInput
+                        id="form-currency"
+                        value={formData.currency ?? "EGP"}
+                        onChange={(e) => updateField("currency", e.target.value)}
+                        placeholder="EGP"
+                        maxLength={3}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>
+            {regionalPricingEnabled && formData.pricingType !== "free" && (
+              <div className="space-y-3 rounded-xl border border-border/60 p-4">
+                <div>
+                  <h4 className="text-sm font-semibold">أسعار حسب الدولة</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    العملة محددة حسب الدولة. اترك السعر فارغاً لاستخدام السعر الأساسي بالجنيه المصري.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {REGIONAL_COUNTRIES.map((country) => (
+                    <div className="space-y-1.5" key={country.code}>
+                      <Label htmlFor={`regional-price-${country.code}`}>
+                        {country.name} ({country.currency})
+                      </Label>
+                      <AppInput
+                        id={`regional-price-${country.code}`}
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        value={formData.regionalPrices?.[country.code] ?? ""}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          updateRegionalPrice(country.code, value ? Number(value) : null);
+                        }}
+                        placeholder="استخدم السعر الأساسي"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-5">

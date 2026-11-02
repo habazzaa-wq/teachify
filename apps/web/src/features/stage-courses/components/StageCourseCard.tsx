@@ -7,6 +7,7 @@ import { BookOpen, Clock, Users, Award, Tag, Sparkles, CheckCircle2 } from "luci
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { formatNumber, initialsOf } from "@/lib/format";
+import { formatCoursePrice } from "@/features/public-course/utils";
 import type { StageCourse } from "../types";
 import { ACCENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS, PRIMARY } from "../constants";
 
@@ -36,7 +37,6 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
   const dur = formatDuration(course.duration);
   const hasDiscount = course.discountPrice !== null && course.discountPrice > 0;
   const isFree = course.pricingType === "free";
-  const currency = course.currency ?? "ر.س";
   const instructors = course.instructors?.length
     ? course.instructors
     : course.instructor
@@ -249,13 +249,13 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
                       boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
                     }}
                   >
-                    {formatNumber(course.discountPrice!)} {currency}
+                    {formatCoursePrice(course.discountPrice!, course.currency ?? "EGP")}
                   </span>
                   <span
                     className="rounded-full px-2.5 py-1 text-[11px] font-bold text-white/70 line-through"
                     style={{ background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.35)" }}
                   >
-                    {formatNumber(course.price ?? 0)} {currency}
+                    {formatCoursePrice(course.price ?? 0, course.currency ?? "EGP")}
                   </span>
                 </div>
               ) : course.price ? (
@@ -266,7 +266,7 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
                     boxShadow: "0 4px 16px rgba(0,0,0,0.251)",
                   }}
                 >
-                  {formatNumber(course.price)} {currency}
+                  {formatCoursePrice(course.price, course.currency ?? "EGP")}
                 </span>
               ) : (
                 <span className="text-xs font-medium" style={{ color: isDark ? "#8a8290" : "#9CA3AF" }}>

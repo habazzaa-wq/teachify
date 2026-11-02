@@ -196,6 +196,8 @@ export interface Tenant {
   status: TenantStatus;
   featureFlags: {
     hasInstructors: boolean;
+    hasWallet?: boolean;
+    hasRegionalPricing?: boolean;
   };
   instructorDisableMode?: "retain" | "purge";
   subscription: TenantSubscription;

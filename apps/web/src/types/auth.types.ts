@@ -127,7 +127,10 @@ export interface Plan {
 }
 
 export interface FeatureFlags {
-  [key: string]: boolean;
+  [key: string]: boolean | undefined;
+  has_instructors?: boolean;
+  has_wallet?: boolean;
+  has_regional_pricing?: boolean;
 }
 
 export interface LoginResponse {

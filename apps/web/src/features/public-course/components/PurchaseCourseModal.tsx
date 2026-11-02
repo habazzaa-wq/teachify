@@ -13,11 +13,12 @@ import {
   BookOpen,
   Sparkles,
 } from "lucide-react";
-import { usePurchaseCourse } from "../hooks";
+import { useCreateDirectCoursePayment, usePurchaseCourse } from "../hooks";
 import { formatCoursePrice } from "../utils";
 import { useWallet } from "@/features/wallet/hooks";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { OnlineRechargeModal } from "@/features/wallet/components/OnlineRechargeModal";
 import { RechargeWalletModal } from "@/features/wallet/components/RechargeWalletModal";
 import { PRIMARY, ACCENT, CTA_GRADIENT } from "../brand";
@@ -44,9 +45,12 @@ interface PurchaseCourseModalProps {
 
 export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseModalProps) {
   const { isAuthenticated } = useCurrentUser();
-  const { data: walletData } = useWallet(open && isAuthenticated);
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
+  const { data: walletData } = useWallet(open && isAuthenticated && walletEnabled);
   const { data: hero } = usePublicHero();
   const purchase = usePurchaseCourse(course.slug);
+  const directPayment = useCreateDirectCoursePayment(course.slug);
 
   const [rechargeOnline, setRechargeOnline] = useState(false);
   const [rechargeCode, setRechargeCode] = useState(false);
@@ -55,34 +59,39 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const balance = walletData?.balance ?? 0;
   const isFree = course.pricingType === "free";
   const price = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
-  const walletLoading = !isFree && !walletData;
-  const insufficient = !isFree && balance < price;
+  const walletLoading = walletEnabled && !isFree && !walletData;
+  const insufficient = walletEnabled && !isFree && balance < price;
 
   const rawSupportNumber =
     hero?.socialLinks?.whatsapp || hero?.socialLinks?.phone || "201011245565";
   const cleanSupportNumber = rawSupportNumber.replace(/[^0-9]/g, "");
   const supportHref = cleanSupportNumber
     ? `https://wa.me/${cleanSupportNumber}?text=${encodeURIComponent(
-        `أريد الاشتراك في دورة «${course.title}» بسعر ${formatCoursePrice(price)}. رصيد محفظتي غير كافٍ، أرجو توفير الوصول للدورة مقابل تحويل المبلغ.`,
+        `أريد الاشتراك في دورة «${course.title}» بسعر ${formatCoursePrice(price, course.currency ?? "EGP")}. رصيد محفظتي غير كافٍ، أرجو توفير الوصول للدورة مقابل تحويل المبلغ.`,
       )}`
     : "#";
 
   const handleClose = useCallback(() => {
-    if (purchase.isPending) return;
+    if (purchase.isPending || directPayment.isPending) return;
     setRechargeOnline(false);
     setRechargeCode(false);
     setShowRecharge(false);
     purchase.reset();
     onClose();
-  }, [purchase, onClose]);
+  }, [purchase, directPayment, onClose]);
 
   const handleConfirm = useCallback(() => {
-    if (purchase.isPending) return;
-    purchase.mutate();
-  }, [purchase]);
+    if (purchase.isPending || directPayment.isPending) return;
+    if (isFree || walletEnabled) {
+      purchase.mutate();
+    } else {
+      directPayment.mutate();
+    }
+  }, [purchase, directPayment, isFree, walletEnabled]);
 
-  const errorMessage = purchase.error
-    ? (purchase.error as { message?: string }).message ?? "حدث خطأ غير متوقع. حاول مرة أخرى."
+  const requestError = purchase.error ?? directPayment.error;
+  const errorMessage = requestError
+    ? (requestError as { message?: string }).message ?? "حدث خطأ غير متوقع. حاول مرة أخرى."
     : null;
 
   return (
@@ -139,7 +148,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                       >
                         <p className="text-xs text-muted-foreground/60">رصيد المحفظة المتبقي</p>
                         <p className="mt-1 text-2xl font-extrabold" style={{ color: primary }}>
-                          {formatCoursePrice(purchase.data.balance)}
+                          {formatCoursePrice(purchase.data.balance, course.currency ?? "EGP")}
                         </p>
                       </motion.div>
                     )}
@@ -193,8 +202,8 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                                 رصيد المحفظة غير كافٍ
                               </p>
                               <p className="mt-1 text-xs text-amber-700/70 dark:text-amber-400/70">
-                                سعر الدورة {formatCoursePrice(price)} ورصيدك الحالي{" "}
-                                {formatCoursePrice(balance)}. اشحن محفظتك أو تواصل مع الدعم
+                                سعر الدورة {formatCoursePrice(price, course.currency ?? "EGP")} ورصيدك الحالي{" "}
+                                {formatCoursePrice(balance, course.currency ?? "EGP")}. اشحن محفظتك أو تواصل مع الدعم
                                 للاشتراك في الدورة.
                               </p>
                             </div>
@@ -263,24 +272,28 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground/70">سعر الدورة</span>
                             <span className="font-extrabold text-foreground">
-                              {formatCoursePrice(price)}
+                              {formatCoursePrice(price, course.currency ?? "EGP")}
                             </span>
                           </div>
                           <div className="my-2.5 border-t border-dashed border-border/60" />
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="inline-flex items-center gap-1.5 text-muted-foreground/70">
-                              <Wallet className="h-4 w-4" style={{ color: primary }} />
-                              رصيد محفظتك
-                            </span>
-                            <span className="font-bold text-foreground">{formatCoursePrice(balance)}</span>
-                          </div>
-                          <div className="my-2.5 border-t border-dashed border-border/60" />
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground/70">الرصيد المتبقي بعد الشراء</span>
-                            <span className="font-extrabold" style={{ color: primary }}>
-                              {formatCoursePrice(Math.max(0, balance - price))}
-                            </span>
-                          </div>
+                          {walletEnabled && (
+                            <>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="inline-flex items-center gap-1.5 text-muted-foreground/70">
+                                  <Wallet className="h-4 w-4" style={{ color: primary }} />
+                                  رصيد محفظتك
+                                </span>
+                                <span className="font-bold text-foreground">{formatCoursePrice(balance)}</span>
+                              </div>
+                              <div className="my-2.5 border-t border-dashed border-border/60" />
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground/70">الرصيد المتبقي بعد الشراء</span>
+                                <span className="font-extrabold" style={{ color: primary }}>
+                                  {formatCoursePrice(Math.max(0, balance - price))}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         {errorMessage && (
@@ -299,7 +312,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           <button
                             type="button"
                             onClick={handleConfirm}
-                            disabled={purchase.isPending}
+                            disabled={purchase.isPending || directPayment.isPending}
                             className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                             style={{
                               background: CTA_GRADIENT,
@@ -307,25 +320,25 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                             }}
                           >
                             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                            {purchase.isPending ? (
+                            {purchase.isPending || directPayment.isPending ? (
                               <Loader2 className="h-4 w-4 animate-spin relative z-10" />
                             ) : (
                               <Sparkles className="h-4 w-4 relative z-10" />
                             )}
                             <span className="relative z-10">
-                              {purchase.isPending
+                              {purchase.isPending || directPayment.isPending
                                 ? isFree
                                   ? "جارٍ الاشتراك..."
-                                  : "جارٍ الشراء..."
+                                  : walletEnabled ? "جارٍ الشراء..." : "جارٍ التوجيه للدفع..."
                                 : isFree
                                   ? "تأكيد الاشتراك"
-                                  : "تأكيد الشراء"}
+                                  : walletEnabled ? "تأكيد الشراء" : "المتابعة إلى الدفع"}
                             </span>
                           </button>
                           <button
                             type="button"
                             onClick={handleClose}
-                            disabled={purchase.isPending}
+                            disabled={purchase.isPending || directPayment.isPending}
                             className="h-11 px-5 rounded-xl text-sm font-medium border border-border/50 bg-background/80 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
                           >
                             إلغاء
@@ -334,7 +347,11 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
 
                         <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/50">
                           <ShieldCheck className="h-3.5 w-3.5" style={{ color: secondary }} />
-                          سيتم خصم المبلغ من محفظتك فوراً وفتح كامل محتوى الدورة
+                          {isFree
+                            ? "سيتم تفعيل اشتراكك فوراً"
+                            : walletEnabled
+                              ? "سيتم خصم المبلغ من محفظتك فوراً وفتح كامل محتوى الدورة"
+                              : "ستنتقل إلى بوابة الدفع الآمنة لإتمام شراء الدورة"}
                         </div>
                       </>
                     )}
@@ -346,8 +363,12 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
         )}
       </AnimatePresence>
 
-      <OnlineRechargeModal open={rechargeOnline} onClose={() => setRechargeOnline(false)} />
-      <RechargeWalletModal open={rechargeCode} onClose={() => setRechargeCode(false)} />
+      {walletEnabled && (
+        <>
+          <OnlineRechargeModal open={rechargeOnline} onClose={() => setRechargeOnline(false)} />
+          <RechargeWalletModal open={rechargeCode} onClose={() => setRechargeCode(false)} />
+        </>
+      )}
     </>
   );
 }

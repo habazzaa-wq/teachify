@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseModuleResource;
 use App\Http\Resources\CourseResource;
+use App\Http\Resources\PublicCourseResource;
 use App\Models\Course;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -72,7 +73,7 @@ class PublicCourseController extends Controller
         $courses = $query->paginate((int) ($request->input('per_page', 12)));
 
         return response()->json([
-            'data' => CourseResource::collection($courses),
+            'data' => PublicCourseResource::collection($courses),
             'total' => $courses->total(),
             'per_page' => $courses->perPage(),
             'current_page' => $courses->currentPage(),
@@ -164,7 +165,7 @@ class PublicCourseController extends Controller
             ->firstOrFail();
 
         return response()->json([
-            'data' => new CourseResource($course),
+            'data' => new PublicCourseResource($course),
         ]);
     }
 
@@ -227,7 +228,7 @@ class PublicCourseController extends Controller
             ->get();
 
         return response()->json([
-            'data' => CourseResource::collection($related),
+            'data' => PublicCourseResource::collection($related),
         ]);
     }
 }

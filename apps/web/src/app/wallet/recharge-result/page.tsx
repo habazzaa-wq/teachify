@@ -15,6 +15,7 @@ import { useWallet, walletKeys } from "@/features/wallet/hooks";
 import { walletService } from "@/features/wallet/services";
 import { formatCurrency } from "@/lib/format";
 import { useQueryClient } from "@tanstack/react-query";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 const primary = "var(--brand-primary)";
 const secondary = "var(--brand-secondary)";
@@ -22,6 +23,8 @@ const secondary = "var(--brand-secondary)";
 type ResultStatus = "loading" | "success" | "failed" | "pending" | "error";
 
 export default function WalletRechargeResultPage() {
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
   const searchParams = useSearchParams();
   const router = useRouter();
   const qc = useQueryClient();
@@ -34,9 +37,14 @@ export default function WalletRechargeResultPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const polledRef = useRef(false);
 
-  const { data: walletData } = useWallet(true);
+  const { data: walletData } = useWallet(walletEnabled);
 
   useEffect(() => {
+    if (!walletEnabled) {
+      router.replace("/");
+      return;
+    }
+
     if (!reference) {
       // Defer so we don't call setState synchronously within the effect.
       const t = window.setTimeout(() => setStatus("error"), 0);
@@ -118,7 +126,7 @@ export default function WalletRechargeResultPage() {
       window.clearTimeout(timeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reference, initialStatus]);
+  }, [reference, initialStatus, router, walletEnabled]);
 
   const goBack = () => {
     router.back();

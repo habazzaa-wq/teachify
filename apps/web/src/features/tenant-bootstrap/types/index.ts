@@ -61,6 +61,8 @@ export interface TenantByDomainResponse {
   status: string;
   feature_flags?: {
     has_instructors?: boolean;
+    has_wallet?: boolean;
+    has_regional_pricing?: boolean;
   } | null;
   branding: TenantBranding;
   /** Platform-level brand colors (the "platform colors" field). Distinct from

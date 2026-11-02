@@ -56,6 +56,8 @@ type FormData = {
   supportEmail: string; favicon: string | null;
   notes: string; tags: string[];
   hasInstructors: boolean;
+  hasWallet: boolean;
+  hasRegionalPricing: boolean;
   instructorDisableMode: "retain" | "purge" | "";
 };
 
@@ -73,6 +75,8 @@ const DEFAULT_FORM: FormData = {
   supportEmail: "", favicon: null,
   notes: "", tags: [],
   hasInstructors: false,
+  hasWallet: true,
+  hasRegionalPricing: false,
   instructorDisableMode: "",
 };
 
@@ -122,6 +126,8 @@ function tenantToFormData(tenant: Tenant | null | undefined): FormData {
     notes: tenant.notes ?? "",
     tags: tenant.tags ?? [],
     hasInstructors: tenant.featureFlags?.hasInstructors ?? false,
+    hasWallet: tenant.featureFlags?.hasWallet ?? true,
+    hasRegionalPricing: tenant.featureFlags?.hasRegionalPricing ?? false,
     instructorDisableMode: "",
   };
 }
@@ -401,6 +407,8 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
       },
       featureFlags: {
         hasInstructors: form.hasInstructors,
+        hasWallet: form.hasWallet,
+        hasRegionalPricing: form.hasRegionalPricing,
       },
       ...(dataSource?.featureFlags?.hasInstructors && !form.hasInstructors
         ? { instructorDisableMode: form.instructorDisableMode as "retain" | "purge" }
@@ -551,6 +559,7 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
 
             <AppTabsContent value="features" className="mt-0">
               {mountedTabs.has("features") && (
+                <>
                 <label className="flex items-start gap-3 rounded-lg border p-4">
                   <input
                     type="checkbox"
@@ -568,6 +577,46 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                     </span>
                   </span>
                 </label>
+                <fieldset className="mt-4 space-y-3 rounded-lg border p-4">
+                  <legend className="px-1 text-sm font-semibold">نظام الدفع (اختر نظاماً واحداً)</legend>
+                  <label className="flex items-start gap-3 rounded-lg p-2">
+                    <input
+                      type="radio"
+                      name="commerceFeature"
+                      checked={form.hasWallet}
+                      onChange={() => {
+                        handleChange("hasWallet", true);
+                        handleChange("hasRegionalPricing", false);
+                      }}
+                      className="mt-1"
+                    />
+                    <span className="space-y-1">
+                      <span className="block font-medium">محفظة الطالب</span>
+                      <span className="block text-sm text-muted-foreground">
+                        تظهر المحفظة والرصيد وسجل العمليات والشحن، وتكون مشتريات الدورات بالجنيه المصري.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-lg p-2">
+                    <input
+                      type="radio"
+                      name="commerceFeature"
+                      checked={form.hasRegionalPricing}
+                      onChange={() => {
+                        handleChange("hasWallet", false);
+                        handleChange("hasRegionalPricing", true);
+                      }}
+                      className="mt-1"
+                    />
+                    <span className="space-y-1">
+                      <span className="block font-medium">التسعير حسب الدولة والدفع المباشر</span>
+                      <span className="block text-sm text-muted-foreground">
+                        تُخفى المحفظة ويُدفع ثمن الدورة مباشرة بعملة السعر المحددة للدولة.
+                      </span>
+                    </span>
+                  </label>
+                </fieldset>
+                </>
               )}
               {dataSource?.featureFlags?.hasInstructors && !form.hasInstructors && (
                 <fieldset className="mt-4 space-y-3 rounded-lg border border-destructive/30 p-4">

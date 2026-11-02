@@ -23,6 +23,7 @@ export interface Course {
   price: number | null;
   currency: string | null;
   discountPrice: number | null;
+  regionalPrices?: Record<string, number>;
   enrollmentLimit: number | null;
   startDate: string | null;
   endDate: string | null;
@@ -87,6 +88,7 @@ export interface CreateCoursePayload {
   price?: number | null;
   currency?: string | null;
   discountPrice?: number | null;
+  regionalPrices?: Record<string, number>;
   enrollmentLimit?: number | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -119,6 +121,7 @@ export interface UpdateCoursePayload {
   price?: number | null;
   currency?: string | null;
   discountPrice?: number | null;
+  regionalPrices?: Record<string, number>;
   enrollmentLimit?: number | null;
   startDate?: string | null;
   endDate?: string | null;

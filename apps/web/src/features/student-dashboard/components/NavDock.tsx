@@ -49,6 +49,7 @@ interface NavDockProps {
   active: DashboardViewId;
   onChange: (id: DashboardViewId) => void;
   streakDays: number;
+  showWallet?: boolean;
 }
 
 const orbBase =
@@ -116,14 +117,15 @@ function Orb({
  * Floating navigation dock — a slim vertical capsule anchored to the reading
  * edge (right in RTL). Items switch views in place; nothing navigates.
  */
-export function NavDock({ active, onChange, streakDays }: NavDockProps) {
+export function NavDock({ active, onChange, streakDays, showWallet = true }: NavDockProps) {
   const t = useBrandTheme();
+  const views = showWallet ? DASHBOARD_VIEWS : DASHBOARD_VIEWS.filter((view) => view.id !== "wallet");
   const activeIndex = Math.max(
     0,
-    DASHBOARD_VIEWS.findIndex((v) => v.id === active),
+    views.findIndex((v) => v.id === active),
   );
-  const fillPercent = ((activeIndex + 1) / DASHBOARD_VIEWS.length) * 100;
-  const activeLabel = DASHBOARD_VIEWS[activeIndex]?.label ?? "";
+  const fillPercent = ((activeIndex + 1) / views.length) * 100;
+  const activeLabel = views[activeIndex]?.label ?? "";
 
   return (
     <>
@@ -186,7 +188,7 @@ export function NavDock({ active, onChange, streakDays }: NavDockProps) {
           <div className="my-1 h-px w-7 rounded-full" style={{ backgroundColor: t.divider }} aria-hidden="true" />
 
           <div className="relative flex flex-col items-center gap-1.5">
-            {DASHBOARD_VIEWS.map((meta) => (
+            {views.map((meta) => (
               <Orb
                 key={meta.id}
                 meta={meta}
@@ -245,7 +247,7 @@ export function NavDock({ active, onChange, streakDays }: NavDockProps) {
               borderColor: t.isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
             }}
           >
-            {DASHBOARD_VIEWS.map((meta) => (
+            {views.map((meta) => (
               <button
                 key={meta.id}
                 type="button"

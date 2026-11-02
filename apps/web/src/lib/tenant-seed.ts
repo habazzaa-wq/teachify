@@ -24,6 +24,7 @@ export function tenantSeedToActiveTenant(
     slug: seed.slug,
     status: seed.status,
     domain: seed.domain,
+    feature_flags: seed.feature_flags ?? null,
     branding: {
       logo: b?.logo ?? null,
       favicon: b?.favicon ?? null,

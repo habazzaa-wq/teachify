@@ -36,6 +36,7 @@ function formatCourse(raw: any): Course {
     price: raw.price ?? null,
     currency: raw.currency ?? null,
     discountPrice: raw.discountPrice ?? null,
+    regionalPrices: raw.regionalPrices ?? {},
     enrollmentLimit: raw.enrollmentLimit ?? null,
     startDate: raw.startDate ?? null,
     endDate: raw.endDate ?? null,
@@ -145,6 +146,7 @@ export const coursesService = {
       price_amount: payload.price,
       price_currency: payload.currency,
       discount_price: payload.discountPrice,
+      regional_prices: payload.regionalPrices,
       enrollment_limit: payload.enrollmentLimit,
       start_date: payload.startDate,
       end_date: payload.endDate,
@@ -180,6 +182,7 @@ export const coursesService = {
     if (payload.price !== undefined) body.price_amount = payload.price;
     if (payload.currency !== undefined) body.price_currency = payload.currency;
     if (payload.discountPrice !== undefined) body.discount_price = payload.discountPrice;
+    if (payload.regionalPrices !== undefined) body.regional_prices = payload.regionalPrices;
     if (payload.enrollmentLimit !== undefined) body.enrollment_limit = payload.enrollmentLimit;
     if (payload.startDate !== undefined) body.start_date = payload.startDate;
     if (payload.endDate !== undefined) body.end_date = payload.endDate;

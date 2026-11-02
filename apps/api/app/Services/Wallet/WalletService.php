@@ -11,6 +11,7 @@ use App\Models\Wallet;
 use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
 use App\Services\Learning\EnrollmentService;
+use App\Services\Commerce\TenantCommerceFeatures;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -51,6 +52,12 @@ class WalletService
         $amount = $course->pricing_type === 'free'
             ? 0.0
             : (float) ($course->discount_price ?? $course->price_amount ?? 0);
+
+        if ($course->pricing_type !== 'free' && ! app(TenantCommerceFeatures::class)->walletEnabled($tenant)) {
+            throw ValidationException::withMessages([
+                'course' => ['الدفع عبر المحفظة غير متاح لهذه الأكاديمية.'],
+            ]);
+        }
 
         return DB::transaction(function () use ($tenant, $course, $student, $enrollments, $amount): array {
             $wallet = null;
@@ -302,6 +309,12 @@ class WalletService
      */
     public function creditOnlinePayment(Tenant $tenant, WalletPayment $payment): array
     {
+        if ($payment->payment_type !== 'wallet_topup' || $payment->wallet_id === null) {
+            throw ValidationException::withMessages([
+                'payment' => ['دفعة شحن المحفظة غير صالحة.'],
+            ]);
+        }
+
         if ($payment->isPaid()) {
             return [
                 'wallet' => $payment->wallet,

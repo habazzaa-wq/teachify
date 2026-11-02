@@ -259,4 +259,38 @@ export const publicCourseService = {
       enrollment: json.enrollment ?? null,
     };
   },
+
+  async createDirectPayment(slug: string): Promise<{
+    paymentUrl: string;
+    amount: number;
+    currency: string;
+  }> {
+    const json = await tenantStudentFetch<{
+      data: { payment_url: string; amount: number; currency: string };
+    }>(`/public/courses/${slug}/direct-payment`, { method: "POST" });
+    return {
+      paymentUrl: json.data.payment_url,
+      amount: json.data.amount,
+      currency: json.data.currency,
+    };
+  },
+
+  async getDirectPaymentStatus(reference: string): Promise<{
+    status: "pending" | "paid" | "failed" | "expired";
+    courseSlug: string | null;
+    failureReason: string | null;
+  }> {
+    const json = await tenantStudentFetch<{
+      data: {
+        status: "pending" | "paid" | "failed" | "expired";
+        course_slug: string | null;
+        failure_reason: string | null;
+      };
+    }>(`/public/course-payments/${encodeURIComponent(reference)}`);
+    return {
+      status: json.data.status,
+      courseSlug: json.data.course_slug,
+      failureReason: json.data.failure_reason,
+    };
+  },
 };

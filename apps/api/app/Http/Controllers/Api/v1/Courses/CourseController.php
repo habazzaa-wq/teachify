@@ -426,6 +426,8 @@ class CourseController extends Controller
             'price_amount' => ['nullable', 'integer', 'min:0'],
             'price_currency' => ['nullable', 'string', 'size:3'],
             'discount_price' => ['nullable', 'integer', 'min:0'],
+            'regional_prices' => ['sometimes', 'array'],
+            'regional_prices.*' => ['numeric', 'min:1', 'max:100000000'],
             'enrollment_limit' => ['nullable', 'integer', 'min:0'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after:start_date'],

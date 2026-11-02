@@ -12,10 +12,13 @@ import { TasksView } from "./TasksView";
 import { WalletHistoryView } from "./WalletHistoryView";
 import { AchievementsView } from "./AchievementsView";
 import { CalendarView } from "./CalendarView";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 export function StudentDashboardPage() {
   const { data, isLoading, isError, refetch } = useStudentDashboard();
   const [activeView, setActiveView] = useState<DashboardViewId>("overview");
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
 
   if (isLoading) {
     return <AppLoadingState label="جارٍ تحميل لوحة الطالب..." className="min-h-[60vh]" />;
@@ -38,6 +41,7 @@ export function StudentDashboardPage() {
         active={activeView}
         onChange={setActiveView}
         streakDays={data.stats.currentStreakDays}
+        showWallet={walletEnabled}
       />
 
       <div key={activeView} className="animate-fade-in-up">
@@ -45,7 +49,7 @@ export function StudentDashboardPage() {
         {activeView === "courses" && <CoursesView items={data.continueLearning} />}
         {activeView === "exams" && <ExamsView attempts={data.recentAttempts} />}
         {activeView === "tasks" && <TasksView tasks={data.upcomingTasks} />}
-        {activeView === "wallet" && <WalletHistoryView />}
+        {activeView === "wallet" && walletEnabled && <WalletHistoryView />}
         {activeView === "achievements" && <AchievementsView achievements={data.achievements} />}
         {activeView === "calendar" && <CalendarView calendar={data.calendar} />}
       </div>

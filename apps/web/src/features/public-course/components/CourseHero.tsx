@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { formatCoursePrice } from "../utils";
 import { useUiStore } from "@/stores/ui.store";
 import { formatDurationLong } from "../utils";
 import type { PublicCourse } from "../types";
@@ -117,7 +118,6 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
   const discountPercent = hasDiscount
     ? Math.round(((originalPrice - course.discountPrice!) / originalPrice) * 100)
     : 0;
-  const currency = "ج.م";
 
   const coverSrc = course.coverImage || course.thumbnail;
   const ghostLetter = course.title.trim().charAt(0) || "د";
@@ -486,15 +486,12 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
                   ) : (
                     <div className="flex flex-wrap items-end gap-x-2 gap-y-0.5">
                       <span className="text-3xl font-black tabular-nums tracking-tight" style={{ color: P }}>
-                        {formatNumber(displayPrice)}
-                      </span>
-                      <span className="mb-1 text-sm font-bold" style={{ color: soft }}>
-                        {currency}
+                        {formatCoursePrice(displayPrice, course.currency ?? "EGP")}
                       </span>
                       {hasDiscount && (
                         <>
                           <span className="mb-1 text-sm font-semibold text-rose-500 line-through dark:text-rose-400">
-                            {formatNumber(originalPrice)} {currency}
+                            {formatCoursePrice(originalPrice, course.currency ?? "EGP")}
                           </span>
                           <span
                             className="mb-1 rounded-[6px] px-2 py-0.5 text-[11px] font-black"

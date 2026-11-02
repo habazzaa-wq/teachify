@@ -17,6 +17,7 @@ async function serverFetch<T>(path: string): Promise<T> {
   const tenantId = h.get("x-tenant-id") ?? "";
   const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(":")[0];
   const tenantDomain = h.get("x-tenant-domain") ?? host;
+  const countryCode = h.get("cf-ipcountry")?.toUpperCase();
 
   const url = `${resolveApiBaseUrl()}${path}`;
 
@@ -26,6 +27,7 @@ async function serverFetch<T>(path: string): Promise<T> {
       "Content-Type": "application/json",
       ...(tenantId ? { "X-Tenant-ID": tenantId } : {}),
       ...(tenantDomain ? { "X-Tenant-Domain": tenantDomain } : {}),
+      ...(countryCode && /^[A-Z]{2}$/.test(countryCode) ? { "CF-IPCountry": countryCode } : {}),
     },
     cache: "no-store",
   });

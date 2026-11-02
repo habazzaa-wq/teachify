@@ -19,7 +19,9 @@ class WalletPayment extends Model
     protected $fillable = [
         'tenant_id',
         'wallet_id',
+        'course_id',
         'tenant_user_id',
+        'payment_type',
         'reference',
         'amount',
         'currency',

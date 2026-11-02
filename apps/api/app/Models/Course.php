@@ -37,6 +37,7 @@ class Course extends Model
         'price_amount',
         'price_currency',
         'discount_price',
+        'regional_prices',
         'enrollment_limit',
         'start_date',
         'end_date',
@@ -57,6 +58,7 @@ class Course extends Model
     protected function casts(): array
     {
         return [
+            'regional_prices' => 'array',
             'price_amount' => 'integer',
             'discount_price' => 'integer',
             'duration' => 'integer',

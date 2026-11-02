@@ -8,6 +8,7 @@ import { ArrowRight, BookOpen, Command, Flame, Loader2, Search, X } from "lucide
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { formatCoursePrice } from "@/features/public-course/utils";
 import { catalogService } from "../services";
 import type { CatalogCourse } from "../types";
 import { ACCENT, PRIMARY } from "../constants";
@@ -123,7 +124,6 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
 
   const renderPrice = (course: CatalogCourse) => {
     const isFree = course.pricingType === "free";
-    const currency = course.currency ?? "ر.س";
     if (isFree) {
       return (
         <span
@@ -148,7 +148,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
             boxShadow: "0 2px 10px rgba(0,0,0,0.208)",
           }}
         >
-          {formatNumber(price)} {currency}
+          {formatCoursePrice(price, course.currency ?? "EGP")}
         </span>
       );
     }

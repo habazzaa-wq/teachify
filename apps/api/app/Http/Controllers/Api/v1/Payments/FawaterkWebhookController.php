@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\WalletPayment;
 use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
+use App\Services\Commerce\DirectCoursePaymentService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class FawaterkWebhookController extends Controller
         private readonly FawaterkService $fawaterkService,
         private readonly PaymentGatewayService $gatewayService,
         private readonly WalletService $walletService,
+        private readonly DirectCoursePaymentService $directCoursePaymentService,
     ) {
     }
 
@@ -58,7 +60,18 @@ class FawaterkWebhookController extends Controller
         $status = strtolower((string) ($payload['invoice_status'] ?? ''));
 
         if ($status === 'paid') {
-            $this->walletService->creditOnlinePayment($payment->tenant, $payment);
+            if ($payment->payment_type === 'course_purchase') {
+                $this->directCoursePaymentService->complete($payment->tenant, $payment);
+            } elseif ($payment->payment_type === 'wallet_topup') {
+                $this->walletService->creditOnlinePayment($payment->tenant, $payment);
+            } else {
+                return response()->json(['message' => 'Unsupported payment type'], 422);
+            }
+        } elseif ($payment->payment_type === 'course_purchase' && in_array($status, ['failed', 'cancelled', 'expired'], true)) {
+            $payment->update([
+                'status' => WalletPayment::STATUS_FAILED,
+                'failure_reason' => 'تم رفض الدفع أو انتهت صلاحيته.',
+            ]);
         }
 
         return response()->json(['message' => 'ok']);

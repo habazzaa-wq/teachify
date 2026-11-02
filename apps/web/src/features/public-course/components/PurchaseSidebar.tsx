@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { formatCoursePrice } from "../utils";
 import { SubscribeButton } from "./primitives";
 import { CTA_GRADIENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
 import type { PublicCourse } from "../types";
@@ -49,7 +50,6 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = course.currency;
 
   const discountPercent = useMemo(() => {
     if (!hasDiscount || !originalPrice || !course.discountPrice) return 0;
@@ -112,17 +112,12 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
             ) : (
               <div className="flex flex-wrap items-end gap-2.5">
                 <span className="text-3xl font-extrabold tracking-tight text-foreground">
-                  {formatNumber(displayPrice)}
+                  {formatCoursePrice(displayPrice, course.currency ?? "EGP")}
                 </span>
-                {currency && (
-                  <span className="mb-1 text-sm font-semibold text-muted-foreground">
-                    {currency}
-                  </span>
-                )}
                 {hasDiscount && (
                   <>
                     <span className="mb-1 text-base text-muted-foreground line-through">
-                      {formatNumber(originalPrice)} {currency ?? ""}
+                      {formatCoursePrice(originalPrice, course.currency ?? "EGP")}
                     </span>
                     <span
                       className="mb-1 rounded-lg px-2 py-0.5 text-[11px] font-extrabold"

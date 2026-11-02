@@ -89,7 +89,11 @@ interface TenantState {
     slug: string;
     domain: string;
     status: string;
-    feature_flags?: { has_instructors?: boolean } | null;
+    feature_flags?: {
+      has_instructors?: boolean;
+      has_wallet?: boolean;
+      has_regional_pricing?: boolean;
+    } | null;
     branding: TenantBranding;
     platformBranding?: TenantBranding | null;
     subdomain?: string | null;

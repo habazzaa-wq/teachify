@@ -135,9 +135,11 @@ export const platformTenantsApiService = {
     if (typeof filtered.instructorDisableMode === "string") {
       payload.instructor_disable_mode = filtered.instructorDisableMode;
     }
-    if (featureFlags && typeof featureFlags === "object" && "hasInstructors" in featureFlags) {
+    if (featureFlags && typeof featureFlags === "object") {
       payload.feature_flags = {
-        has_instructors: featureFlags.hasInstructors,
+        ...("hasInstructors" in featureFlags ? { has_instructors: featureFlags.hasInstructors } : {}),
+        ...("hasWallet" in featureFlags ? { has_wallet: featureFlags.hasWallet } : {}),
+        ...("hasRegionalPricing" in featureFlags ? { has_regional_pricing: featureFlags.hasRegionalPricing } : {}),
       };
     }
     const response = await platformApi.put<{ tenant: Tenant }>(`/tenants/${id}`, payload);

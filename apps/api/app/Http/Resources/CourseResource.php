@@ -52,6 +52,7 @@ class CourseResource extends JsonResource
             'price' => $this->price_amount,
             'currency' => $this->price_currency,
             'discountPrice' => $this->discount_price,
+            'regionalPrices' => $this->regional_prices ?? [],
             'enrollmentLimit' => $this->enrollment_limit,
             'startDate' => $this->start_date?->toIso8601String(),
             'endDate' => $this->end_date?->toIso8601String(),

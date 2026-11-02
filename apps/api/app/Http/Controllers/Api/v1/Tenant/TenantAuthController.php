@@ -319,6 +319,11 @@ class TenantAuthController extends Controller
                 'slug' => $tenant->slug,
                 'status' => $tenant->status,
                 'domain' => $tenant->getDefaultDomain(),
+                'feature_flags' => [
+                    'has_instructors' => (bool) ($tenant->feature_flags['has_instructors'] ?? false),
+                    'has_wallet' => (bool) ($tenant->feature_flags['has_wallet'] ?? true),
+                    'has_regional_pricing' => (bool) ($tenant->feature_flags['has_regional_pricing'] ?? false),
+                ],
                 // Teacher appearance (control-panel colors) — read from the
                 // `branding` settings group so the saved colors survive a reload.
                 'branding' => $this->getBranding($tenant),

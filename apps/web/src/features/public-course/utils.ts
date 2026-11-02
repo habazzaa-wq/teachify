@@ -27,8 +27,20 @@ import { formatCurrency } from "@/lib/format";
  */
 export function formatCoursePrice(
   amount: number | string | null | undefined,
+  currency = "EGP",
 ): string {
-  return formatCurrency(amount);
+  const currencyNames: Record<string, string> = {
+    EGP: "جنيه مصري",
+    SR: "ريال سعودي",
+    AED: "درهم إماراتي",
+    KWD: "دينار كويتي",
+    QAR: "ريال قطري",
+    BHD: "دينار بحريني",
+    USD: "دولار أمريكي",
+  };
+  if (currency === "EGP") return formatCurrency(amount);
+  const numericAmount = Number(amount ?? 0);
+  return `${new Intl.NumberFormat("ar", { maximumFractionDigits: 2 }).format(numericAmount)} ${currencyNames[currency] ?? currency}`;
 }
 
 /** Content-type → icon/label/color mapping used across the curriculum. */

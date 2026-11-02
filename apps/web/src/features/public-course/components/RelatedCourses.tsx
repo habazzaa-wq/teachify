@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, Users, Clock, GraduationCap } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { formatCoursePrice } from "../utils";
 import { SectionHeader } from "./primitives";
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
 import type { RelatedCourse } from "../types";
@@ -24,7 +25,6 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
     course.discountPrice < course.price;
   const displayPrice = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const originalPrice = course.price ?? 0;
-  const currency = course.currency;
   const diffColor = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
 
   return (
@@ -111,15 +111,15 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
             ) : hasDiscount ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-extrabold text-[var(--brand-primary)]">
-                  {formatNumber(displayPrice)} {currency ?? ""}
+                  {formatCoursePrice(displayPrice, course.currency ?? "EGP")}
                 </span>
                 <span className="text-xs text-muted-foreground line-through">
-                  {formatNumber(originalPrice)}
+                  {formatCoursePrice(originalPrice, course.currency ?? "EGP")}
                 </span>
               </div>
             ) : displayPrice > 0 ? (
               <span className="text-sm font-extrabold text-[var(--brand-primary)]">
-                {formatNumber(displayPrice)} {currency ?? ""}
+                {formatCoursePrice(displayPrice, course.currency ?? "EGP")}
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">—</span>

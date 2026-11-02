@@ -97,11 +97,30 @@ class TenantController extends Controller
             'plan' => ['sometimes', 'nullable', 'array'],
             'platform_plan_id' => ['sometimes', 'nullable', 'integer', 'exists:platform_plans,id'],
             'feature_flags.has_instructors' => ['sometimes', 'boolean'],
+            'feature_flags.has_wallet' => ['sometimes', 'boolean'],
+            'feature_flags.has_regional_pricing' => ['sometimes', 'boolean'],
             'instructor_disable_mode' => ['sometimes', 'required', 'in:retain,purge'],
         ]);
 
         $featureFlags = $validated['feature_flags'] ?? null;
         $instructorDisableMode = $validated['instructor_disable_mode'] ?? null;
+        if ($featureFlags !== null) {
+            $currentFlags = $tenant->feature_flags ?? [];
+            $walletEnabled = (bool) ($featureFlags['has_wallet'] ?? $currentFlags['has_wallet'] ?? true);
+            $regionalPricingEnabled = (bool) ($featureFlags['has_regional_pricing'] ?? $currentFlags['has_regional_pricing'] ?? false);
+
+            if ($walletEnabled === $regionalPricingEnabled) {
+                if (array_key_exists('has_wallet', $featureFlags) && ! array_key_exists('has_regional_pricing', $featureFlags)) {
+                    $featureFlags['has_regional_pricing'] = ! $walletEnabled;
+                } elseif (array_key_exists('has_regional_pricing', $featureFlags) && ! array_key_exists('has_wallet', $featureFlags)) {
+                    $featureFlags['has_wallet'] = ! $regionalPricingEnabled;
+                } else {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'feature_flags' => ['يجب تفعيل المحفظة أو التسعير حسب الدولة فقط، ولا يمكن تفعيلهما معاً أو إيقافهما معاً.'],
+                    ]);
+                }
+            }
+        }
         unset($validated['feature_flags']);
         unset($validated['instructor_disable_mode']);
 

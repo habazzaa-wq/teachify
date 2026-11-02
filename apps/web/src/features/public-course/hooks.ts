@@ -89,7 +89,17 @@ export function usePurchaseCourse(slug: string | null) {
           queryKey: [PUBLIC_COURSE_QUERY_KEY, "detail", slug],
         });
       }
+
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    },
+  });
+}
+
+export function useCreateDirectCoursePayment(slug: string | null) {
+  return useMutation({
+    mutationFn: () => publicCourseService.createDirectPayment(slug!),
+    onSuccess: ({ paymentUrl }) => {
+      window.location.assign(paymentUrl);
     },
   });
 }

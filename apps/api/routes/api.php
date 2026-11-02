@@ -104,6 +104,7 @@ use App\Http\Controllers\Api\v1\Public\PublicCourseController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
+use App\Http\Controllers\Api\v1\Public\DirectCoursePaymentController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\Public\PublicInstructorController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
@@ -407,6 +408,8 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
         Route::get('/public/courses/{slug}/enrollment', [PublicEnrollmentCheckController::class, 'show']);
         Route::post('/public/courses/{slug}/enroll', [PublicCoursePurchaseController::class, 'store'])->middleware('throttle:10,1');
+        Route::post('/public/courses/{slug}/direct-payment', [DirectCoursePaymentController::class, 'create'])->middleware('throttle:10,1');
+        Route::get('/public/course-payments/{reference}', [DirectCoursePaymentController::class, 'status'])->middleware('throttle:60,1');
     });
 
     Route::prefix('auth')->group(function () {

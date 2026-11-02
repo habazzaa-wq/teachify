@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Instructors\InstructorFeature;
+use App\Services\Commerce\CourseRegionalPricing;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -54,6 +55,7 @@ class CourseService
                 'price_amount' => $data['price_amount'] ?? null,
                 'price_currency' => $data['price_currency'] ?? 'EGP',
                 'discount_price' => $data['discount_price'] ?? null,
+                'regional_prices' => app(CourseRegionalPricing::class)->normalize($tenant, $data['regional_prices'] ?? []),
                 'educational_stage_id' => $data['educational_stage_id'] ?? null,
                 'subject_id' => $data['subject_id'] ?? null,
                 'enrollment_limit' => $data['enrollment_limit'] ?? null,
@@ -135,6 +137,7 @@ class CourseService
                 'price_amount',
                 'price_currency',
                 'discount_price',
+                'regional_prices',
                 'educational_stage_id',
                 'subject_id',
                 'enrollment_limit',
@@ -149,6 +152,10 @@ class CourseService
                 'learning_outcomes',
                 'target_audience',
             ])->all())->save();
+            if (array_key_exists('regional_prices', $data)) {
+                $course->regional_prices = app(CourseRegionalPricing::class)->normalize($tenant, $data['regional_prices']);
+                $course->save();
+            }
 
             if (array_key_exists('category_ids', $data) || array_key_exists('tag_ids', $data)) {
                 $this->syncTaxonomy(

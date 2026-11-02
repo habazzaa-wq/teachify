@@ -32,6 +32,11 @@ class CurrentUserController extends Controller
                 'slug' => $tenant->slug,
                 'status' => $tenant->status,
                 'domain' => $tenant->getDefaultDomain(),
+                'feature_flags' => [
+                    'has_instructors' => (bool) ($tenant->feature_flags['has_instructors'] ?? false),
+                    'has_wallet' => (bool) ($tenant->feature_flags['has_wallet'] ?? true),
+                    'has_regional_pricing' => (bool) ($tenant->feature_flags['has_regional_pricing'] ?? false),
+                ],
                 'branding' => $this->getBranding($tenant),
                 'platform_branding' => $this->getPlatformBranding($tenant),
                 'platform_plan_id' => $tenant->platform_plan_id,

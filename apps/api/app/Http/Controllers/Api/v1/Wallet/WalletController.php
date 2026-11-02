@@ -9,6 +9,7 @@ use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
 use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
+use App\Services\Commerce\TenantCommerceFeatures;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,15 @@ use Illuminate\Validation\ValidationException;
 
 class WalletController extends Controller
 {
+    private function assertWalletEnabled(): void
+    {
+        abort_unless(
+            app(TenantCommerceFeatures::class)->walletEnabled(currentTenant()),
+            403,
+            'المحفظة غير مفعّلة لهذه الأكاديمية.',
+        );
+    }
+
     public function __construct(
         private readonly WalletService $walletService,
         private readonly PaymentGatewayService $gatewayService,
@@ -41,6 +51,7 @@ class WalletController extends Controller
      */
     public function me(): JsonResponse
     {
+        $this->assertWalletEnabled();
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
         $this->assertStudentRole($membership);
@@ -57,6 +68,7 @@ class WalletController extends Controller
      */
     public function transactions(Request $request): JsonResponse
     {
+        $this->assertWalletEnabled();
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
         $this->assertStudentRole($membership);
@@ -113,6 +125,7 @@ class WalletController extends Controller
      */
     public function recharge(Request $request): JsonResponse
     {
+        $this->assertWalletEnabled();
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:64'],
         ]);
@@ -139,6 +152,7 @@ class WalletController extends Controller
      */
     public function createOnlinePayment(Request $request): JsonResponse
     {
+        $this->assertWalletEnabled();
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
         ]);
@@ -244,6 +258,7 @@ class WalletController extends Controller
      */
     public function onlinePaymentStatus(string $reference): JsonResponse
     {
+        $this->assertWalletEnabled();
         $tenant = currentTenant();
         $membership = app(TenantUser::class);
         $this->assertStudentRole($membership);

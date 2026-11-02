@@ -29,6 +29,8 @@ class TenantResource extends JsonResource
             'status' => $this->status,
             'featureFlags' => [
                 'hasInstructors' => (bool) ($this->feature_flags['has_instructors'] ?? false),
+                'hasWallet' => (bool) ($this->feature_flags['has_wallet'] ?? true),
+                'hasRegionalPricing' => (bool) ($this->feature_flags['has_regional_pricing'] ?? false),
             ],
             'domain' => $primaryDomain ? [
                 'platformSubdomain' => $primaryDomain->subdomain ?? '',
