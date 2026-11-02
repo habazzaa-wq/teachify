@@ -22,6 +22,13 @@ class PublicInstructorTest extends TestCase
             'tenant_id' => $tenant->id,
             'user_id' => $user->id,
             'is_instructor' => true,
+            'bio' => 'Experienced educator.',
+            'expertise' => 'Mathematics',
+            'experience_years' => 12,
+            'website_url' => 'https://example.test',
+            'linkedin_url' => 'https://linkedin.com/in/example',
+            'youtube_url' => 'https://youtube.com/@example',
+            'phone' => '+201234567890',
         ]);
 
         $this->getJson('/api/v1/public/instructors', [
@@ -31,6 +38,13 @@ class PublicInstructorTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $membership->id)
             ->assertJsonPath('data.0.name', 'New Instructor')
+            ->assertJsonPath('data.0.bio', 'Experienced educator.')
+            ->assertJsonPath('data.0.expertise', 'Mathematics')
+            ->assertJsonPath('data.0.experienceYears', 12)
+            ->assertJsonPath('data.0.websiteUrl', 'https://example.test')
+            ->assertJsonPath('data.0.linkedinUrl', 'https://linkedin.com/in/example')
+            ->assertJsonPath('data.0.youtubeUrl', 'https://youtube.com/@example')
+            ->assertJsonMissingPath('data.0.phone')
             ->assertJsonPath('data.0.coursesCount', 0)
             ->assertJsonPath('data.0.courses', []);
     }

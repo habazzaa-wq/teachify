@@ -21,6 +21,7 @@ interface InstructorAuthState {
   ) => void;
   setCredentials: (accessToken: string, refreshToken: string) => void;
   updateUser: (user: InstructorUser) => void;
+  updateMembership: (membership: InstructorMembership) => void;
   clear: () => void;
 }
 
@@ -39,6 +40,7 @@ export const useInstructorAuthStore = create<InstructorAuthState>()(
       setCredentials: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, mustChangePassword: false }),
       updateUser: (user) => set({ user }),
+      updateMembership: (membership) => set({ membership }),
       clear: () =>
         set({
           user: null,

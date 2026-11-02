@@ -80,14 +80,22 @@ export const instructorApi = {
   },
 
   updateProfile(token: string, data: {
-    name: string;
+    first_name: string;
+    last_name: string;
     avatar: string | null;
     job_title: string;
     department: string;
+    phone: string;
+    bio: string;
+    expertise: string;
+    experience_years: number | null;
+    website_url: string | null;
+    linkedin_url: string | null;
+    youtube_url: string | null;
   }) {
     return request<{
       user: InstructorUser;
-      membership: InstructorMembership & { job_title: string | null; department: string | null };
+      membership: InstructorMembership;
     }>("instructor/auth/profile", "PUT", { token, data });
   },
 

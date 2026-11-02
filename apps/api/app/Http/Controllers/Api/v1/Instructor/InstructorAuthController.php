@@ -7,6 +7,7 @@ use App\Models\TenantUser;
 use App\Services\Instructors\InstructorAuthenticationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InstructorAuthController extends Controller
 {
@@ -35,6 +36,19 @@ class InstructorAuthController extends Controller
                 'id' => $membership->id,
                 'tenant_id' => $membership->tenant_id,
                 'status' => $membership->status,
+                'joined_at' => $membership->joined_at?->toIso8601String(),
+                'last_login_at' => $membership->last_login_at?->toIso8601String(),
+                'first_name' => $membership->first_name,
+                'last_name' => $membership->last_name,
+                'job_title' => $membership->job_title,
+                'department' => $membership->department,
+                'phone' => $membership->phone,
+                'bio' => $membership->bio,
+                'expertise' => $membership->expertise,
+                'experience_years' => $membership->experience_years,
+                'website_url' => $membership->website_url,
+                'linkedin_url' => $membership->linkedin_url,
+                'youtube_url' => $membership->youtube_url,
             ],
         ]);
     }
@@ -70,8 +84,19 @@ class InstructorAuthController extends Controller
                 'id' => $membership->id,
                 'tenant_id' => $membership->tenant_id,
                 'must_change_password' => $membership->must_change_password,
+                'joined_at' => $membership->joined_at?->toIso8601String(),
+                'last_login_at' => $membership->last_login_at?->toIso8601String(),
+                'first_name' => $membership->first_name,
+                'last_name' => $membership->last_name,
                 'job_title' => $membership->job_title,
                 'department' => $membership->department,
+                'phone' => $membership->phone,
+                'bio' => $membership->bio,
+                'expertise' => $membership->expertise,
+                'experience_years' => $membership->experience_years,
+                'website_url' => $membership->website_url,
+                'linkedin_url' => $membership->linkedin_url,
+                'youtube_url' => $membership->youtube_url,
             ],
         ]);
     }
@@ -81,18 +106,43 @@ class InstructorAuthController extends Controller
         /** @var TenantUser $membership */
         $membership = $request->attributes->get('instructorMembership');
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
             'avatar' => ['sometimes', 'nullable', 'url', 'max:2048'],
             'job_title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'department' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'expertise' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'experience_years' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:80'],
+            'website_url' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
+            'linkedin_url' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
+            'youtube_url' => ['sometimes', 'nullable', 'url:http,https', 'max:2048'],
         ]);
 
-        $request->user()->forceFill(['name' => $validated['name']])->save();
-        $membership->forceFill(collect($validated)->only([
-            'avatar',
-            'job_title',
-            'department',
-        ])->all())->save();
+        $validated['first_name'] = trim($validated['first_name']);
+        $validated['last_name'] = trim($validated['last_name']);
+        abort_if($validated['first_name'] === '' || $validated['last_name'] === '', 422, 'الاسم الأول واسم العائلة مطلوبان.');
+
+        DB::transaction(function () use ($request, $membership, $validated): void {
+            $request->user()->forceFill([
+                'name' => trim($validated['first_name'].' '.$validated['last_name']),
+            ])->save();
+            $membership->forceFill(collect($validated)->only([
+                'avatar',
+                'job_title',
+                'department',
+                'first_name',
+                'last_name',
+                'phone',
+                'bio',
+                'expertise',
+                'experience_years',
+                'website_url',
+                'linkedin_url',
+                'youtube_url',
+            ])->all())->save();
+        });
 
         return response()->json([
             'message' => 'Profile updated.',
@@ -106,8 +156,19 @@ class InstructorAuthController extends Controller
                 'id' => $membership->id,
                 'tenant_id' => $membership->tenant_id,
                 'must_change_password' => $membership->must_change_password,
+                'joined_at' => $membership->joined_at?->toIso8601String(),
+                'last_login_at' => $membership->last_login_at?->toIso8601String(),
+                'first_name' => $membership->first_name,
+                'last_name' => $membership->last_name,
                 'job_title' => $membership->job_title,
                 'department' => $membership->department,
+                'phone' => $membership->phone,
+                'bio' => $membership->bio,
+                'expertise' => $membership->expertise,
+                'experience_years' => $membership->experience_years,
+                'website_url' => $membership->website_url,
+                'linkedin_url' => $membership->linkedin_url,
+                'youtube_url' => $membership->youtube_url,
             ],
         ]);
     }

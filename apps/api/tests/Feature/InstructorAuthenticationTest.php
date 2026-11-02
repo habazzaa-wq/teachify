@@ -328,14 +328,25 @@ class InstructorAuthenticationTest extends TestCase
 
         $this->withHeaders($headers + ['Authorization' => 'Bearer '.$accessToken])
             ->putJson('/api/v1/instructor/auth/profile', [
-                'name' => 'Updated Instructor',
+                'first_name' => 'Updated',
+                'last_name' => 'Instructor',
                 'avatar' => 'https://cdn.example.test/instructor.jpg',
                 'job_title' => 'Senior Instructor',
                 'department' => 'Mathematics',
+                'phone' => '+201234567890',
+                'bio' => 'Experienced educator focused on practical learning.',
+                'expertise' => 'Applied Mathematics',
+                'experience_years' => 12,
+                'website_url' => 'https://example.test',
+                'linkedin_url' => 'https://linkedin.com/in/example',
+                'youtube_url' => 'https://youtube.com/@example',
             ])
             ->assertOk()
             ->assertJsonPath('user.name', 'Updated Instructor')
-            ->assertJsonPath('membership.job_title', 'Senior Instructor');
+            ->assertJsonPath('membership.first_name', 'Updated')
+            ->assertJsonPath('membership.last_name', 'Instructor')
+            ->assertJsonPath('membership.job_title', 'Senior Instructor')
+            ->assertJsonPath('membership.experience_years', 12);
 
         $this->assertDatabaseHas('users', [
             'id' => $account['membership']->user_id,
@@ -346,6 +357,15 @@ class InstructorAuthenticationTest extends TestCase
             'avatar' => 'https://cdn.example.test/instructor.jpg',
             'job_title' => 'Senior Instructor',
             'department' => 'Mathematics',
+            'first_name' => 'Updated',
+            'last_name' => 'Instructor',
+            'phone' => '+201234567890',
+            'bio' => 'Experienced educator focused on practical learning.',
+            'expertise' => 'Applied Mathematics',
+            'experience_years' => 12,
+            'website_url' => 'https://example.test',
+            'linkedin_url' => 'https://linkedin.com/in/example',
+            'youtube_url' => 'https://youtube.com/@example',
         ]);
     }
 

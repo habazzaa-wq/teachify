@@ -10,8 +10,19 @@ export interface InstructorMembership {
   tenant_id: number;
   status?: string;
   must_change_password?: boolean;
+  joined_at?: string | null;
+  last_login_at?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   job_title?: string | null;
   department?: string | null;
+  phone?: string | null;
+  bio?: string | null;
+  expertise?: string | null;
+  experience_years?: number | null;
+  website_url?: string | null;
+  linkedin_url?: string | null;
+  youtube_url?: string | null;
 }
 
 export interface InstructorCourse {

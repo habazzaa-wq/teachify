@@ -27,7 +27,7 @@ class PublicInstructorController extends Controller
 
         return response()->json([
             'data' => $memberships
-                ->map(fn (TenantUser $membership) => $this->presentInstructor(
+                ->map(fn(TenantUser $membership) => $this->presentInstructor(
                     $membership,
                     $coursesByInstructor->get($membership->id, collect())->values(),
                 ))
@@ -49,7 +49,7 @@ class PublicInstructorController extends Controller
             ->firstOrFail();
 
         $courses = $this->publicCourses($tenant->id, [$membership->id])
-            ->filter(fn (Course $course) => $this->courseHasInstructor($course, $membership->id))
+            ->filter(fn(Course $course) => $this->courseHasInstructor($course, $membership->id))
             ->values();
 
         return response()->json([
@@ -69,7 +69,7 @@ class PublicInstructorController extends Controller
             ->where('visibility', 'public')
             ->where(function (Builder $query) use ($membershipIds): void {
                 $query->whereIn('primary_instructor_tenant_user_id', $membershipIds)
-                    ->orWhereHas('instructors', fn (Builder $instructors) => $instructors
+                    ->orWhereHas('instructors', fn(Builder $instructors) => $instructors
                         ->whereIn('tenant_user_id', $membershipIds)
                         ->where('is_visible', true));
             })
@@ -88,29 +88,34 @@ class PublicInstructorController extends Controller
                 ->filter()
                 ->unique();
 
-            return $ids->map(fn (int $id) => [$id, $course]);
-        })->groupBy(fn (array $entry) => $entry[0])
-            ->map(fn ($entries) => $entries->map(fn (array $entry) => $entry[1])->unique('id'));
+            return $ids->map(fn(int $id) => [$id, $course]);
+        })->groupBy(fn(array $entry) => $entry[0])
+            ->map(fn($entries) => $entries->map(fn(array $entry) => $entry[1])->unique('id'));
     }
 
     private function courseHasInstructor(Course $course, int $membershipId): bool
     {
         return $course->primary_instructor_tenant_user_id === $membershipId
-            || $course->instructors->contains(fn ($assignment) =>
-                $assignment->tenant_user_id === $membershipId && $assignment->is_visible);
+            || $course->instructors->contains(fn($assignment) => $assignment->tenant_user_id === $membershipId && $assignment->is_visible);
     }
 
     private function presentInstructor(TenantUser $membership, $courses): array
     {
         return [
-            'id' => (string) $membership->id,
+            'id' => (string)$membership->id,
             'name' => $membership->user?->name ?? '',
             'avatar' => $membership->avatar ?? $membership->user?->avatar,
             'jobTitle' => $membership->job_title,
             'department' => $membership->department,
+            'bio' => $membership->bio,
+            'expertise' => $membership->expertise,
+            'experienceYears' => $membership->experience_years,
+            'websiteUrl' => $membership->website_url,
+            'linkedinUrl' => $membership->linkedin_url,
+            'youtubeUrl' => $membership->youtube_url,
             'coursesCount' => $courses->count(),
-            'courses' => $courses->map(fn (Course $course) => [
-                'id' => (string) $course->id,
+            'courses' => $courses->map(fn(Course $course) => [
+                'id' => (string)$course->id,
                 'title' => $course->title,
                 'slug' => $course->slug,
                 'thumbnail' => $course->thumbnail_path,

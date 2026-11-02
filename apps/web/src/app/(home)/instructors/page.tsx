@@ -12,6 +12,9 @@ interface InstructorSummary {
   avatar: string | null;
   jobTitle: string | null;
   department: string | null;
+  expertise: string | null;
+  experienceYears: number | null;
+  bio: string | null;
   coursesCount: number;
 }
 
@@ -71,6 +74,15 @@ export default function InstructorsPage() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {[instructor.jobTitle, instructor.department].filter(Boolean).join(" · ")}
                 </p>
+              )}
+              {instructor.expertise && (
+                <p className="mt-2 text-xs font-medium text-primary">{instructor.expertise}</p>
+              )}
+              {instructor.bio && (
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{instructor.bio}</p>
+              )}
+              {instructor.experienceYears != null && (
+                <p className="mt-3 text-xs text-muted-foreground">{instructor.experienceYears} سنوات خبرة</p>
               )}
               <p className="mt-3 text-sm text-muted-foreground">{instructor.coursesCount} دورة</p>
             </Link>
