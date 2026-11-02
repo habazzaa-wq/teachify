@@ -6,6 +6,7 @@ import InstructorCourseDetailPage from "../../app/(instructor)/instructor/course
 import InstructorCoursesPage from "../../app/(instructor)/instructor/courses/page";
 import NewInstructorCoursePage from "../../app/(instructor)/instructor/courses/new/page";
 import InstructorLoginPage from "../../app/(instructor)/instructor/login/page";
+import InstructorStudentsPage from "../../app/(instructor)/instructor/students/page";
 
 vi.mock("next/link", () => ({
   default: ({ children }: { children: ReactNode }) => createElement("a", null, children),
@@ -91,5 +92,13 @@ describe("Instructor pages", () => {
 
     expect(html).toContain("إنشاء دورة جديدة");
     expect(html).toContain("عنوان الدورة");
+  });
+
+  it("renders the read-only, scoped student workspace", () => {
+    const html = renderPage(InstructorStudentsPage);
+
+    expect(html).toContain("إدارة الطلاب");
+    expect(html).toContain("الدورات المعيّنة لك فقط");
+    expect(html).toContain("تصدير النتائج");
   });
 });
