@@ -199,6 +199,14 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
               {directPayment.isPending ? "جارٍ تجهيز الدفع..." : "المتابعة إلى الدفع الآمن"}
             </button>
 
+            {activeProvider === "paypal" && quote.data?.gatewayEnvironment === "test" && (
+              <p role="status" className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-800 dark:text-amber-200">
+                أنت تستخدم بيئة PayPal التجريبية (Sandbox). لإكمال الاختبار، سجّل الدخول بحساب مشتري
+                Sandbox من لوحة PayPal للمطورين؛ بيانات التاجر مخصصة للربط، والحساب الحقيقي لا يعمل
+                في هذه البيئة.
+              </p>
+            )}
+
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
               بيانات الدفع تُعالج بأمان عبر بوابة الدفع المختارة.

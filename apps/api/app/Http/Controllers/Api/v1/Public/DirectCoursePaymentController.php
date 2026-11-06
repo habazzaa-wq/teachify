@@ -80,6 +80,7 @@ class DirectCoursePaymentController extends Controller
 
             $data['gateway_amount'] = $paypalAmount['amount'];
             $data['gateway_currency'] = $paypalAmount['currency'];
+            $data['gateway_environment'] = $config['environment'] ?? 'test';
         }
 
         return response()->json([

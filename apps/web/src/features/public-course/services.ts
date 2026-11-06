@@ -286,6 +286,7 @@ export const publicCourseService = {
     countryName: string;
     gatewayAmount: number | null;
     gatewayCurrency: string | null;
+    gatewayEnvironment: "test" | "live" | null;
   }> {
     const json = await tenantStudentFetch<{
       data: {
@@ -295,6 +296,7 @@ export const publicCourseService = {
         country_name: string;
         gateway_amount?: number;
         gateway_currency?: string;
+        gateway_environment?: "test" | "live";
       };
     }>(`/public/courses/${slug}/direct-payment/quote${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`);
     return {
@@ -304,6 +306,7 @@ export const publicCourseService = {
       countryName: json.data.country_name,
       gatewayAmount: json.data.gateway_amount ?? null,
       gatewayCurrency: json.data.gateway_currency ?? null,
+      gatewayEnvironment: json.data.gateway_environment ?? null,
     };
   },
 
