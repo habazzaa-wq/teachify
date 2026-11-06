@@ -8,9 +8,10 @@ use App\Models\TenantUser;
 use App\Models\WalletPayment;
 use App\Services\Commerce\CourseRegionalPricing;
 use App\Services\Commerce\TenantCommerceFeatures;
+use App\Services\Payments\Exceptions\PaymentGatewayException;
 use App\Services\Payments\FawaterkService;
-use App\Services\Payments\PayPalService;
 use App\Services\Payments\PaymentGatewayService;
+use App\Services\Payments\PayPalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -23,7 +24,45 @@ class DirectCoursePaymentController extends Controller
         private readonly FawaterkService $fawaterkService,
         private readonly PayPalService $paypalService,
         private readonly CourseRegionalPricing $regionalPricing,
-    ) {
+    ) {}
+
+    public function quote(Request $request, string $slug): JsonResponse
+    {
+        $tenant = currentTenant();
+        abort_unless(
+            ! app(TenantCommerceFeatures::class)->walletEnabled($tenant)
+                && app(TenantCommerceFeatures::class)->regionalPricingEnabled($tenant),
+            403,
+            'الدفع المباشر غير مفعّل لهذه الأكاديمية.',
+        );
+
+        $student = currentTenantUser();
+        abort_if(! $student, 401, 'يجب تسجيل الدخول أولاً.');
+        abort_unless(
+            $student->roles()->where('slug', 'student')->exists(),
+            403,
+            'هذه الميزة متاحة للطلاب فقط.',
+        );
+
+        $course = Course::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->where('visibility', 'public')
+            ->firstOrFail();
+
+        abort_if($course->pricing_type === 'free', 422, 'هذه الدورة مجانية ولا تحتاج إلى دفع.');
+
+        $quote = $this->regionalPricing->price($tenant, $course, $request);
+
+        return response()->json([
+            'data' => [
+                'amount' => $quote['amount'],
+                'currency' => $quote['currency'],
+                'country_code' => $quote['country_code'],
+                'country_name' => CourseRegionalPricing::COUNTRIES[$quote['country_code']]['name'],
+            ],
+        ]);
     }
 
     public function create(Request $request, string $slug): JsonResponse
@@ -67,7 +106,7 @@ class DirectCoursePaymentController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
-        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
+        } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
             ]);
@@ -150,7 +189,7 @@ class DirectCoursePaymentController extends Controller
                     ],
                 ]);
             }
-        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
+        } catch (PaymentGatewayException $exception) {
             $payment->update([
                 'status' => WalletPayment::STATUS_FAILED,
                 'failure_reason' => $exception->getMessage(),
@@ -221,5 +260,4 @@ class DirectCoursePaymentController extends Controller
             ],
         ]);
     }
-
 }

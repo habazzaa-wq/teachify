@@ -279,6 +279,28 @@ export const publicCourseService = {
     };
   },
 
+  async getDirectCoursePaymentQuote(slug: string): Promise<{
+    amount: number;
+    currency: string;
+    countryCode: string;
+    countryName: string;
+  }> {
+    const json = await tenantStudentFetch<{
+      data: {
+        amount: number;
+        currency: string;
+        country_code: string;
+        country_name: string;
+      };
+    }>(`/public/courses/${slug}/direct-payment/quote`);
+    return {
+      amount: json.data.amount,
+      currency: json.data.currency,
+      countryCode: json.data.country_code,
+      countryName: json.data.country_name,
+    };
+  },
+
   async getDirectPaymentStatus(reference: string): Promise<{
     status: "pending" | "paid" | "failed" | "expired";
     courseSlug: string | null;

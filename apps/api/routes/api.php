@@ -78,9 +78,9 @@ use App\Http\Controllers\Api\v1\Learning\LessonBookmarkController;
 use App\Http\Controllers\Api\v1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\v1\Learning\ProgressController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryController;
-use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryFolderController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryMetricsController;
+use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaProxyController;
 use App\Http\Controllers\Api\v1\Media\MediaUploadController;
 use App\Http\Controllers\Api\v1\Media\VideoPlaybackController;
@@ -90,8 +90,8 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationPreferenceController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Payments\FawaterkWebhookController;
-use App\Http\Controllers\Api\v1\Payments\PayPalReturnController;
 use App\Http\Controllers\Api\v1\Payments\PaymentGatewayController;
+use App\Http\Controllers\Api\v1\Payments\PayPalReturnController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
 use App\Http\Controllers\Api\v1\Platform\PlatformDomainCheckController;
@@ -101,11 +101,11 @@ use App\Http\Controllers\Api\v1\Platform\TenantController;
 use App\Http\Controllers\Api\v1\Platform\TenantDomainController;
 use App\Http\Controllers\Api\v1\Platform\TenantIntegrationController;
 use App\Http\Controllers\Api\v1\Platform\TenantSettingController;
+use App\Http\Controllers\Api\v1\Public\DirectCoursePaymentController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonFileController;
 use App\Http\Controllers\Api\v1\Public\PublicCourseLessonVideoController;
 use App\Http\Controllers\Api\v1\Public\PublicCoursePurchaseController;
-use App\Http\Controllers\Api\v1\Public\DirectCoursePaymentController;
 use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\Public\PublicInstructorController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
@@ -427,6 +427,8 @@ Route::prefix('v1')->group(function () {
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
         Route::get('/public/courses/{slug}/enrollment', [PublicEnrollmentCheckController::class, 'show']);
+        Route::get('/public/courses/{slug}/direct-payment/quote', [DirectCoursePaymentController::class, 'quote'])
+            ->middleware('throttle:60,1');
         Route::post('/public/courses/{slug}/enroll', [PublicCoursePurchaseController::class, 'store'])->middleware('throttle:10,1');
         Route::post('/public/courses/{slug}/direct-payment', [DirectCoursePaymentController::class, 'create'])->middleware('throttle:10,1');
         Route::get('/public/course-payments/{reference}', [DirectCoursePaymentController::class, 'status'])->middleware('throttle:60,1');

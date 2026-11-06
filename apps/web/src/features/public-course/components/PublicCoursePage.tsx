@@ -21,6 +21,7 @@ import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { isFileLesson } from "../utils";
 import type { PublicCourse, PublicCourseLesson } from "../types";
 
@@ -63,6 +64,7 @@ function CoursePageSkeleton() {
 export function PublicCoursePage({ slug, initialCourse }: Props) {
   const router = useRouter();
   const { isAuthenticated } = useCurrentUser();
+  const { tenant } = useActiveTenant();
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -86,8 +88,15 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
       setLoginOpen(true);
       return;
     }
+    if (
+      tenant?.feature_flags?.has_wallet === false
+      && tenant.feature_flags.has_regional_pricing === true
+    ) {
+      router.push(`/courses/${slug}/checkout`);
+      return;
+    }
     setPurchaseModalOpen(true);
-  }, [isEnrolled, isAuthenticated, router]);
+  }, [isEnrolled, isAuthenticated, router, tenant, slug]);
 
   const handleLogin = useCallback(() => {
     setLoginOpen(true);
@@ -95,8 +104,15 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
 
   const handleLoginSuccess = useCallback(() => {
     setLoginOpen(false);
+    if (
+      tenant?.feature_flags?.has_wallet === false
+      && tenant.feature_flags.has_regional_pricing === true
+    ) {
+      router.push(`/courses/${slug}/checkout`);
+      return;
+    }
     setPurchaseModalOpen(true);
-  }, []);
+  }, [router, slug, tenant]);
 
   const handleLockedClick = useCallback(() => {
     if (!isEnrolled) {
