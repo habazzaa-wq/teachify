@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
+import { instructorApi } from "@/features/instructors/api";
 
 export interface CourseTag {
   id: number;
@@ -18,10 +19,14 @@ async function fetchCourseTags(): Promise<CourseTag[]> {
   }));
 }
 
-export function useCourseTags() {
+export function useCourseTags(instructorToken?: string | null) {
   return useQuery({
-    queryKey: ["course-tags", "list"],
-    queryFn: fetchCourseTags,
+    queryKey: ["course-tags", "list", instructorToken ? "instructor" : "tenant"],
+    queryFn: async () => {
+      if (!instructorToken) return fetchCourseTags();
+      const { data } = await instructorApi.courseLookups(instructorToken);
+      return data.tags;
+    },
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -12,6 +12,7 @@ interface CourseEditDrawerProps {
   courseId: string | null;
   onSave?: (id: string, data: CreateCoursePayload) => void;
   saving?: boolean;
+  instructorToken?: string | null;
 }
 
 function CourseEditDrawer({
@@ -20,8 +21,9 @@ function CourseEditDrawer({
   courseId,
   onSave,
   saving,
+  instructorToken,
 }: CourseEditDrawerProps) {
-  const { data: course, isLoading } = useCourse(courseId);
+  const { data: course, isLoading } = useCourse(courseId, instructorToken);
 
   const initialValues = useMemo<CreateCoursePayload | null>(() => {
     if (!course) return null;
@@ -75,6 +77,7 @@ function CourseEditDrawer({
       initialValues={initialValues}
       onSave={onSave ? (data) => onSave(courseId as string, data) : undefined}
       saving={saving}
+      instructorToken={instructorToken}
     />
   );
 }

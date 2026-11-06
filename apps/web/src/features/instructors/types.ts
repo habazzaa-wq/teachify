@@ -8,6 +8,7 @@ export interface InstructorUser {
 export interface InstructorMembership {
   id: number;
   tenant_id: number;
+  permissions?: string[];
   status?: string;
   must_change_password?: boolean;
   joined_at?: string | null;
@@ -32,11 +33,30 @@ export interface InstructorCourse {
   subtitle?: string | null;
   shortDescription?: string | null;
   description?: string | null;
+  fullDescription?: string | null;
   status: string;
   visibility: string;
   difficulty?: string | null;
   language?: string | null;
   duration?: number | null;
+  thumbnail?: string | null;
+  coverImage?: string | null;
+  pricingType?: "free" | "one_time" | "subscription";
+  price?: number | null;
+  currency?: string | null;
+  discountPrice?: number | null;
+  enrollmentLimit?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  certificateEnabled?: boolean;
+  featured?: boolean;
+  studentsCount?: number;
+  sectionsCount?: number;
+  lessonsCount?: number;
+  publishedAt?: string | null;
+  archivedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   instructor?: {
     id: string;
     name: string | null;

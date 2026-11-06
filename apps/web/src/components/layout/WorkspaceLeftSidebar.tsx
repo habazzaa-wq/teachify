@@ -334,7 +334,7 @@ export function WorkspaceLeftSidebar() {
               />
               <StudioSidebarItem
                 icon={<CreditCard className="h-4 w-4" />}
-                label="بوابة الدفع"
+                label="بوابات الدفع"
                 active={pathname.startsWith("/teacher/settings/payment-gateway")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/settings/payment-gateway")}

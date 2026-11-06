@@ -68,8 +68,8 @@ export default function InstructorCourseDetailPage() {
     setNotice("");
     try {
       const response = await instructorApi.updateCourse(accessToken, courseId, form);
-      setCourse(response.data);
-      setForm(formFromCourse(response.data));
+      setCourse(response);
+      setForm(formFromCourse(response));
       setNotice("تم حفظ تغييرات الدورة.");
     } catch (cause) {
       setError(instructorApiErrorMessage(cause));
@@ -84,8 +84,8 @@ export default function InstructorCourseDetailPage() {
     setNotice("");
     try {
       const response = await instructorApi.publishCourse(accessToken, courseId);
-      setCourse(response.data);
-      setForm(formFromCourse(response.data));
+      setCourse(response);
+      setForm(formFromCourse(response));
       setNotice("تم نشر الدورة.");
     } catch (cause) {
       setError(instructorApiErrorMessage(cause));

@@ -2,13 +2,41 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoriesService } from "../services";
+import { instructorApi } from "@/features/instructors/api";
 import { CATEGORIES_QUERY_KEY } from "../constants";
 import type { CategoryFilterParams, CreateCategoryPayload, UpdateCategoryPayload } from "../types";
 
-export function useCategories(params?: CategoryFilterParams) {
+export function useCategories(params?: CategoryFilterParams, instructorToken?: string | null) {
   return useQuery({
-    queryKey: [CATEGORIES_QUERY_KEY, "list", params],
-    queryFn: () => categoriesService.list(params),
+    queryKey: [CATEGORIES_QUERY_KEY, "list", instructorToken ? "instructor" : "tenant", params],
+    queryFn: async () => {
+      if (!instructorToken) return categoriesService.list(params);
+      const { data } = await instructorApi.courseLookups(instructorToken);
+      return {
+        data: data.categories.map((category) => ({
+          id: category.id,
+          tenantId: category.tenantId,
+          parentId: category.parentId,
+          name: category.name,
+          slug: category.slug,
+          description: null,
+          thumbnail: null,
+          icon: null,
+          color: null,
+          sortOrder: 0,
+          featured: false,
+          active: category.active,
+          seo: { title: null, description: null, keywords: null },
+          parent: null,
+          children: [],
+          coursesCount: 0,
+          createdAt: "",
+          updatedAt: "",
+          deletedAt: null,
+        })),
+        total: data.categories.length,
+      };
+    },
   });
 }
 

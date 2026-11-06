@@ -97,7 +97,7 @@ export function usePurchaseCourse(slug: string | null) {
 
 export function useCreateDirectCoursePayment(slug: string | null) {
   return useMutation({
-    mutationFn: () => publicCourseService.createDirectPayment(slug!),
+    mutationFn: (provider: string) => publicCourseService.createDirectPayment(slug!, provider),
     onSuccess: ({ paymentUrl }) => {
       window.location.assign(paymentUrl);
     },

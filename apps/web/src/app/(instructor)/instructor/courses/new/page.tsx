@@ -25,7 +25,7 @@ export default function NewInstructorCoursePage() {
         title: title.trim(),
         ...(slug.trim() ? { slug: slug.trim() } : {}),
       });
-      router.replace(`/instructor/courses/${response.data.id}`);
+      router.replace(`/instructor/courses/${response.id}`);
     } catch (cause) {
       setError(instructorApiErrorMessage(cause));
     } finally {

@@ -260,14 +260,18 @@ export const publicCourseService = {
     };
   },
 
-  async createDirectPayment(slug: string): Promise<{
+  async createDirectPayment(slug: string, provider: string): Promise<{
     paymentUrl: string;
     amount: number;
     currency: string;
   }> {
     const json = await tenantStudentFetch<{
       data: { payment_url: string; amount: number; currency: string };
-    }>(`/public/courses/${slug}/direct-payment`, { method: "POST" });
+    }>(`/public/courses/${slug}/direct-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider }),
+    });
     return {
       paymentUrl: json.data.payment_url,
       amount: json.data.amount,

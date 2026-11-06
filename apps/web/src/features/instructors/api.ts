@@ -10,6 +10,9 @@ import type {
   InstructorCourseUpdatePayload,
   InstructorUser,
 } from "./types";
+import { formatCourse } from "@/features/courses/services";
+import type { Course, CourseFilterParams, CourseMetricData, CreateCoursePayload, UpdateCoursePayload } from "@/features/courses/types";
+import type { BulkActionResult, CourseListResponse } from "@/features/courses/services";
 
 interface InstructorRequestOptions {
   token?: string | null;
@@ -57,6 +60,51 @@ async function request<T>(
   });
 
   return response.data;
+}
+
+function serializeCoursePayload(
+  payload: CreateCoursePayload | UpdateCoursePayload | InstructorCourseUpdatePayload,
+): Record<string, unknown> {
+  if ("short_description" in payload) return { ...payload };
+
+  const fieldNames: Record<string, string> = {
+    title: "title",
+    subtitle: "subtitle",
+    shortDescription: "short_description",
+    description: "description",
+    fullDescription: "full_description",
+    thumbnailPath: "thumbnail_path",
+    coverImagePath: "cover_image_path",
+    visibility: "visibility",
+    difficulty: "difficulty",
+    language: "language",
+    duration: "duration",
+    pricingType: "pricing_type",
+    price: "price_amount",
+    currency: "price_currency",
+    discountPrice: "discount_price",
+    regionalPrices: "regional_prices",
+    enrollmentLimit: "enrollment_limit",
+    startDate: "start_date",
+    endDate: "end_date",
+    certificateEnabled: "certificate_enabled",
+    featured: "featured",
+    seoTitle: "seo_title",
+    seoDescription: "seo_description",
+    seoKeywords: "seo_keywords",
+    educationalStageId: "educational_stage_id",
+    subjectId: "subject_id",
+    categoryIds: "category_ids",
+    tagIds: "tag_ids",
+    requirements: "requirements",
+    learningOutcomes: "learning_outcomes",
+    targetAudience: "target_audience",
+  };
+  const body: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    body[fieldNames[key] ?? key] = value;
+  }
+  return body;
 }
 
 export const instructorApi = {
@@ -164,8 +212,56 @@ export const instructorApi = {
     return request<{ message: string }>("instructor/auth/logout", "POST", { token });
   },
 
-  listCourses(token: string) {
-    return request<InstructorCoursesResponse>("instructor/courses", "GET", { token });
+  async listCourses(token: string, params?: CourseFilterParams): Promise<CourseListResponse> {
+    const response = await request<{
+      data: Record<string, unknown>[];
+      total: number;
+      per_page: number;
+      current_page: number;
+      last_page: number;
+    }>("instructor/courses", "GET", {
+      token,
+      params: Object.fromEntries(
+        Object.entries(params ?? {}).filter(([, value]) => value !== undefined),
+      ) as InstructorRequestOptions["params"],
+    });
+    return {
+      data: response.data.map(formatCourse),
+      total: response.total,
+      perPage: response.per_page,
+      currentPage: response.current_page,
+      lastPage: response.last_page,
+    };
+  },
+
+  async courseMetrics(token: string): Promise<CourseMetricData> {
+    const response = await request<{ data: CourseMetricData }>("instructor/courses/metrics", "GET", { token });
+    return response.data;
+  },
+
+  async exportCourses(token: string): Promise<Blob> {
+    return request<Blob>("instructor/courses/export", "GET", { token, responseType: "blob" });
+  },
+
+  courseLookups(token: string) {
+    return request<{
+      data: {
+        categories: Array<{ id: string; tenantId: string; parentId: string | null; name: string; slug: string; active: boolean }>;
+        tags: Array<{ id: number; name: string; slug: string }>;
+        stages: Array<{ id: number; name: string; is_active: boolean }>;
+        subjects: Array<{ id: number; name: string; is_active: boolean }>;
+      };
+    }>("instructor/course-lookups", "GET", { token });
+  },
+
+  async uploadCourseImage(token: string, file: File): Promise<string | null> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("visibility", "public");
+    const response = await request<{
+      data: { cdn_url?: string | null; asset?: { cdnUrl?: string | null; thumbnailUrl?: string | null } | null };
+    }>("instructor/media-library/upload/file", "POST", { token, data: form, multipart: true });
+    return response.data.cdn_url ?? response.data.asset?.cdnUrl ?? response.data.asset?.thumbnailUrl ?? null;
   },
 
   workspace(token: string) {
@@ -254,8 +350,12 @@ export const instructorApi = {
     );
   },
 
-  createCourse(token: string, data: { title: string; slug?: string }) {
-    return request<InstructorCourseResponse>("instructor/courses", "POST", { token, data });
+  async createCourse(token: string, payload: CreateCoursePayload): Promise<Course> {
+    const response = await request<InstructorCourseResponse>("instructor/courses", "POST", {
+      token,
+      data: serializeCoursePayload(payload),
+    });
+    return formatCourse(response.data);
   },
 
   getCourse(token: string, courseId: string) {
@@ -266,21 +366,69 @@ export const instructorApi = {
     );
   },
 
-  updateCourse(token: string, courseId: string, data: InstructorCourseUpdatePayload) {
-    return request<InstructorCourseResponse>(
+  async updateCourse(
+    token: string,
+    courseId: string,
+    payload: UpdateCoursePayload | InstructorCourseUpdatePayload,
+  ): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
       `instructor/courses/${encodeURIComponent(courseId)}`,
       "PUT",
-      { token, data },
+      { token, data: serializeCoursePayload(payload) },
     );
+    return formatCourse(response.data);
   },
 
-  publishCourse(token: string, courseId: string) {
-    return request<InstructorCourseResponse>(
-      `instructor/courses/${encodeURIComponent(courseId)}/publish`,
-      "PATCH",
-      { token },
-    );
+  async deleteCourse(token: string, courseId: string): Promise<void> {
+    await request(`instructor/courses/${encodeURIComponent(courseId)}`, "DELETE", { token });
   },
+
+  async publishCourse(token: string, courseId: string): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
+      `instructor/courses/${encodeURIComponent(courseId)}/publish`, "PATCH", { token },
+    );
+    return formatCourse(response.data);
+  },
+
+  async archiveCourse(token: string, courseId: string): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
+      `instructor/courses/${encodeURIComponent(courseId)}/archive`, "PATCH", { token },
+    );
+    return formatCourse(response.data);
+  },
+
+  async restoreCourse(token: string, courseId: string): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
+      `instructor/courses/${encodeURIComponent(courseId)}/restore`, "POST", { token },
+    );
+    return formatCourse(response.data);
+  },
+
+  async duplicateCourse(token: string, courseId: string): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
+      `instructor/courses/${encodeURIComponent(courseId)}/duplicate`, "POST", { token },
+    );
+    return formatCourse(response.data);
+  },
+
+  async toggleCourseFeature(token: string, courseId: string): Promise<Course> {
+    const response = await request<InstructorCourseResponse>(
+      `instructor/courses/${encodeURIComponent(courseId)}/feature`, "POST", { token },
+    );
+    return formatCourse(response.data);
+  },
+
+  async bulkCourseAction(
+    token: string,
+    action: "publish" | "archive" | "restore" | "delete" | "feature",
+    ids: string[],
+  ): Promise<BulkActionResult> {
+    return request<BulkActionResult>(`instructor/courses/bulk/${action}`, "POST", {
+      token,
+      data: { ids: ids.map(Number) },
+    });
+  },
+
 };
 
 export interface InstructorWorkspaceMetrics {

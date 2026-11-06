@@ -127,6 +127,7 @@ interface CourseFormPanelProps {
   onSave?: (data: CreateCoursePayload) => void;
   saving?: boolean;
   footerNote?: string;
+  instructorToken?: string | null;
 }
 
 function CourseFormPanel({
@@ -138,10 +139,11 @@ function CourseFormPanel({
   onSave,
   saving,
   footerNote,
+  instructorToken,
 }: CourseFormPanelProps) {
-  const { data: tags = [] } = useCourseTags();
-  const { data: stagesData } = useEducationalStagesList();
-  const { data: subjectsData } = useSubjectsList();
+  const { data: tags = [] } = useCourseTags(instructorToken);
+  const { data: stagesData } = useEducationalStagesList(undefined, instructorToken);
+  const { data: subjectsData } = useSubjectsList(undefined, instructorToken);
   const { tenant } = useActiveTenant();
   const regionalPricingEnabled = tenant?.feature_flags?.has_regional_pricing === true;
   const stages = stagesData?.data ?? [];
@@ -216,6 +218,7 @@ function CourseFormPanel({
             <CourseImageUploader
               value={formData.thumbnailPath}
               onChange={(url) => updateField("thumbnailPath", url)}
+              instructorToken={instructorToken}
             />
           </div>
 

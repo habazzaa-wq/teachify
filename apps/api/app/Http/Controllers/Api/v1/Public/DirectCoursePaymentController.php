@@ -9,6 +9,7 @@ use App\Models\WalletPayment;
 use App\Services\Commerce\CourseRegionalPricing;
 use App\Services\Commerce\TenantCommerceFeatures;
 use App\Services\Payments\FawaterkService;
+use App\Services\Payments\PayPalService;
 use App\Services\Payments\PaymentGatewayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class DirectCoursePaymentController extends Controller
     public function __construct(
         private readonly PaymentGatewayService $gatewayService,
         private readonly FawaterkService $fawaterkService,
+        private readonly PayPalService $paypalService,
         private readonly CourseRegionalPricing $regionalPricing,
     ) {
     }
@@ -50,6 +52,9 @@ class DirectCoursePaymentController extends Controller
             ->firstOrFail();
 
         abort_if($course->pricing_type === 'free', 422, 'هذه الدورة مجانية ولا تحتاج إلى دفع.');
+        $validated = $request->validate([
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
+        ]);
         abort_if(
             $course->enrollments()->where('tenant_user_id', $student->id)->where('status', 'active')->exists(),
             409,
@@ -60,7 +65,8 @@ class DirectCoursePaymentController extends Controller
         abort_if($quote['amount'] <= 0, 422, 'سعر الدورة غير صالح للدفع.');
 
         try {
-            $config = $this->gatewayService->requireConfig($tenant);
+            $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
+            $config = $this->gatewayService->requireConfig($tenant, $provider);
         } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
@@ -77,7 +83,7 @@ class DirectCoursePaymentController extends Controller
             'amount' => $quote['amount'],
             'currency' => $quote['currency'],
             'status' => WalletPayment::STATUS_PENDING,
-            'provider' => PaymentGatewayService::PROVIDER,
+            'provider' => $provider,
             'metadata' => [
                 'course_slug' => $course->slug,
                 'country_code' => $quote['country_code'],
@@ -91,30 +97,59 @@ class DirectCoursePaymentController extends Controller
             .'&course='.urlencode($course->slug);
 
         try {
-            $result = $this->fawaterkService->createInvoiceLink($config, [
-                'cartTotal' => $quote['amount'],
-                'currency' => $quote['currency'],
-                'customer' => [
-                    'first_name' => $nameParts[0] ?? 'طالب',
-                    'last_name' => $nameParts[1] ?? 'Teachify',
-                    'email' => $user?->email,
-                    'phone' => $student->phone,
-                ],
-                'cartItems' => [[
-                    'name' => $course->title,
-                    'price' => (string) $quote['amount'],
-                    'quantity' => '1',
-                ]],
-                'sendEmail' => false,
-                'sendSMS' => false,
-                'payLoad' => ['reference' => $reference],
-                'redirectionUrls' => [
-                    'successUrl' => $resultUrl.'&status=success',
-                    'failUrl' => $resultUrl.'&status=failed',
-                    'pendingUrl' => $resultUrl.'&status=pending',
-                    'webhookUrl' => $request->schemeAndHttpHost().'/api/v1/payments/fawaterk/webhook_json',
-                ],
-            ]);
+            if ($provider === 'paypal') {
+                $paypalAmount = $this->paypalService->amountForPayment(
+                    $config,
+                    (string) $quote['amount'],
+                    $quote['currency'],
+                );
+                $paypalReturnUrl = $request->schemeAndHttpHost().'/api/v1/payments/paypal/return?reference='.urlencode($reference);
+                $paypalResult = $this->paypalService->createOrder(
+                    $config,
+                    $reference,
+                    $paypalAmount['amount'],
+                    $paypalAmount['currency'],
+                    $course->title,
+                    $paypalReturnUrl,
+                    $request->schemeAndHttpHost().'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),
+                );
+                $result = [
+                    'url' => $paypalResult['url'],
+                    'invoice_id' => $paypalResult['order_id'],
+                    'invoice_key' => null,
+                ];
+                $payment->update([
+                    'metadata' => array_merge($payment->metadata ?? [], [
+                        'paypal_amount' => $paypalAmount['amount'],
+                        'paypal_currency' => $paypalAmount['currency'],
+                    ]),
+                ]);
+            } else {
+                $result = $this->fawaterkService->createInvoiceLink($config, [
+                    'cartTotal' => $quote['amount'],
+                    'currency' => $quote['currency'],
+                    'customer' => [
+                        'first_name' => $nameParts[0] ?? 'طالب',
+                        'last_name' => $nameParts[1] ?? 'Teachify',
+                        'email' => $user?->email,
+                        'phone' => $student->phone,
+                    ],
+                    'cartItems' => [[
+                        'name' => $course->title,
+                        'price' => (string) $quote['amount'],
+                        'quantity' => '1',
+                    ]],
+                    'sendEmail' => false,
+                    'sendSMS' => false,
+                    'payLoad' => ['reference' => $reference],
+                    'redirectionUrls' => [
+                        'successUrl' => $resultUrl.'&status=success',
+                        'failUrl' => $resultUrl.'&status=failed',
+                        'pendingUrl' => $resultUrl.'&status=pending',
+                        'webhookUrl' => $request->schemeAndHttpHost().'/api/v1/payments/fawaterk/webhook_json',
+                    ],
+                ]);
+            }
         } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
             $payment->update([
                 'status' => WalletPayment::STATUS_FAILED,
@@ -151,6 +186,8 @@ class DirectCoursePaymentController extends Controller
                 'amount' => $quote['amount'],
                 'currency' => $quote['currency'],
                 'country_code' => $quote['country_code'],
+                'gateway_amount' => $provider === 'paypal' ? $paypalAmount['amount'] : $quote['amount'],
+                'gateway_currency' => $provider === 'paypal' ? $paypalAmount['currency'] : $quote['currency'],
             ],
         ], 201);
     }
@@ -184,4 +221,5 @@ class DirectCoursePaymentController extends Controller
             ],
         ]);
     }
+
 }

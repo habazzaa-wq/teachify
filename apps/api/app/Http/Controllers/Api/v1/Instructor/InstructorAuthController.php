@@ -49,6 +49,7 @@ class InstructorAuthController extends Controller
                 'website_url' => $membership->website_url,
                 'linkedin_url' => $membership->linkedin_url,
                 'youtube_url' => $membership->youtube_url,
+                'permissions' => $this->permissions($membership),
             ],
         ]);
     }
@@ -97,6 +98,7 @@ class InstructorAuthController extends Controller
                 'website_url' => $membership->website_url,
                 'linkedin_url' => $membership->linkedin_url,
                 'youtube_url' => $membership->youtube_url,
+                'permissions' => $this->permissions($membership),
             ],
         ]);
     }
@@ -169,6 +171,7 @@ class InstructorAuthController extends Controller
                 'website_url' => $membership->website_url,
                 'linkedin_url' => $membership->linkedin_url,
                 'youtube_url' => $membership->youtube_url,
+                'permissions' => $this->permissions($membership),
             ],
         ]);
     }
@@ -196,5 +199,19 @@ class InstructorAuthController extends Controller
         $auth->revokeCurrentToken($request->user());
 
         return response()->json(['message' => 'Logged out.']);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function permissions(TenantUser $membership): array
+    {
+        return $membership->roles()
+            ->with('permissions:id,slug')
+            ->get()
+            ->flatMap(fn ($role) => $role->permissions->pluck('slug'))
+            ->unique()
+            ->values()
+            ->all();
     }
 }

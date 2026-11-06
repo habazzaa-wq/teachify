@@ -4,6 +4,12 @@ import { instructorApi } from "./api";
 
 vi.mock("axios", () => ({
   default: {
+    create: vi.fn(() => ({
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+    })),
     request: vi.fn(),
   },
 }));

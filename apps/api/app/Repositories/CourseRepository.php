@@ -44,6 +44,11 @@ class CourseRepository
         return $query;
     }
 
+    public function courseIdsQuery(): Builder
+    {
+        return $this->query()->select('courses.id');
+    }
+
     protected function defaultEagerLoads(): array
     {
         return ['primaryInstructor.user', 'categories', 'educationalStage', 'subject'];
@@ -140,16 +145,14 @@ class CourseRepository
 
     public function countByStatus(string $status): int
     {
-        return Course::query()
-            ->where('tenant_id', currentTenant()->id)
+        return $this->query()
             ->where('status', $status)
             ->count();
     }
 
     public function countFeatured(): int
     {
-        return Course::query()
-            ->where('tenant_id', currentTenant()->id)
+        return $this->query()
             ->where('featured', true)
             ->count();
     }
@@ -157,14 +160,13 @@ class CourseRepository
     public function countEnrollmentsTotal(): int
     {
         return CourseEnrollment::query()
-            ->whereHas('course', fn (Builder $q) => $q->where('tenant_id', currentTenant()->id))
+            ->whereIn('course_id', $this->courseIdsQuery())
             ->count();
     }
 
     public function sumRevenue(): int
     {
-        return Course::query()
-            ->where('tenant_id', currentTenant()->id)
+        return $this->query()
             ->where('status', 'published')
             ->where('pricing_type', 'one_time')
             ->sum('price_amount');
@@ -173,14 +175,14 @@ class CourseRepository
     public function avgRating(): float
     {
         return round(CourseAnalytics::query()
-            ->whereHas('course', fn (Builder $q) => $q->where('tenant_id', currentTenant()->id))
+            ->whereIn('course_id', $this->courseIdsQuery())
             ->avg('avg_rating'), 1);
     }
 
     public function completionRate(): float
     {
         $total = CourseEnrollment::query()
-            ->whereHas('course', fn (Builder $q) => $q->where('tenant_id', currentTenant()->id))
+            ->whereIn('course_id', $this->courseIdsQuery())
             ->count();
 
         if ($total === 0) {
@@ -188,7 +190,7 @@ class CourseRepository
         }
 
         $completed = CourseCompletion::query()
-            ->whereHas('course', fn (Builder $q) => $q->where('tenant_id', currentTenant()->id))
+            ->whereIn('course_id', $this->courseIdsQuery())
             ->count();
 
         return round(($completed / $total) * 100, 1);

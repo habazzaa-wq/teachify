@@ -127,7 +127,8 @@ class CourseSectionRepository
     public function countTotal(?Course $course = null): int
     {
         $query = CourseSection::query()
-            ->where('tenant_id', currentTenant()->id);
+            ->where('tenant_id', currentTenant()->id)
+            ->whereIn('course_id', app(CourseRepository::class)->courseIdsQuery());
 
         if ($course) {
             $query->where('course_id', $course->id);

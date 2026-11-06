@@ -243,7 +243,13 @@ function buildFilterParams(
   return params;
 }
 
-function CoursesHomeContent() {
+function CoursesHomeContent({
+  instructorToken,
+  instructorPermissions,
+}: {
+  instructorToken?: string | null;
+  instructorPermissions?: string[];
+} = {}) {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -283,24 +289,24 @@ function CoursesHomeContent() {
   );
 
   /* ── Data fetching ── */
-  const coursesQuery = useCourses(queryParams);
-  const categoriesQuery = useCategories({ per_page: 100 });
-  const metricsQuery = useCoursesMetrics();
+  const coursesQuery = useCourses(queryParams, instructorToken);
+  const categoriesQuery = useCategories({ per_page: 100 }, instructorToken);
+  const metricsQuery = useCoursesMetrics(instructorToken);
 
   /* ── Mutations ── */
-  const createCourse = useCreateCourse();
-  const updateCourse = useUpdateCourse();
-  const deleteCourse = useDeleteCourse();
-  const publishCourse = usePublishCourse();
-  const archiveCourse = useArchiveCourse();
-  const restoreCourse = useRestoreCourse();
-  const duplicateCourse = useDuplicateCourse();
-  const toggleFeature = useToggleFeatureCourse();
-  const bulkPublish = useBulkPublishCourses();
-  const bulkArchive = useBulkArchiveCourses();
-  const bulkRestore = useBulkRestoreCourses();
-  const bulkDelete = useBulkDeleteCourses();
-  const bulkToggleFeature = useBulkToggleFeatureCourses();
+  const createCourse = useCreateCourse(instructorToken);
+  const updateCourse = useUpdateCourse(instructorToken);
+  const deleteCourse = useDeleteCourse(instructorToken);
+  const publishCourse = usePublishCourse(instructorToken);
+  const archiveCourse = useArchiveCourse(instructorToken);
+  const restoreCourse = useRestoreCourse(instructorToken);
+  const duplicateCourse = useDuplicateCourse(instructorToken);
+  const toggleFeature = useToggleFeatureCourse(instructorToken);
+  const bulkPublish = useBulkPublishCourses(instructorToken);
+  const bulkArchive = useBulkArchiveCourses(instructorToken);
+  const bulkRestore = useBulkRestoreCourses(instructorToken);
+  const bulkDelete = useBulkDeleteCourses(instructorToken);
+  const bulkToggleFeature = useBulkToggleFeatureCourses(instructorToken);
 
   const bulkPending =
     bulkPublish.isPending ||
@@ -769,7 +775,7 @@ function CoursesHomeContent() {
             variants={fadeUpItem}
             className="mb-8 flex flex-wrap items-center gap-3"
           >
-            <PermissionGuard permission="courses.create">
+              <CoursePermissionGuard instructorMode={Boolean(instructorToken)} instructorPermissions={instructorPermissions} permission="courses.create">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -779,7 +785,7 @@ function CoursesHomeContent() {
                 <Plus className="h-4 w-4" />
                 إنشاء دورة
               </motion.button>
-            </PermissionGuard>
+            </CoursePermissionGuard>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -1167,7 +1173,7 @@ function CoursesHomeContent() {
                   متكاملة لطلابك.
                 </p>
               </div>
-              <PermissionGuard permission="courses.create">
+              <CoursePermissionGuard instructorMode={Boolean(instructorToken)} instructorPermissions={instructorPermissions} permission="courses.create">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -1177,7 +1183,7 @@ function CoursesHomeContent() {
                   <Plus className="h-4 w-4" />
                   إنشاء أول دورة
                 </motion.button>
-              </PermissionGuard>
+              </CoursePermissionGuard>
             </motion.div>
           )}
 
@@ -1279,7 +1285,7 @@ function CoursesHomeContent() {
                   )}
 
                   <div className="ms-auto flex items-center gap-2">
-                    <PermissionGuard permission="courses.update">
+                    <CoursePermissionGuard instructorMode={Boolean(instructorToken)} instructorPermissions={instructorPermissions} permission="courses.update">
                       <AppDropdownMenu>
                         <AppDropdownMenuTrigger asChild>
                           <AppButton
@@ -1335,7 +1341,7 @@ function CoursesHomeContent() {
                           </AppDropdownMenuItem>
                         </AppDropdownMenuContent>
                       </AppDropdownMenu>
-                    </PermissionGuard>
+                    </CoursePermissionGuard>
 
                     {selectedCount > 0 && (
                       <AppButton
@@ -1372,6 +1378,7 @@ function CoursesHomeContent() {
                         <ContinueCourseCard
                           key={course.id}
                           course={course}
+                          instructorMode={Boolean(instructorToken)}
                         />
                       ))}
                     </div>
@@ -1401,6 +1408,7 @@ function CoursesHomeContent() {
                         key={course.id}
                         course={course}
                         index={i}
+                        onOpen={instructorToken && !instructorPermissions?.includes("courses.update") ? undefined : handleOpenEdit}
                         isPinned
                         selected={selectedCourseIds.has(course.id)}
                         onToggleSelect={handleSelectCourse}
@@ -1412,6 +1420,8 @@ function CoursesHomeContent() {
                         onDelete={handleDelete}
                         onToggleFeature={handleToggleFeature}
                         onTogglePin={handleTogglePin}
+                        instructorMode={Boolean(instructorToken)}
+                        instructorPermissions={instructorPermissions}
                       />
                     ))}
                   </div>
@@ -1445,6 +1455,7 @@ function CoursesHomeContent() {
                       key={course.id}
                       course={course}
                       index={i}
+                      onOpen={instructorToken && !instructorPermissions?.includes("courses.update") ? undefined : handleOpenEdit}
                       isPinned={pinnedCourseIds.includes(course.id)}
                       selected={selectedCourseIds.has(course.id)}
                       onToggleSelect={handleSelectCourse}
@@ -1456,7 +1467,9 @@ function CoursesHomeContent() {
                       onDelete={handleDelete}
                       onToggleFeature={handleToggleFeature}
                       onTogglePin={handleTogglePin}
-                    />
+                        instructorMode={Boolean(instructorToken)}
+                        instructorPermissions={instructorPermissions}
+                      />
                   ))}
                 </div>
               </motion.section>
@@ -1494,6 +1507,7 @@ function CoursesHomeContent() {
         onOpenChange={setCreateDrawerOpen}
         onSave={handleCreateSave}
         saving={createCourse.isPending}
+        instructorToken={instructorToken}
       />
 
       <CourseEditDrawer
@@ -1502,6 +1516,7 @@ function CoursesHomeContent() {
         courseId={selectedCourseId}
         onSave={handleEditSave}
         saving={updateCourse.isPending}
+        instructorToken={instructorToken}
       />
 
       <AppConfirmDialog
@@ -1525,12 +1540,12 @@ interface ContinueCourseCardProps {
   course: Course;
 }
 
-function ContinueCourseCard({ course }: ContinueCourseCardProps) {
+function ContinueCourseCard({ course, instructorMode = false }: ContinueCourseCardProps & { instructorMode?: boolean }) {
   const router = useRouter();
 
   const handleClick = useCallback(() => {
-    router.push(`/teacher/courses/${course.id}`);
-  }, [router, course.id]);
+    router.push(`${instructorMode ? "/instructor" : "/teacher"}/courses/${course.id}`);
+  }, [instructorMode, router, course.id]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1669,3 +1684,19 @@ function ContinueCourseCard({ course }: ContinueCourseCardProps) {
 }
 
 export { CoursesHomeContent };
+
+function CoursePermissionGuard({
+  instructorMode,
+  instructorPermissions,
+  permission,
+  children,
+}: {
+  instructorMode: boolean;
+  instructorPermissions?: string[];
+  permission: string;
+  children: React.ReactNode;
+}) {
+  return instructorMode
+    ? instructorPermissions?.includes(permission) ? <>{children}</> : null
+    : <PermissionGuard permission={permission}>{children}</PermissionGuard>;
+}

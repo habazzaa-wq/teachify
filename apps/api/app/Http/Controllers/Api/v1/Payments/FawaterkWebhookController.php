@@ -46,7 +46,7 @@ class FawaterkWebhookController extends Controller
         app()->instance(Tenant::class, $payment->tenant);
         app()->instance('currentTenant', $payment->tenant);
 
-        $config = $this->gatewayService->config($payment->tenant);
+        $config = $this->gatewayService->config($payment->tenant, PaymentGatewayService::PROVIDER, false);
 
         // We must be able to verify the hash before trusting the webhook.
         if (! $config) {

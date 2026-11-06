@@ -78,9 +78,9 @@ use App\Http\Controllers\Api\v1\Learning\LessonBookmarkController;
 use App\Http\Controllers\Api\v1\Learning\LessonNoteController;
 use App\Http\Controllers\Api\v1\Learning\ProgressController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryController;
+use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryFolderController;
 use App\Http\Controllers\Api\v1\Media\MediaLibraryMetricsController;
-use App\Http\Controllers\Api\v1\Media\MediaLibraryUploadController;
 use App\Http\Controllers\Api\v1\Media\MediaProxyController;
 use App\Http\Controllers\Api\v1\Media\MediaUploadController;
 use App\Http\Controllers\Api\v1\Media\VideoPlaybackController;
@@ -90,6 +90,7 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationPreferenceController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Payments\FawaterkWebhookController;
+use App\Http\Controllers\Api\v1\Payments\PayPalReturnController;
 use App\Http\Controllers\Api\v1\Payments\PaymentGatewayController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
@@ -187,6 +188,8 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('instructor')->middleware(['auth:sanctum', 'instructor.context'])->group(function () {
         Route::get('/workspace', [InstructorWorkspaceController::class, 'dashboard']);
+        Route::get('/course-lookups', [InstructorWorkspaceController::class, 'courseLookups']);
+        Route::post('/media-library/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
         Route::get('/students', [InstructorWorkspaceController::class, 'students']);
         Route::get('/students/metrics', [InstructorWorkspaceController::class, 'studentMetrics']);
         Route::get('/exams', [InstructorWorkspaceController::class, 'exams']);
@@ -274,12 +277,22 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/courses', [CourseController::class, 'index']);
         Route::post('/courses', [CourseController::class, 'store']);
+        Route::get('/courses/metrics', [CourseController::class, 'metrics']);
+        Route::get('/courses/export', [CourseController::class, 'export']);
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::put('/courses/{course}', [CourseController::class, 'update']);
         Route::patch('/courses/{course}/status', [CourseController::class, 'updateStatus']);
         Route::patch('/courses/{course}/publish', [CourseController::class, 'publish']);
         Route::patch('/courses/{course}/archive', [CourseController::class, 'archive']);
-
+        Route::post('/courses/{course}/restore', [CourseController::class, 'restore'])->middleware('instructor.course');
+        Route::post('/courses/{course}/duplicate', [CourseController::class, 'duplicate'])->middleware('instructor.course');
+        Route::post('/courses/{course}/feature', [CourseController::class, 'feature'])->middleware('instructor.course');
+        Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->middleware('instructor.course');
+        Route::post('/courses/bulk/publish', [CourseController::class, 'bulkPublish']);
+        Route::post('/courses/bulk/archive', [CourseController::class, 'bulkArchive']);
+        Route::post('/courses/bulk/restore', [CourseController::class, 'bulkRestore']);
+        Route::post('/courses/bulk/delete', [CourseController::class, 'bulkDelete']);
+        Route::post('/courses/bulk/feature', [CourseController::class, 'bulkFeature']);
         Route::prefix('courses/{course}')
             ->middleware('instructor.course')
             ->group(function () {
@@ -369,6 +382,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
+    Route::get('/public/payment-gateways', [PaymentGatewayController::class, 'available']);
     Route::get('/public/seo/articles', [PublicSeoContentController::class, 'index'])->defaults('type', 'article');
     Route::get('/public/seo/guides', [PublicSeoContentController::class, 'index'])->defaults('type', 'guide');
     Route::get('/public/seo/articles/{slug}', [PublicSeoContentController::class, 'show'])->defaults('type', 'article');
@@ -388,6 +402,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/payments/fawaterk/webhook_json', [FawaterkWebhookController::class, 'handle'])
         ->middleware('throttle:60,1')
         ->name('payments.fawaterk.webhook');
+    Route::get('/payments/paypal/return', [PayPalReturnController::class, 'complete'])
+        ->middleware('throttle:30,1')
+        ->name('payments.paypal.return');
+    Route::get('/payments/paypal/cancel', [PayPalReturnController::class, 'cancel'])
+        ->middleware('throttle:30,1')
+        ->name('payments.paypal.cancel');
     Route::get('/media/serve/{path}', [MediaProxyController::class, 'serve'])
         ->where('path', '.*')
         ->middleware('throttle:1200,1')

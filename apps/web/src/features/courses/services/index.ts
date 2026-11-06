@@ -15,7 +15,7 @@ export interface BulkActionResult {
   requested: number;
 }
 
-function formatCourse(raw: any): Course {
+export function formatCourse(raw: any): Course {
   return {
     id: String(raw.id),
     tenantId: String(raw.tenantId),

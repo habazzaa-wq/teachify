@@ -72,7 +72,8 @@ export function useRechargeWallet() {
 
 export function useCreateOnlinePayment() {
   return useMutation({
-    mutationFn: (amount: number) => walletService.createOnlinePayment(amount),
+    mutationFn: ({ amount, provider }: { amount: number; provider: string }) =>
+      walletService.createOnlinePayment(amount, provider),
   });
 }
 

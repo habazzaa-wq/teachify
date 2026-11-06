@@ -38,13 +38,13 @@ export const walletService = {
     return json;
   },
 
-  async createOnlinePayment(amount: number): Promise<OnlinePaymentCreateResponse> {
+  async createOnlinePayment(amount: number, provider: string): Promise<OnlinePaymentCreateResponse> {
     const json = await tenantStudentFetch<OnlinePaymentCreateResponse>(
       "/student/wallet/online-recharge",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, provider }),
       },
     );
     return json;

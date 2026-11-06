@@ -4,13 +4,15 @@ import { useState, useCallback, useRef } from "react";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui";
 import { mediaLibraryService } from "@/features/media-library/services";
+import { instructorApi } from "@/features/instructors/api";
 
 interface CourseImageUploaderProps {
   value?: string | null;
   onChange: (url: string | null) => void;
+  instructorToken?: string | null;
 }
 
-function CourseImageUploader({ value, onChange }: CourseImageUploaderProps) {
+function CourseImageUploader({ value, onChange, instructorToken }: CourseImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +22,12 @@ function CourseImageUploader({ value, onChange }: CourseImageUploaderProps) {
       setError(null);
       setUploading(true);
       try {
-        const result = await mediaLibraryService.uploadFileDirect(file, "public");
-        onChange(result.cdnUrl ?? result.asset?.cdnUrl ?? result.asset?.thumbnailUrl ?? null);
+        if (instructorToken) {
+          onChange(await instructorApi.uploadCourseImage(instructorToken, file));
+        } else {
+          const result = await mediaLibraryService.uploadFileDirect(file, "public");
+          onChange(result.cdnUrl ?? result.asset?.cdnUrl ?? result.asset?.thumbnailUrl ?? null);
+        }
       } catch (err: any) {
         console.error(
           "Course image upload failed:",
@@ -34,7 +40,7 @@ function CourseImageUploader({ value, onChange }: CourseImageUploaderProps) {
         setUploading(false);
       }
     },
-    [onChange],
+    [instructorToken, onChange],
   );
 
   const handleChange = useCallback(

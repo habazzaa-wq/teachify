@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { useCreateOnlinePayment, useWallet } from "../hooks";
+import { useAvailablePaymentGateways } from "@/features/payments/hooks";
+import type { PaymentProvider } from "@/features/payments/types";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -29,8 +31,14 @@ interface OnlineRechargeModalProps {
 export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps) {
   const createPayment = useCreateOnlinePayment();
   const { data: walletData } = useWallet(true);
+  const {
+    data: providers = [],
+    isLoading: gatewaysLoading,
+    isError: gatewaysError,
+  } = useAvailablePaymentGateways(open);
 
   const [amount, setAmount] = useState<number | "">("");
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("fawaterk");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -76,7 +84,13 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
     setError(null);
     setBusy(true);
     try {
-      const result = await createPayment.mutateAsync(numericAmount);
+      const provider = providers.includes(selectedProvider) ? selectedProvider : providers[0];
+      if (!provider) {
+        setError("لا توجد بوابة دفع مفعّلة حالياً لهذه الأكاديمية.");
+        setBusy(false);
+        return;
+      }
+      const result = await createPayment.mutateAsync({ amount: numericAmount, provider });
       // Redirect to the payment gateway to complete the transaction.
       window.location.assign(result.data.payment_url);
     } catch (err: unknown) {
@@ -246,14 +260,43 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                 <div className="flex items-center gap-2 justify-center pt-1">
                   <ShieldCheck className="h-4 w-4 shrink-0" style={{ color: secondary }} />
                   <p className="text-[11px] text-muted-foreground/50">
-                    الدفع مشفّر وآمن عبر بوابة فواتيرك
+                    الدفع مشفّر وآمن عبر بوابة الدفع المختارة
                   </p>
                 </div>
+
+                {providers.length === 0 && !gatewaysLoading && (
+                  <p className="text-center text-xs text-amber-600">
+                    {gatewaysError
+                      ? "تعذر تحميل بوابات الدفع. أعد فتح النافذة للمحاولة مرة أخرى."
+                      : "لا توجد بوابة دفع مفعّلة لهذه الأكاديمية حالياً."}
+                  </p>
+                )}
+
+                {providers.length > 1 && (
+                  <div className="space-y-2">
+                    <label htmlFor="wallet-payment-provider" className="text-xs font-medium text-foreground/80">
+                      بوابة الدفع
+                    </label>
+                    <select
+                      id="wallet-payment-provider"
+                      value={selectedProvider}
+                      onChange={(event) => setSelectedProvider(event.target.value as PaymentProvider)}
+                      disabled={busy || gatewaysLoading}
+                      className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"
+                    >
+                      {providers.map((provider) => (
+                        <option key={provider} value={provider}>
+                          {provider === "paypal" ? "PayPal" : "فواتيرك"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-1">
                   <button
                     type="submit"
-                    disabled={busy}
+                    disabled={busy || gatewaysLoading || providers.length === 0}
                     className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                     style={{
                       background: `var(--brand-primary)`,

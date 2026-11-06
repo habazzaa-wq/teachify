@@ -19,7 +19,8 @@ class CoursePolicy
     public function view(User $user, Course $course): bool
     {
         if ($course->tenant_id !== currentTenant()->id) {
-            return false;
+            return $this->isAssignedInstructor($user, $course)
+                && $this->auth()->hasPermission($user, currentTenant(), 'courses.update');
         }
 
         if ($this->isTenantOperator($user, currentTenant()) || $this->isAssignedInstructor($user, $course)) {
@@ -81,7 +82,9 @@ class CoursePolicy
             return $this->auth()->hasPermission($user, currentTenant(), 'courses.delete');
         }
 
-        return false;
+        return app(InstructorFeature::class)->isEnabled(currentTenant())
+            && $this->isAssignedInstructor($user, $course)
+            && $this->auth()->hasPermission($user, currentTenant(), 'courses.update');
     }
 
     public function archive(User $user, Course $course): bool
@@ -92,8 +95,10 @@ class CoursePolicy
     public function feature(User $user, Course $course): bool
     {
         return $course->tenant_id === currentTenant()->id
-            && $this->isTenantOperator($user, currentTenant())
-            && $this->auth()->hasPermission($user, currentTenant(), 'courses.feature');
+            && (($this->isTenantOperator($user, currentTenant())
+                    && $this->auth()->hasPermission($user, currentTenant(), 'courses.feature'))
+                || ($this->isAssignedInstructor($user, $course)
+                    && $this->auth()->hasPermission($user, currentTenant(), 'courses.update')));
     }
 
     public function assignInstructors(User $user, Course $course): bool
@@ -113,8 +118,7 @@ class CoursePolicy
             return $this->auth()->hasPermission($user, currentTenant(), 'courses.manage_settings');
         }
 
-        return $this->isAssignedInstructor($user, $course)
-            && $this->auth()->hasPermission($user, currentTenant(), 'courses.update');
+        return false;
     }
 
     private function isTenantOperator(User $user, Tenant $tenant): bool

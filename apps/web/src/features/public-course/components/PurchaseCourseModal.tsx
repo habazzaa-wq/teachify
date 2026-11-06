@@ -14,6 +14,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCreateDirectCoursePayment, usePurchaseCourse } from "../hooks";
+import { useAvailablePaymentGateways } from "@/features/payments/hooks";
+import type { PaymentProvider } from "@/features/payments/types";
 import { formatCoursePrice } from "../utils";
 import { useWallet } from "@/features/wallet/hooks";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
@@ -48,6 +50,11 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const { tenant } = useActiveTenant();
   const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
   const { data: walletData } = useWallet(open && isAuthenticated && walletEnabled);
+  const {
+    data: paymentProviders = [],
+    isLoading: paymentProvidersLoading,
+    isError: paymentProvidersError,
+  } = useAvailablePaymentGateways(open && !walletEnabled);
   const { data: hero } = usePublicHero();
   const purchase = usePurchaseCourse(course.slug);
   const directPayment = useCreateDirectCoursePayment(course.slug);
@@ -55,6 +62,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const [rechargeOnline, setRechargeOnline] = useState(false);
   const [rechargeCode, setRechargeCode] = useState(false);
   const [showRecharge, setShowRecharge] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("fawaterk");
 
   const balance = walletData?.balance ?? 0;
   const isFree = course.pricingType === "free";
@@ -85,9 +93,10 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
     if (isFree || walletEnabled) {
       purchase.mutate();
     } else {
-      directPayment.mutate();
+      const provider = paymentProviders.includes(selectedProvider) ? selectedProvider : paymentProviders[0];
+      if (provider) directPayment.mutate(provider);
     }
-  }, [purchase, directPayment, isFree, walletEnabled]);
+  }, [purchase, directPayment, isFree, walletEnabled, paymentProviders, selectedProvider]);
 
   const requestError = purchase.error ?? directPayment.error;
   const errorMessage = requestError
@@ -296,6 +305,33 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           )}
                         </div>
 
+                        {!walletEnabled && !isFree && paymentProviders.length > 1 && (
+                          <div className="mb-4 space-y-2">
+                            <label htmlFor="course-payment-provider" className="text-xs font-medium text-foreground/80">
+                              بوابة الدفع
+                            </label>
+                            <select
+                              id="course-payment-provider"
+                              value={selectedProvider}
+                              onChange={(event) => setSelectedProvider(event.target.value as PaymentProvider)}
+                              className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"
+                            >
+                              {paymentProviders.map((provider) => (
+                                <option key={provider} value={provider}>
+                                  {provider === "paypal" ? "PayPal" : "فواتيرك"}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        {!walletEnabled && !isFree && !paymentProvidersLoading && paymentProviders.length === 0 && (
+                          <p className="mb-4 text-center text-xs text-amber-600">
+                            {paymentProvidersError
+                              ? "تعذر تحميل بوابات الدفع. أعد المحاولة بعد قليل."
+                              : "لا توجد بوابة دفع مفعّلة لهذه الأكاديمية حالياً."}
+                          </p>
+                        )}
+
                         {errorMessage && (
                           <motion.div
                             initial={{ opacity: 0, y: -4 }}
@@ -312,7 +348,11 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           <button
                             type="button"
                             onClick={handleConfirm}
-                            disabled={purchase.isPending || directPayment.isPending}
+                            disabled={
+                              purchase.isPending
+                              || directPayment.isPending
+                              || (!walletEnabled && !isFree && (paymentProvidersLoading || paymentProviders.length === 0))
+                            }
                             className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                             style={{
                               background: CTA_GRADIENT,

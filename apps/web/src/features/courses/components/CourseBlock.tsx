@@ -47,6 +47,8 @@ import { cn } from "@/lib/cn";
 interface CourseBlockProps {
   course: Course;
   index?: number;
+  onOpen?: (course: Course) => void;
+  readOnly?: boolean;
   onEdit?: (course: Course) => void;
   onPublish?: (course: Course) => void;
   onDuplicate?: (course: Course) => void;
@@ -58,6 +60,8 @@ interface CourseBlockProps {
   isPinned?: boolean;
   selected?: boolean;
   onToggleSelect?: (course: Course) => void;
+  instructorMode?: boolean;
+  instructorPermissions?: string[];
 }
 
 const languageLabels: Record<string, string> = {
@@ -109,6 +113,8 @@ function getCompletionPercent(course: Course): number {
 function CourseBlock({
   course,
   index = 0,
+  onOpen,
+  readOnly = false,
   onEdit,
   onPublish,
   onDuplicate,
@@ -120,6 +126,8 @@ function CourseBlock({
   isPinned,
   selected,
   onToggleSelect,
+  instructorMode = false,
+  instructorPermissions,
 }: CourseBlockProps) {
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -143,8 +151,13 @@ function CourseBlock({
     course.discountPrice != null && course.discountPrice > 0;
 
   const handleClick = useCallback(() => {
-    router.push(`/teacher/courses/${course.id}`);
-  }, [router, course.id]);
+    if (onOpen) {
+      onOpen(course);
+      return;
+    }
+
+    router.push(`${instructorMode ? "/instructor" : "/teacher"}/courses/${course.id}`);
+  }, [instructorMode, router, course, onOpen]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -300,9 +313,10 @@ function CourseBlock({
             </div>
 
             {/* Quick Actions */}
-            <div className="absolute end-3 top-3 z-20 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <AppTooltipProvider>
-                <div className="flex items-center gap-1">
+            {!readOnly && (
+              <div className="absolute end-3 top-3 z-20 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <AppTooltipProvider>
+                  <div className="flex items-center gap-1">
                   {onTogglePin && (
                     <AppTooltip>
                       <AppTooltipTrigger asChild>
@@ -329,7 +343,7 @@ function CourseBlock({
                       </AppTooltipContent>
                     </AppTooltip>
                   )}
-                  <PermissionGuard permission="courses.update">
+                  <CoursePermissionGuard instructorMode={instructorMode} instructorPermissions={instructorPermissions} permission="courses.update">
                     <AppTooltip>
                       <AppTooltipTrigger asChild>
                         <motion.button
@@ -349,8 +363,8 @@ function CourseBlock({
                         تعديل
                       </AppTooltipContent>
                     </AppTooltip>
-                  </PermissionGuard>
-                  <PermissionGuard permission="courses.update">
+                  </CoursePermissionGuard>
+                  <CoursePermissionGuard instructorMode={instructorMode} instructorPermissions={instructorPermissions} permission="courses.update">
                     <AppDropdownMenu>
                       <AppDropdownMenuTrigger asChild>
                         <motion.button
@@ -419,7 +433,7 @@ function CourseBlock({
                             أرشفة
                           </AppDropdownMenuItem>
                         )}
-                        <PermissionGuard permission="courses.delete">
+                        <CoursePermissionGuard instructorMode={instructorMode} instructorPermissions={instructorPermissions} permission="courses.delete">
                           <AppDropdownMenuSeparator />
                           <AppDropdownMenuItem
                             onClick={(e) => {
@@ -431,13 +445,14 @@ function CourseBlock({
                             <Trash2 className="ms-2 h-4 w-4" />
                             حذف
                           </AppDropdownMenuItem>
-                        </PermissionGuard>
+                        </CoursePermissionGuard>
                       </AppDropdownMenuContent>
                     </AppDropdownMenu>
-                  </PermissionGuard>
-                </div>
-              </AppTooltipProvider>
-            </div>
+                  </CoursePermissionGuard>
+                  </div>
+                </AppTooltipProvider>
+              </div>
+            )}
           </div>
         </div>
 
@@ -601,3 +616,22 @@ function CourseBlock({
 
 const MemoizedCourseBlock = memo(CourseBlock);
 export { MemoizedCourseBlock as CourseBlock };
+
+function CoursePermissionGuard({
+  instructorMode,
+  instructorPermissions,
+  permission,
+  children,
+}: {
+  instructorMode: boolean;
+  instructorPermissions?: string[];
+  permission: string;
+  children: React.ReactNode;
+}) {
+  return instructorMode
+    ? instructorPermissions?.includes(permission)
+      || (permission === "courses.delete" && instructorPermissions?.includes("courses.update"))
+      ? <>{children}</>
+      : null
+    : <PermissionGuard permission={permission}>{children}</PermissionGuard>;
+}

@@ -185,9 +185,13 @@ class CourseController extends Controller
         ]);
     }
 
-    public function duplicate(Course $course): JsonResponse
+    public function duplicate(Request $request, Course $course): JsonResponse
     {
         abort_if($course->tenant_id !== currentTenant()->id, 404);
+        if ($this->isInstructor($request)) {
+            abort_unless(app(InstructorCourseAuthorization::class)
+                ->canAccessCourse($request->user(), $course), 403);
+        }
         Gate::authorize('create', Course::class);
 
         $newCourse = $this->service->duplicate($course, currentTenantUser());
@@ -453,16 +457,9 @@ class CourseController extends Controller
 
     private function validateInstructorCourse(Request $request, bool $partial = false): array
     {
-        $rules = [
-            'title' => [$partial ? 'sometimes' : 'required', 'string', 'max:255'],
-            'slug' => ['sometimes', 'string', 'max:255', 'alpha_dash:ascii'],
-            'subtitle' => ['nullable', 'string', 'max:255'],
-            'short_description' => ['nullable', 'string', 'max:500'],
-            'description' => ['nullable', 'string'],
-            'full_description' => ['nullable', 'string'],
-            'difficulty' => ['sometimes', Rule::in(['beginner', 'intermediate', 'advanced', 'all_levels'])],
-            'language' => ['sometimes', 'string', 'max:10'],
-        ];
+        $rules = $this->courseRules($partial);
+        unset($rules['primary_instructor_tenant_user_id']);
+
         $unsupported = array_diff(array_keys($request->all()), array_keys($rules));
         if ($unsupported !== []) {
             throw ValidationException::withMessages(array_fill_keys(
@@ -472,6 +469,53 @@ class CourseController extends Controller
         }
 
         return $request->validate($rules);
+    }
+
+    private function courseRules(bool $partial = false): array
+    {
+        $required = $partial ? 'sometimes' : 'required';
+
+        return [
+            'title' => [$required, 'string', 'max:255'],
+            'slug' => ['sometimes', 'string', 'max:255', 'alpha_dash:ascii'],
+            'subtitle' => ['nullable', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:500'],
+            'description' => ['nullable', 'string'],
+            'full_description' => ['nullable', 'string'],
+            'thumbnail_path' => ['nullable', 'string', 'max:2048'],
+            'cover_image_path' => ['nullable', 'string', 'max:2048'],
+            'primary_instructor_tenant_user_id' => ['sometimes', 'integer'],
+            'visibility' => ['sometimes', Rule::in(['private', 'public', 'unlisted'])],
+            'difficulty' => ['sometimes', Rule::in(['beginner', 'intermediate', 'advanced', 'all_levels'])],
+            'language' => ['sometimes', 'string', 'max:10'],
+            'duration' => ['nullable', 'integer', 'min:0'],
+            'pricing_type' => ['sometimes', Rule::in(['free', 'one_time', 'subscription'])],
+            'price_amount' => ['nullable', 'integer', 'min:0'],
+            'price_currency' => ['nullable', 'string', 'size:3'],
+            'discount_price' => ['nullable', 'integer', 'min:0'],
+            'regional_prices' => ['sometimes', 'array'],
+            'regional_prices.*' => ['numeric', 'min:1', 'max:100000000'],
+            'enrollment_limit' => ['nullable', 'integer', 'min:0'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after:start_date'],
+            'certificate_enabled' => ['sometimes', 'boolean'],
+            'featured' => ['sometimes', 'boolean'],
+            'seo_title' => ['nullable', 'string', 'max:255'],
+            'seo_description' => ['nullable', 'string', 'max:500'],
+            'seo_keywords' => ['nullable', 'string', 'max:500'],
+            'requirements' => ['nullable', 'array'],
+            'requirements.*' => ['string', 'max:500'],
+            'learning_outcomes' => ['nullable', 'array'],
+            'learning_outcomes.*' => ['string', 'max:500'],
+            'target_audience' => ['nullable', 'array'],
+            'target_audience.*' => ['string', 'max:500'],
+            'educational_stage_id' => ['nullable', 'integer', 'exists:educational_stages,id'],
+            'subject_id' => ['nullable', 'integer', 'exists:subjects,id'],
+            'category_ids' => ['sometimes', 'array'],
+            'category_ids.*' => ['integer'],
+            'tag_ids' => ['sometimes', 'array'],
+            'tag_ids.*' => ['integer'],
+        ];
     }
 
     private function isInstructor(Request $request): bool

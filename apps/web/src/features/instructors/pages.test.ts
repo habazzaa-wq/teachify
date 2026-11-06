@@ -1,5 +1,6 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import InstructorChangePasswordPage from "../../app/(instructor)/instructor/change-password/page";
 import InstructorCourseDetailPage from "../../app/(instructor)/instructor/courses/[courseId]/page";
@@ -20,6 +21,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/features/instructors/InstructorAuthProvider", () => ({
   useInstructorAuth: () => ({
     user: { name: "Test Instructor" },
+    membership: { permissions: ["courses.create", "courses.update"] },
     accessToken: "test-access-token",
     login: vi.fn(),
     changePassword: vi.fn(),
@@ -43,7 +45,12 @@ vi.mock("@/providers/TenantProvider", () => ({
 }));
 
 function renderPage(page: () => ReactNode): string {
-  return renderToStaticMarkup(createElement(page));
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return renderToStaticMarkup(
+    createElement(QueryClientProvider, { client: queryClient }, createElement(page)),
+  );
 }
 
 describe("Instructor pages", () => {
@@ -73,12 +80,10 @@ describe("Instructor pages", () => {
     expect(html).toContain("aria-label=\"الوضع الليلي\"");
   });
 
-  it("renders the course list in its loading state for the authenticated Instructor", () => {
+  it("renders the admin-style course list in its loading state for the authenticated Instructor", () => {
     const html = renderPage(InstructorCoursesPage);
 
-    expect(html).toContain("مرحباً، Test Instructor");
-    expect(html).toContain("الدورات المعيّنة لك");
-    expect(html).toContain("جارٍ تحميل الدورات");
+    expect(html).toContain("animate-pulse");
   });
 
   it("renders the course detail loading state", () => {

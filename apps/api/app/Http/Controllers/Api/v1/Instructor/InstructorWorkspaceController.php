@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Api\v1\Instructor;
 
 use App\Http\Controllers\Controller;
 use App\Models\AssignmentSubmission;
+use App\Models\Category;
+use App\Models\EducationalStage;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamAttemptAnswer;
 use App\Models\MediaAsset;
 use App\Models\Quiz;
 use App\Models\TenantUser;
+use App\Models\Subject;
+use App\Models\Tag;
 use App\Http\Requests\ExamBank\StoreManualGradeRequest;
 use App\Services\ExamBank\ExamManualGradingService;
 use App\Services\Instructors\InstructorCourseAuthorization;
@@ -50,6 +54,47 @@ class InstructorWorkspaceController extends Controller
                 'pending_grading' => $this->submissionsQuery($instructor, $courseIds)
                     ->whereIn('status', ['submitted', 'returned'])
                     ->count(),
+            ],
+        ]);
+    }
+
+    public function courseLookups(Request $request): JsonResponse
+    {
+        $instructor = $this->instructor($request);
+        $tenantId = $instructor->tenant_id;
+
+        return response()->json([
+            'data' => [
+                'categories' => Category::query()
+                    ->where('tenant_id', $tenantId)
+                    ->where('active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get(['id', 'tenant_id', 'parent_id', 'name', 'slug', 'active'])
+                    ->map(fn (Category $category): array => [
+                        'id' => (string) $category->id,
+                        'tenantId' => (string) $category->tenant_id,
+                        'parentId' => $category->parent_id === null ? null : (string) $category->parent_id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                        'active' => (bool) $category->active,
+                    ]),
+                'tags' => Tag::query()
+                    ->where('tenant_id', $tenantId)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'slug']),
+                'stages' => EducationalStage::query()
+                    ->where('tenant_id', $tenantId)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'is_active']),
+                'subjects' => Subject::query()
+                    ->where('tenant_id', $tenantId)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'is_active']),
             ],
         ]);
     }

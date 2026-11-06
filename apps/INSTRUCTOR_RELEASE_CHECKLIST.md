@@ -145,13 +145,13 @@ if ($hits) { $hits; exit 1 }
 Write-Output "UNTRACKED_INSTRUCTOR_FILES_CHECKED=$($files.Count); trailing whitespace: none"
 ```
 
-No full test suite or production/server validation was run.
+At this initial preparation snapshot, no full test suite or production/server validation had been run; the later targeted tests and deployment checks are recorded below.
 
-## Packaging disposition and commands
+## Original packaging notes (2026-10-28 snapshot)
 
-No archive was created: the earlier inventory is unavailable, the worktree contains unrelated dirt, and this run was constrained not to copy repository files into a package. Reconcile this manifest with the earlier inventory and review the exact 32 tracked diffs before packaging. Do not use `git add`/`git archive` against this dirty worktree as a shortcut; `git archive` omits working-tree modifications and untracked files.
+At this snapshot no archive had been created: the earlier inventory was unavailable, the worktree contained unrelated dirt, and the preparation was constrained not to copy repository files into a package. The later reconciliation and artifact creation are recorded below. Do not use `git add`/`git archive` against a dirty worktree as a shortcut; `git archive` omits working-tree modifications and untracked files.
 
-After reconciliation, use a new output path outside the repository and an explicit allowlist. From the repository root in PowerShell, this extracts only the 56 bullet paths in the two Required sections (and excludes the later dirty-file list), verifies the paths exist, and writes the archive directly without staging or moving repository files:
+The following command is retained for the original 56-file snapshot only; it is not the 71-file manifest used for the 2026-11-05 release. For a future release, reconcile the current file list first and use a new output path outside the repository with an explicit allowlist. This historical command extracts the original 56 bullet paths in the two Required sections:
 
 ```powershell
 $checklist = Get-Content 'apps\INSTRUCTOR_RELEASE_CHECKLIST.md'
@@ -176,15 +176,15 @@ Verify the archive listing against those 56 paths before distribution; do not in
 
 ## Deployment sequence
 
-1. Keep all tenant `has_instructors` flags off. Confirm a tested backup/restore point and identify the correct target database, migration runner, active release path, and rollback owner.
+1. Record the current tenant `has_instructors` values and do not change them as part of a code deployment. Confirm a tested backup/restore point and identify the correct target database, migration runner, active release path, and rollback owner.
 2. Plan an additive migration-first window. The release's current API code reads the new `tenant_users` and `courses` columns, so code-before-migration is unsafe. If the deployment system permits, run the migration-bearing release's `php artisan migrate --force` while the old application code is still serving, then verify both migrations completed before switching application code. If that is not supported, plan a maintenance/atomic deployment or migration-only phase appropriate to the actual platform; do not assume compatibility.
-3. Deploy API code after both migrations are verified; then deploy the web app. Verify health, route availability, and logs with all tenant flags still off.
-4. Exercise the feature in a non-production tenant/environment where enabling its test flag is explicitly approved. Keep production tenant flags off until the complete smoke checklist passes. Then enable only approved production tenants through the controlled flag owner/process.
+3. Deploy API code after both migrations are verified; then deploy the web app. Verify health and route availability, and confirm the production flag values remain exactly as recorded.
+4. Exercise the feature in a non-production tenant/environment where enabling its test flag is explicitly approved. Change production flags only through the controlled flag owner/process after the complete smoke checklist passes.
 5. Treat rollback as an authorization/data decision: rolling back the identity migration drops Instructor identity and forced-password state; rolling back the assignment-marker migration drops assignment history and can restore legacy creator/pivot authorization while the feature is disabled. Do not automatically roll back either migration after code has used the columns.
 
 ## Post-deployment smoke checklist
 
-Run in the approved non-production/canary tenant before production enablement:
+Run in an approved non-production/canary tenant before enabling any additional production tenant. At the 2026-11-05 deployment baseline, one of six production tenants already had `has_instructors` enabled; that state was preserved and not broadened.
 
 - [ ] Tenant Admin provisions an Instructor account; generic user/invitation flows cannot create or promote that identity.
 - [ ] Tenant Admin assigns a course, verifies its primary membership/marker, then unassigns it and verifies the marker remains managed with no primary assignment.
@@ -192,9 +192,58 @@ Run in the approved non-production/canary tenant before production enablement:
 - [ ] Instructor can list/open and perform permitted operations on currently assigned courses only.
 - [ ] After reassignment, the former Instructor is denied and the new Instructor is allowed on the next request; after unassignment, both are denied, including nested course operations.
 - [ ] Present a tenant-A access token and refresh token with tenant-B context; both are rejected and tenant-B data remains unchanged.
-- [ ] Confirm failures are logged/observable, no unexpected account/course access occurs, and production flags remain off until all checks pass.
+- [ ] Confirm failures are logged/observable, no unexpected account/course access occurs, and production flag values are unchanged until all checks pass.
 
-## Release gates
+## Reconciliation update — 2026-11-05
 
-- **Packaging:** NO-GO for an archive from this run; manifest/checklist preparation is complete, but prior-inventory reconciliation and reviewed allowlist packaging remain outstanding.
-- **Production enablement:** NO-GO. Server/database compatibility and production smoke checks have not been verified. No deploy, production DB command, or feature-flag change was performed.
+The earlier 56-file inventory is retained above as the 2026-10-28 snapshot. At reconciliation time, excluding this output-only checklist, all 56 paths existed, 11 were modified, and there were no untracked files. The implementation worktree had 26 modified tracked source files; the 15 modified files outside the historical allowlist are added below because they implement or support the current Instructor course-management changes. The reconciled package therefore contains 71 source files (the original 56 plus these 15); the checklist and all other worktree files remain excluded.
+
+### Additional required tracked files (15)
+
+- `apps/api/app/Http/Controllers/Api/v1/Instructor/InstructorWorkspaceController.php`
+- `apps/api/app/Repositories/CourseSectionRepository.php`
+- `apps/web/src/app/(instructor)/instructor/courses/new/page.tsx`
+- `apps/web/src/features/course-categories/hooks/index.ts`
+- `apps/web/src/features/courses/components/CourseBlock.tsx`
+- `apps/web/src/features/courses/components/CourseCreatePanel.tsx`
+- `apps/web/src/features/courses/components/CourseEditDrawer.tsx`
+- `apps/web/src/features/courses/components/CourseFormPanel.tsx`
+- `apps/web/src/features/courses/components/CourseImageUploader.tsx`
+- `apps/web/src/features/courses/components/CoursesHomeContent.tsx`
+- `apps/web/src/features/courses/hooks/index.ts`
+- `apps/web/src/features/courses/hooks/useCourseTags.ts`
+- `apps/web/src/features/courses/services/index.ts`
+- `apps/web/src/features/homepage/educational-stages/hooks.ts`
+- `apps/web/src/features/subjects/hooks.ts`
+
+The focused checks were rerun after fixing Instructor deletion authorization to preserve assigned-Instructor deletion only while the feature is enabled, correcting the course-feature API method reference, typing the distinct Instructor lookup shape, and providing the React Query test context:
+
+- `php artisan test --compact tests/Feature/InstructorCourseAuthorizationTest.php` — passed, 10 tests / 166 assertions.
+- `npm run typecheck` — passed.
+- `npm test -- src/features/instructors/pages.test.ts` — passed, 6 tests. Vite emitted its existing config-loader warning.
+
+An allowlist-only archive was created at `C:\Users\everest\.copilot\session-state\3afae97a-c14e-4e22-bb59-170b6c01d6ac\files\teachify-instructor-release-20261105.zip`. Its listing was verified against the 71 reconciled paths; no checklist, environment file, build output, or unrelated worktree change is included. At artifact creation, this was only a source overlay and the production compatibility and enablement gates were still pending.
+
+**Disposition at artifact review:** packaging was complete for the reconciled source allowlist. Production deployment was still pending the server/database compatibility review and recovery checks recorded below. The final deployment outcome is recorded at the end of this document.
+
+### Pre-cutover server preflight — 2026-11-05
+
+- Server checkout is on `deploy` at `b499eada7a3ca3252c8eace12a0e0e2199275193`, matching local `HEAD`.
+- The live layout has no `/var/www/teachify/current`, `releases`, or `shared` path; the documented deployment script intentionally refuses live-path writes.
+- `git status` reports 13,771 dirty paths, including three Instructor source files and extensive generated `.next` artifacts. This differs from the older five-file server-dirt snapshot. The three source files included in the release were saved in the rollback snapshot before replacement; unrelated generated paths and the separate untracked Instructor component were preserved.
+- The current 71-file ZIP is not the documented migration-first pair of a two-migration archive plus 54-file application archive. The old deployment script pins a different base/candidate and a 56-path manifest, so it cannot safely deploy this artifact.
+- Before cutover, the isolated production-dump restore verification was confirmed, the staged Webpack build and smoke test passed, and the user's deployment instruction authorized the maintenance cutover. The reconciled ZIP was uploaded mode `0600` to `/home/deplo/.local/share/teachify-releases/instructor-release-20261105-da08c71936d3.zip`; its SHA-256 is `DA08C71936D331495B47569CE43A6CF836E7F291DD9EBC67A241BA0451315E2B`.
+
+## Original release gates (2026-10-28 snapshot)
+
+- **Packaging:** pending at the initial snapshot; the reconciled 71-file artifact and its validation are recorded above.
+- **Deployment:** pending at the initial snapshot; the final deployment outcome is recorded below.
+
+## Deployment result — 2026-11-05
+
+- **Deployment:** completed from the verified artifact. The Webpack production build passed and the staged homepage and `/instructor/login` smoke checks returned HTTP 200.
+- **Overlay:** 24 changed runtime source files were installed individually. The two migration files matched the deployed source and were already applied exactly once; no production migration was run.
+- **Cutover:** the previous web `.next` build and all 24 pre-deployment source files are retained in `/home/deplo/.local/share/teachify-releases/instructor-release-20261105-da08c71936d3/rollback-live-20261105T220406Z`. Only the frontend and relevant queue/scheduler PM2 processes were restarted; no global restart was used.
+- **Live verification:** homepage HTTP 200, Instructor login HTTP 200, API `/up` HTTP 200, and Instructor API routes are present. The live web build ID is `gEqLFoT3NJ3kAcRnvtSR5`.
+- **Preserved state:** the pre-deployment Instructor flag state was one enabled tenant out of six and its fingerprint is unchanged. No feature flag was changed. The untracked `InstructorCoursesPageContent.tsx` and protected same-origin `env.ts` configuration were verified unchanged.
+- **Not covered:** no credentialed, account-level Instructor workflow or custom-domain end-to-end smoke test was run. The checklist above remains required before enabling any additional tenant.

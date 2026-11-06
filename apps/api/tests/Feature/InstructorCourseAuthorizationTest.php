@@ -149,6 +149,12 @@ class InstructorCourseAuthorizationTest extends TestCase
             ->assertJsonCount(1, 'data');
 
         $this->withHeaders($headers)
+            ->getJson('/api/v1/instructor/courses/metrics')
+            ->assertOk()
+            ->assertJsonPath('data.totalCourses', 1)
+            ->assertJsonPath('data.draft', 1);
+
+        $this->withHeaders($headers)
             ->putJson('/api/v1/instructor/courses/'.$createdButUnassignedCourse->id, [
                 'title' => 'Unauthorized edit',
             ])
@@ -164,9 +170,13 @@ class InstructorCourseAuthorizationTest extends TestCase
         $this->withHeaders($headers)
             ->putJson('/api/v1/instructor/courses/'.$assignedCourse->id, [
                 'visibility' => 'public',
+                'pricing_type' => 'one_time',
+                'price_amount' => 12500,
             ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('visibility');
+            ->assertOk()
+            ->assertJsonPath('data.visibility', 'public')
+            ->assertJsonPath('data.pricingType', 'one_time')
+            ->assertJsonPath('data.price', 12500);
 
         $this->withHeaders($headers)
             ->patchJson('/api/v1/instructor/courses/'.$assignedCourse->id.'/publish')
@@ -177,8 +187,14 @@ class InstructorCourseAuthorizationTest extends TestCase
             ->postJson('/api/v1/instructor/courses', [
                 'title' => 'Created by Instructor',
                 'slug' => 'created-by-instructor',
+                'visibility' => 'public',
+                'pricing_type' => 'one_time',
+                'price_amount' => 12500,
+                'requirements' => ['Prerequisite'],
             ])
             ->assertCreated()
+            ->assertJsonPath('data.visibility', 'public')
+            ->assertJsonPath('data.price', 12500)
             ->json('data.id');
         $this->assertDatabaseHas('courses', [
             'id' => $created,
@@ -189,6 +205,10 @@ class InstructorCourseAuthorizationTest extends TestCase
         $this->withHeaders($headers)
             ->deleteJson('/api/v1/courses/'.$assignedCourse->id)
             ->assertForbidden();
+
+        $this->withHeaders($headers)
+            ->deleteJson('/api/v1/instructor/courses/'.$assignedCourse->id)
+            ->assertOk();
     }
 
     public function test_instructor_course_access_cannot_cross_tenant_through_a_foreign_membership_or_pivot(): void

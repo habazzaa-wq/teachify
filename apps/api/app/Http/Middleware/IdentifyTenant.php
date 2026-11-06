@@ -80,6 +80,8 @@ class IdentifyTenant
             || $request->is('api/v1/certificates/verify/*')
             || $request->is('api/v1/integrations/bunny/webhooks')
             || $request->is('api/v1/payments/fawaterk/webhook_json')
+            || $request->is('api/v1/payments/paypal/return')
+            || $request->is('api/v1/payments/paypal/cancel')
             || $request->is('api/v1/tenant/by-domain')
             || $request->is('api/v1/auth/refresh')
             || $request->is('api/v1/tenant/auth/login')

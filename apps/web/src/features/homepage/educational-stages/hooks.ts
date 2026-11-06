@@ -6,11 +6,19 @@ import {
   useQueries,
   useQuery,
   useQueryClient,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { educationalStagesService } from "./services";
+import { instructorApi } from "@/features/instructors/api";
 import { stagesKeys } from "./keys";
-import type { EducationalStageInput, StageStats } from "./types";
+import type { EducationalStageInput, EducationalStageRecord, StageStats } from "./types";
+
+type EducationalStageList = Awaited<ReturnType<typeof educationalStagesService.list>>;
+type InstructorStageList = {
+  data: Pick<EducationalStageRecord, "id" | "name" | "is_active">[];
+  total: number;
+};
 
 export function usePublicStages() {
   return useQuery({
@@ -76,10 +84,24 @@ export function useStageStatsState(
   }, [stageIds, data, isLoading]);
 }
 
-export function useEducationalStagesList(params?: { inactive?: boolean }) {
-  return useQuery({
-    queryKey: [...stagesKeys.list, params ?? {}],
-    queryFn: () => educationalStagesService.list(params),
+export function useEducationalStagesList(
+  params?: { inactive?: boolean },
+): UseQueryResult<EducationalStageList>;
+export function useEducationalStagesList(
+  params: { inactive?: boolean } | undefined,
+  instructorToken: string | null | undefined,
+): UseQueryResult<EducationalStageList | InstructorStageList>;
+export function useEducationalStagesList(
+  params?: { inactive?: boolean },
+  instructorToken?: string | null,
+): UseQueryResult<EducationalStageList | InstructorStageList> {
+  return useQuery<EducationalStageList | InstructorStageList>({
+    queryKey: [...stagesKeys.list, params ?? {}, instructorToken ? "instructor" : "tenant"],
+    queryFn: async () => {
+      if (!instructorToken) return educationalStagesService.list(params);
+      const { data } = await instructorApi.courseLookups(instructorToken);
+      return { data: data.stages, total: data.stages.length };
+    },
   });
 }
 

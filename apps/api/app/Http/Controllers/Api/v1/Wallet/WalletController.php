@@ -8,6 +8,7 @@ use App\Models\Wallet;
 use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
 use App\Services\Payments\FawaterkService;
+use App\Services\Payments\PayPalService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Commerce\TenantCommerceFeatures;
 use App\Services\Wallet\WalletService;
@@ -30,6 +31,7 @@ class WalletController extends Controller
         private readonly WalletService $walletService,
         private readonly PaymentGatewayService $gatewayService,
         private readonly FawaterkService $fawaterkService,
+        private readonly PayPalService $paypalService,
     ) {
     }
 
@@ -148,13 +150,14 @@ class WalletController extends Controller
     }
 
     /**
-     * Create an online wallet top-up (Fawaterk invoice link) and return the payment URL.
+     * Create an online wallet top-up and return the payment URL.
      */
     public function createOnlinePayment(Request $request): JsonResponse
     {
         $this->assertWalletEnabled();
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
         ]);
 
         $tenant = currentTenant();
@@ -163,7 +166,12 @@ class WalletController extends Controller
         $wallet = $this->walletService->getOrCreateWallet($tenant, $membership);
         $amount = (float) $validated['amount'];
 
-        $config = $this->gatewayService->requireConfig($tenant);
+        try {
+            $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
+            $config = $this->gatewayService->requireConfig($tenant, $provider);
+        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
+            throw ValidationException::withMessages(['payment' => [$exception->getMessage()]]);
+        }
 
         $reference = $this->gatewayService->generateReference();
 
@@ -175,7 +183,7 @@ class WalletController extends Controller
             'amount' => $amount,
             'currency' => 'EGP',
             'status' => WalletPayment::STATUS_PENDING,
-            'provider' => PaymentGatewayService::PROVIDER,
+            'provider' => $provider,
             'metadata' => ['requested_by_ip' => $request->ip()],
         ]);
 
@@ -213,7 +221,32 @@ class WalletController extends Controller
         ];
 
         try {
-            $result = $this->fawaterkService->createInvoiceLink($config, $payload);
+            if ($provider === 'paypal') {
+                $paypalAmount = $this->paypalService->amountForPayment($config, (string) $amount, 'EGP');
+                $paypalReturnUrl = $baseUrl.'/api/v1/payments/paypal/return?reference='.urlencode($reference);
+                $result = $this->paypalService->createOrder(
+                    $config,
+                    $reference,
+                    $paypalAmount['amount'],
+                    $paypalAmount['currency'],
+                    'شحن محفظة الأكاديمية',
+                    $paypalReturnUrl,
+                    $baseUrl.'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),
+                );
+                $result = [
+                    'url' => $result['url'],
+                    'invoice_id' => $result['order_id'],
+                    'invoice_key' => null,
+                ];
+                $payment->update([
+                    'metadata' => array_merge($payment->metadata ?? [], [
+                        'paypal_amount' => $paypalAmount['amount'],
+                        'paypal_currency' => $paypalAmount['currency'],
+                    ]),
+                ]);
+            } else {
+                $result = $this->fawaterkService->createInvoiceLink($config, $payload);
+            }
         } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $e) {
             $payment->update([
                 'status' => WalletPayment::STATUS_FAILED,
@@ -249,6 +282,8 @@ class WalletController extends Controller
                 'payment_url' => $result['url'],
                 'amount' => $amount,
                 'currency' => 'EGP',
+                'gateway_amount' => $provider === 'paypal' ? $paypalAmount['amount'] : $amount,
+                'gateway_currency' => $provider === 'paypal' ? $paypalAmount['currency'] : 'EGP',
             ],
         ], 201);
     }
