@@ -286,7 +286,7 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                     >
                       {providers.map((provider) => (
                         <option key={provider} value={provider}>
-                          {provider === "paypal" ? "PayPal" : "فواتيرك"}
+                          {provider === "paypal" ? "PayPal" : provider === "paymob" ? "Paymob" : "فواتيرك"}
                         </option>
                       ))}
                     </select>

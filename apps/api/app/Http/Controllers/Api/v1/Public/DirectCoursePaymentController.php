@@ -11,6 +11,7 @@ use App\Services\Commerce\TenantCommerceFeatures;
 use App\Services\Payments\Exceptions\PaymentGatewayException;
 use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
+use App\Services\Payments\PaymobService;
 use App\Services\Payments\PayPalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class DirectCoursePaymentController extends Controller
     public function __construct(
         private readonly PaymentGatewayService $gatewayService,
         private readonly FawaterkService $fawaterkService,
+        private readonly PaymobService $paymobService,
         private readonly PayPalService $paypalService,
         private readonly CourseRegionalPricing $regionalPricing,
     ) {}
@@ -55,7 +57,7 @@ class DirectCoursePaymentController extends Controller
 
         $quote = $this->regionalPricing->price($tenant, $course, $request);
         $validated = $request->validate([
-            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
         ]);
         $data = [
             'amount' => $quote['amount'],
@@ -64,22 +66,21 @@ class DirectCoursePaymentController extends Controller
             'country_name' => CourseRegionalPricing::COUNTRIES[$quote['country_code']]['name'],
         ];
 
-        if (($validated['provider'] ?? null) === 'paypal') {
+        if (in_array(($validated['provider'] ?? null), ['paypal', 'paymob'], true)) {
+            $provider = $validated['provider'];
             try {
-                $config = $this->gatewayService->requireConfig($tenant, 'paypal');
-                $paypalAmount = $this->paypalService->amountForPayment(
-                    $config,
-                    (string) $quote['amount'],
-                    $quote['currency'],
-                );
+                $config = $this->gatewayService->requireConfig($tenant, $provider);
+                $gatewayAmount = $provider === 'paypal'
+                    ? $this->paypalService->amountForPayment($config, (string) $quote['amount'], $quote['currency'])
+                    : $this->paymobService->amountForPayment($config, (string) $quote['amount'], $quote['currency']);
             } catch (PaymentGatewayException $exception) {
                 throw ValidationException::withMessages([
                     'payment' => [$exception->getMessage()],
                 ]);
             }
 
-            $data['gateway_amount'] = $paypalAmount['amount'];
-            $data['gateway_currency'] = $paypalAmount['currency'];
+            $data['gateway_amount'] = $gatewayAmount['amount'];
+            $data['gateway_currency'] = $gatewayAmount['currency'];
             $data['gateway_environment'] = $config['environment'] ?? 'test';
         }
 
@@ -115,7 +116,7 @@ class DirectCoursePaymentController extends Controller
 
         abort_if($course->pricing_type === 'free', 422, 'هذه الدورة مجانية ولا تحتاج إلى دفع.');
         $validated = $request->validate([
-            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
         ]);
         abort_if(
             $course->enrollments()->where('tenant_user_id', $student->id)->where('status', 'active')->exists(),
@@ -133,13 +134,11 @@ class DirectCoursePaymentController extends Controller
                 'amount' => (string) $quote['amount'],
                 'currency' => $quote['currency'],
             ];
-            if ($provider === 'paypal') {
-                $paypalAmount = $this->paypalService->amountForPayment(
-                    $config,
-                    (string) $quote['amount'],
-                    $quote['currency'],
-                );
-            }
+            $gatewayAmount = match ($provider) {
+                'paypal' => $this->paypalService->amountForPayment($config, (string) $quote['amount'], $quote['currency']),
+                'paymob' => $this->paymobService->amountForPayment($config, (string) $quote['amount'], $quote['currency']),
+                default => $paypalAmount,
+            };
         } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
@@ -161,6 +160,10 @@ class DirectCoursePaymentController extends Controller
                 'course_slug' => $course->slug,
                 'country_code' => $quote['country_code'],
                 'requested_by_ip' => $request->ip(),
+                ...($provider === 'fawaterk' ? [] : [
+                    'gateway_amount' => $gatewayAmount['amount'],
+                    'gateway_currency' => $gatewayAmount['currency'],
+                ]),
             ],
         ]);
 
@@ -188,9 +191,33 @@ class DirectCoursePaymentController extends Controller
                 ];
                 $payment->update([
                     'metadata' => array_merge($payment->metadata ?? [], [
-                        'paypal_amount' => $paypalAmount['amount'],
-                        'paypal_currency' => $paypalAmount['currency'],
+                        'paypal_amount' => $gatewayAmount['amount'],
+                        'paypal_currency' => $gatewayAmount['currency'],
                     ]),
+                ]);
+            } elseif ($provider === 'paymob') {
+                $paymobResult = $this->paymobService->createPaymentLink(
+                    $config,
+                    $reference,
+                    $gatewayAmount['amount'],
+                    $gatewayAmount['currency'],
+                    [
+                        'first_name' => $nameParts[0] ?? 'Student',
+                        'last_name' => $nameParts[1] ?? 'Teachify',
+                        'email' => $user?->email ?? '',
+                        'phone' => $student->phone ?? '',
+                        'country' => $quote['country_code'],
+                    ],
+                    $request->schemeAndHttpHost().'/api/v1/payments/paymob/webhook',
+                    $request->schemeAndHttpHost().'/api/v1/payments/paymob/return?reference='.urlencode($reference),
+                );
+                $result = [
+                    'url' => $paymobResult['url'],
+                    'invoice_id' => $paymobResult['order_id'],
+                    'invoice_key' => null,
+                ];
+                $payment->update([
+                    'provider_reference' => $paymobResult['transaction_id'] ?: null,
                 ]);
             } else {
                 $result = $this->fawaterkService->createInvoiceLink($config, [
@@ -254,8 +281,8 @@ class DirectCoursePaymentController extends Controller
                 'amount' => $quote['amount'],
                 'currency' => $quote['currency'],
                 'country_code' => $quote['country_code'],
-                'gateway_amount' => $provider === 'paypal' ? $paypalAmount['amount'] : $quote['amount'],
-                'gateway_currency' => $provider === 'paypal' ? $paypalAmount['currency'] : $quote['currency'],
+                'gateway_amount' => $gatewayAmount['amount'],
+                'gateway_currency' => $gatewayAmount['currency'],
             ],
         ], 201);
     }

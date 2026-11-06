@@ -37,6 +37,10 @@ const providerDetails: Record<PaymentProvider, { label: string; description: str
     label: "PayPal",
     description: "أكمل الدفع بأمان عبر PayPal أو البطاقة المتاحة في حسابك.",
   },
+  paymob: {
+    label: "Paymob",
+    description: "ادفع ببطاقات Visa وMastercard، حسب وسائل الدفع المفعّلة لدى الأكاديمية.",
+  },
 };
 
 export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProps) {
@@ -199,11 +203,10 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
               {directPayment.isPending ? "جارٍ تجهيز الدفع..." : "المتابعة إلى الدفع الآمن"}
             </button>
 
-            {activeProvider === "paypal" && quote.data?.gatewayEnvironment === "test" && (
+            {["paypal", "paymob"].includes(activeProvider ?? "") && quote.data?.gatewayEnvironment === "test" && (
               <p role="status" className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-800 dark:text-amber-200">
-                أنت تستخدم بيئة PayPal التجريبية (Sandbox). لإكمال الاختبار، سجّل الدخول بحساب مشتري
-                Sandbox من لوحة PayPal للمطورين؛ بيانات التاجر مخصصة للربط، والحساب الحقيقي لا يعمل
-                في هذه البيئة.
+                أنت تستخدم بيئة الاختبار. استخدم بيانات الدفع التجريبية التي توفرها بوابة الدفع؛
+                معاملات الاختبار لا تخصم أموالاً حقيقية.
               </p>
             )}
 
@@ -249,7 +252,9 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                       {quote.data.countryName}
                     </span>
                   </div>
-                  {activeProvider === "paypal" && quote.data.gatewayAmount !== null && quote.data.gatewayCurrency && (
+                  {["paypal", "paymob"].includes(activeProvider ?? "")
+                    && quote.data.gatewayAmount !== null
+                    && quote.data.gatewayCurrency && (
                     <div className="mt-4 flex items-start justify-between gap-4 text-sm">
                       <span className="text-muted-foreground">السعر بعملة PayPal</span>
                       <span className="text-end font-semibold text-foreground">
@@ -262,12 +267,16 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                   )}
                   <div className="mt-4 flex items-center justify-between gap-4">
                     <span className="text-sm text-muted-foreground">
-                      {activeProvider === "paypal" ? "المبلغ الذي ستدفعه" : "الإجمالي"}
+                      {["paypal", "paymob"].includes(activeProvider ?? "") ? "المبلغ الذي ستدفعه" : "الإجمالي"}
                     </span>
                     <span className="text-xl font-extrabold text-foreground">
                       {formatCoursePrice(
-                        activeProvider === "paypal" ? quote.data.gatewayAmount ?? quote.data.amount : quote.data.amount,
-                        activeProvider === "paypal" ? quote.data.gatewayCurrency ?? quote.data.currency : quote.data.currency,
+                        ["paypal", "paymob"].includes(activeProvider ?? "")
+                          ? quote.data.gatewayAmount ?? quote.data.amount
+                          : quote.data.amount,
+                        ["paypal", "paymob"].includes(activeProvider ?? "")
+                          ? quote.data.gatewayCurrency ?? quote.data.currency
+                          : quote.data.currency,
                       )}
                     </span>
                   </div>

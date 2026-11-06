@@ -1,4 +1,4 @@
-export type PaymentProvider = "fawaterk" | "paypal";
+export type PaymentProvider = "fawaterk" | "paypal" | "paymob";
 
 export interface GatewaySettings {
   provider: PaymentProvider;
@@ -10,6 +10,9 @@ export interface GatewaySettings {
   has_client_id?: boolean;
   client_id_masked?: string;
   has_client_secret?: boolean;
+  has_hmac_secret?: boolean;
+  integration_id?: string;
+  iframe_id?: string;
   currency?: string;
   exchange_rate?: number | null;
   exchange_rates?: Record<string, number | null>;
@@ -18,6 +21,7 @@ export interface GatewaySettings {
 export interface PaymentGatewaySettings {
   fawaterk: GatewaySettings;
   paypal: GatewaySettings;
+  paymob: GatewaySettings;
 }
 
 export interface PaymentGatewayUpdateInput {
@@ -27,6 +31,9 @@ export interface PaymentGatewayUpdateInput {
   secret_key?: string | null;
   client_id?: string | null;
   client_secret?: string | null;
+  hmac_secret?: string | null;
+  integration_id?: number;
+  iframe_id?: number;
   currency?: string;
   exchange_rate?: number | null;
   exchange_rates?: Record<string, number | null>;

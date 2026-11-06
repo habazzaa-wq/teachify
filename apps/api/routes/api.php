@@ -91,6 +91,7 @@ use App\Http\Controllers\Api\v1\Notifications\NotificationPreferenceController;
 use App\Http\Controllers\Api\v1\Notifications\NotificationTemplateController;
 use App\Http\Controllers\Api\v1\Payments\FawaterkWebhookController;
 use App\Http\Controllers\Api\v1\Payments\PaymentGatewayController;
+use App\Http\Controllers\Api\v1\Payments\PaymobWebhookController;
 use App\Http\Controllers\Api\v1\Payments\PayPalReturnController;
 use App\Http\Controllers\Api\v1\Platform\PlatformAdminController;
 use App\Http\Controllers\Api\v1\Platform\PlatformBunnySettingController;
@@ -402,6 +403,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/payments/fawaterk/webhook_json', [FawaterkWebhookController::class, 'handle'])
         ->middleware('throttle:60,1')
         ->name('payments.fawaterk.webhook');
+    Route::post('/payments/paymob/webhook', [PaymobWebhookController::class, 'handle'])
+        ->middleware('throttle:120,1')
+        ->name('payments.paymob.webhook');
+    Route::get('/payments/paymob/return', [PaymobWebhookController::class, 'redirect'])
+        ->middleware('throttle:60,1')
+        ->name('payments.paymob.return');
     Route::get('/payments/paypal/return', [PayPalReturnController::class, 'complete'])
         ->middleware('throttle:30,1')
         ->name('payments.paypal.return');

@@ -13,7 +13,7 @@ class PaymentGatewayService
 
     public const PROVIDER = 'fawaterk';
 
-    public const PROVIDERS = ['fawaterk', 'paypal'];
+    public const PROVIDERS = ['fawaterk', 'paypal', 'paymob'];
 
     /**
      * Resolve the tenant's gateway settings, migrating the legacy flat Fawaterk
@@ -39,6 +39,7 @@ class PaymentGatewayService
                         'secret_key' => $values['secret_key'] ?? null,
                     ],
                     'paypal' => [],
+                    'paymob' => [],
                 ],
             ];
         }
@@ -46,7 +47,13 @@ class PaymentGatewayService
         foreach (self::PROVIDERS as $provider) {
             $gateway = $values['gateways'][$provider] ?? [];
             if (! empty($gateway['credentials_encrypted'])) {
-                foreach (['api_key', 'secret_key', 'client_id', 'client_secret'] as $key) {
+                foreach ([
+                    'api_key',
+                    'secret_key',
+                    'client_id',
+                    'client_secret',
+                    'hmac_secret',
+                ] as $key) {
                     if (isset($gateway[$key]) && $gateway[$key] !== '') {
                         $gateway[$key] = Crypt::decryptString((string) $gateway[$key]);
                     }
@@ -87,6 +94,28 @@ class PaymentGatewayService
                 'client_id' => (string) $gateway['client_id'],
                 'client_secret' => (string) $gateway['client_secret'],
                 'currency' => (string) ($gateway['currency'] ?? 'USD'),
+                'exchange_rate' => (float) ($gateway['exchange_rate'] ?? 0),
+                'exchange_rates' => is_array($gateway['exchange_rates'] ?? null) ? $gateway['exchange_rates'] : [],
+            ];
+        }
+
+        if ($provider === 'paymob') {
+            if (empty($gateway['api_key'])
+                || empty($gateway['integration_id'])
+                || empty($gateway['iframe_id'])
+                || empty($gateway['hmac_secret'])
+                || empty($gateway['currency'])) {
+                return null;
+            }
+
+            return [
+                'provider' => $provider,
+                'environment' => $gateway['environment'] ?? 'test',
+                'api_key' => (string) $gateway['api_key'],
+                'integration_id' => (int) $gateway['integration_id'],
+                'iframe_id' => (string) $gateway['iframe_id'],
+                'hmac_secret' => (string) $gateway['hmac_secret'],
+                'currency' => (string) $gateway['currency'],
                 'exchange_rate' => (float) ($gateway['exchange_rate'] ?? 0),
                 'exchange_rates' => is_array($gateway['exchange_rates'] ?? null) ? $gateway['exchange_rates'] : [],
             ];
@@ -163,9 +192,11 @@ class PaymentGatewayService
         $settings = $this->rawSettings($tenant);
         $existing = $settings['gateways'][$provider] ?? [];
 
-        $credentialKeys = $provider === 'paypal'
-            ? ['client_id', 'client_secret']
-            : ['api_key', 'secret_key'];
+        $credentialKeys = match ($provider) {
+            'paypal' => ['client_id', 'client_secret'],
+            'paymob' => ['api_key', 'hmac_secret'],
+            default => ['api_key', 'secret_key'],
+        };
 
         foreach ($credentialKeys as $key) {
             if (array_key_exists($key, $values) && ($values[$key] === null || trim((string) $values[$key]) === '')) {
@@ -178,9 +209,11 @@ class PaymentGatewayService
 
         foreach (self::PROVIDERS as $gatewayProvider) {
             $gateway = $persisted['gateways'][$gatewayProvider] ?? [];
-            $keys = $gatewayProvider === 'paypal'
-                ? ['client_id', 'client_secret']
-                : ['api_key', 'secret_key'];
+            $keys = match ($gatewayProvider) {
+                'paypal' => ['client_id', 'client_secret'],
+                'paymob' => ['api_key', 'hmac_secret'],
+                default => ['api_key', 'secret_key'],
+            };
 
             foreach ($keys as $key) {
                 if (! empty($gateway[$key])) {
@@ -214,6 +247,7 @@ class PaymentGatewayService
         $gateways = $settings['gateways'] ?? [];
         $fawaterk = $gateways['fawaterk'] ?? [];
         $paypal = $gateways['paypal'] ?? [];
+        $paymob = $gateways['paymob'] ?? [];
 
         return [
             'fawaterk' => [
@@ -240,6 +274,26 @@ class PaymentGatewayService
                 'currency' => (string) ($paypal['currency'] ?? 'USD'),
                 'exchange_rate' => isset($paypal['exchange_rate']) ? (float) $paypal['exchange_rate'] : null,
                 'exchange_rates' => $paypal['exchange_rates'] ?? [],
+            ],
+            'paymob' => [
+                'provider' => 'paymob',
+                'environment' => $paymob['environment'] ?? 'test',
+                'is_active' => (bool) (
+                    ! empty($paymob['is_active'])
+                    && ! empty($paymob['api_key'])
+                    && ! empty($paymob['integration_id'])
+                    && ! empty($paymob['iframe_id'])
+                    && ! empty($paymob['hmac_secret'])
+                    && ! empty($paymob['currency'])
+                ),
+                'api_key_masked' => $this->mask((string) ($paymob['api_key'] ?? '')),
+                'has_api_key' => ! empty($paymob['api_key']),
+                'has_hmac_secret' => ! empty($paymob['hmac_secret']),
+                'integration_id' => (string) ($paymob['integration_id'] ?? ''),
+                'iframe_id' => (string) ($paymob['iframe_id'] ?? ''),
+                'currency' => (string) ($paymob['currency'] ?? 'EGP'),
+                'exchange_rate' => isset($paymob['exchange_rate']) ? (float) $paymob['exchange_rate'] : null,
+                'exchange_rates' => $paymob['exchange_rates'] ?? [],
             ],
         ];
     }

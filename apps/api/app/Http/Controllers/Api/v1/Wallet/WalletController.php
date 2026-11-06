@@ -7,10 +7,12 @@ use App\Models\TenantUser;
 use App\Models\Wallet;
 use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
-use App\Services\Payments\FawaterkService;
-use App\Services\Payments\PayPalService;
-use App\Services\Payments\PaymentGatewayService;
 use App\Services\Commerce\TenantCommerceFeatures;
+use App\Services\Payments\Exceptions\PaymentGatewayException;
+use App\Services\Payments\FawaterkService;
+use App\Services\Payments\PaymentGatewayService;
+use App\Services\Payments\PaymobService;
+use App\Services\Payments\PayPalService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,8 +34,8 @@ class WalletController extends Controller
         private readonly PaymentGatewayService $gatewayService,
         private readonly FawaterkService $fawaterkService,
         private readonly PayPalService $paypalService,
-    ) {
-    }
+        private readonly PaymobService $paymobService,
+    ) {}
 
     /**
      * Ensure the active membership has the student role so a teacher/owner
@@ -139,7 +141,7 @@ class WalletController extends Controller
         $result = $this->walletService->recharge($tenant, $membership, $validated['code']);
 
         return response()->json([
-            'message' => 'تم شحن محفظتك بنجاح بمبلغ ' . rtrim(rtrim(number_format((float) $result['amount'], 2), '0'), '.') . ' جنيه.',
+            'message' => 'تم شحن محفظتك بنجاح بمبلغ '.rtrim(rtrim(number_format((float) $result['amount'], 2), '0'), '.').' جنيه.',
             'data' => [
                 'amount' => $result['amount'],
                 'balance' => $result['balance'],
@@ -157,7 +159,7 @@ class WalletController extends Controller
         $this->assertWalletEnabled();
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
-            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
         ]);
 
         $tenant = currentTenant();
@@ -169,7 +171,7 @@ class WalletController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
-        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $exception) {
+        } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages(['payment' => [$exception->getMessage()]]);
         }
 
@@ -213,10 +215,10 @@ class WalletController extends Controller
             'sendSMS' => false,
             'payLoad' => ['reference' => $reference],
             'redirectionUrls' => [
-                'successUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=success',
-                'failUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=failed',
-                'pendingUrl' => $baseUrl . '/wallet/recharge-result?reference=' . $reference . '&status=pending',
-                'webhookUrl' => $baseUrl . '/api/v1/payments/fawaterk/webhook_json',
+                'successUrl' => $baseUrl.'/wallet/recharge-result?reference='.$reference.'&status=success',
+                'failUrl' => $baseUrl.'/wallet/recharge-result?reference='.$reference.'&status=failed',
+                'pendingUrl' => $baseUrl.'/wallet/recharge-result?reference='.$reference.'&status=pending',
+                'webhookUrl' => $baseUrl.'/api/v1/payments/fawaterk/webhook_json',
             ],
         ];
 
@@ -244,10 +246,38 @@ class WalletController extends Controller
                         'paypal_currency' => $paypalAmount['currency'],
                     ]),
                 ]);
+            } elseif ($provider === 'paymob') {
+                $paymobAmount = $this->paymobService->amountForPayment($config, (string) $amount, 'EGP');
+                $result = $this->paymobService->createPaymentLink(
+                    $config,
+                    $reference,
+                    $paymobAmount['amount'],
+                    $paymobAmount['currency'],
+                    [
+                        'first_name' => $nameParts[0] ?? 'Student',
+                        'last_name' => $nameParts[1] ?? 'Teachify',
+                        'email' => $user?->email ?? '',
+                        'phone' => $membership->phone ?? '',
+                        'country' => 'EG',
+                    ],
+                    $baseUrl.'/api/v1/payments/paymob/webhook',
+                    $baseUrl.'/api/v1/payments/paymob/return?reference='.rawurlencode($reference),
+                );
+                $result = [
+                    'url' => $result['url'],
+                    'invoice_id' => $result['order_id'],
+                    'invoice_key' => null,
+                ];
+                $payment->update([
+                    'metadata' => array_merge($payment->metadata ?? [], [
+                        'gateway_amount' => $paymobAmount['amount'],
+                        'gateway_currency' => $paymobAmount['currency'],
+                    ]),
+                ]);
             } else {
                 $result = $this->fawaterkService->createInvoiceLink($config, $payload);
             }
-        } catch (\App\Services\Payments\Exceptions\PaymentGatewayException $e) {
+        } catch (PaymentGatewayException $e) {
             $payment->update([
                 'status' => WalletPayment::STATUS_FAILED,
                 'failure_reason' => $e->getMessage(),
@@ -282,8 +312,12 @@ class WalletController extends Controller
                 'payment_url' => $result['url'],
                 'amount' => $amount,
                 'currency' => 'EGP',
-                'gateway_amount' => $provider === 'paypal' ? $paypalAmount['amount'] : $amount,
-                'gateway_currency' => $provider === 'paypal' ? $paypalAmount['currency'] : 'EGP',
+                'gateway_amount' => $provider === 'paypal'
+                    ? $paypalAmount['amount']
+                    : ($provider === 'paymob' ? $paymobAmount['amount'] : $amount),
+                'gateway_currency' => $provider === 'paypal'
+                    ? $paypalAmount['currency']
+                    : ($provider === 'paymob' ? $paymobAmount['currency'] : 'EGP'),
             ],
         ], 201);
     }
