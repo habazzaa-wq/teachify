@@ -126,4 +126,15 @@ class PayPalServiceTest extends TestCase
         $this->assertSame(['amount' => '50.00', 'currency' => 'SAR'], $regional);
         $this->assertSame(['amount' => '3.25', 'currency' => 'USD'], $convertedRegional);
     }
+
+    public function test_it_converts_egp_when_the_rate_is_entered_as_egp_per_paypal_currency(): void
+    {
+        $converted = app(PayPalService::class)->amountForPayment([
+            ...$this->config,
+            'currency' => 'USD',
+            'exchange_rate' => 52,
+        ], '385.00', 'EGP');
+
+        $this->assertSame(['amount' => '7.40', 'currency' => 'USD'], $converted);
+    }
 }

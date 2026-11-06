@@ -44,7 +44,15 @@ class PayPalService
                 ? (float) ($config['exchange_rate'] ?? 0)
                 : (float) ($config['exchange_rates'][$sourceCurrency] ?? 0);
 
-            if (! in_array($targetCurrency, self::SUPPORTED_CURRENCIES, true) || $exchangeRate <= 0) {
+            // Accept both common EGP rate formats: target currency per EGP
+            // (e.g. 0.02 USD) and EGP per target currency (e.g. 52 EGP/USD).
+            if ($sourceCurrency === 'EGP' && $exchangeRate > 1) {
+                $exchangeRate = 1 / $exchangeRate;
+            }
+
+            if (! in_array($targetCurrency, self::SUPPORTED_CURRENCIES, true)
+                || ! is_finite($exchangeRate)
+                || $exchangeRate <= 0) {
                 throw new PaymentGatewayException('أدخل سعر تحويل لهذه العملة إلى عملة PayPal المختارة أو استخدم فواتيرك.');
             }
 

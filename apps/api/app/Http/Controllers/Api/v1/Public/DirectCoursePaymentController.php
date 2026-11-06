@@ -54,14 +54,36 @@ class DirectCoursePaymentController extends Controller
         abort_if($course->pricing_type === 'free', 422, 'هذه الدورة مجانية ولا تحتاج إلى دفع.');
 
         $quote = $this->regionalPricing->price($tenant, $course, $request);
+        $validated = $request->validate([
+            'provider' => ['nullable', 'string', 'in:fawaterk,paypal'],
+        ]);
+        $data = [
+            'amount' => $quote['amount'],
+            'currency' => $quote['currency'],
+            'country_code' => $quote['country_code'],
+            'country_name' => CourseRegionalPricing::COUNTRIES[$quote['country_code']]['name'],
+        ];
+
+        if (($validated['provider'] ?? null) === 'paypal') {
+            try {
+                $config = $this->gatewayService->requireConfig($tenant, 'paypal');
+                $paypalAmount = $this->paypalService->amountForPayment(
+                    $config,
+                    (string) $quote['amount'],
+                    $quote['currency'],
+                );
+            } catch (PaymentGatewayException $exception) {
+                throw ValidationException::withMessages([
+                    'payment' => [$exception->getMessage()],
+                ]);
+            }
+
+            $data['gateway_amount'] = $paypalAmount['amount'];
+            $data['gateway_currency'] = $paypalAmount['currency'];
+        }
 
         return response()->json([
-            'data' => [
-                'amount' => $quote['amount'],
-                'currency' => $quote['currency'],
-                'country_code' => $quote['country_code'],
-                'country_name' => CourseRegionalPricing::COUNTRIES[$quote['country_code']]['name'],
-            ],
+            'data' => $data,
         ]);
     }
 
@@ -106,6 +128,17 @@ class DirectCoursePaymentController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
+            $paypalAmount = [
+                'amount' => (string) $quote['amount'],
+                'currency' => $quote['currency'],
+            ];
+            if ($provider === 'paypal') {
+                $paypalAmount = $this->paypalService->amountForPayment(
+                    $config,
+                    (string) $quote['amount'],
+                    $quote['currency'],
+                );
+            }
         } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
@@ -137,11 +170,6 @@ class DirectCoursePaymentController extends Controller
 
         try {
             if ($provider === 'paypal') {
-                $paypalAmount = $this->paypalService->amountForPayment(
-                    $config,
-                    (string) $quote['amount'],
-                    $quote['currency'],
-                );
                 $paypalReturnUrl = $request->schemeAndHttpHost().'/api/v1/payments/paypal/return?reference='.urlencode($reference);
                 $paypalResult = $this->paypalService->createOrder(
                     $config,

@@ -104,11 +104,15 @@ export function useCreateDirectCoursePayment(slug: string | null) {
   });
 }
 
-export function useDirectCoursePaymentQuote(slug: string | null, enabled = true) {
+export function useDirectCoursePaymentQuote(
+  slug: string | null,
+  provider: string | null,
+  enabled = true,
+) {
   return useQuery({
-    queryKey: [PUBLIC_COURSE_QUERY_KEY, "direct-payment-quote", slug],
-    queryFn: () => publicCourseService.getDirectCoursePaymentQuote(slug!),
-    enabled: !!slug && enabled,
+    queryKey: [PUBLIC_COURSE_QUERY_KEY, "direct-payment-quote", slug, provider],
+    queryFn: () => publicCourseService.getDirectCoursePaymentQuote(slug!, provider ?? undefined),
+    enabled: !!slug && !!provider && enabled,
     staleTime: 60_000,
   });
 }

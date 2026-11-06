@@ -279,11 +279,13 @@ export const publicCourseService = {
     };
   },
 
-  async getDirectCoursePaymentQuote(slug: string): Promise<{
+  async getDirectCoursePaymentQuote(slug: string, provider?: string): Promise<{
     amount: number;
     currency: string;
     countryCode: string;
     countryName: string;
+    gatewayAmount: number | null;
+    gatewayCurrency: string | null;
   }> {
     const json = await tenantStudentFetch<{
       data: {
@@ -291,13 +293,17 @@ export const publicCourseService = {
         currency: string;
         country_code: string;
         country_name: string;
+        gateway_amount?: number;
+        gateway_currency?: string;
       };
-    }>(`/public/courses/${slug}/direct-payment/quote`);
+    }>(`/public/courses/${slug}/direct-payment/quote${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`);
     return {
       amount: json.data.amount,
       currency: json.data.currency,
       countryCode: json.data.country_code,
       countryName: json.data.country_name,
+      gatewayAmount: json.data.gateway_amount ?? null,
+      gatewayCurrency: json.data.gateway_currency ?? null,
     };
   },
 

@@ -57,11 +57,15 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
     isLoading: providersLoading,
     isError: providersError,
   } = useAvailablePaymentGateways(isAuthenticated && isRegionalCheckoutEnabled);
-  const quote = useDirectCoursePaymentQuote(slug, isAuthenticated && isRegionalCheckoutEnabled);
   const directPayment = useCreateDirectCoursePayment(slug);
   const activeProvider = selectedProvider && providers.includes(selectedProvider)
     ? selectedProvider
     : providers[0] ?? null;
+  const quote = useDirectCoursePaymentQuote(
+    slug,
+    activeProvider,
+    isAuthenticated && isRegionalCheckoutEnabled,
+  );
 
   useEffect(() => {
     if (!isAuthenticated) setLoginOpen(true);
@@ -219,7 +223,11 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                 <Skeleton className="h-8 w-40" />
               ) : quote.isError ? (
                 <div role="alert" className="space-y-2 text-sm text-destructive">
-                  <p>تعذر تحديد السعر لبلدك. أعد المحاولة.</p>
+                  <p>
+                    {quote.error instanceof Error
+                      ? quote.error.message
+                      : "تعذر تحديد السعر لبلدك. أعد المحاولة."}
+                  </p>
                   <button type="button" onClick={() => void quote.refetch()} className="font-semibold underline">
                     إعادة المحاولة
                   </button>
@@ -233,10 +241,26 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                       {quote.data.countryName}
                     </span>
                   </div>
+                  {activeProvider === "paypal" && quote.data.gatewayAmount !== null && quote.data.gatewayCurrency && (
+                    <div className="mt-4 flex items-start justify-between gap-4 text-sm">
+                      <span className="text-muted-foreground">السعر بعملة PayPal</span>
+                      <span className="text-end font-semibold text-foreground">
+                        {formatCoursePrice(quote.data.gatewayAmount, quote.data.gatewayCurrency)}
+                        <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                          يعادل {formatCoursePrice(quote.data.amount, quote.data.currency)}
+                        </span>
+                      </span>
+                    </div>
+                  )}
                   <div className="mt-4 flex items-center justify-between gap-4">
-                    <span className="text-sm text-muted-foreground">الإجمالي</span>
+                    <span className="text-sm text-muted-foreground">
+                      {activeProvider === "paypal" ? "المبلغ الذي ستدفعه" : "الإجمالي"}
+                    </span>
                     <span className="text-xl font-extrabold text-foreground">
-                      {formatCoursePrice(quote.data.amount, quote.data.currency)}
+                      {formatCoursePrice(
+                        activeProvider === "paypal" ? quote.data.gatewayAmount ?? quote.data.amount : quote.data.amount,
+                        activeProvider === "paypal" ? quote.data.gatewayCurrency ?? quote.data.currency : quote.data.currency,
+                      )}
                     </span>
                   </div>
                 </>

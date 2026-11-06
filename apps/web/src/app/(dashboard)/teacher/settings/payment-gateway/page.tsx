@@ -173,7 +173,7 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
             </div>
             <div className="space-y-2">
               <label htmlFor="paypal-egp-rate" className="text-sm font-medium">
-                سعر التحويل: 1 جنيه مصري = كام {currency}؟
+                سعر التحويل إلى {currency}
               </label>
               <AppInput
                 id="paypal-egp-rate"
@@ -184,8 +184,12 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
                 dir="ltr"
                 value={exchangeRate}
                 onChange={(event) => setExchangeRate(event.target.value)}
-                placeholder="مثال: 0.02"
+                placeholder="مثال: 0.02 أو 52"
               />
+              <p className="text-xs leading-5 text-muted-foreground">
+                اكتب عدد {currency} لكل جنيه مصري (مثلاً 0.02)، أو اكتب عدد الجنيهات لكل 1 {currency}
+                (مثلاً 52). سنتعرف على الصيغة ونحسب المبلغ الصحيح قبل الدفع.
+              </p>
             </div>
             <div className="space-y-3">
               <p className="text-sm font-medium">سعر التحويل للعملات الإقليمية غير المدعومة مباشرةً</p>
@@ -207,8 +211,8 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
               ))}
             </div>
             <p className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
-              نتحقق من بيانات PayPal عند التفعيل. أدخل سعر التحويل الذي تعتمد عليه أكاديميتك؛
-              سيظهر للطالب مبلغ الدفع بعملة PayPal عند إتمام العملية. استخدم بيانات تطبيق REST
+              نتحقق من بيانات PayPal عند التفعيل. سيظهر للطالب مبلغ الدفع بعملة PayPal قبل المتابعة.
+              استخدم بيانات تطبيق REST
               التجاري والبيئة المطابقة لمفاتيحك.
             </p>
           </>
