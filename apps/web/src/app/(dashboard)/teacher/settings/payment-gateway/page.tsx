@@ -20,25 +20,11 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
   const updateSettings = useUpdatePaymentGateway();
   const isPayPal = provider === "paypal";
   const isPaymob = provider === "paymob";
-  const needsCurrencyConversion = isPayPal || isPaymob;
   const [environment, setEnvironment] = useState<"test" | "live" | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [integrationId, setIntegrationId] = useState(settings.integration_id ?? "");
   const [iframeId, setIframeId] = useState(settings.iframe_id ?? "");
-  const [currency, setCurrency] = useState(settings.currency ?? (isPaymob ? "EGP" : "USD"));
-  const [exchangeRate, setExchangeRate] = useState(
-    settings.exchange_rate == null ? "" : String(settings.exchange_rate),
-  );
-  const regionalCurrencies = isPaymob
-    ? ["SAR", "AED", "KWD", "QAR", "BHD", "USD", "EUR"]
-    : ["KWD", "QAR", "BHD"];
-  const [exchangeRates, setExchangeRates] = useState<Record<string, string>>({
-    ...Object.fromEntries(regionalCurrencies.map((code) => [
-      code,
-      settings.exchange_rates?.[code] == null ? "" : String(settings.exchange_rates[code]),
-    ])),
-  });
   const [activeToggled, setActiveToggled] = useState<boolean | null>(null);
   const activeEnvironment = environment ?? settings.environment ?? "test";
   const isActive = activeToggled ?? settings.is_active;
@@ -52,11 +38,6 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
         ? {
             client_id: apiKey.trim() || null,
             client_secret: secretKey.trim() || null,
-            currency,
-            exchange_rate: exchangeRate.trim() ? Number(exchangeRate) : null,
-            exchange_rates: Object.fromEntries(
-              Object.entries(exchangeRates).map(([code, rate]) => [code, rate.trim() ? Number(rate) : null]),
-            ),
           }
         : isPaymob
           ? {
@@ -64,11 +45,6 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
               hmac_secret: secretKey.trim() || null,
               integration_id: integrationId.trim() ? Number(integrationId) : undefined,
               iframe_id: iframeId.trim() ? Number(iframeId) : undefined,
-              currency,
-              exchange_rate: exchangeRate.trim() ? Number(exchangeRate) : null,
-              exchange_rates: Object.fromEntries(
-                Object.entries(exchangeRates).map(([code, rate]) => [code, rate.trim() ? Number(rate) : null]),
-              ),
             }
         : {
             api_key: apiKey.trim() || null,
@@ -80,7 +56,7 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
         setSecretKey("");
       },
     });
-  }, [activeEnvironment, apiKey, currency, exchangeRate, exchangeRates, integrationId, iframeId, isActive, isPayPal, isPaymob, provider, secretKey, updateSettings]);
+  }, [activeEnvironment, apiKey, integrationId, iframeId, isActive, isPayPal, isPaymob, provider, secretKey, updateSettings]);
 
   const hasFirstCredential = isPayPal ? settings.has_client_id : settings.has_api_key;
   const firstCredentialPlaceholder = isPayPal
@@ -218,68 +194,11 @@ function GatewayCard({ provider, settings }: GatewayCardProps) {
           </>
         )}
 
-        {needsCurrencyConversion && (
-          <>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {isPaymob ? "عملة تكامل Paymob" : "عملة استقبال مبالغ الجنيه المصري"}
-              </label>
-              <AppSelect value={currency} onValueChange={setCurrency}>
-                <AppSelectTrigger>
-                  <AppSelectValue placeholder="اختر العملة" />
-                </AppSelectTrigger>
-                <AppSelectContent>
-                  {(isPaymob ? ["EGP", "USD", "EUR", "SAR", "AED"] : ["USD", "EUR", "GBP", "SAR", "AED", "CAD", "AUD"]).map((item) => (
-                    <AppSelectItem key={item} value={item}>{item}</AppSelectItem>
-                  ))}
-                </AppSelectContent>
-              </AppSelect>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor={`${provider}-egp-rate`} className="text-sm font-medium">
-                سعر التحويل من الجنيه المصري إلى {currency}
-              </label>
-              <AppInput
-                id={`${provider}-egp-rate`}
-                type="number"
-                inputMode="decimal"
-                min="0.000001"
-                step="any"
-                dir="ltr"
-                value={exchangeRate}
-                onChange={(event) => setExchangeRate(event.target.value)}
-                placeholder="مثال: 0.02 أو 52"
-              />
-              <p className="text-xs leading-5 text-muted-foreground">
-                اكتب عدد {currency} لكل جنيه مصري (مثلاً 0.02)، أو عدد الجنيهات لكل 1 {currency}
-                (مثلاً 52). عند اختيار EGP لا يلزم سعر تحويل.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <p className="text-sm font-medium">سعر تحويل عملات التسعير الإقليمي إلى {currency}</p>
-              {regionalCurrencies.map((code) => (
-                <div key={code} className="grid grid-cols-[auto_1fr] items-center gap-3">
-                  <label htmlFor={`${provider}-rate-${code}`} className="text-sm text-muted-foreground">{code}</label>
-                  <AppInput
-                    id={`${provider}-rate-${code}`}
-                    type="number"
-                    inputMode="decimal"
-                    min="0.000001"
-                    step="any"
-                    dir="ltr"
-                    value={exchangeRates[code]}
-                    onChange={(event) => setExchangeRates((rates) => ({ ...rates, [code]: event.target.value }))}
-                    placeholder={`1 ${code} = ${currency}`}
-                  />
-                </div>
-              ))}
-            </div>
-            <p className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
-              {isPayPal
-                ? "نتحقق من بيانات PayPal عند التفعيل، ويظهر للطالب المبلغ بعملة PayPal قبل المتابعة."
-                : "نتحقق من مفتاح API عند التفعيل، ويظهر للطالب المبلغ بعملة تكامل Paymob قبل المتابعة."}
-            </p>
-          </>
+        {(isPayPal || isPaymob) && (
+          <p className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
+            يدفع الطالب بنفس المبلغ والعملة المحددين لسعر الدورة. تأكد من أن حسابك وتكامل البوابة يدعمان عملة السعر؛
+            قد ترفض البوابة العملية إذا لم تكن العملة مفعّلة لحساب التاجر.
+          </p>
         )}
 
         <div className="flex justify-end">

@@ -60,6 +60,9 @@ class PaymentGatewayService
                 }
                 unset($gateway['credentials_encrypted']);
             }
+            if (in_array($provider, ['paypal', 'paymob'], true)) {
+                unset($gateway['currency'], $gateway['exchange_rate'], $gateway['exchange_rates']);
+            }
             $values['gateways'][$provider] = $gateway;
         }
 
@@ -82,9 +85,7 @@ class PaymentGatewayService
 
         if ($provider === 'paypal') {
             if (empty($gateway['client_id'])
-                || empty($gateway['client_secret'])
-                || empty($gateway['currency'])
-                || empty($gateway['exchange_rate'])) {
+                || empty($gateway['client_secret'])) {
                 return null;
             }
 
@@ -93,9 +94,6 @@ class PaymentGatewayService
                 'environment' => $gateway['environment'] ?? 'test',
                 'client_id' => (string) $gateway['client_id'],
                 'client_secret' => (string) $gateway['client_secret'],
-                'currency' => (string) ($gateway['currency'] ?? 'USD'),
-                'exchange_rate' => (float) ($gateway['exchange_rate'] ?? 0),
-                'exchange_rates' => is_array($gateway['exchange_rates'] ?? null) ? $gateway['exchange_rates'] : [],
             ];
         }
 
@@ -103,8 +101,7 @@ class PaymentGatewayService
             if (empty($gateway['api_key'])
                 || empty($gateway['integration_id'])
                 || empty($gateway['iframe_id'])
-                || empty($gateway['hmac_secret'])
-                || empty($gateway['currency'])) {
+                || empty($gateway['hmac_secret'])) {
                 return null;
             }
 
@@ -115,9 +112,6 @@ class PaymentGatewayService
                 'integration_id' => (int) $gateway['integration_id'],
                 'iframe_id' => (string) $gateway['iframe_id'],
                 'hmac_secret' => (string) $gateway['hmac_secret'],
-                'currency' => (string) $gateway['currency'],
-                'exchange_rate' => (float) ($gateway['exchange_rate'] ?? 0),
-                'exchange_rates' => is_array($gateway['exchange_rates'] ?? null) ? $gateway['exchange_rates'] : [],
             ];
         }
 
@@ -265,15 +259,10 @@ class PaymentGatewayService
                     ! empty($paypal['is_active'])
                     && ! empty($paypal['client_id'])
                     && ! empty($paypal['client_secret'])
-                    && ! empty($paypal['currency'])
-                    && ! empty($paypal['exchange_rate'])
                 ),
                 'client_id_masked' => $this->mask((string) ($paypal['client_id'] ?? '')),
                 'has_client_id' => ! empty($paypal['client_id']),
                 'has_client_secret' => ! empty($paypal['client_secret']),
-                'currency' => (string) ($paypal['currency'] ?? 'USD'),
-                'exchange_rate' => isset($paypal['exchange_rate']) ? (float) $paypal['exchange_rate'] : null,
-                'exchange_rates' => $paypal['exchange_rates'] ?? [],
             ],
             'paymob' => [
                 'provider' => 'paymob',
@@ -284,16 +273,12 @@ class PaymentGatewayService
                     && ! empty($paymob['integration_id'])
                     && ! empty($paymob['iframe_id'])
                     && ! empty($paymob['hmac_secret'])
-                    && ! empty($paymob['currency'])
                 ),
                 'api_key_masked' => $this->mask((string) ($paymob['api_key'] ?? '')),
                 'has_api_key' => ! empty($paymob['api_key']),
                 'has_hmac_secret' => ! empty($paymob['hmac_secret']),
                 'integration_id' => (string) ($paymob['integration_id'] ?? ''),
                 'iframe_id' => (string) ($paymob['iframe_id'] ?? ''),
-                'currency' => (string) ($paymob['currency'] ?? 'EGP'),
-                'exchange_rate' => isset($paymob['exchange_rate']) ? (float) $paymob['exchange_rate'] : null,
-                'exchange_rates' => $paymob['exchange_rates'] ?? [],
             ],
         ];
     }

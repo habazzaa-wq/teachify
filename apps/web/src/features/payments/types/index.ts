@@ -13,9 +13,6 @@ export interface GatewaySettings {
   has_hmac_secret?: boolean;
   integration_id?: string;
   iframe_id?: string;
-  currency?: string;
-  exchange_rate?: number | null;
-  exchange_rates?: Record<string, number | null>;
 }
 
 export interface PaymentGatewaySettings {
@@ -34,8 +31,5 @@ export interface PaymentGatewayUpdateInput {
   hmac_secret?: string | null;
   integration_id?: number;
   iframe_id?: number;
-  currency?: string;
-  exchange_rate?: number | null;
-  exchange_rates?: Record<string, number | null>;
   is_active?: boolean;
 }

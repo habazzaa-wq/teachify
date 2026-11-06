@@ -46,41 +46,25 @@ class PaymobService
     }
 
     /**
-     * Convert a quoted course price to the currency configured for the merchant integration.
+     * Return the quoted amount unchanged, normalizing the regional Saudi code
+     * to the ISO currency code expected by Paymob.
      *
-     * @param  array<string, mixed>  $config
      * @return array{amount: string, currency: string}
      */
-    public function amountForPayment(array $config, string $amount, string $currency): array
+    public function amountForPayment(string $amount, string $currency): array
     {
         if (! is_numeric($amount) || (float) $amount <= 0) {
             throw new PaymentGatewayException('مبلغ الدفع غير صالح لعملية Paymob.');
         }
 
         $sourceCurrency = strtoupper($currency) === 'SR' ? 'SAR' : strtoupper($currency);
-        $targetCurrency = strtoupper((string) ($config['currency'] ?? 'EGP'));
-
-        if ($sourceCurrency === $targetCurrency) {
-            return ['amount' => $this->formatAmount($amount), 'currency' => $targetCurrency];
-        }
-
-        $exchangeRate = $sourceCurrency === 'EGP'
-            ? (float) ($config['exchange_rate'] ?? 0)
-            : (float) ($config['exchange_rates'][$sourceCurrency] ?? 0);
-
-        if ($sourceCurrency === 'EGP' && $exchangeRate > 1) {
-            $exchangeRate = 1 / $exchangeRate;
-        }
-
-        if (! is_finite($exchangeRate) || $exchangeRate <= 0) {
-            throw new PaymentGatewayException(
-                'أدخل سعر التحويل من '.$sourceCurrency.' إلى عملة Paymob أو استخدم بوابة أخرى.',
-            );
+        if (! preg_match('/^[A-Z]{3}$/', $sourceCurrency)) {
+            throw new PaymentGatewayException('عملة السعر المحددة غير صالحة لعملية Paymob.');
         }
 
         return [
-            'amount' => $this->formatAmount((string) ((float) $amount * $exchangeRate)),
-            'currency' => $targetCurrency,
+            'amount' => $this->formatAmount($amount),
+            'currency' => $sourceCurrency,
         ];
     }
 

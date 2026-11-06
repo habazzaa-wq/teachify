@@ -224,7 +224,7 @@ class WalletController extends Controller
 
         try {
             if ($provider === 'paypal') {
-                $paypalAmount = $this->paypalService->amountForPayment($config, (string) $amount, 'EGP');
+                $paypalAmount = $this->paypalService->amountForPayment((string) $amount, 'EGP');
                 $paypalReturnUrl = $baseUrl.'/api/v1/payments/paypal/return?reference='.urlencode($reference);
                 $result = $this->paypalService->createOrder(
                     $config,
@@ -247,7 +247,7 @@ class WalletController extends Controller
                     ]),
                 ]);
             } elseif ($provider === 'paymob') {
-                $paymobAmount = $this->paymobService->amountForPayment($config, (string) $amount, 'EGP');
+                $paymobAmount = $this->paymobService->amountForPayment((string) $amount, 'EGP');
                 $result = $this->paymobService->createPaymentLink(
                     $config,
                     $reference,

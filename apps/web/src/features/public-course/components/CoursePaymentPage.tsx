@@ -252,32 +252,12 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                       {quote.data.countryName}
                     </span>
                   </div>
-                  {["paypal", "paymob"].includes(activeProvider ?? "")
-                    && quote.data.gatewayAmount !== null
-                    && quote.data.gatewayCurrency && (
-                    <div className="mt-4 flex items-start justify-between gap-4 text-sm">
-                      <span className="text-muted-foreground">السعر بعملة PayPal</span>
-                      <span className="text-end font-semibold text-foreground">
-                        {formatCoursePrice(quote.data.gatewayAmount, quote.data.gatewayCurrency)}
-                        <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                          يعادل {formatCoursePrice(quote.data.amount, quote.data.currency)}
-                        </span>
-                      </span>
-                    </div>
-                  )}
                   <div className="mt-4 flex items-center justify-between gap-4">
                     <span className="text-sm text-muted-foreground">
-                      {["paypal", "paymob"].includes(activeProvider ?? "") ? "المبلغ الذي ستدفعه" : "الإجمالي"}
+                      المبلغ المطلوب
                     </span>
                     <span className="text-xl font-extrabold text-foreground">
-                      {formatCoursePrice(
-                        ["paypal", "paymob"].includes(activeProvider ?? "")
-                          ? quote.data.gatewayAmount ?? quote.data.amount
-                          : quote.data.amount,
-                        ["paypal", "paymob"].includes(activeProvider ?? "")
-                          ? quote.data.gatewayCurrency ?? quote.data.currency
-                          : quote.data.currency,
-                      )}
+                      {formatCoursePrice(quote.data.amount, quote.data.currency)}
                     </span>
                   </div>
                 </>

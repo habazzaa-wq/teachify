@@ -22,8 +22,7 @@ import type {
 import { formatCurrency } from "@/lib/format";
 
 /**
- * Price label for a course. Prices are always displayed in EGP (جنيه مصري)
- * regardless of the stored currency, matching the wallet currency.
+ * Format a course price in the currency used for its regional price.
  */
 export function formatCoursePrice(
   amount: number | string | null | undefined,

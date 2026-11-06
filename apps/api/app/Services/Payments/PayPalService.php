@@ -28,38 +28,18 @@ class PayPalService
     }
 
     /**
-     * Convert EGP prices using the tenant's configured rate; other supported
-     * currencies are charged as quoted.
+     * Return the quoted amount unchanged when PayPal supports its currency.
      *
-     * @param  array<string, mixed>  $config
      * @return array{amount: string, currency: string}
      */
-    public function amountForPayment(array $config, string $amount, string $currency): array
+    public function amountForPayment(string $amount, string $currency): array
     {
         $sourceCurrency = strtoupper($currency) === 'SR' ? 'SAR' : strtoupper($currency);
 
-        if ($sourceCurrency === 'EGP' || ! in_array($sourceCurrency, self::SUPPORTED_CURRENCIES, true)) {
-            $targetCurrency = strtoupper((string) ($config['currency'] ?? 'USD'));
-            $exchangeRate = $sourceCurrency === 'EGP'
-                ? (float) ($config['exchange_rate'] ?? 0)
-                : (float) ($config['exchange_rates'][$sourceCurrency] ?? 0);
-
-            // Accept both common EGP rate formats: target currency per EGP
-            // (e.g. 0.02 USD) and EGP per target currency (e.g. 52 EGP/USD).
-            if ($sourceCurrency === 'EGP' && $exchangeRate > 1) {
-                $exchangeRate = 1 / $exchangeRate;
-            }
-
-            if (! in_array($targetCurrency, self::SUPPORTED_CURRENCIES, true)
-                || ! is_finite($exchangeRate)
-                || $exchangeRate <= 0) {
-                throw new PaymentGatewayException('أدخل سعر تحويل لهذه العملة إلى عملة PayPal المختارة أو استخدم فواتيرك.');
-            }
-
-            return [
-                'amount' => $this->formatAmount((string) ((float) $amount * $exchangeRate)),
-                'currency' => $targetCurrency,
-            ];
+        if (! in_array($sourceCurrency, self::SUPPORTED_CURRENCIES, true)) {
+            throw new PaymentGatewayException(
+                'PayPal لا يدعم الدفع بعملة هذا السعر. اختر بوابة أخرى تدعم العملة المحددة للدورة.',
+            );
         }
 
         return [

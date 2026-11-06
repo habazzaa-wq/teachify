@@ -108,33 +108,16 @@ class PayPalServiceTest extends TestCase
         $this->assertSame('CAPTURE-123', $result['capture_id']);
     }
 
-    public function test_it_converts_egp_using_the_tenant_rate_and_normalizes_regional_currency_codes(): void
+    public function test_it_charges_supported_regional_currencies_without_conversion(): void
     {
         $service = app(PayPalService::class);
-        $config = [
-            ...$this->config,
-            'currency' => 'USD',
-            'exchange_rate' => 0.02,
-            'exchange_rates' => ['KWD' => 3.25],
-        ];
-
-        $converted = $service->amountForPayment($config, '100.00', 'EGP');
-        $regional = $service->amountForPayment($config, '50.00', 'SR');
-        $convertedRegional = $service->amountForPayment($config, '1.00', 'KWD');
-
-        $this->assertSame(['amount' => '2.00', 'currency' => 'USD'], $converted);
-        $this->assertSame(['amount' => '50.00', 'currency' => 'SAR'], $regional);
-        $this->assertSame(['amount' => '3.25', 'currency' => 'USD'], $convertedRegional);
+        $this->assertSame(['amount' => '500.00', 'currency' => 'SAR'], $service->amountForPayment('500', 'SR'));
+        $this->assertSame(['amount' => '50.00', 'currency' => 'AED'], $service->amountForPayment('50', 'AED'));
     }
 
-    public function test_it_converts_egp_when_the_rate_is_entered_as_egp_per_paypal_currency(): void
+    public function test_it_rejects_currencies_that_paypal_cannot_charge_without_conversion(): void
     {
-        $converted = app(PayPalService::class)->amountForPayment([
-            ...$this->config,
-            'currency' => 'USD',
-            'exchange_rate' => 52,
-        ], '385.00', 'EGP');
-
-        $this->assertSame(['amount' => '7.40', 'currency' => 'USD'], $converted);
+        $this->expectException(PaymentGatewayException::class);
+        app(PayPalService::class)->amountForPayment('385.00', 'EGP');
     }
 }

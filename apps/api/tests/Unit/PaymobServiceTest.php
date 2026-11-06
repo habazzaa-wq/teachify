@@ -16,7 +16,6 @@ class PaymobServiceTest extends TestCase
         'integration_id' => 12345,
         'iframe_id' => '67890',
         'hmac_secret' => 'test-hmac-secret',
-        'currency' => 'EGP',
     ];
 
     public function test_it_creates_a_hosted_card_payment_link(): void
@@ -30,8 +29,8 @@ class PaymobServiceTest extends TestCase
         $result = app(PaymobService::class)->createPaymentLink(
             $this->config,
             'COURSE-REFERENCE',
-            '385.00',
-            'EGP',
+            '500.00',
+            'SAR',
             [
                 'first_name' => 'Test',
                 'last_name' => 'Student',
@@ -49,41 +48,38 @@ class PaymobServiceTest extends TestCase
             $result['url'],
         );
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/ecommerce/orders')
-            && $request['amount_cents'] === 38500
+            && $request['amount_cents'] === 50000
+            && $request['currency'] === 'SAR'
             && $request['merchant_order_id'] === 'COURSE-REFERENCE'
         );
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/acceptance/payment_keys')
             && $request['integration_id'] === 12345
+            && $request['amount_cents'] === 50000
+            && $request['currency'] === 'SAR'
             && $request['notification_url'] === 'https://tenant.example/api/v1/payments/paymob/webhook'
             && $request['redirection_url'] === 'https://tenant.example/api/v1/payments/paymob/return?reference=COURSE-REFERENCE'
         );
     }
 
-    public function test_it_converts_quoted_prices_to_the_paymob_integration_currency(): void
+    public function test_it_uses_the_quoted_amount_and_currency_without_conversion(): void
     {
         $service = app(PaymobService::class);
-        $config = [
-            ...$this->config,
-            'currency' => 'USD',
-            'exchange_rate' => 52,
-            'exchange_rates' => ['SAR' => 14.2],
-        ];
 
         $this->assertSame(
-            ['amount' => '7.40', 'currency' => 'USD'],
-            $service->amountForPayment($config, '385.00', 'EGP'),
+            ['amount' => '385.00', 'currency' => 'EGP'],
+            $service->amountForPayment('385.00', 'EGP'),
         );
         $this->assertSame(
-            ['amount' => '710.00', 'currency' => 'USD'],
-            $service->amountForPayment($config, '50.00', 'SAR'),
+            ['amount' => '500.00', 'currency' => 'SAR'],
+            $service->amountForPayment('500.00', 'SR'),
         );
     }
 
-    public function test_it_rejects_a_missing_currency_conversion_rate(): void
+    public function test_it_rejects_invalid_payment_amounts(): void
     {
         $this->expectException(PaymentGatewayException::class);
 
-        app(PaymobService::class)->amountForPayment($this->config, '100.00', 'SAR');
+        app(PaymobService::class)->amountForPayment('0', 'SAR');
     }
 
     public function test_it_verifies_the_signed_transaction_callback_and_rejects_tampering(): void

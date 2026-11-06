@@ -71,8 +71,8 @@ class DirectCoursePaymentController extends Controller
             try {
                 $config = $this->gatewayService->requireConfig($tenant, $provider);
                 $gatewayAmount = $provider === 'paypal'
-                    ? $this->paypalService->amountForPayment($config, (string) $quote['amount'], $quote['currency'])
-                    : $this->paymobService->amountForPayment($config, (string) $quote['amount'], $quote['currency']);
+                    ? $this->paypalService->amountForPayment((string) $quote['amount'], $quote['currency'])
+                    : $this->paymobService->amountForPayment((string) $quote['amount'], $quote['currency']);
             } catch (PaymentGatewayException $exception) {
                 throw ValidationException::withMessages([
                     'payment' => [$exception->getMessage()],
@@ -130,14 +130,14 @@ class DirectCoursePaymentController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
-            $paypalAmount = [
+            $quotedAmount = [
                 'amount' => (string) $quote['amount'],
                 'currency' => $quote['currency'],
             ];
             $gatewayAmount = match ($provider) {
-                'paypal' => $this->paypalService->amountForPayment($config, (string) $quote['amount'], $quote['currency']),
-                'paymob' => $this->paymobService->amountForPayment($config, (string) $quote['amount'], $quote['currency']),
-                default => $paypalAmount,
+                'paypal' => $this->paypalService->amountForPayment((string) $quote['amount'], $quote['currency']),
+                'paymob' => $this->paymobService->amountForPayment((string) $quote['amount'], $quote['currency']),
+                default => $quotedAmount,
             };
         } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
@@ -178,8 +178,8 @@ class DirectCoursePaymentController extends Controller
                 $paypalResult = $this->paypalService->createOrder(
                     $config,
                     $reference,
-                    $paypalAmount['amount'],
-                    $paypalAmount['currency'],
+                    $gatewayAmount['amount'],
+                    $gatewayAmount['currency'],
                     $course->title,
                     $paypalReturnUrl,
                     $request->schemeAndHttpHost().'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),

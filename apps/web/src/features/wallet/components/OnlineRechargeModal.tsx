@@ -43,6 +43,7 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
   const [busy, setBusy] = useState(false);
 
   const balance = walletData?.balance ?? 0;
+  const walletProviders = providers.filter((provider) => provider !== "paypal");
 
   const resetForm = useCallback(() => {
     setAmount("");
@@ -84,9 +85,12 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
     setError(null);
     setBusy(true);
     try {
-      const provider = providers.includes(selectedProvider) ? selectedProvider : providers[0];
+      const selectedWalletProvider = selectedProvider === "paypal" ? undefined : selectedProvider;
+      const provider = selectedWalletProvider && walletProviders.includes(selectedWalletProvider)
+        ? selectedWalletProvider
+        : walletProviders[0];
       if (!provider) {
-        setError("لا توجد بوابة دفع مفعّلة حالياً لهذه الأكاديمية.");
+        setError("لا توجد بوابة مفعّلة تدعم عملة شحن المحفظة (EGP) حالياً.");
         setBusy(false);
         return;
       }
@@ -264,15 +268,15 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                   </p>
                 </div>
 
-                {providers.length === 0 && !gatewaysLoading && (
+                {walletProviders.length === 0 && !gatewaysLoading && (
                   <p className="text-center text-xs text-amber-600">
                     {gatewaysError
                       ? "تعذر تحميل بوابات الدفع. أعد فتح النافذة للمحاولة مرة أخرى."
-                      : "لا توجد بوابة دفع مفعّلة لهذه الأكاديمية حالياً."}
+                      : "لا توجد بوابة مفعّلة تدعم عملة شحن المحفظة (EGP) حالياً."}
                   </p>
                 )}
 
-                {providers.length > 1 && (
+                {walletProviders.length > 1 && (
                   <div className="space-y-2">
                     <label htmlFor="wallet-payment-provider" className="text-xs font-medium text-foreground/80">
                       بوابة الدفع
@@ -284,9 +288,9 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                       disabled={busy || gatewaysLoading}
                       className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"
                     >
-                      {providers.map((provider) => (
+                      {walletProviders.map((provider) => (
                         <option key={provider} value={provider}>
-                          {provider === "paypal" ? "PayPal" : provider === "paymob" ? "Paymob" : "فواتيرك"}
+                          {provider === "paymob" ? "Paymob" : "فواتيرك"}
                         </option>
                       ))}
                     </select>
@@ -296,7 +300,7 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                 <div className="flex gap-3 pt-1">
                   <button
                     type="submit"
-                    disabled={busy || gatewaysLoading || providers.length === 0}
+                    disabled={busy || gatewaysLoading || walletProviders.length === 0}
                     className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                     style={{
                       background: `var(--brand-primary)`,
