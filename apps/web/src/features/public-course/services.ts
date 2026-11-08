@@ -260,7 +260,7 @@ export const publicCourseService = {
     };
   },
 
-  async createDirectPayment(slug: string, provider: string): Promise<{
+  async createDirectPayment(slug: string, provider: string, paypalCurrency?: string): Promise<{
     paymentUrl: string;
     amount: number;
     currency: string;
@@ -270,7 +270,7 @@ export const publicCourseService = {
     }>(`/public/courses/${slug}/direct-payment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider }),
+      body: JSON.stringify({ provider, ...(paypalCurrency ? { paypal_currency: paypalCurrency } : {}) }),
     });
     return {
       paymentUrl: json.data.payment_url,
@@ -279,12 +279,16 @@ export const publicCourseService = {
     };
   },
 
-  async getDirectCoursePaymentQuote(slug: string, provider?: string): Promise<{
+  async getDirectCoursePaymentQuote(slug: string, provider?: string, paypalCurrency?: string): Promise<{
     amount: number;
     currency: string;
     countryCode: string;
     countryName: string;
     gatewayEnvironment: "test" | "live" | null;
+    gatewayAmount: string | null;
+    gatewayCurrency: string | null;
+    gatewayExchangeRate: string | null;
+    paypalCurrencies: string[];
   }> {
     const json = await tenantStudentFetch<{
       data: {
@@ -293,14 +297,24 @@ export const publicCourseService = {
         country_code: string;
         country_name: string;
         gateway_environment?: "test" | "live";
+        gateway_amount?: string;
+        gateway_currency?: string;
+        gateway_exchange_rate?: string;
+        paypal_currencies?: string[];
       };
-    }>(`/public/courses/${slug}/direct-payment/quote${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`);
+    }>(`/public/courses/${slug}/direct-payment/quote${provider
+      ? `?provider=${encodeURIComponent(provider)}${paypalCurrency ? `&paypal_currency=${encodeURIComponent(paypalCurrency)}` : ""}`
+      : ""}`);
     return {
       amount: json.data.amount,
       currency: json.data.currency,
       countryCode: json.data.country_code,
       countryName: json.data.country_name,
       gatewayEnvironment: json.data.gateway_environment ?? null,
+      gatewayAmount: json.data.gateway_amount ?? null,
+      gatewayCurrency: json.data.gateway_currency ?? null,
+      gatewayExchangeRate: json.data.gateway_exchange_rate ?? null,
+      paypalCurrencies: json.data.paypal_currencies ?? [],
     };
   },
 

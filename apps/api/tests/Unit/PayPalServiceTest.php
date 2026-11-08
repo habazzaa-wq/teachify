@@ -111,13 +111,52 @@ class PayPalServiceTest extends TestCase
     public function test_it_charges_supported_regional_currencies_without_conversion(): void
     {
         $service = app(PayPalService::class);
-        $this->assertSame(['amount' => '500.00', 'currency' => 'SAR'], $service->amountForPayment('500', 'SR'));
-        $this->assertSame(['amount' => '50.00', 'currency' => 'AED'], $service->amountForPayment('50', 'AED'));
+        $this->assertSame(
+            ['amount' => '500.00', 'currency' => 'SAR', 'exchange_rate' => '1'],
+            $service->amountForPayment('500', 'SR'),
+        );
+        $this->assertSame(
+            ['amount' => '50.00', 'currency' => 'AED', 'exchange_rate' => '1'],
+            $service->amountForPayment('50', 'AED'),
+        );
     }
 
-    public function test_it_rejects_currencies_that_paypal_cannot_charge_without_conversion(): void
+    public function test_it_converts_a_course_price_into_the_selected_paypal_currency(): void
+    {
+        Http::fake([
+            'open.er-api.com/v6/latest/EGP' => Http::response([
+                'result' => 'success',
+                'rates' => ['USD' => 0.02],
+            ]),
+        ]);
+
+        $result = app(PayPalService::class)->amountForPayment('385.00', 'EGP', 'USD');
+
+        $this->assertSame([
+            'amount' => '7.70',
+            'currency' => 'USD',
+            'exchange_rate' => '0.02',
+        ], $result);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://open.er-api.com/v6/latest/EGP');
+    }
+
+    public function test_it_rejects_a_selected_currency_that_paypal_does_not_support(): void
     {
         $this->expectException(PaymentGatewayException::class);
-        app(PayPalService::class)->amountForPayment('385.00', 'EGP');
+        app(PayPalService::class)->amountForPayment('385.00', 'EGP', 'EGP');
+    }
+
+    public function test_it_rounds_zero_decimal_paypal_currencies_correctly(): void
+    {
+        Http::fake([
+            'open.er-api.com/v6/latest/USD' => Http::response([
+                'result' => 'success',
+                'rates' => ['JPY' => 150.25],
+            ]),
+        ]);
+
+        $result = app(PayPalService::class)->amountForPayment('1.00', 'USD', 'JPY');
+
+        $this->assertSame('150', $result['amount']);
     }
 }

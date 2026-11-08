@@ -97,7 +97,8 @@ export function usePurchaseCourse(slug: string | null) {
 
 export function useCreateDirectCoursePayment(slug: string | null) {
   return useMutation({
-    mutationFn: (provider: string) => publicCourseService.createDirectPayment(slug!, provider),
+    mutationFn: ({ provider, paypalCurrency }: { provider: string; paypalCurrency?: string }) =>
+      publicCourseService.createDirectPayment(slug!, provider, paypalCurrency),
     onSuccess: ({ paymentUrl }) => {
       window.location.assign(paymentUrl);
     },
@@ -108,10 +109,11 @@ export function useDirectCoursePaymentQuote(
   slug: string | null,
   provider: string | null,
   enabled = true,
+  paypalCurrency?: string,
 ) {
   return useQuery({
-    queryKey: [PUBLIC_COURSE_QUERY_KEY, "direct-payment-quote", slug, provider],
-    queryFn: () => publicCourseService.getDirectCoursePaymentQuote(slug!, provider ?? undefined),
+    queryKey: [PUBLIC_COURSE_QUERY_KEY, "direct-payment-quote", slug, provider, paypalCurrency],
+    queryFn: () => publicCourseService.getDirectCoursePaymentQuote(slug!, provider ?? undefined, paypalCurrency),
     enabled: !!slug && !!provider && enabled,
     staleTime: 60_000,
   });

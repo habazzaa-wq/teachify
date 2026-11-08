@@ -58,6 +58,7 @@ class DirectCoursePaymentController extends Controller
         $quote = $this->regionalPricing->price($tenant, $course, $request);
         $validated = $request->validate([
             'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
+            'paypal_currency' => ['nullable', 'string', 'size:3'],
         ]);
         $data = [
             'amount' => $quote['amount'],
@@ -71,7 +72,11 @@ class DirectCoursePaymentController extends Controller
             try {
                 $config = $this->gatewayService->requireConfig($tenant, $provider);
                 $gatewayAmount = $provider === 'paypal'
-                    ? $this->paypalService->amountForPayment((string) $quote['amount'], $quote['currency'])
+                    ? $this->paypalService->amountForPayment(
+                        (string) $quote['amount'],
+                        $quote['currency'],
+                        strtoupper((string) ($validated['paypal_currency'] ?? 'USD')),
+                    )
                     : $this->paymobService->amountForPayment((string) $quote['amount'], $quote['currency']);
             } catch (PaymentGatewayException $exception) {
                 throw ValidationException::withMessages([
@@ -82,6 +87,10 @@ class DirectCoursePaymentController extends Controller
             $data['gateway_amount'] = $gatewayAmount['amount'];
             $data['gateway_currency'] = $gatewayAmount['currency'];
             $data['gateway_environment'] = $config['environment'] ?? 'test';
+            if ($provider === 'paypal') {
+                $data['paypal_currencies'] = $this->paypalService->supportedCurrencies();
+                $data['gateway_exchange_rate'] = $gatewayAmount['exchange_rate'];
+            }
         }
 
         return response()->json([
@@ -117,6 +126,7 @@ class DirectCoursePaymentController extends Controller
         abort_if($course->pricing_type === 'free', 422, 'هذه الدورة مجانية ولا تحتاج إلى دفع.');
         $validated = $request->validate([
             'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
+            'paypal_currency' => ['nullable', 'string', 'size:3'],
         ]);
         abort_if(
             $course->enrollments()->where('tenant_user_id', $student->id)->where('status', 'active')->exists(),
@@ -130,12 +140,22 @@ class DirectCoursePaymentController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
+            $paypalCurrency = strtoupper((string) ($validated['paypal_currency'] ?? 'USD'));
+            if ($provider === 'paypal' && ! in_array($paypalCurrency, $this->paypalService->supportedCurrencies(), true)) {
+                throw ValidationException::withMessages([
+                    'paypal_currency' => ['عملة الدفع المختارة غير مدعومة من PayPal. اختر عملة أخرى.'],
+                ]);
+            }
             $quotedAmount = [
                 'amount' => (string) $quote['amount'],
                 'currency' => $quote['currency'],
             ];
             $gatewayAmount = match ($provider) {
-                'paypal' => $this->paypalService->amountForPayment((string) $quote['amount'], $quote['currency']),
+                'paypal' => $this->paypalService->amountForPayment(
+                    (string) $quote['amount'],
+                    $quote['currency'],
+                    $paypalCurrency,
+                ),
                 'paymob' => $this->paymobService->amountForPayment((string) $quote['amount'], $quote['currency']),
                 default => $quotedAmount,
             };
@@ -193,6 +213,7 @@ class DirectCoursePaymentController extends Controller
                     'metadata' => array_merge($payment->metadata ?? [], [
                         'paypal_amount' => $gatewayAmount['amount'],
                         'paypal_currency' => $gatewayAmount['currency'],
+                        'paypal_exchange_rate' => $gatewayAmount['exchange_rate'],
                     ]),
                 ]);
             } elseif ($provider === 'paymob') {
@@ -283,6 +304,7 @@ class DirectCoursePaymentController extends Controller
                 'country_code' => $quote['country_code'],
                 'gateway_amount' => $gatewayAmount['amount'],
                 'gateway_currency' => $gatewayAmount['currency'],
+                'gateway_exchange_rate' => $provider === 'paypal' ? $gatewayAmount['exchange_rate'] : null,
             ],
         ], 201);
     }

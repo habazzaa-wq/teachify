@@ -17,7 +17,7 @@ import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useAvailablePaymentGateways } from "@/features/payments/hooks";
 import type { PaymentProvider } from "@/features/payments/types";
 import { useCreateDirectCoursePayment, useDirectCoursePaymentQuote, usePublicCourse } from "../hooks";
-import { formatCoursePrice } from "../utils";
+import { formatCoursePrice, PAYPAL_SUPPORTED_CURRENCIES } from "../utils";
 import { PRIMARY, CTA_GRADIENT } from "../brand";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PublicLoginCard } from "@/features/auth/components/PublicLoginCard";
@@ -48,6 +48,7 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
   const { isAuthenticated } = useCurrentUser();
   const { tenant } = useActiveTenant();
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null);
+  const [paypalCurrency, setPaypalCurrency] = useState("USD");
   const [loginOpen, setLoginOpen] = useState(false);
 
   const { data: fetchedCourse, isLoading: courseLoading } = usePublicCourse(slug);
@@ -69,6 +70,7 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
     slug,
     activeProvider,
     isAuthenticated && isRegionalCheckoutEnabled,
+    activeProvider === "paypal" ? paypalCurrency : undefined,
   );
 
   useEffect(() => {
@@ -180,6 +182,24 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
               </div>
             )}
 
+            {activeProvider === "paypal" && (
+              <div className="mt-5">
+                <label htmlFor="paypal-currency" className="mb-2 block text-sm font-semibold text-foreground">
+                  اختر عملة حساب PayPal
+                </label>
+                <select
+                  id="paypal-currency"
+                  value={paypalCurrency}
+                  onChange={(event) => setPaypalCurrency(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  {(quote.data?.paypalCurrencies.length ? quote.data.paypalCurrencies : PAYPAL_SUPPORTED_CURRENCIES).map((currency) => (
+                    <option key={currency} value={currency}>{currency}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {directPayment.error && (
               <p role="alert" className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                 {directPayment.error instanceof Error
@@ -190,7 +210,10 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
 
             <button
               type="button"
-              onClick={() => activeProvider && directPayment.mutate(activeProvider)}
+              onClick={() => activeProvider && directPayment.mutate({
+                provider: activeProvider,
+                ...(activeProvider === "paypal" ? { paypalCurrency } : {}),
+              })}
               disabled={!activeProvider || providersLoading || providersError || directPayment.isPending || quote.isLoading || quote.isError}
               className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: CTA_GRADIENT }}
@@ -254,12 +277,27 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                   </div>
                   <div className="mt-4 flex items-center justify-between gap-4">
                     <span className="text-sm text-muted-foreground">
-                      المبلغ المطلوب
+                      {activeProvider === "paypal" ? "سعر الدورة" : "المبلغ المطلوب"}
                     </span>
                     <span className="text-xl font-extrabold text-foreground">
                       {formatCoursePrice(quote.data.amount, quote.data.currency)}
                     </span>
                   </div>
+                  {activeProvider === "paypal" && quote.data.gatewayAmount && quote.data.gatewayCurrency && (
+                    <div className="mt-4 rounded-xl bg-primary/5 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-muted-foreground">المبلغ المطلوب عبر PayPal</span>
+                        <span className="text-lg font-extrabold text-foreground">
+                          {formatCoursePrice(quote.data.gatewayAmount, quote.data.gatewayCurrency)}
+                        </span>
+                      </div>
+                      {quote.data.gatewayExchangeRate && (
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                          سعر التحويل: 1 {quote.data.currency === "SR" ? "SAR" : quote.data.currency} = {quote.data.gatewayExchangeRate} {quote.data.gatewayCurrency}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               ) : null}
 

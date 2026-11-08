@@ -13,10 +13,10 @@ import {
   BookOpen,
   Sparkles,
 } from "lucide-react";
-import { useCreateDirectCoursePayment, usePurchaseCourse } from "../hooks";
+import { useCreateDirectCoursePayment, useDirectCoursePaymentQuote, usePurchaseCourse } from "../hooks";
 import { useAvailablePaymentGateways } from "@/features/payments/hooks";
 import type { PaymentProvider } from "@/features/payments/types";
-import { formatCoursePrice } from "../utils";
+import { formatCoursePrice, PAYPAL_SUPPORTED_CURRENCIES } from "../utils";
 import { useWallet } from "@/features/wallet/hooks";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
@@ -63,9 +63,19 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const [rechargeCode, setRechargeCode] = useState(false);
   const [showRecharge, setShowRecharge] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("fawaterk");
+  const [paypalCurrency, setPaypalCurrency] = useState("USD");
+  const activeProvider = paymentProviders.includes(selectedProvider)
+    ? selectedProvider
+    : paymentProviders[0] ?? null;
 
   const balance = walletData?.balance ?? 0;
   const isFree = course.pricingType === "free";
+  const directQuote = useDirectCoursePaymentQuote(
+    course.slug,
+    activeProvider,
+    open && !walletEnabled && !isFree,
+    activeProvider === "paypal" ? paypalCurrency : undefined,
+  );
   const price = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
   const walletLoading = walletEnabled && !isFree && !walletData;
   const insufficient = walletEnabled && !isFree && balance < price;
@@ -92,16 +102,20 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
     if (purchase.isPending || directPayment.isPending) return;
     if (isFree || walletEnabled) {
       purchase.mutate();
-    } else {
-      const provider = paymentProviders.includes(selectedProvider) ? selectedProvider : paymentProviders[0];
-      if (provider) directPayment.mutate(provider);
+    } else if (activeProvider) {
+      directPayment.mutate({
+        provider: activeProvider,
+        ...(activeProvider === "paypal" ? { paypalCurrency } : {}),
+      });
     }
-  }, [purchase, directPayment, isFree, walletEnabled, paymentProviders, selectedProvider]);
+  }, [purchase, directPayment, isFree, walletEnabled, activeProvider, paypalCurrency]);
 
-  const requestError = purchase.error ?? directPayment.error;
+  const requestError = purchase.error ?? directPayment.error ?? directQuote.error;
   const errorMessage = requestError
     ? (requestError as { message?: string }).message ?? "حدث خطأ غير متوقع. حاول مرة أخرى."
     : null;
+  const displayedPrice = !walletEnabled && directQuote.data ? directQuote.data.amount : price;
+  const displayedCurrency = !walletEnabled && directQuote.data ? directQuote.data.currency : course.currency ?? "EGP";
 
   return (
     <>
@@ -281,9 +295,25 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground/70">سعر الدورة</span>
                             <span className="font-extrabold text-foreground">
-                              {formatCoursePrice(price, course.currency ?? "EGP")}
+                              {formatCoursePrice(displayedPrice, displayedCurrency)}
                             </span>
                           </div>
+                          {!walletEnabled && activeProvider === "paypal" && directQuote.data?.gatewayAmount && directQuote.data.gatewayCurrency && (
+                            <>
+                              <div className="my-2.5 border-t border-dashed border-border/60" />
+                              <div className="flex items-center justify-between gap-3 text-sm">
+                                <span className="text-muted-foreground/70">المبلغ المطلوب عبر PayPal</span>
+                                <span className="font-extrabold text-foreground">
+                                  {formatCoursePrice(directQuote.data.gatewayAmount, directQuote.data.gatewayCurrency)}
+                                </span>
+                              </div>
+                              {directQuote.data.gatewayExchangeRate && (
+                                <p className="mt-2 text-xs text-muted-foreground/70">
+                                  1 {directQuote.data.currency === "SR" ? "SAR" : directQuote.data.currency} = {directQuote.data.gatewayExchangeRate} {directQuote.data.gatewayCurrency}
+                                </p>
+                              )}
+                            </>
+                          )}
                           <div className="my-2.5 border-t border-dashed border-border/60" />
                           {walletEnabled && (
                             <>
@@ -324,6 +354,25 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                             </select>
                           </div>
                         )}
+                        {!walletEnabled && !isFree && activeProvider === "paypal" && (
+                          <div className="mb-4 space-y-2">
+                            <label htmlFor="course-paypal-currency" className="text-xs font-medium text-foreground/80">
+                              اختر عملة حساب PayPal
+                            </label>
+                            <select
+                              id="course-paypal-currency"
+                              value={paypalCurrency}
+                              onChange={(event) => setPaypalCurrency(event.target.value)}
+                              className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"
+                            >
+                              {(directQuote.data?.paypalCurrencies.length
+                                ? directQuote.data.paypalCurrencies
+                                : PAYPAL_SUPPORTED_CURRENCIES).map((currency) => (
+                                <option key={currency} value={currency}>{currency}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                         {!walletEnabled && !isFree && !paymentProvidersLoading && paymentProviders.length === 0 && (
                           <p className="mb-4 text-center text-xs text-amber-600">
                             {paymentProvidersError
@@ -352,6 +401,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                               purchase.isPending
                               || directPayment.isPending
                               || (!walletEnabled && !isFree && (paymentProvidersLoading || paymentProviders.length === 0))
+                              || (!walletEnabled && !isFree && (directQuote.isLoading || directQuote.isError))
                             }
                             className="relative flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60 group overflow-hidden"
                             style={{

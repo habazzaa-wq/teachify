@@ -21,6 +21,12 @@ import type {
 } from "./types";
 import { formatCurrency } from "@/lib/format";
 
+export const PAYPAL_SUPPORTED_CURRENCIES = [
+  "AUD", "BRL", "CAD", "CHF", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF",
+  "ILS", "JPY", "MXN", "MYR", "NOK", "NZD", "PHP", "PLN", "SAR", "SEK",
+  "SGD", "THB", "TWD", "USD", "AED",
+];
+
 /**
  * Format a course price in the currency used for its regional price.
  */

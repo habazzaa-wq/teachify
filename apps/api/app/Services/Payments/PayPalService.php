@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Services\Payments\Exceptions\PaymentGatewayException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class PayPalService
@@ -28,24 +29,46 @@ class PayPalService
     }
 
     /**
-     * Return the quoted amount unchanged when PayPal supports its currency.
+     * Convert a quoted amount into a currency PayPal can charge.
      *
-     * @return array{amount: string, currency: string}
+     * @return array{amount: string, currency: string, exchange_rate: string}
      */
-    public function amountForPayment(string $amount, string $currency): array
+    public function amountForPayment(string $amount, string $currency, ?string $targetCurrency = null): array
     {
         $sourceCurrency = strtoupper($currency) === 'SR' ? 'SAR' : strtoupper($currency);
+        $paymentCurrency = $targetCurrency === null
+            ? $sourceCurrency
+            : strtoupper($targetCurrency);
 
-        if (! in_array($sourceCurrency, self::SUPPORTED_CURRENCIES, true)) {
+        if (! in_array($paymentCurrency, self::SUPPORTED_CURRENCIES, true)) {
             throw new PaymentGatewayException(
-                'PayPal لا يدعم الدفع بعملة هذا السعر. اختر بوابة أخرى تدعم العملة المحددة للدورة.',
+                $targetCurrency === null
+                    ? 'PayPal لا يدعم الدفع بعملة هذا السعر. اختر بوابة أخرى تدعم العملة المحددة للدورة.'
+                    : 'عملة الدفع المختارة غير مدعومة من PayPal. اختر عملة أخرى.',
             );
         }
 
+        if (! is_numeric($amount) || (float) $amount <= 0) {
+            throw new PaymentGatewayException('مبلغ الدفع غير صالح لعملية PayPal.');
+        }
+
+        $rate = $sourceCurrency === $paymentCurrency
+            ? 1.0
+            : $this->exchangeRate($sourceCurrency, $paymentCurrency);
+
         return [
-            'amount' => $this->formatAmount($amount),
-            'currency' => $sourceCurrency,
+            'amount' => $this->formatAmount((string) ((float) $amount * $rate), $paymentCurrency),
+            'currency' => $paymentCurrency,
+            'exchange_rate' => rtrim(rtrim(number_format($rate, 8, '.', ''), '0'), '.'),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function supportedCurrencies(): array
+    {
+        return self::SUPPORTED_CURRENCIES;
     }
 
     /**
@@ -70,7 +93,7 @@ class PayPalService
                 'custom_id' => $reference,
                 'amount' => [
                     'currency_code' => strtoupper($currency),
-                    'value' => $this->formatAmount($amount),
+                    'value' => $this->formatAmount($amount, $currency),
                 ],
                 'description' => mb_substr($description, 0, 127),
             ]],
@@ -122,7 +145,7 @@ class PayPalService
             || ($unit['custom_id'] ?? '') !== $reference
             || ($capture['status'] ?? '') !== 'COMPLETED'
             || strtoupper((string) ($receivedAmount['currency_code'] ?? '')) !== strtoupper($currency)
-            || $this->formatAmount((string) ($receivedAmount['value'] ?? '')) !== $this->formatAmount($amount)
+            || $this->formatAmount((string) ($receivedAmount['value'] ?? ''), $currency) !== $this->formatAmount($amount, $currency)
             || empty($capture['id'])) {
             throw new PaymentGatewayException('تعذر تأكيد مبلغ أو حالة عملية الدفع من PayPal.');
         }
@@ -212,12 +235,45 @@ class PayPalService
             : 'https://api-m.sandbox.paypal.com';
     }
 
-    private function formatAmount(string $amount): string
+    private function formatAmount(string $amount, string $currency): string
     {
         if (! is_numeric($amount) || (float) $amount <= 0) {
             throw new PaymentGatewayException('مبلغ الدفع غير صالح لعملية PayPal.');
         }
 
-        return number_format((float) $amount, 2, '.', '');
+        $precision = in_array(strtoupper($currency), ['HUF', 'JPY', 'TWD'], true) ? 0 : 2;
+
+        return number_format((float) $amount, $precision, '.', '');
+    }
+
+    private function exchangeRate(string $sourceCurrency, string $targetCurrency): float
+    {
+        $rates = Cache::remember(
+            'paypal.exchange-rates.'.strtoupper($sourceCurrency),
+            now()->addHours(6),
+            function () use ($sourceCurrency): array {
+                try {
+                    $response = Http::acceptJson()
+                        ->timeout(self::TIMEOUT)
+                        ->get('https://open.er-api.com/v6/latest/'.rawurlencode($sourceCurrency));
+                } catch (ConnectionException $exception) {
+                    throw new PaymentGatewayException('تعذّر الاتصال بخدمة أسعار العملات، حاول مرة أخرى لاحقاً.', previous: $exception);
+                }
+
+                $body = $response->json();
+                if ($response->failed() || ! is_array($body) || ($body['result'] ?? null) !== 'success' || ! is_array($body['rates'] ?? null)) {
+                    throw new PaymentGatewayException('تعذّر الحصول على سعر تحويل العملات حالياً. حاول مرة أخرى لاحقاً.');
+                }
+
+                return $body['rates'];
+            },
+        );
+
+        $rate = $rates[strtoupper($targetCurrency)] ?? null;
+        if (! is_numeric($rate) || (float) $rate <= 0) {
+            throw new PaymentGatewayException('لا يتوفر سعر تحويل لهذه العملة حالياً. اختر عملة أخرى.');
+        }
+
+        return (float) $rate;
     }
 }
