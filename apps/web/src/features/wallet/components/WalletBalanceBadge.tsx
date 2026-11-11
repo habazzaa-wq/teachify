@@ -3,11 +3,13 @@
 import { Wallet, Loader2 } from "lucide-react";
 import { useWallet } from "../hooks";
 import { formatCurrency } from "@/lib/format";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 const secondaryContrast = "var(--brand-secondary-contrast)";
 
 export function WalletBalanceBadge({ onClick }: { onClick?: () => void }) {
-  const { data, isLoading } = useWallet(true);
+  const { tenant } = useActiveTenant();
+  const { data, isLoading } = useWallet(tenant?.feature_flags?.has_wallet === true);
   const balance = data?.balance ?? 0;
 
   return (

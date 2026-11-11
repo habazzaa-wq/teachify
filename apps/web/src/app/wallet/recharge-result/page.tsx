@@ -24,7 +24,7 @@ type ResultStatus = "loading" | "success" | "failed" | "pending" | "error";
 
 export default function WalletRechargeResultPage() {
   const { tenant } = useActiveTenant();
-  const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
   const searchParams = useSearchParams();
   const router = useRouter();
   const qc = useQueryClient();

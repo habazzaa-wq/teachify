@@ -18,7 +18,7 @@ export function StudentDashboardPage() {
   const { data, isLoading, isError, refetch } = useStudentDashboard();
   const [activeView, setActiveView] = useState<DashboardViewId>("overview");
   const { tenant } = useActiveTenant();
-  const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
 
   if (isLoading) {
     return <AppLoadingState label="جارٍ تحميل لوحة الطالب..." className="min-h-[60vh]" />;

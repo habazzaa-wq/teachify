@@ -48,7 +48,7 @@ interface PurchaseCourseModalProps {
 export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseModalProps) {
   const { isAuthenticated } = useCurrentUser();
   const { tenant } = useActiveTenant();
-  const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
   const { data: walletData } = useWallet(open && isAuthenticated && walletEnabled);
   const {
     data: paymentProviders = [],

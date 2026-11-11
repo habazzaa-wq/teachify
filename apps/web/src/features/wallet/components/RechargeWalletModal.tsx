@@ -14,6 +14,7 @@ import {
 import { useRechargeWallet, useWallet } from "../hooks";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 const primary = "var(--brand-primary)";
 const secondary = "var(--brand-secondary)";
@@ -36,7 +37,9 @@ const ERROR_MESSAGES: Record<number, string> = {
 
 export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps) {
   const recharge = useRechargeWallet();
-  const { data: walletData } = useWallet(open);
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
+  const { data: walletData } = useWallet(open && walletEnabled);
 
   const [code, setCode] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});

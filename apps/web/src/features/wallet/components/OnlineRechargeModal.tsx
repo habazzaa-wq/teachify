@@ -15,6 +15,7 @@ import { useAvailablePaymentGateways } from "@/features/payments/hooks";
 import type { PaymentProvider } from "@/features/payments/types";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 const primary = "var(--brand-primary)";
 const secondary = "var(--brand-secondary)";
@@ -30,7 +31,9 @@ interface OnlineRechargeModalProps {
 
 export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps) {
   const createPayment = useCreateOnlinePayment();
-  const { data: walletData } = useWallet(open);
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
+  const { data: walletData } = useWallet(open && walletEnabled);
   const {
     data: providers = [],
     isLoading: gatewaysLoading,

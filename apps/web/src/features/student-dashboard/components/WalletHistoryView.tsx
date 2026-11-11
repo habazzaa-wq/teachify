@@ -24,6 +24,7 @@ import {
   BRAND_TEXT_ON_PRIMARY,
 } from "../constants";
 import { formatCurrency, formatDateTime, formatNumber, formatRechargeCode } from "@/lib/format";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
 
 interface MethodMeta {
   label: string;
@@ -67,8 +68,10 @@ function SkeletonRow({ t }: { t: ReturnType<typeof useBrandTheme> }) {
 
 export function WalletHistoryView() {
   const t = useBrandTheme();
-  const { data: walletData } = useWallet(true);
-  const { data, isLoading, isError, refetch } = useWalletTransactions(true, 100);
+  const { tenant } = useActiveTenant();
+  const walletEnabled = tenant?.feature_flags?.has_wallet === true;
+  const { data: walletData } = useWallet(walletEnabled);
+  const { data, isLoading, isError, refetch } = useWalletTransactions(walletEnabled, 100);
 
   const [rechargeOpen, setRechargeOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
