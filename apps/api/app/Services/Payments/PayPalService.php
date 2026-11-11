@@ -214,17 +214,27 @@ class PayPalService
         if ($response->failed()) {
             $this->logPayPalFailure('oauth_token', $response);
 
-            throw new PaymentGatewayException('تعذّر التحقق من بيانات PayPal. راجع Client ID وClient Secret والبيئة المختارة.');
+            throw new PaymentGatewayException($this->credentialFailureMessage($response));
         }
 
         $body = $this->responseBody($response, 'oauth_token');
         if (empty($body['access_token'])) {
             $this->logPayPalFailure('oauth_token', $response);
 
-            throw new PaymentGatewayException('تعذّر التحقق من بيانات PayPal. راجع Client ID وClient Secret والبيئة المختارة.');
+            throw new PaymentGatewayException($this->credentialFailureMessage($response));
         }
 
         return (string) $body['access_token'];
+    }
+
+    private function credentialFailureMessage(Response $response): string
+    {
+        $body = $response->json();
+        if (is_array($body) && ($body['error'] ?? null) === 'invalid_client') {
+            return 'PayPal رفض Client ID أو Client Secret للبيئة المختارة. استخدم الزوج كاملًا من التطبيق نفسه ضمن Sandbox مع بيئة Test، أو من تطبيق Live مع بيئة Live.';
+        }
+
+        return 'تعذّر التحقق من بيانات PayPal. راجع Client ID وClient Secret والبيئة المختارة.';
     }
 
     private function logPayPalFailure(string $operation, Response $response, ?string $requestId = null): void

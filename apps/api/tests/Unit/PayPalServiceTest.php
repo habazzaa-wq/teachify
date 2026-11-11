@@ -84,6 +84,22 @@ class PayPalServiceTest extends TestCase
         );
     }
 
+    public function test_it_explains_when_paypal_rejects_credentials_for_the_selected_environment(): void
+    {
+        Http::fake([
+            'api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response([
+                'error' => 'invalid_client',
+                'error_description' => 'Client Authentication failed',
+            ], 401),
+        ]);
+        Log::shouldReceive('warning')->once();
+
+        $this->expectException(PaymentGatewayException::class);
+        $this->expectExceptionMessage('استخدم الزوج كاملًا من التطبيق نفسه ضمن Sandbox مع بيئة Test');
+
+        app(PayPalService::class)->verifyCredentials($this->config);
+    }
+
     public function test_it_returns_an_actionable_message_for_paypal_compliance_rejections(): void
     {
         Http::fake([
