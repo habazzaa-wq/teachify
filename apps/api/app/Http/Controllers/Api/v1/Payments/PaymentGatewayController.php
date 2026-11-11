@@ -58,7 +58,7 @@ class PaymentGatewayController extends Controller
             $rules['client_id'] = ['nullable', 'string', 'max:255'];
             $rules['client_secret'] = ['nullable', 'string', 'max:255'];
         } elseif ($provider === 'paymob') {
-            $rules['api_key'] = ['nullable', 'string', 'max:255'];
+            $rules['api_key'] = ['nullable', 'string', 'max:2048'];
             $rules['hmac_secret'] = ['nullable', 'string', 'max:255'];
             $rules['integration_id'] = ['sometimes', 'integer', 'min:1'];
             $rules['iframe_id'] = ['sometimes', 'integer', 'min:1'];
