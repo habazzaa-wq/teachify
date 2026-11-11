@@ -253,7 +253,7 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
-  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
+  const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
   const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
     ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
     : navLinks;

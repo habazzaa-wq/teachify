@@ -24,7 +24,7 @@ type ResultStatus = "loading" | "success" | "failed" | "pending" | "error";
 
 export default function WalletRechargeResultPage() {
   const { tenant } = useActiveTenant();
-  const walletEnabled = tenant?.feature_flags?.has_wallet !== false;
+  const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
   const searchParams = useSearchParams();
   const router = useRouter();
   const qc = useQueryClient();
@@ -40,6 +40,10 @@ export default function WalletRechargeResultPage() {
   const { data: walletData } = useWallet(walletEnabled);
 
   useEffect(() => {
+    if (!tenant) {
+      return;
+    }
+
     if (!walletEnabled) {
       router.replace("/");
       return;
@@ -126,7 +130,7 @@ export default function WalletRechargeResultPage() {
       window.clearTimeout(timeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reference, initialStatus, router, walletEnabled]);
+  }, [reference, initialStatus, router, tenant, walletEnabled]);
 
   const goBack = () => {
     router.back();
