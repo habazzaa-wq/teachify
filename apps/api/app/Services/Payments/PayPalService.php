@@ -7,6 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PayPalService
 {
@@ -172,16 +173,21 @@ class PayPalService
                 ->asJson()
                 ->timeout(self::TIMEOUT)
                 ->withHeaders(['PayPal-Request-Id' => substr($requestId, 0, 108)]);
-            $response = $request->{$method}($this->baseUrl($config).$path, $payload);
+            $requestBody = $payload === [] ? (object) [] : $payload;
+            $response = $request->{$method}($this->baseUrl($config).$path, $requestBody);
         } catch (ConnectionException $exception) {
+            $this->logConnectionFailure($path, $exception, $requestId);
+
             throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal، حاول مرة أخرى لاحقاً.', previous: $exception);
         }
 
         if ($response->failed()) {
+            $this->logPayPalFailure($path, $response, $requestId);
+
             throw new PaymentGatewayException('رفض PayPal طلب الدفع. تحقق من بيانات الحساب والعملة وحاول مرة أخرى.');
         }
 
-        return $this->responseBody($response);
+        return $this->responseBody($response, $path, $requestId);
     }
 
     /**
@@ -200,25 +206,88 @@ class PayPalService
                 ->timeout(self::TIMEOUT)
                 ->post($this->baseUrl($config).'/v1/oauth2/token', ['grant_type' => 'client_credentials']);
         } catch (ConnectionException $exception) {
+            $this->logConnectionFailure('oauth_token', $exception);
+
             throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal للتحقق من بيانات الحساب.', previous: $exception);
         }
 
-        $body = $this->responseBody($response);
-        if ($response->failed() || empty($body['access_token'])) {
+        if ($response->failed()) {
+            $this->logPayPalFailure('oauth_token', $response);
+
+            throw new PaymentGatewayException('تعذّر التحقق من بيانات PayPal. راجع Client ID وClient Secret والبيئة المختارة.');
+        }
+
+        $body = $this->responseBody($response, 'oauth_token');
+        if (empty($body['access_token'])) {
+            $this->logPayPalFailure('oauth_token', $response);
+
             throw new PaymentGatewayException('تعذّر التحقق من بيانات PayPal. راجع Client ID وClient Secret والبيئة المختارة.');
         }
 
         return (string) $body['access_token'];
     }
 
+    private function logPayPalFailure(string $operation, Response $response, ?string $requestId = null): void
+    {
+        $body = $response->json();
+        $details = [];
+
+        if (is_array($body)) {
+            $paypalDetails = is_array($body['details'] ?? null) ? $body['details'] : [];
+            foreach (array_slice($paypalDetails, 0, 5) as $detail) {
+                if (! is_array($detail)) {
+                    continue;
+                }
+
+                $entry = array_filter([
+                    'issue' => $detail['issue'] ?? null,
+                    'description' => $detail['description'] ?? null,
+                ], fn (mixed $value): bool => is_string($value) && $value !== '');
+
+                if ($entry !== []) {
+                    $details[] = $entry;
+                }
+            }
+        }
+
+        Log::warning('PayPal API request failed.', array_filter([
+            'operation' => $operation,
+            'request_id' => $requestId,
+            'http_status' => $response->status(),
+            'paypal_debug_id' => is_array($body) ? ($body['debug_id'] ?? null) : null,
+            'name' => is_array($body) ? ($body['name'] ?? $body['error'] ?? null) : null,
+            'issue' => is_array($body) ? ($body['issue'] ?? null) : null,
+            'message' => is_array($body) ? ($body['message'] ?? $body['error_description'] ?? null) : null,
+            'details' => $details,
+        ], fn (mixed $value): bool => $value !== null && $value !== [] && $value !== ''));
+    }
+
+    private function logConnectionFailure(
+        string $operation,
+        ConnectionException $exception,
+        ?string $requestId = null,
+    ): void {
+        Log::warning('Payment dependency connection failed.', [
+            'operation' => $operation,
+            'request_id' => $requestId,
+            'exception' => $exception->getMessage(),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
-    private function responseBody(Response $response): array
+    private function responseBody(Response $response, string $operation, ?string $requestId = null): array
     {
         $body = $response->json();
 
         if (! is_array($body)) {
+            Log::warning('PayPal API returned an invalid response.', array_filter([
+                'operation' => $operation,
+                'request_id' => $requestId,
+                'http_status' => $response->status(),
+            ], fn (mixed $value): bool => $value !== null && $value !== ''));
+
             throw new PaymentGatewayException('أعاد PayPal استجابة غير صالحة.');
         }
 
@@ -257,6 +326,8 @@ class PayPalService
                         ->timeout(self::TIMEOUT)
                         ->get('https://open.er-api.com/v6/latest/'.rawurlencode($sourceCurrency));
                 } catch (ConnectionException $exception) {
+                    $this->logConnectionFailure('exchange_rate', $exception);
+
                     throw new PaymentGatewayException('تعذّر الاتصال بخدمة أسعار العملات، حاول مرة أخرى لاحقاً.', previous: $exception);
                 }
 

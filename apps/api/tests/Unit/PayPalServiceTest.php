@@ -6,6 +6,7 @@ use App\Services\Payments\Exceptions\PaymentGatewayException;
 use App\Services\Payments\PayPalService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class PayPalServiceTest extends TestCase
@@ -45,6 +46,41 @@ class PayPalServiceTest extends TestCase
             && $request['purchase_units'][0]['custom_id'] === 'WALLET-REFERENCE'
             && $request['purchase_units'][0]['amount']['currency_code'] === 'EGP'
             && $request['purchase_units'][0]['amount']['value'] === '125.50'
+        );
+    }
+
+    public function test_it_logs_paypal_order_diagnostics_without_exposing_them_in_the_exception(): void
+    {
+        Http::fake([
+            'api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response(['access_token' => 'access-token']),
+            'api-m.sandbox.paypal.com/v2/checkout/orders' => Http::response([
+                'name' => 'UNPROCESSABLE_ENTITY',
+                'debug_id' => 'paypal-debug-123',
+                'details' => [[
+                    'issue' => 'CURRENCY_NOT_SUPPORTED',
+                    'description' => 'The currency is not supported.',
+                ]],
+            ], 422),
+        ]);
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(fn (string $message, array $context): bool => $message === 'PayPal API request failed.'
+                && $context['operation'] === '/v2/checkout/orders'
+                && $context['request_id'] === 'COURSE-REFERENCE'
+                && $context['paypal_debug_id'] === 'paypal-debug-123'
+                && $context['details'][0]['issue'] === 'CURRENCY_NOT_SUPPORTED');
+
+        $this->expectException(PaymentGatewayException::class);
+        $this->expectExceptionMessage('رفض PayPal طلب الدفع. تحقق من بيانات الحساب والعملة وحاول مرة أخرى.');
+
+        app(PayPalService::class)->createOrder(
+            $this->config,
+            'COURSE-REFERENCE',
+            '125.50',
+            'USD',
+            'Course purchase',
+            'https://tenant.example/return',
+            'https://tenant.example/cancel',
         );
     }
 
@@ -106,6 +142,8 @@ class PayPalServiceTest extends TestCase
         );
 
         $this->assertSame('CAPTURE-123', $result['capture_id']);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-123/capture'
+            && $request->body() === '{}');
     }
 
     public function test_it_charges_supported_regional_currencies_without_conversion(): void
