@@ -30,7 +30,7 @@ interface OnlineRechargeModalProps {
 
 export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps) {
   const createPayment = useCreateOnlinePayment();
-  const { data: walletData } = useWallet(true);
+  const { data: walletData } = useWallet(open);
   const {
     data: providers = [],
     isLoading: gatewaysLoading,

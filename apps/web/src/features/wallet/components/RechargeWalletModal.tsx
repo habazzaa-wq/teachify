@@ -36,7 +36,7 @@ const ERROR_MESSAGES: Record<number, string> = {
 
 export function RechargeWalletModal({ open, onClose }: RechargeWalletModalProps) {
   const recharge = useRechargeWallet();
-  const { data: walletData } = useWallet(true);
+  const { data: walletData } = useWallet(open);
 
   const [code, setCode] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
