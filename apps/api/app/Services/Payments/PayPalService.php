@@ -184,7 +184,7 @@ class PayPalService
         if ($response->failed()) {
             $this->logPayPalFailure($path, $response, $requestId);
 
-            throw new PaymentGatewayException('رفض PayPal طلب الدفع. تحقق من بيانات الحساب والعملة وحاول مرة أخرى.');
+            throw new PaymentGatewayException($this->failureMessage($response));
         }
 
         return $this->responseBody($response, $path, $requestId);
@@ -260,6 +260,31 @@ class PayPalService
             'message' => is_array($body) ? ($body['message'] ?? $body['error_description'] ?? null) : null,
             'details' => $details,
         ], fn (mixed $value): bool => $value !== null && $value !== [] && $value !== ''));
+    }
+
+    private function failureMessage(Response $response): string
+    {
+        $body = $response->json();
+        $details = is_array($body) && is_array($body['details'] ?? null)
+            ? $body['details']
+            : [];
+        $issue = is_array($details[0] ?? null)
+            ? ($details[0]['issue'] ?? null)
+            : (is_array($body) ? ($body['issue'] ?? null) : null);
+
+        if ($issue !== 'COMPLIANCE_VIOLATION') {
+            return 'رفض PayPal طلب الدفع. تحقق من بيانات الحساب والعملة وحاول مرة أخرى.';
+        }
+
+        $debugId = is_array($body) && is_string($body['debug_id'] ?? null)
+            && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $body['debug_id'])
+                ? $body['debug_id']
+                : null;
+        $message = 'رفض PayPal تأكيد العملية بسبب فحص الامتثال (COMPLIANCE_VIOLATION). تحقق من حالة حسابي البائع والمشتري في PayPal Sandbox، أو تواصل مع دعم PayPal Developers.';
+
+        return $debugId === null
+            ? $message
+            : $message.' رقم التشخيص: '.$debugId;
     }
 
     private function logConnectionFailure(

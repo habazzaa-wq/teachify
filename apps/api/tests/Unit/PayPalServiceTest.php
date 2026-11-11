@@ -84,6 +84,33 @@ class PayPalServiceTest extends TestCase
         );
     }
 
+    public function test_it_returns_an_actionable_message_for_paypal_compliance_rejections(): void
+    {
+        Http::fake([
+            'api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response(['access_token' => 'access-token']),
+            'api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-123/capture' => Http::response([
+                'name' => 'UNPROCESSABLE_ENTITY',
+                'debug_id' => 'sandbox-debug-123',
+                'details' => [[
+                    'issue' => 'COMPLIANCE_VIOLATION',
+                    'description' => 'Transaction cannot be processed.',
+                ]],
+            ], 422),
+        ]);
+        Log::shouldReceive('warning')->once();
+
+        $this->expectException(PaymentGatewayException::class);
+        $this->expectExceptionMessageMatches('/COMPLIANCE_VIOLATION.*sandbox-debug-123/');
+
+        app(PayPalService::class)->captureOrder(
+            $this->config,
+            'ORDER-123',
+            'COURSE-REFERENCE',
+            '7.22',
+            'USD',
+        );
+    }
+
     public function test_it_rejects_a_capture_when_the_paid_amount_does_not_match(): void
     {
         Http::fake([
