@@ -15,7 +15,7 @@ import {
   AppButton,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { Building2, Globe, CreditCard, UserCog, Palette, FileText, Save, Loader2, Users } from "lucide-react";
+import { Building2, Globe, CreditCard, UserCog, Palette, FileText, Save, Loader2, Users, Newspaper } from "lucide-react";
 import {
   wizardSection1Schema,
   wizardSection2Schema,
@@ -56,6 +56,7 @@ type FormData = {
   supportEmail: string; favicon: string | null;
   notes: string; tags: string[];
   hasInstructors: boolean;
+  hasBlog: boolean;
   hasWallet: boolean;
   hasRegionalPricing: boolean;
   instructorDisableMode: "retain" | "purge" | "";
@@ -75,6 +76,7 @@ const DEFAULT_FORM: FormData = {
   supportEmail: "", favicon: null,
   notes: "", tags: [],
   hasInstructors: false,
+  hasBlog: false,
   hasWallet: true,
   hasRegionalPricing: false,
   instructorDisableMode: "",
@@ -126,6 +128,7 @@ function tenantToFormData(tenant: Tenant | null | undefined): FormData {
     notes: tenant.notes ?? "",
     tags: tenant.tags ?? [],
     hasInstructors: tenant.featureFlags?.hasInstructors ?? false,
+    hasBlog: tenant.featureFlags?.hasBlog ?? false,
     hasWallet: tenant.featureFlags?.hasWallet ?? true,
     hasRegionalPricing: tenant.featureFlags?.hasRegionalPricing ?? false,
     instructorDisableMode: "",
@@ -407,6 +410,7 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
       },
       featureFlags: {
         hasInstructors: form.hasInstructors,
+        hasBlog: form.hasBlog,
         hasWallet: form.hasWallet,
         hasRegionalPricing: form.hasRegionalPricing,
       },
@@ -574,6 +578,20 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                     <span className="block font-medium">تفعيل حسابات المدرّسين</span>
                     <span className="block text-sm text-muted-foreground">
                       يتيح للمسؤول إنشاء حسابات مدرّسين مستقلة وإدارة إسناد المقررات.
+                    </span>
+                  </span>
+                </label>
+                <label className="mt-3 flex items-start gap-3 rounded-lg border p-4">
+                  <input
+                    type="checkbox"
+                    checked={form.hasBlog}
+                    onChange={(event) => handleChange("hasBlog", event.target.checked)}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span className="space-y-1">
+                    <span className="flex items-center gap-2 font-medium"><Newspaper className="h-4 w-4" /> تفعيل المدونة</span>
+                    <span className="block text-sm text-muted-foreground">
+                      مساحة مقالات عامة خاصة بالمؤسسة، يكتب فيها المسؤول والمدرّسون المقالات وينشرونها أو يجدولونها مع أدوات تحسين الظهور.
                     </span>
                   </span>
                 </label>

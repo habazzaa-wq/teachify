@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\v1\Assignments\AssignmentResultController;
 use App\Http\Controllers\Api\v1\Assignments\AssignmentSubmissionController;
 use App\Http\Controllers\Api\v1\Assignments\LessonAssignmentController;
 use App\Http\Controllers\Api\v1\Audit\ActivityLogController;
+use App\Http\Controllers\Api\v1\Blog\BlogController;
 use App\Http\Controllers\Api\v1\Audit\AuditLogController;
 use App\Http\Controllers\Api\v1\Audit\PlatformAuditController;
 use App\Http\Controllers\Api\v1\Auth\AuthController;
@@ -188,6 +189,12 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('instructor')->middleware(['auth:sanctum', 'instructor.context'])->group(function () {
+        Route::post('/blog/manage/upload-image', [BlogController::class, 'uploadImage'])->middleware('throttle:30,1');
+        Route::get('/blog/manage', [BlogController::class, 'manageIndex']);
+        Route::post('/blog/manage', [BlogController::class, 'store']);
+        Route::get('/blog/manage/{post}', [BlogController::class, 'manageShow'])->whereNumber('post');
+        Route::put('/blog/manage/{post}', [BlogController::class, 'update'])->whereNumber('post');
+        Route::delete('/blog/manage/{post}', [BlogController::class, 'destroy'])->whereNumber('post');
         Route::get('/workspace', [InstructorWorkspaceController::class, 'dashboard']);
         Route::get('/course-lookups', [InstructorWorkspaceController::class, 'courseLookups']);
         Route::post('/media-library/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
@@ -383,6 +390,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
+    Route::get('/public/blog', [BlogController::class, 'publicIndex']);
+    Route::get('/public/blog/{slug}', [BlogController::class, 'publicShow']);
     Route::get('/public/payment-gateways', [PaymentGatewayController::class, 'available']);
     Route::get('/public/seo/articles', [PublicSeoContentController::class, 'index'])->defaults('type', 'article');
     Route::get('/public/seo/guides', [PublicSeoContentController::class, 'index'])->defaults('type', 'guide');
@@ -457,6 +466,12 @@ Route::prefix('v1')->group(function () {
 
     // Authenticated routes
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
+        Route::post('/blog/manage/upload-image', [BlogController::class, 'uploadImage'])->middleware('throttle:30,1');
+        Route::get('/blog/manage', [BlogController::class, 'manageIndex']);
+        Route::post('/blog/manage', [BlogController::class, 'store']);
+        Route::get('/blog/manage/{post}', [BlogController::class, 'manageShow'])->whereNumber('post');
+        Route::put('/blog/manage/{post}', [BlogController::class, 'update'])->whereNumber('post');
+        Route::delete('/blog/manage/{post}', [BlogController::class, 'destroy'])->whereNumber('post');
         Route::get('/instructors/options', [InstructorController::class, 'options']);
         Route::get('/instructors', [InstructorController::class, 'index']);
         Route::post('/instructors', [InstructorController::class, 'store'])->middleware('throttle:10,1');

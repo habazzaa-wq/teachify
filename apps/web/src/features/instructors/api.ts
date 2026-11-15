@@ -13,6 +13,7 @@ import type {
 import { formatCourse } from "@/features/courses/services";
 import type { Course, CourseFilterParams, CourseMetricData, CreateCoursePayload, UpdateCoursePayload } from "@/features/courses/types";
 import type { BulkActionResult, CourseListResponse } from "@/features/courses/services";
+import type { BlogListResponse, BlogPost, BlogPostPayload } from "@/features/blog/types";
 
 interface InstructorRequestOptions {
   token?: string | null;
@@ -108,6 +109,37 @@ function serializeCoursePayload(
 }
 
 export const instructorApi = {
+  blogList(token: string) {
+    return request<BlogListResponse>("instructor/blog/manage", "GET", { token });
+  },
+
+  blogShow(token: string, id: number) {
+    return request<{ data: BlogPost }>(`instructor/blog/manage/${id}`, "GET", { token });
+  },
+
+  blogSave(token: string, post: BlogPostPayload, id?: number) {
+    return request<{ data: BlogPost }>(
+      id ? `instructor/blog/manage/${id}` : "instructor/blog/manage",
+      id ? "PUT" : "POST",
+      { token, data: post },
+    );
+  },
+
+  blogUploadImage(token: string, file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    return request<{ data: { url: string } }>("instructor/blog/manage/upload-image", "POST", {
+      token,
+      data: form,
+      multipart: true,
+      timeout: 300_000,
+    }).then(({ data }) => new URL(data.url, window.location.origin).toString());
+  },
+
+  blogRemove(token: string, id: number) {
+    return request<{ message: string }>(`instructor/blog/manage/${id}`, "DELETE", { token });
+  },
+
   login(email: string, password: string) {
     return request<InstructorSessionResponse>("instructor/auth/login", "POST", {
       data: { email, password },

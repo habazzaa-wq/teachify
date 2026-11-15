@@ -10,8 +10,10 @@ import {
   LayoutDashboard,
   LogOut,
   Users,
+  Newspaper,
 } from "lucide-react";
 import { useInstructorAuth } from "./InstructorAuthProvider";
+import { useTenantContext } from "@/providers/TenantProvider";
 
 const navigation = [
   { href: "/instructor", label: "نظرة عامة", icon: LayoutDashboard },
@@ -25,6 +27,8 @@ const navigation = [
 export function InstructorWorkspaceLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useInstructorAuth();
+  const { activeTenant } = useTenantContext();
+  const blogEnabled = activeTenant?.feature_flags?.has_blog === true;
 
   if (pathname === "/instructor/login" || pathname === "/instructor/change-password") {
     return <>{children}</>;
@@ -69,7 +73,7 @@ export function InstructorWorkspaceLayout({ children }: { children: React.ReactN
             <p className="hidden px-3 pb-2 pt-1 text-[11px] font-semibold tracking-wider text-muted-foreground md:block">
               مساحة العمل
             </p>
-            {navigation.map(({ href, label, icon: Icon }) => {
+            {[...navigation, ...(blogEnabled ? [{ href: "/instructor/blog", label: "المدونة", icon: Newspaper }] : [])].map(({ href, label, icon: Icon }) => {
               const active = href === "/instructor"
                 ? pathname === href
                 : pathname === href || pathname.startsWith(`${href}/`);

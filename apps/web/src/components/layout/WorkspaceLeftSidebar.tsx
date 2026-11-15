@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Scale,
   PanelBottom,
+  Newspaper,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -79,6 +80,7 @@ export function WorkspaceLeftSidebar() {
   const pathname = usePathname();
   const { activeTenant } = useTenantContext();
   const instructorsEnabled = activeTenant?.feature_flags?.has_instructors === true;
+  const blogEnabled = activeTenant?.feature_flags?.has_blog === true;
   const {
     leftSidebarOpen,
     leftSidebarWidth,
@@ -394,6 +396,15 @@ export function WorkspaceLeftSidebar() {
 
             {/* Site pages (legal + footer) */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "صفحات الموقع"} collapsed={leftSidebarCollapsed}>
+              {blogEnabled && (
+                <StudioSidebarItem
+                  icon={<Newspaper className="h-4 w-4" />}
+                  label="المدونة"
+                  active={pathname.startsWith(routes.dashboardBlog)}
+                  collapsed={leftSidebarCollapsed}
+                  onClick={() => handleNavigate(routes.dashboardBlog)}
+                />
+              )}
               <Suspense fallback={null}>
                 <LegalPageItems
                   collapsed={leftSidebarCollapsed}

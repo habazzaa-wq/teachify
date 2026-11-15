@@ -38,10 +38,15 @@ export async function GET() {
           }),
         );
       }
+
     } catch {
       // No tenant context (e.g. a platform-only host) or unreachable API: the
       // sitemap still lists the always-public routes instead of 500-ing.
     }
+  }
+
+  if (includeDefault && tenant?.feature_flags?.has_blog) {
+    entries.push(publicEntry(origin, "/blog", { changeFrequency: "daily", priority: 0.7 }));
   }
 
   return new NextResponse(buildUrlsetXml(entries), {

@@ -15,6 +15,7 @@ export const routes = {
   dashboardLessons: "/teacher/lessons",
   dashboardStudents: "/teacher/students",
   dashboardContent: "/teacher/content",
+  dashboardBlog: "/teacher/blog",
   // Teacher SEO & Content Studio — under /teacher/seo/
   seoStudio: "/teacher/seo",
   seoContent: "/teacher/seo/content",

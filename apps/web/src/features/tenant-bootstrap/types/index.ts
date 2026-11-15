@@ -61,6 +61,7 @@ export interface TenantByDomainResponse {
   status: string;
   feature_flags?: {
     has_instructors?: boolean;
+    has_blog?: boolean;
     has_wallet?: boolean;
     has_regional_pricing?: boolean;
   } | null;

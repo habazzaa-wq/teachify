@@ -52,6 +52,7 @@ class PublicTenantController extends Controller
             'status' => $tenant->status,
             'feature_flags' => [
                 'has_instructors' => (bool) ($tenant->feature_flags['has_instructors'] ?? false),
+                'has_blog' => (bool) ($tenant->feature_flags['has_blog'] ?? false),
                 'has_wallet' => (bool) ($tenant->feature_flags['has_wallet'] ?? true),
                 'has_regional_pricing' => (bool) ($tenant->feature_flags['has_regional_pricing'] ?? false),
             ],
