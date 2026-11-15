@@ -1,5 +1,16 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { describe, expect, it } from "vitest";
-import { extractArticleHeadings } from "./article-headings";
+import { extractArticleHeadings, rehypeBlogHeadingIds } from "./article-headings";
+import {
+  blogSanitizeSchema,
+  rehypeBlogSafeInlineStyles,
+  rehypeBlogTextAlignment,
+} from "./rendering";
 
 describe("extractArticleHeadings", () => {
   it("extracts markdown and raw HTML headings with unique ids", () => {
@@ -14,5 +25,24 @@ describe("extractArticleHeadings", () => {
     expect(extractArticleHeadings("```md\n## not a heading\n```\n## Real heading")).toEqual([
       { id: "real-heading", text: "Real heading", level: 2 },
     ]);
+  });
+
+  it("renders article heading ids with the complete sanitized markdown plugin chain", () => {
+    const content = "## Real heading";
+    const headings = extractArticleHeadings(content);
+    const html = renderToStaticMarkup(
+      createElement(ReactMarkdown, {
+        remarkPlugins: [remarkGfm],
+        rehypePlugins: [
+          rehypeRaw,
+          rehypeBlogTextAlignment,
+          [rehypeSanitize, blogSanitizeSchema],
+          [rehypeBlogHeadingIds, headings],
+          rehypeBlogSafeInlineStyles,
+        ],
+      }, content),
+    );
+
+    expect(html).toContain('<h2 id="real-heading">Real heading</h2>');
   });
 });

@@ -168,9 +168,9 @@ export default async function BlogArticlePage({ params }: Props) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[
                   rehypeRaw,
-                  rehypeBlogHeadingIds(headings),
                   rehypeBlogTextAlignment,
                   [rehypeSanitize, blogSanitizeSchema],
+                  [rehypeBlogHeadingIds, headings],
                   rehypeBlogSafeInlineStyles,
                 ]}
               >
