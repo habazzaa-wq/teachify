@@ -102,8 +102,18 @@ export interface SeoMetadataInput {
   canonical: string;
   ogImage?: string | null;
   ogImageAlt?: string | null;
+  /** OpenGraph object type. Article pages should pass `article`. */
+  ogType?: "website" | "article";
   /** Private pages: set `noindex` to emit `noindex, nofollow` + drop canonical. */
   noindex?: boolean;
+}
+
+function resolveTitleString(title: Metadata["title"], siteName: string): string {
+  if (typeof title === "string") return title;
+  if (!title) return siteName;
+  if ("absolute" in title && title.absolute) return title.absolute;
+  if ("default" in title && title.default) return title.default;
+  return siteName;
 }
 
 /**
@@ -117,7 +127,7 @@ export function buildSeoMetadata(
   origin: string,
 ): Metadata {
   const siteName = getSiteName(tenant);
-  const titleString = typeof input.title === "string" ? input.title : siteName;
+  const titleString = resolveTitleString(input.title, siteName);
   const description = input.description?.trim() || undefined;
   const ogImage = resolveAssetUrl(
     input.ogImage ?? tenant?.seo?.ogImage ?? tenant?.branding?.logo ?? null,
@@ -145,7 +155,7 @@ export function buildSeoMetadata(
         }
       : {}),
     openGraph: {
-      type: "website",
+      type: input.ogType ?? "website",
       locale: "ar_SA",
       siteName,
       title: titleString,

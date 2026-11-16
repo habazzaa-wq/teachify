@@ -53,6 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.seo_description || post.excerpt || `اقرأ ${post.title} على مدونة ${getSiteName(tenant)}.`,
       canonical: canonicalUrl(origin, `/blog/${post.slug}`),
       ogImage: post.cover_image_url ?? undefined,
+      ogType: "article",
     },
     tenant,
     origin,
