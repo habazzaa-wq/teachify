@@ -134,6 +134,7 @@
 
 .articleBody {
   --article-accent: color-mix(in srgb, var(--brand-primary) 72%, hsl(var(--foreground)));
+  font-family: var(--font-sans), sans-serif;
   font-size: 1.0625rem;
   line-height: 2.05;
   color: color-mix(in srgb, hsl(var(--foreground)) 86%, transparent);
@@ -177,7 +178,6 @@
   margin: 3rem 0 1.1rem;
   padding-bottom: 0.8rem;
   border-bottom: 1px solid hsl(var(--border));
-  font-family: var(--font-display), var(--font-sans), serif;
   font-size: 1.75rem;
   letter-spacing: -0.01em;
 }

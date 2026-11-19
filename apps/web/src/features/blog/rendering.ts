@@ -5,7 +5,6 @@ const alignments = ["left", "center", "right", "justify"] as const;
 const alignedElements = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6"]);
 const safeColor = /^#[\da-f]{6}$/i;
 const safeLineHeights = new Set(["1.25", "1.5", "1.8", "2"]);
-const safeFontFamilies = new Set(["Arial", "Cairo", "Georgia", "Tahoma", "Times New Roman", "Verdana"]);
 
 export const blogSanitizeSchema = {
   ...defaultSchema,
@@ -15,7 +14,6 @@ export const blogSanitizeSchema = {
       ...(defaultSchema.attributes?.span ?? []),
       ["dataColor", safeColor],
       ["dataFontSize", /^([1-4]?\d|50)px$/],
-      ["dataFontFamily", [...safeFontFamilies]],
       ["dataLineHeight", [...safeLineHeights]],
     ],
     mark: [
@@ -76,8 +74,6 @@ export function rehypeBlogTextAlignment() {
             if (lineHeight && safeLineHeights.has(lineHeight)) {
               node.properties.dataLineHeight = lineHeight;
             }
-            const family = declarations["font-family"]?.split(",")[0]?.trim().replace(/^["']|["']$/g, "");
-            if (family && safeFontFamilies.has(family)) node.properties.dataFontFamily = family;
           }
 
           delete node.properties.style;
@@ -98,7 +94,6 @@ export function rehypeBlogSafeInlineStyles() {
           const styles: string[] = [];
           const color = node.properties.dataColor;
           const fontSize = node.properties.dataFontSize;
-          const fontFamily = node.properties.dataFontFamily;
           const lineHeight = node.properties.dataLineHeight;
 
           if (typeof color === "string" && safeColor.test(color)) {
@@ -107,16 +102,12 @@ export function rehypeBlogSafeInlineStyles() {
           if (node.tagName === "span" && typeof fontSize === "string" && /^([1-4]?\d|50)px$/.test(fontSize)) {
             styles.push(`font-size: ${fontSize}`);
           }
-          if (node.tagName === "span" && typeof fontFamily === "string" && safeFontFamilies.has(fontFamily)) {
-            styles.push(`font-family: ${fontFamily}`);
-          }
           if (node.tagName === "span" && typeof lineHeight === "string" && safeLineHeights.has(lineHeight)) {
             styles.push(`line-height: ${lineHeight}`);
           }
 
           delete node.properties.dataColor;
           delete node.properties.dataFontSize;
-          delete node.properties.dataFontFamily;
           delete node.properties.dataLineHeight;
           if (styles.length > 0) node.properties.style = styles.join("; ");
         }

@@ -400,7 +400,7 @@ export function BlogArticleHero({
             </span>
           </div>
 
-          <h1 className="mt-5 font-display text-[1.95rem] font-bold leading-[1.32] tracking-tight text-white sm:text-[2.6rem] sm:leading-[1.28] lg:text-[3.15rem]">
+          <h1 className="mt-5 font-sans text-[1.95rem] font-bold leading-[1.32] tracking-tight text-white sm:text-[2.6rem] sm:leading-[1.28] lg:text-[3.15rem]">
             {title}
           </h1>
 
