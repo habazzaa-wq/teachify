@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\QuestionCategory;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,7 +27,7 @@ class QuestionCategoryRepository
         $query = $this->applyParentFilter($query, $params['parent_id'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->paginate((int) ($params['per_page'] ?? 50));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 50));
     }
 
     public function listAll(array $params = []): Collection

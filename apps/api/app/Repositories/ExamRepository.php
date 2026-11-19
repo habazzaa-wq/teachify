@@ -6,6 +6,7 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -44,7 +45,7 @@ class ExamRepository
         $query = $this->withCounts($query);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
     public function listAll(array $params = []): Collection

@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\QuestionBank;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -28,7 +29,7 @@ class QuestionBankRepository
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
         $query = $query->withCount('questions');
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
     public function listAll(array $params = []): Collection

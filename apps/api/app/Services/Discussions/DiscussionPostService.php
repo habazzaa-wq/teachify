@@ -7,6 +7,7 @@ use App\Models\DiscussionThread;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Security\AuditLogger;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -37,7 +38,7 @@ class DiscussionPostService
             ->orderBy('created_at')
             ->with(['author.user', 'parent']);
 
-        return $query->paginate($perPage);
+        return $query->paginate(Pagination::perPage($perPage));
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\TenantUser;
 use App\Policies\NotificationPolicy;
 use App\Services\Notifications\NotificationService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 
 class NotificationController extends Controller
@@ -16,7 +17,7 @@ class NotificationController extends Controller
         $page = $notifications->list(
             currentTenant(),
             app(TenantUser::class),
-            perPage: (int) request()->input('per_page', 25),
+            perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
         return response()->json([
@@ -34,7 +35,7 @@ class NotificationController extends Controller
             currentTenant(),
             app(TenantUser::class),
             unreadOnly: true,
-            perPage: (int) request()->input('per_page', 25),
+            perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
         return response()->json([

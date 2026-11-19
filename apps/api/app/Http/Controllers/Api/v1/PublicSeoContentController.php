@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PublicSeoContentResource;
 use App\Models\SeoContent;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,7 +31,7 @@ class PublicSeoContentController extends Controller
             ])
             ->with('featuredImage:id,cdn_url,thumbnail_url,width,height,mime_type,size,size_bytes,title,original_name')
             ->orderByDesc('published_at')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate(Pagination::perPage($request->input('per_page'), 20));
 
         $payload = collect($items->items())->map(fn (SeoContent $c) => [
             'id' => (string) $c->id,

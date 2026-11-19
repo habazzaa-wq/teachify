@@ -9,6 +9,7 @@ use App\Models\TenantUser;
 use App\Policies\CommunityPolicy;
 use App\Policies\NotificationPolicy;
 use App\Services\Notifications\NotificationService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 
 class CommunityNotificationController extends Controller
@@ -26,7 +27,7 @@ class CommunityNotificationController extends Controller
             $tenant,
             $member,
             typePrefix: 'community.',
-            perPage: (int) request()->input('per_page', 25),
+            perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
         return response()->json([
@@ -52,7 +53,7 @@ class CommunityNotificationController extends Controller
             $member,
             unreadOnly: true,
             typePrefix: 'community.',
-            perPage: (int) request()->input('per_page', 25),
+            perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
         return response()->json([

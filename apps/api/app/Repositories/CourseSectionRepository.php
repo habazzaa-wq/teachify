@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Course;
 use App\Models\CourseSection;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -56,7 +57,7 @@ class CourseSectionRepository
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
         $query = $this->withLessonsCount($query);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
     public function listAll(array $params = [], ?Course $course = null): Collection

@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\MediaAsset;
 use App\Models\Tenant;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -117,7 +118,7 @@ class MediaAssetRepository
 
         $query->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
 
-        $perPage = min((int) ($params['per_page'] ?? 48), 100);
+        $perPage = Pagination::perPage($params['per_page'] ?? null, 48);
 
         return $query->paginate($perPage);
     }

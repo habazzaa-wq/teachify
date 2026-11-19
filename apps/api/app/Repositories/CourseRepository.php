@@ -6,9 +6,11 @@ use App\Models\Course;
 use App\Models\CourseAnalytics;
 use App\Models\CourseCompletion;
 use App\Models\CourseEnrollment;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\LazyCollection;
 
 class CourseRepository
 {
@@ -76,17 +78,17 @@ class CourseRepository
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
         $query = $this->withEnrollmentsCount($query);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
-    public function listAll(array $params = []): Collection
+    public function listAll(array $params = []): LazyCollection
     {
         $query = $this->query();
         $query = $this->applySearch($query, $params['search'] ?? null);
         $query = $this->applyStatusFilter($query, $params['status'] ?? null);
         $query = $this->withEnrollmentsCount($query);
 
-        return $query->get();
+        return $query->lazyById(250);
     }
 
     public function findById(int $id): ?Course

@@ -6,6 +6,7 @@ use App\Models\CommunityMessage;
 use App\Models\CommunityThread;
 use App\Models\Tenant;
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CommunitySearchService
@@ -63,7 +64,7 @@ class CommunitySearchService
         return $builder
             ->orderByDesc('id')
             ->with(['author.user', 'channel', 'attachments.mediaAsset'])
-            ->paginate((int) ($filters['per_page'] ?? 20));
+            ->paginate(Pagination::perPage($filters['per_page'] ?? null, 20));
     }
 
     private function searchThreads(Tenant $tenant, TenantUser $member, string $query, array $filters): LengthAwarePaginator
@@ -87,7 +88,7 @@ class CommunitySearchService
         return $builder
             ->orderByDesc('last_message_at')
             ->with(['channel', 'creator.user'])
-            ->paginate((int) ($filters['per_page'] ?? 20));
+            ->paginate(Pagination::perPage($filters['per_page'] ?? null, 20));
     }
 
     private function bindTenant(Tenant $tenant): void

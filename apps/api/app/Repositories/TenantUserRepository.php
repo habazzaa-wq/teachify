@@ -3,10 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\LazyCollection;
 
 class TenantUserRepository
 {
@@ -41,16 +43,16 @@ class TenantUserRepository
         $query = $this->applyLastLoginFilter($query, $params['last_login'] ?? null);
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
 
-        return $query->paginate((int) ($params['per_page'] ?? 25));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
-    public function listAll(array $params = []): Collection
+    public function listAll(array $params = []): LazyCollection
     {
         $query = $this->query();
         $query = $this->applySearch($query, $params['search'] ?? null);
         $query = $this->applyStatusFilter($query, $params['status'] ?? null);
 
-        return $query->get();
+        return $query->lazyById(250);
     }
 
     public function findById(int $id): ?TenantUser

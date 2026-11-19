@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Question;
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -44,7 +45,7 @@ class QuestionRepository
 
         return $query
             ->with('mediaAsset')
-            ->paginate((int) ($params['per_page'] ?? 25));
+            ->paginate(Pagination::perPage($params['per_page'] ?? null, 25));
     }
 
     public function listAll(array $params = []): Collection

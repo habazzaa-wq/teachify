@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +30,7 @@ class RoleController extends Controller
         }
 
         return response()->json(
-            $query->orderBy('name')->paginate($request->integer('per_page', 50))
+            $query->orderBy('name')->paginate(Pagination::perPage($request->input('per_page'), 50))
         );
     }
 

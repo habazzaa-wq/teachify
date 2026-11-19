@@ -15,6 +15,7 @@ use App\Models\CommunityStat;
 use App\Models\CommunityThread;
 use App\Models\Tenant;
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +48,7 @@ class CommunityMessageService
             ]);
         }
 
-        $perPage = (int) ($filters['per_page'] ?? 30);
+        $perPage = Pagination::perPage($filters['per_page'] ?? null, 30);
         $beforeId = isset($filters['before_id']) ? (int) $filters['before_id'] : null;
         $afterId = isset($filters['after_id']) ? (int) $filters['after_id'] : null;
 

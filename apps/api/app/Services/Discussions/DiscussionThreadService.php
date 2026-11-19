@@ -8,6 +8,7 @@ use App\Models\DiscussionThread;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Security\AuditLogger;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
@@ -52,7 +53,7 @@ class DiscussionThreadService
             ->orderByDesc('last_activity_at')
             ->orderByDesc('created_at');
 
-        return $query->paginate($perPage);
+        return $query->paginate(Pagination::perPage($perPage));
     }
 
     public function show(Tenant $tenant, DiscussionThread $thread): DiscussionThread

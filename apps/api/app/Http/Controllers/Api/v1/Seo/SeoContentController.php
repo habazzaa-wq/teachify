@@ -19,6 +19,7 @@ use App\Services\Seo\SeoCanonicalGuard;
 use App\Services\Seo\SeoHtmlSanitizer;
 use App\Services\Seo\SeoScoreService;
 use App\Services\Seo\SeoSlugService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -78,7 +79,7 @@ class SeoContentController extends Controller
             $query->orderBy('updated_at', 'desc');
         }
 
-        $items = $query->paginate($request->integer('per_page', 25));
+        $items = $query->paginate(Pagination::perPage($request->input('per_page'), 25));
 
         return response()->json([
             'data' => SeoContentResource::collection($items),
@@ -301,7 +302,7 @@ class SeoContentController extends Controller
         $revisions = $seoContent->revisions()
             ->with('editor:id,user_id')
             ->latest('id')
-            ->paginate(request()->integer('per_page', 25));
+            ->paginate(Pagination::perPage(request()->input('per_page'), 25));
 
         return response()->json([
             'data' => collect($revisions->items())->map(fn (SeoRevision $r) => [

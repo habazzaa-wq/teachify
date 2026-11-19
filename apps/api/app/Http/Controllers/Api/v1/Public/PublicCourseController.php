@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\v1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseModuleResource;
-use App\Http\Resources\CourseResource;
 use App\Http\Resources\PublicCourseResource;
 use App\Models\Course;
+use App\Models\Subject;
+use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,7 +72,7 @@ class PublicCourseController extends Controller
             default => $query->orderByRaw('COALESCE(published_at, created_at) desc')->orderBy('created_at', 'desc'),
         };
 
-        $courses = $query->paginate((int) ($request->input('per_page', 12)));
+        $courses = $query->paginate(Pagination::perPage($request->input('per_page'), 12, 48));
 
         return response()->json([
             'data' => PublicCourseResource::collection($courses),
@@ -100,37 +102,56 @@ class PublicCourseController extends Controller
 
         $coursesCount = (clone $query)->count();
 
-        $teachers = (clone $query)
+        $teacherCounts = (clone $query)
             ->whereNotNull('primary_instructor_tenant_user_id')
-            ->with('primaryInstructor.user')
-            ->get(['primary_instructor_tenant_user_id'])
+            ->select('primary_instructor_tenant_user_id')
+            ->selectRaw('COUNT(*) as courses_count')
             ->groupBy('primary_instructor_tenant_user_id')
-            ->map(function ($group) {
-                $teacher = $group->first()->primaryInstructor;
+            ->get();
+
+        $teachersById = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $teacherCounts->pluck('primary_instructor_tenant_user_id'))
+            ->with('user')
+            ->get()
+            ->keyBy('id');
+
+        $teachers = $teacherCounts
+            ->map(function ($row) use ($teachersById) {
+                $teacher = $teachersById->get($row->primary_instructor_tenant_user_id);
                 $name = $teacher?->user?->name ?? $teacher?->name;
 
                 return [
-                    'id' => (string) $group->first()->primary_instructor_tenant_user_id,
+                    'id' => (string) $row->primary_instructor_tenant_user_id,
                     'name' => $name ?? 'مدرس',
                     'avatar' => $teacher?->avatar ?? $teacher?->user?->avatar,
                     'specialization' => $teacher?->job_title ?? null,
-                    'coursesCount' => $group->count(),
+                    'coursesCount' => (int) $row->courses_count,
                 ];
             })
             ->values();
 
-        $subjects = (clone $query)
+        $subjectCounts = (clone $query)
             ->whereNotNull('subject_id')
-            ->with('subject')
-            ->get(['subject_id'])
+            ->select('subject_id')
+            ->selectRaw('COUNT(*) as courses_count')
             ->groupBy('subject_id')
-            ->map(function ($group) {
-                $subject = $group->first()->subject;
+            ->get();
+
+        $subjectsById = Subject::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $subjectCounts->pluck('subject_id'))
+            ->get()
+            ->keyBy('id');
+
+        $subjects = $subjectCounts
+            ->map(function ($row) use ($subjectsById) {
+                $subject = $subjectsById->get($row->subject_id);
 
                 return [
-                    'id' => (string) $group->first()->subject_id,
+                    'id' => (string) $row->subject_id,
                     'name' => $subject?->name ?? 'مادة',
-                    'coursesCount' => $group->count(),
+                    'coursesCount' => (int) $row->courses_count,
                 ];
             })
             ->values();

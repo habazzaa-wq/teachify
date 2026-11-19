@@ -7,6 +7,7 @@ use App\Models\DiscussionThread;
 use App\Models\TenantUser;
 use App\Policies\DiscussionPolicy;
 use App\Services\Discussions\DiscussionThreadService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -21,7 +22,7 @@ class DiscussionThreadController extends Controller
             currentTenant(),
             app(TenantUser::class),
             $filters,
-            (int) $request->input('per_page', 25),
+            Pagination::perPage($request->input('per_page'), 25),
         );
 
         return response()->json([

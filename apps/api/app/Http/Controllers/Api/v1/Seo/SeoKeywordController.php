@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SeoKeywordResource;
 use App\Models\SeoKeyword;
 use App\Services\Audit\AuditLogService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -49,7 +50,7 @@ class SeoKeywordController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $items = $query->paginate($request->integer('per_page', 25));
+        $items = $query->paginate(Pagination::perPage($request->input('per_page'), 25));
 
         return response()->json([
             'data' => SeoKeywordResource::collection($items),

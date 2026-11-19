@@ -12,9 +12,12 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Repositories\CourseRepository;
 use App\Services\Notifications\NotificationService;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\LazyCollection;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -26,6 +29,31 @@ use Tests\TestCase;
 class P2PaginationAndNPlusOneTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_course_export_query_is_lazy_and_reads_beyond_one_chunk(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->bindTenant($tenant);
+        $now = now();
+
+        $courses = collect(range(1, 251))->map(fn (int $index) => [
+            'tenant_id' => $tenant->id,
+            'title' => "Course {$index}",
+            'slug' => "course-{$index}",
+            'status' => 'draft',
+            'visibility' => 'private',
+            'pricing_type' => 'free',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all();
+
+        DB::table('courses')->insert($courses);
+
+        $exportRows = app(CourseRepository::class)->listAll();
+
+        $this->assertInstanceOf(LazyCollection::class, $exportRows);
+        $this->assertCount(251, $exportRows);
+    }
 
     public function test_notifications_list_is_paginated_and_bounded(): void
     {

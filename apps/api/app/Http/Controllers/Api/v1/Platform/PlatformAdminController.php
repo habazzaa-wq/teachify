@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\PlatformAdmin;
 use App\Models\User;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +26,7 @@ class PlatformAdminController extends Controller
         }
 
         return response()->json(
-            $query->paginate($request->integer('per_page', 25))
+            $query->paginate(Pagination::perPage($request->input('per_page'), 25))
         );
     }
 

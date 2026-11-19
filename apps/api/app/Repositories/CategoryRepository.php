@@ -3,9 +3,11 @@
 namespace App\Repositories;
 
 use App\Models\Category;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\LazyCollection;
 
 class CategoryRepository
 {
@@ -44,16 +46,16 @@ class CategoryRepository
         $query = $this->applySort($query, $params['sort'] ?? null, $params['sort_dir'] ?? null);
         $query = $this->withCoursesCount($query);
 
-        return $query->paginate((int) ($params['per_page'] ?? 50));
+        return $query->paginate(Pagination::perPage($params['per_page'] ?? null, 50));
     }
 
-    public function listAll(array $params = []): Collection
+    public function listAll(array $params = []): LazyCollection
     {
         $query = $this->query();
         $query = $this->applySearch($query, $params['search'] ?? null);
         $query = $this->withCoursesCount($query);
 
-        return $query->get();
+        return $query->lazyById(250);
     }
 
     public function listTree(): Collection

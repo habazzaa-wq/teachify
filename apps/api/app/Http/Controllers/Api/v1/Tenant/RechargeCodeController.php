@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\RechargeCode;
 use App\Services\Wallet\WalletService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,7 +40,7 @@ class RechargeCodeController extends Controller
         }
 
         $items = $query->orderBy('created_at', 'desc')
-            ->paginate($request->integer('per_page', 50));
+            ->paginate(Pagination::perPage($request->input('per_page'), 50));
 
         return response()->json([
             'data' => $items->items(),

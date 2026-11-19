@@ -9,6 +9,7 @@ use App\Models\TenantUser;
 use App\Policies\DiscussionPolicy;
 use App\Services\Discussions\DiscussionParticipantService;
 use App\Services\Discussions\DiscussionPostService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,12 @@ class DiscussionPostController extends Controller
 
         $includeModerated = $policy->viewModeratedPosts(app(TenantUser::class), currentTenant(), $thread);
 
-        $page = $posts->list(currentTenant(), $thread, $includeModerated, (int) $request->input('per_page', 50));
+        $page = $posts->list(
+            currentTenant(),
+            $thread,
+            $includeModerated,
+            Pagination::perPage($request->input('per_page'), 50),
+        );
 
         return response()->json([
             'posts' => $page->items(),

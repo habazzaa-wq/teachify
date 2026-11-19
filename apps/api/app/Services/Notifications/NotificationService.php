@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\NotificationDelivery;
 use App\Models\Tenant;
 use App\Models\TenantUser;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -31,7 +32,7 @@ class NotificationService
             ->when($unreadOnly, fn ($query) => $query->where('status', 'unread'))
             ->when($typePrefix, fn ($query) => $query->where('type', 'like', $typePrefix . '%'))
             ->orderByDesc('created_at')
-            ->paginate($perPage);
+            ->paginate(Pagination::perPage($perPage));
     }
 
     /**

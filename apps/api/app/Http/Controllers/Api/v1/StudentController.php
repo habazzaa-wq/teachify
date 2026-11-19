@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Instructors\InstructorMembershipGuard;
 use App\Services\AvatarGenerator;
 use App\Services\Auth\InvitationService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,7 @@ class StudentController extends Controller
         $sortColumn = in_array($sort, $allowedSorts) ? $sort : 'created_at';
         $query->orderBy($sortColumn, $sortDir === 'asc' ? 'asc' : 'desc');
 
-        $perPage = min((int) $request->input('per_page', 25), 100);
+        $perPage = Pagination::perPage($request->input('per_page'), 25);
         $paginator = $query->paginate($perPage);
 
         $students = $paginator->getCollection()->map(fn ($tu) => $this->formatStudent($tu));
@@ -140,7 +141,7 @@ class StudentController extends Controller
             ->whereHas('roles', fn ($q) => $q->where('slug', 'student'))
             ->firstOrFail();
 
-        $perPage = min((int) $request->input('per_page', 25), 100);
+        $perPage = Pagination::perPage($request->input('per_page'), 25);
 
         $paginator = CourseEnrollment::with(['course', 'completion'])
             ->withCount([

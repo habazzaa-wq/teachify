@@ -14,6 +14,7 @@ use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PaymobService;
 use App\Services\Payments\PayPalService;
 use App\Services\Wallet\WalletService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -82,7 +83,7 @@ class WalletController extends Controller
         $items = $wallet->transactions()
             ->with(['rechargeCode', 'walletPayment'])
             ->orderBy('created_at', 'desc')
-            ->paginate($request->integer('per_page', 20));
+            ->paginate(Pagination::perPage($request->input('per_page'), 20));
 
         $payload = $items->getCollection()->map(function (WalletTransaction $transaction): array {
             $method = match (true) {

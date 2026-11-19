@@ -20,6 +20,25 @@ class PublicCourseModulesTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_public_course_list_caps_requested_page_size(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        Course::create([
+            'tenant_id' => $tenant->id,
+            'title' => 'Public course',
+            'slug' => 'public-course-'.uniqid(),
+            'status' => 'published',
+            'visibility' => 'public',
+            'pricing_type' => 'free',
+        ]);
+
+        $this->getJson('/api/v1/public/courses?per_page=10000', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('per_page', 48)
+            ->assertJsonPath('total', 1);
+    }
+
     public function test_public_modules_only_include_published_content(): void
     {
         [$tenant, $course, $publishedModule, $publishedSection, $unpublishedModule, $draftSection, $publishedLesson, $draftLesson] = $this->modulesFixture();
