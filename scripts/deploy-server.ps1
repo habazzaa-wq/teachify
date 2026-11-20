@@ -26,7 +26,9 @@ param(
     [switch]$LocalDirty
 )
 
-$ErrorActionPreference = 'Stop'
+# Native git/ssh write progress to stderr. With 'Stop' PowerShell turns that into
+# terminating errors; explicit $LASTEXITCODE checks below are the source of truth.
+$ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot '_task-common.ps1')
 
 # ---- Server configuration ----------------------------------------------------
@@ -35,6 +37,7 @@ $SshUser  = 'deplo'
 $SshHost  = '187.127.92.237'
 $RemoteDir = '/var/www/teachify'
 $Branch   = 'deploy'
+$SshArgs  = @('-i', $SshKey, '-o', 'StrictHostKeyChecking=no', '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=40', "$SshUser@$SshHost")
 
 # ---- Local pre-flight --------------------------------------------------------
 if (-not (Test-Path -LiteralPath $SshKey)) {
@@ -86,6 +89,13 @@ Write-Step "Deployment plan"
 Write-Host " Target   : $SshUser@$SshHost : $RemoteDir"
 Write-Host " Branch   : $Branch"
 Write-Host " Local SHA: $localSha"
+$serverSha = ((& ssh @SshArgs "git -C $RemoteDir rev-parse HEAD" 2>$null) | Select-Object -Last 1).Trim()
+if ($serverSha -and $serverSha -eq $localSha) {
+    Write-Warn2 "Server already at $localSha - deploy will be a no-op."
+    Write-Warn2 "If you expected new code, verify it landed on GitHub: git log -1 origin/$Branch"
+} elseif ($serverSha) {
+    Write-Host " Server   : $serverSha -> $localSha"
+}
 Write-Host " Steps    : git ff ->"
 if ($doBuild -eq 1) {
     Write-Host "            ZERO DOWNTIME (no maintenance mode) ->"
@@ -212,7 +222,6 @@ $payload = $payload -replace '__DO_MIGRATE__', $doMigrate
 $payload = $payload -replace '__DO_RESTART__', $doRestart
 $payload = $payload -replace "`r", ""
 
-$SshArgs = @('-i', $SshKey, '-o', 'StrictHostKeyChecking=no', '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=40', "$SshUser@$SshHost")
 $remoteScript = '/tmp/deploy_teachify.sh'
 $remoteLog    = '/tmp/deploy_teachify.log'
 
@@ -230,8 +239,9 @@ if ($LASTEXITCODE -ne 0) { Write-Fail "Could not launch the deployment."; exit 1
 Write-Step "Deployment running (detached). Streaming server log ..."
 $start = 1
 $result = $null
-for ($i = 0; $i -lt 180; $i++) {
-    Start-Sleep -Seconds 10
+for ($i = 0; $i -lt 120; $i++) {
+    # Poll fast at first so short/no-op deploys return almost immediately.
+    Start-Sleep -Seconds $(if ($i -lt 3) { 3 } else { 5 })
     $raw = & ssh @SshArgs "tail -n +$start $remoteLog" 2>$null
     $lines = @($raw) | ForEach-Object { $_ -split "`n" } | Where-Object { $_.Trim() -ne '' }
     if ($lines.Count -gt 0) {

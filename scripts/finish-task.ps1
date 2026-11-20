@@ -19,13 +19,18 @@ param(
     [Parameter(Position = 0)]
     [string]$Name,
 
-    [switch]$Commit,
+    [switch]$Commit,      # kept for compatibility - committing is now the default
+    [switch]$NoCommit,    # opt out: refuse to auto-commit pending work
     [string]$Message,
     [switch]$NoPush,
+    [switch]$KeepWorktree,
+    [switch]$RebaseOthers,   # opt-in: rewrite other task branches onto the new deploy
     [switch]$Help
 )
 
-$ErrorActionPreference = 'Stop'
+# git writes progress to stderr; with 'Stop' PowerShell turns that into a terminating
+# error and aborts the deploy. Exit codes below are the source of truth.
+$ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot '_task-common.ps1')
 
 $repo      = Get-RepoRoot
@@ -72,22 +77,27 @@ $taskPath = $target.Path
 Write-Ok "Resolved to branch '$Branch' ($taskPath)"
 
 # ---- 1) Dirty handling (in the TASK worktree) --------------------------------
-if (-not (Test-CleanTree -Path $taskPath)) {
-    if ($Commit) {
-        Write-Step "Committing pending changes in '$taskPath'"
-        & git -C $taskPath add -A
-        $msg = if ($Message) { $Message } else { "feat($($Branch -replace '^feat/','')): commit before finishing task" }
-        & git -C $taskPath commit -m $msg | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Fail "Auto-commit failed in '$taskPath'."
-            exit 1
-        }
-        Write-Ok "Committed pending changes ($(& git -C $taskPath rev-parse --short HEAD))"
-    } else {
+# Committing is the default now: finishing a task without shipping its pending work
+# is the mistake that produces a "nothing changed" deploy.
+$dirtyFiles = @(& git -C $taskPath status --porcelain)
+if ($dirtyFiles.Count -gt 0) {
+    if ($NoCommit) {
         Write-Fail "Uncommitted changes in '$taskPath'."
-        Write-Warn2 "Either commit them in that session, or re-run with: -Commit  (optional: -Message 'your note')"
+        Write-Warn2 "Commit them first, or re-run without -NoCommit to let finish-task commit them."
         exit 1
     }
+    Write-Step "Committing $($dirtyFiles.Count) pending change(s) in '$taskPath'"
+    $dirtyFiles | Select-Object -First 10 | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+    if ($dirtyFiles.Count -gt 10) { Write-Host "     ... and $($dirtyFiles.Count - 10) more" -ForegroundColor DarkGray }
+    & git -C $taskPath add -A
+    if ($LASTEXITCODE -ne 0) { Write-Fail "'git add -A' failed in '$taskPath'."; exit 1 }
+    $msg = if ($Message) { $Message } else { "feat($($Branch -replace '^feat/','')): $Name task changes" }
+    & git -C $taskPath commit -m $msg | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Fail "Auto-commit failed in '$taskPath'."
+        exit 1
+    }
+    Write-Ok "Committed pending changes ($(& git -C $taskPath rev-parse --short HEAD))"
 }
 
 $mainWt = $worktrees | Where-Object { $_.Path -eq $repo } | Select-Object -First 1
@@ -99,12 +109,20 @@ if ($null -eq $mainWt -or $mainWt.Branch -ne 'deploy') {
 # ---- 2) Integration in a throwaway detached worktree ------------------------
 # This keeps the main copy's working tree (and any unrelated local changes) fully
 # untouched. We merge the task branch and push from a fresh copy of origin/deploy.
-& git -C $repo fetch origin deploy | Out-Null
+& git -C $repo fetch --quiet origin deploy | Out-Null
+$oldDeploySha = (& git -C $repo rev-parse origin/deploy).Trim()
+$taskTip      = (& git -C $repo rev-parse $Branch).Trim()
+if ($taskTip -eq $oldDeploySha) {
+    Write-Fail "Task branch '$Branch' has no new commits over origin/deploy - nothing to finish."
+    Write-Warn2 "Make your changes in $taskPath, then run finish-task again."
+    exit 1
+}
+Write-Ok "Task branch tip: $taskTip (deploy before: $oldDeploySha)"
 
 $ts    = Get-Date -Format 'yyyyMMddHHmmss'
 $tmp   = Join-Path $tasksRoot "tf-merge-$ts"
 Write-Step "Preparing isolated merge worktree at $tmp"
-& git -C $repo worktree add --detach "$tmp" "origin/deploy" | Out-Null
+& git -C $repo worktree add --detach --quiet "$tmp" "origin/deploy" | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Could not create a temporary merge worktree."
     exit 1
@@ -136,17 +154,25 @@ try {
     $mergeSucceeded = $true
 
     if (-not $NoPush) {
-        & git -C $tmp push origin "HEAD:deploy" | Out-Null
+        & git -C $tmp push --quiet origin "HEAD:deploy" | Out-Null
         if ($LASTEXITCODE -ne 0) {
             Write-Fail "Push to deploy failed (concurrent push?). Push manually: git -C `"$tmp`" push origin HEAD:deploy"
             exit 1
         }
-        Write-Ok "Pushed deploy to origin"
-        # Keep the local 'deploy' branch ref in sync so subsequent deploy-server
-        # runs see a matching SHA (the push updated origin/deploy, not this ref).
-        & git -C $repo fetch origin deploy | Out-Null
-        & git -C $repo branch -f deploy "origin/deploy" | Out-Null
-        Write-Ok "Synced local 'deploy' ref to origin/deploy"
+        & git -C $repo fetch --quiet origin deploy | Out-Null
+        $newDeploySha = (& git -C $repo rev-parse origin/deploy).Trim()
+        if ($newDeploySha -eq $oldDeploySha) {
+            Write-Fail "Push reported success but origin/deploy did not move ($oldDeploySha)."
+            exit 1
+        }
+        & git -C $repo merge-base --is-ancestor $Branch origin/deploy 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Fail "Branch '$Branch' is not contained in origin/deploy - refusing to report success."
+            exit 1
+        }
+        Write-Ok "Pushed task to origin/deploy: $oldDeploySha -> $newDeploySha"
+        Write-Warn2 "Local 'deploy' ref is left alone (it is checked out in the main worktree with your WIP)."
+        Write-Warn2 "deploy-server.ps1 always deploys origin/deploy, so this is expected and safe."
     } else {
         Write-Warn2 "-NoPush given: changes were merged but NOT pushed."
     }
@@ -161,20 +187,34 @@ try {
 }
 
 # ---- 3) Rebase remaining active tasks onto the updated deploy ----------------
-& git -C $repo fetch origin deploy | Out-Null
-$others = @($worktrees | Where-Object { $_.Path -ne $repo -and $_.Branch -ne $Branch })
+# Opt-in: silently rewriting ~20 other task branches on every finish is slow and
+# risky. Pass -RebaseOthers when you actually want them moved onto the new deploy.
+$rebased = 0
+if ($RebaseOthers) {
+$others = @($worktrees | Where-Object { $_.Path -ne $repo -and $_.Branch -ne $Branch -and $_.Branch -ne '' })
 foreach ($wt in $others) {
-    if (-not (Test-CleanTree -Path $wt.Path)) {
-        Write-Warn2 "$($wt.Path): has uncommitted changes - skipped rebase (rebase it manually when committed)."
+    if (-not (Test-Path -LiteralPath (Join-Path $wt.Path '.git'))) {
+        Write-Warn2 "$($wt.Branch): worktree folder is gone - skipped."
         continue
     }
-    & git -C $wt.Path rebase origin/deploy | Out-Null
+    & git -C $wt.Path merge-base --is-ancestor origin/deploy $wt.Branch 2>$null
+    if ($LASTEXITCODE -eq 0) { continue }
+    if (-not (Test-CleanTree -Path $wt.Path)) {
+        Write-Warn2 "$($wt.Branch): has uncommitted changes - skipped rebase (rebase it manually when committed)."
+        continue
+    }
+    & git -C $wt.Path rebase --quiet origin/deploy | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Ok "Rebased $($wt.Branch) onto latest deploy"
+        $rebased++
     } else {
         Write-Fail "$($wt.Branch): rebase conflicts in $($wt.Path)"
         Write-Warn2 "Resolve there, then: git add -A ; git rebase --continue   (or: git rebase --abort)"
     }
+}
+if ($rebased -eq 0) { Write-Ok "No other active tasks needed rebasing." }
+} else {
+    Write-Ok "Other task branches left untouched (pass -RebaseOthers to rebase them)."
 }
 
 # ---- 4) Cleanup (ask before removing the worktree/folder) --------------------
@@ -242,4 +282,11 @@ if (-not $KeepWorktree) {
 
 Write-Host ''
 Write-Step "Task '$Branch' finished successfully."
+if ($NoPush) {
+    Write-Warn2 "Nothing was pushed (-NoPush). Run finish-task again without -NoPush to publish."
+} else {
+    Write-Host " origin/deploy : $newDeploySha"
+    Write-Host " Next step     : .\scripts\deploy-server.ps1 -Yes"
+}
+Write-Host ''
 exit 0
