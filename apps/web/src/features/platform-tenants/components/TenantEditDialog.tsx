@@ -57,6 +57,7 @@ type FormData = {
   notes: string; tags: string[];
   hasInstructors: boolean;
   hasBlog: boolean;
+  hasServices: boolean;
   hasWallet: boolean;
   hasRegionalPricing: boolean;
   instructorDisableMode: "retain" | "purge" | "";
@@ -77,6 +78,7 @@ const DEFAULT_FORM: FormData = {
   notes: "", tags: [],
   hasInstructors: false,
   hasBlog: false,
+  hasServices: false,
   hasWallet: true,
   hasRegionalPricing: false,
   instructorDisableMode: "",
@@ -129,6 +131,7 @@ function tenantToFormData(tenant: Tenant | null | undefined): FormData {
     tags: tenant.tags ?? [],
     hasInstructors: tenant.featureFlags?.hasInstructors ?? false,
     hasBlog: tenant.featureFlags?.hasBlog ?? false,
+    hasServices: tenant.featureFlags?.hasServices ?? false,
     hasWallet: tenant.featureFlags?.hasWallet ?? true,
     hasRegionalPricing: tenant.featureFlags?.hasRegionalPricing ?? false,
     instructorDisableMode: "",
@@ -411,6 +414,7 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
       featureFlags: {
         hasInstructors: form.hasInstructors,
         hasBlog: form.hasBlog,
+        hasServices: form.hasServices,
         hasWallet: form.hasWallet,
         hasRegionalPricing: form.hasRegionalPricing,
       },
@@ -594,6 +598,10 @@ function TenantEditDialog({ open, onOpenChange, tenantId, tenant, onSave, saving
                       مساحة مقالات عامة خاصة بالمؤسسة، يكتب فيها المسؤول والمدرّسون المقالات وينشرونها أو يجدولونها مع أدوات تحسين الظهور.
                     </span>
                   </span>
+                </label>
+                <label className="mt-3 flex items-start gap-3 rounded-lg border p-4">
+                  <input type="checkbox" checked={form.hasServices} onChange={(event) => handleChange("hasServices", event.target.checked)} className="mt-1 h-4 w-4" />
+                  <span className="space-y-1"><span className="block font-medium">تفعيل دليل الخدمات</span><span className="block text-sm text-muted-foreground">يعرض خدمات المؤسسة للزوار مع تفاصيلها ووسيلة تواصل مباشرة عبر واتساب.</span></span>
                 </label>
                 <fieldset className="mt-4 space-y-3 rounded-lg border p-4">
                   <legend className="px-1 text-sm font-semibold">نظام الدفع (اختر نظاماً واحداً)</legend>

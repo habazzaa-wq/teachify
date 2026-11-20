@@ -67,9 +67,6 @@ export function BrandThemeProvider() {
       document.head.appendChild(styleTag);
     }
     styleTag.textContent = css;
-    return () => {
-      styleTag?.remove();
-    };
   }, [css, platformBranding]);
 
   return null;

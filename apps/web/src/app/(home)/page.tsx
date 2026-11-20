@@ -51,6 +51,47 @@ function SectionFallback({ className }: { className?: string }) {
   );
 }
 
+function getHomeSectionsData() {
+  return Promise.all([
+    whyChooseUsServerService.getPublicWhyChooseUs(),
+    stagesServerService.getPublicStages(),
+    stagesServerService.getPublicStagesStats(),
+    communitySectionServerService.getPublicCommunitySection(),
+  ]);
+}
+
+type HomeSectionsData = Awaited<ReturnType<typeof getHomeSectionsData>>;
+
+async function HomeSections({ data }: { data: Promise<HomeSectionsData> }) {
+  const [whyChooseUs, stages, stageStats, communitySection] = await data;
+  const queryClient = getQueryClient();
+
+  if (whyChooseUs) {
+    queryClient.setQueryData(whyChooseUsKeys.public, whyChooseUs);
+  }
+  if (stages) {
+    queryClient.setQueryData(stagesKeys.public, stages);
+  }
+  if (stageStats) {
+    queryClient.setQueryData(stagesKeys.statsAll, stageStats);
+  }
+  queryClient.setQueryData(communitySectionKeys.public, communitySection);
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<SectionFallback />}>
+        <WhyChooseUsOrbit />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <EducationalStagesSection />
+      </Suspense>
+      <Suspense fallback={<SectionFallback />}>
+        <PublicCommunitySection />
+      </Suspense>
+    </HydrationBoundary>
+  );
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const [tenant, origin, hero] = await Promise.all([
     getTenantSeoContext(),
@@ -80,18 +121,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function HomePage() {
-  const queryClient = getQueryClient();
-
-  const [hero, whyChooseUs, stages, stageStats, communitySection, tenant, origin] =
-    await Promise.all([
-      heroServerService.getPublicHero(),
-      whyChooseUsServerService.getPublicWhyChooseUs(),
-      stagesServerService.getPublicStages(),
-      stagesServerService.getPublicStagesStats(),
-      communitySectionServerService.getPublicCommunitySection(),
-      getTenantSeoContext(),
-      getRequestOrigin(),
-    ]);
+  const sectionsData = getHomeSectionsData();
+  const [hero, tenant, origin] = await Promise.all([
+    heroServerService.getPublicHero(),
+    getTenantSeoContext(),
+    getRequestOrigin(),
+  ]);
 
   // Start fetching the above-the-fold teacher portrait while React streams the
   // rest of the page. HeroTeacherPhoto uses this exact URL in its first render.
@@ -100,33 +135,16 @@ async function HomePage() {
     preload(heroImage, { as: "image", fetchPriority: "high" });
   }
 
-  if (hero) {
-    queryClient.setQueryData(heroKeys.public, hero);
-  }
-  if (whyChooseUs) {
-    queryClient.setQueryData(whyChooseUsKeys.public, whyChooseUs);
-  }
-  if (stages) {
-    queryClient.setQueryData(stagesKeys.public, stages);
-  }
-  if (stageStats) {
-    queryClient.setQueryData(stagesKeys.statsAll, stageStats);
-  }
-  queryClient.setQueryData(communitySectionKeys.public, communitySection);
+  const queryClient = getQueryClient();
+  if (hero) queryClient.setQueryData(heroKeys.public, hero);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <JsonLd data={organizationJsonLd(tenant, origin)} />
       <JsonLd data={webSiteJsonLd(tenant, origin)} />
       <HeroSection initialHero={hero} />
-      <Suspense fallback={<SectionFallback />}>
-        <WhyChooseUsOrbit />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <EducationalStagesSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <PublicCommunitySection />
+      <Suspense fallback={<SectionFallback className="min-h-[900px]" />}>
+        <HomeSections data={sectionsData} />
       </Suspense>
     </HydrationBoundary>
   );

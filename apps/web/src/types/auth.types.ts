@@ -129,6 +129,8 @@ export interface Plan {
 export interface FeatureFlags {
   [key: string]: boolean | undefined;
   has_instructors?: boolean;
+  has_blog?: boolean;
+  has_services?: boolean;
   has_wallet?: boolean;
   has_regional_pricing?: boolean;
 }

@@ -29,7 +29,9 @@ import {
   ShieldCheck,
   Scale,
   PanelBottom,
+  Compass,
   Newspaper,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -81,6 +83,7 @@ export function WorkspaceLeftSidebar() {
   const { activeTenant } = useTenantContext();
   const instructorsEnabled = activeTenant?.feature_flags?.has_instructors === true;
   const blogEnabled = activeTenant?.feature_flags?.has_blog === true;
+  const servicesEnabled = activeTenant?.feature_flags?.has_services === true;
   const {
     leftSidebarOpen,
     leftSidebarWidth,
@@ -396,6 +399,7 @@ export function WorkspaceLeftSidebar() {
 
             {/* Site pages (legal + footer) */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "صفحات الموقع"} collapsed={leftSidebarCollapsed}>
+              {servicesEnabled && <StudioSidebarItem icon={<BriefcaseBusiness className="h-4 w-4" />} label="إدارة الخدمات" active={pathname.startsWith(routes.dashboardServices)} collapsed={leftSidebarCollapsed} onClick={() => handleNavigate(routes.dashboardServices)} />}
               {blogEnabled && (
                 <StudioSidebarItem
                   icon={<Newspaper className="h-4 w-4" />}
@@ -418,6 +422,13 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith(routes.teacherFooter)}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate(routes.teacherFooter)}
+              />
+              <StudioSidebarItem
+                icon={<Compass className="h-4 w-4" />}
+                label="صفحة من نحن"
+                active={pathname.startsWith(routes.teacherAbout)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherAbout)}
               />
             </StudioSidebarSection>
           </div>

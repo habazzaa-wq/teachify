@@ -55,9 +55,8 @@ function variantFor(index: number): StageVariant {
  * Creative concept: each stage is its own glassy, brand-accented world arranged
  * in an asymmetric mosaic (hero lead + varied-width satellites). The image is a
  * design material — an arch aperture with an accent reveal layer that slides up
- * behind it, a ghost Arabic numeral, an icon seal — and every card tilts in 3D,
- * with the photo parallaxing one layer deeper than the card (desktop). On touch
- * the same depth is revealed by tapping. Live course/teacher counts count up.
+ * behind it, a ghost Arabic numeral, and an icon seal. Card interactions use
+ * lightweight CSS hover effects rather than per-frame pointer animation.
  * A contents-style stage index in the header gives it a confident, crafted
  * editorial voice that reads as trustworthy to a parent.
  *
@@ -65,8 +64,8 @@ function variantFor(index: number): StageVariant {
  *  · Static stage data is already fetched **server-side** in `(home)/page.tsx`
  *    (stagesServerService.getPublicStages) and hydrated into React Query. This
  *    section (a Client Component) reads that cache — no client round-trip — and
- *    adds a Client boundary only where interactivity requires it (Framer Motion,
- *    pointer/touch state, count-up). `LazyMount` in the page defers hydration
+  *    adds a Client boundary only where interactivity requires it (Framer Motion
+  *    entrance effects and query state). `LazyMount` in the page defers hydration
  *    until the section nears the viewport.
  *
  * Responsiveness: the composition is re-architected per breakpoint, not merely
@@ -237,7 +236,6 @@ export function EducationalStagesSection({
                     variant={variant}
                     priority={i < priorityCount}
                     stats={statsById.get(Number(stage.id)) ?? null}
-                    active={inView}
                     className={spanClass(i, variant)}
                   />
                 );

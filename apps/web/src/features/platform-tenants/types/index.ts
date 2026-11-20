@@ -197,6 +197,7 @@ export interface Tenant {
   featureFlags: {
     hasInstructors: boolean;
     hasBlog?: boolean;
+    hasServices?: boolean;
     hasWallet?: boolean;
     hasRegionalPricing?: boolean;
   };

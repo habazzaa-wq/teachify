@@ -953,6 +953,13 @@ body.page-is-scrolling .news-marquee-track {
   animation-play-state: paused !important;
 }
 
+/* A translucent sticky header forces backdrop re-sampling while scrolling. */
+body.page-is-scrolling .nav-touch-solid {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: hsl(var(--background) / 0.94) !important;
+}
+
 /* ───────── Content-visibility: skip rendering offscreen sections ───────── */
 .section-lazy {
   content-visibility: auto;

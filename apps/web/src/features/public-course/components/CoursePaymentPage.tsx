@@ -45,11 +45,12 @@ const providerDetails: Record<PaymentProvider, { label: string; description: str
 
 export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProps) {
   const router = useRouter();
-  const { isAuthenticated } = useCurrentUser();
+  const { isAuthenticated, status } = useCurrentUser();
   const { tenant } = useActiveTenant();
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider | null>(null);
   const [paypalCurrency, setPaypalCurrency] = useState("USD");
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginDismissed, setLoginDismissed] = useState(false);
+  const loginOpen = status === "unauthenticated" && !loginDismissed;
 
   const { data: fetchedCourse, isLoading: courseLoading } = usePublicCourse(slug);
   const course = fetchedCourse ?? initialCourse;
@@ -72,10 +73,6 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
     isAuthenticated && isRegionalCheckoutEnabled,
     activeProvider === "paypal" ? paypalCurrency : undefined,
   );
-
-  useEffect(() => {
-    if (!isAuthenticated) setLoginOpen(true);
-  }, [isAuthenticated]);
 
   useEffect(() => {
     if (tenant && !isRegionalCheckoutEnabled) {
@@ -312,10 +309,10 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
       <PublicLoginCard
         open={loginOpen}
         onClose={() => {
-          setLoginOpen(false);
+          setLoginDismissed(true);
           router.replace(`/courses/${slug}`);
         }}
-        onSuccess={() => setLoginOpen(false)}
+        onSuccess={() => setLoginDismissed(true)}
       />
     </main>
   );

@@ -5,6 +5,7 @@ export const routes = {
   // Public
   home: "/",
   publicCourse: "/courses",
+  publicServices: "/services",
   // Auth
   tenantLogin: "/tenant-login",
   // Teacher control panel (tenant dashboard) — all under /teacher/
@@ -16,6 +17,7 @@ export const routes = {
   dashboardStudents: "/teacher/students",
   dashboardContent: "/teacher/content",
   dashboardBlog: "/teacher/blog",
+  dashboardServices: "/teacher/services",
   // Teacher SEO & Content Studio — under /teacher/seo/
   seoStudio: "/teacher/seo",
   seoContent: "/teacher/seo/content",
@@ -43,6 +45,8 @@ export const routes = {
   dashboardBranding: "/teacher/settings/branding",
   teacherLegal: "/teacher/settings/legal",
   teacherFooter: "/teacher/settings/footer",
+  teacherAbout: "/teacher/settings/about",
+  publicAbout: "/about",
   publicPrivacy: "/privacy",
   publicTerms: "/terms",
   // Student control panel (learner dashboard) — under /student/

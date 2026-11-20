@@ -1,28 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon, Users,
-} from "lucide-react";
-import { usePublicHero } from "@/features/homepage/hero/hooks";
+import type { ElementType, MouseEvent } from "react";
+import { BookOpen, Home, Layers, Moon, Newspaper, Search, Sun, Users } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
-import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { cn } from "@/lib/cn";
-
-const primary = "var(--brand-primary)";
-const secondary = "var(--brand-secondary)";
-
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 type NavLink = {
   label: string;
   href: string;
-  icon: React.ElementType;
+  icon: ElementType;
   scrollTarget?: string;
 };
 
@@ -30,216 +18,99 @@ const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
+  { label: "المدربون", href: "/instructors", icon: Users },
+  { label: "المدونة", href: "/blog", icon: Newspaper },
 ];
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export function MobileSecondaryNav() {
   const pathname = usePathname();
   const reduced = prefersReducedMotion();
-  const { tenant } = useActiveTenant();
-  const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
-    ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
-    : navLinks;
-  const { data: hero } = usePublicHero();
-  const theme = useUiStore((s) => s.theme);
-  const isDark = theme === "dark";
-  const [mobileIconsOpen, setMobileIconsOpen] = useState(false);
+  const theme = useUiStore((state) => state.theme);
 
-  const icons = hero?.icons;
-  const social = hero?.socialLinks;
+  const handleNavClick = (link: NavLink) => (event: MouseEvent<HTMLAnchorElement>) => {
+    const targetId = link.scrollTarget;
+    if (!targetId || pathname !== "/") return;
 
-  const mobileIconItems = [
-    { key: "gifts", icon: Gift, label: icons?.gifts?.label || "الهدايا", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.gifts?.visible },
-    { key: "facebook", icon: Facebook, label: icons?.facebook?.label || "فيس بوك", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.facebook?.visible, href: social?.facebook },
-    { key: "chat", icon: MessageCircle, label: icons?.chat?.label || "محادثة مباشرة", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.chat?.visible },
-    { key: "youtube", icon: Youtube, label: icons?.youtube?.label || "يوتيوب", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.youtube?.visible, href: social?.youtube },
-    { key: "bestStudents", icon: Star, label: icons?.bestStudents?.label || "أفضل الطلاب", color: primary, borderColor: primary, badge: primary, contrast: "var(--brand-primary-contrast)", visible: icons?.bestStudents?.visible },
-    { key: "phone", icon: Phone, label: icons?.phone?.label || "رقم الهاتف", color: secondary, borderColor: secondary, badge: secondary, contrast: "var(--brand-secondary-contrast)", visible: icons?.phone?.visible, phone: social?.phone, whatsapp: social?.whatsapp },
-  ];
+    event.preventDefault();
+    const scrollToSection = () => {
+      const element = document.getElementById(targetId);
+      if (!element) return false;
+      element.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "start",
+      });
+      return true;
+    };
 
-  const visibleIcons = mobileIconItems.filter((item) => item.visible !== false);
-  const hasIcons = visibleIcons.length > 0;
+    if (!scrollToSection()) {
+      let attempts = 0;
+      const timer = window.setInterval(() => {
+        attempts += 1;
+        if (scrollToSection() || attempts >= 5) window.clearInterval(timer);
+      }, 120);
+    }
+  };
 
   return (
-    <div className="md:hidden px-4 pb-1.5 pt-0.5">
-      <div className="relative">
-        {/* ── Nav bar ── */}
-        <div
-          className="glass-touch-solid relative flex items-center gap-1 rounded-2xl border p-1 shadow-lg backdrop-blur-md"
-          style={{
-            backgroundColor: isDark ? "rgba(22,24,29,0.8)" : "rgba(255,255,255,0.85)",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.15)",
-          }}
+    <div className="px-4 pb-1.5 pt-0.5 md:hidden">
+      <div className="rounded-2xl border border-border/70 bg-background/85 p-1 shadow-lg">
+        <nav
+          aria-label="التصفح"
+          className="grid gap-0.5"
+          style={{ gridTemplateColumns: `repeat(${navLinks.length}, minmax(0, 1fr))` }}
         >
-          <div
-            className="pointer-events-none absolute -top-px inset-x-4 h-px opacity-60"
-            style={{
-              background: `linear-gradient(90deg, transparent, var(--brand-primary), var(--brand-secondary), var(--brand-primary), transparent)`,
-            }}
-          />
+          {navLinks.map((link) => {
+            const isActive = link.href === "/"
+              ? pathname === "/"
+              : pathname === link.href || pathname.startsWith(`${link.href}/`);
+            const Icon = link.icon;
 
-          {/* ── Plus toggle ── */}
-          {hasIcons && (
-            <button
-              type="button"
-              onClick={() => setMobileIconsOpen(!mobileIconsOpen)}
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-300 active:scale-90"
-              style={{
-                backgroundColor: mobileIconsOpen ? primary : "rgba(0,0,0,0.07)",
-                color: mobileIconsOpen ? "#fff" : primary,
-                boxShadow: mobileIconsOpen ? "0 2px 12px rgba(0,0,0,0.25)" : undefined,
-              }}
-            >
-              <Plus
-                className="h-4 w-4 transition-transform duration-300"
-                style={{ transform: mobileIconsOpen ? "rotate(45deg)" : "rotate(0deg)" }}
-              />
-            </button>
-          )}
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={handleNavClick(link)}
+                aria-label={link.label}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-semibold leading-none transition-colors",
+                  isActive
+                    ? "bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-sm"
+                    : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* ── Nav items ── */}
-          <div className="flex-1 flex items-center gap-0.5 overflow-x-auto">
-            {visibleNavLinks.map((link) => {
-              const isActive = pathname === link.href;
-              const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-                if (link.scrollTarget && pathname === "/") {
-                  e.preventDefault();
-                  const targetId = link.scrollTarget;
-                  const scroll = () => {
-                    const el = document.getElementById(targetId);
-                    if (!el) return false;
-                    el.scrollIntoView({
-                      behavior: reduced ? "auto" : "smooth",
-                      block: "start",
-                    });
-                    return true;
-                  };
-                  if (scroll()) return;
-                  let tries = 0;
-                  const timer = window.setInterval(() => {
-                    tries += 1;
-                    if (scroll() || tries >= 5) {
-                      window.clearInterval(timer);
-                    }
-                  }, 120);
-                }
-              };
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={handleClick}
-                  className={cn(
-                    "relative whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all duration-200",
-                    isActive ? "text-[var(--brand-primary-contrast)]" : "text-foreground/70 hover:text-foreground",
-                  )}
-                  style={{
-                    backgroundColor: isActive ? primary : "transparent",
-                    boxShadow: isActive ? "0 2px 12px rgba(0,0,0,0.21)" : undefined,
-                  }}
-                >
-                  {isActive && (
-                    <span
-                      className="absolute inset-0 rounded-xl transition-all duration-200"
-                      style={{ backgroundColor: primary }}
-                    />
-                  )}
-                  <span className="relative z-10">{link.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* ── Search + theme (freed up from the main navbar on mobile) ── */}
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("public-search-request"))}
-              aria-label="بحث عن كورس"
-              title="بحث عن كورس"
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
-              style={{
-                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                color: primary,
-                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
-                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-              }}
-            >
-              <Search className="h-[17px] w-[17px]" />
-            </button>
-            <button
-              type="button"
-              onClick={() => useUiStore.getState().toggleTheme()}
-              aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
-              title={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-105 active:scale-90"
-              style={{
-                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
-                color: "var(--brand-secondary)",
-                boxShadow: "0 1px 6px rgba(0,0,0,0.12)",
-                border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.08)",
-              }}
-            >
-              {theme === "light" ? (
-                <Moon className="h-[17px] w-[17px]" />
-              ) : (
-                <Sun className="h-[17px] w-[17px]" />
-              )}
-            </button>
-          </div>
+        <div className="mt-1 flex items-center justify-start gap-1 border-t border-border/60 px-1 pt-1">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("public-search-request"))}
+            aria-label="بحث عن كورس"
+            title="بحث عن كورس"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-foreground/5 text-[var(--brand-primary)] transition-colors hover:bg-foreground/10"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => useUiStore.getState().toggleTheme()}
+            aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
+            title={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-foreground/5 text-[var(--brand-secondary)] transition-colors hover:bg-foreground/10"
+          >
+            {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </button>
         </div>
-
-        {/* ── Icons floating overlay ── */}
-        {mobileIconsOpen && (
-          <div className="home-menu-pop absolute end-0 start-0 z-50 mt-1.5">
-            <div
-              className="glass-touch-solid overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl"
-              style={{
-                backgroundColor: isDark ? "rgba(22,24,29,0.88)" : "rgba(255,255,255,0.88)",
-                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.12)",
-              }}
-            >
-              <div className="flex flex-col divide-y" style={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.06)" }}>
-                {visibleIcons.map((item) => {
-                  const iconContent = (
-                    <div className="flex items-center gap-3 px-3.5 py-2.5 transition-all duration-200 hover:bg-black/5 active:scale-[0.98]">
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] shadow-md"
-                        style={{
-                          backgroundColor: item.color,
-                          borderColor: item.borderColor,
-                        }}
-                      >
-                        <item.icon className="h-[18px] w-[18px]" style={{ color: item.contrast }} />
-                      </div>
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-sm"
-                        style={{ backgroundColor: item.badge, color: item.contrast }}
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                  );
-
-                  if (item.href) {
-                    return (
-                      <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">
-                        {iconContent}
-                      </a>
-                    );
-                  }
-                  if (item.key === "phone") {
-                    return (
-                      <a key={item.key} href={item.phone ? `tel:${item.phone}` : "#"} className="block">
-                        {iconContent}
-                      </a>
-                    );
-                  }
-                  return <div key={item.key}>{iconContent}</div>;
-                })}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

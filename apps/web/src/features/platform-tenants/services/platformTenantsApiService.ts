@@ -139,6 +139,7 @@ export const platformTenantsApiService = {
       payload.feature_flags = {
         ...("hasInstructors" in featureFlags ? { has_instructors: featureFlags.hasInstructors } : {}),
         ...("hasBlog" in featureFlags ? { has_blog: featureFlags.hasBlog } : {}),
+        ...("hasServices" in featureFlags ? { has_services: featureFlags.hasServices } : {}),
         ...("hasWallet" in featureFlags ? { has_wallet: featureFlags.hasWallet } : {}),
         ...("hasRegionalPricing" in featureFlags ? { has_regional_pricing: featureFlags.hasRegionalPricing } : {}),
       };

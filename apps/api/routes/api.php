@@ -112,6 +112,7 @@ use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\Public\PublicInstructorController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicAboutController;
 use App\Http\Controllers\Api\v1\PublicFooterController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicLegalController;
@@ -140,6 +141,7 @@ use App\Http\Controllers\Api\v1\Tenant\NewsController;
 use App\Http\Controllers\Api\v1\Tenant\RechargeCodeController;
 use App\Http\Controllers\Api\v1\Tenant\SubjectController;
 use App\Http\Controllers\Api\v1\Tenant\TenantAuthController;
+use App\Http\Controllers\Api\v1\Tenant\TenantServiceController;
 use App\Http\Controllers\Api\v1\Wallet\WalletController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -390,6 +392,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
     Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
+    Route::get('/public/services', [TenantServiceController::class, 'publicIndex']);
     Route::get('/public/blog', [BlogController::class, 'publicIndex']);
     Route::get('/public/blog/{slug}', [BlogController::class, 'publicShow']);
     Route::get('/public/payment-gateways', [PaymentGatewayController::class, 'available']);
@@ -401,6 +404,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/hero', [PublicHeroController::class, 'index']);
     Route::get('/public/why-choose-us', [PublicWhyChooseUsController::class, 'index']);
     Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
+    Route::get('/public/about', [PublicAboutController::class, 'index']);
     Route::get('/public/legal', [PublicLegalController::class, 'index']);
     Route::get('/public/footer', [PublicFooterController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
@@ -442,6 +446,11 @@ Route::prefix('v1')->group(function () {
 
     // Enrollment check (requires auth)
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
+        Route::get('/services', [TenantServiceController::class, 'index'])->middleware('permission:tenant.manage');
+        Route::get('/services/instructors', [TenantServiceController::class, 'instructors'])->middleware('permission:tenant.manage');
+        Route::post('/services', [TenantServiceController::class, 'store'])->middleware('permission:tenant.manage');
+        Route::put('/services/{service}', [TenantServiceController::class, 'update'])->whereNumber('service')->middleware('permission:tenant.manage');
+        Route::delete('/services/{service}', [TenantServiceController::class, 'destroy'])->whereNumber('service')->middleware('permission:tenant.manage');
         Route::get('/public/courses/{slug}/enrollment', [PublicEnrollmentCheckController::class, 'show']);
         Route::get('/public/courses/{slug}/direct-payment/quote', [DirectCoursePaymentController::class, 'quote'])
             ->middleware('throttle:60,1');

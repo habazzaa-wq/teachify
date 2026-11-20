@@ -10,6 +10,8 @@ import {
   Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
   LayoutDashboard,
+  Newspaper,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -22,6 +24,9 @@ import { CourseSearchDialog } from "@/features/course-catalog/components/CourseS
 import { getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { cn } from "@/lib/cn";
 import { toAbsoluteAssetUrl } from "@/lib/url";
+import { usePublicAboutPage } from "@/features/about-page/hooks";
+import { getAboutIcon } from "@/features/about-page/icons";
+import { routes } from "@/constants/routes";
 
 const PublicRegisterCard = dynamic(
   () => import("@/features/auth/components/PublicRegisterCard").then((m) => m.PublicRegisterCard),
@@ -253,10 +258,19 @@ function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
+  const { data: aboutPage } = usePublicAboutPage();
   const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
-  const visibleNavLinks: NavLink[] = tenant?.feature_flags?.has_instructors
-    ? [...navLinks, { label: "المدربون", href: "/instructors", icon: Users }]
-    : navLinks;
+  const visibleNavLinks: NavLink[] = [
+    ...navLinks,
+    ...(tenant?.feature_flags?.has_services ? [{ label: "الخدمات", href: routes.publicServices, icon: BriefcaseBusiness }] : []),
+    { label: "المدونة", href: "/blog", icon: Newspaper },
+    ...(tenant?.feature_flags?.has_instructors
+      ? [{ label: "المدربون", href: "/instructors", icon: Users }]
+      : []),
+    ...(aboutPage?.enabled
+      ? [{ label: aboutPage.navLabel, href: routes.publicAbout, icon: getAboutIcon(aboutPage.navIcon) }]
+      : []),
+  ];
   const pathname = usePathname();
   const router = useRouter();
   const auth = useContext(AuthContext);
@@ -575,7 +589,7 @@ export function PublicNavbar() {
                   href={link.href}
                   label={link.label}
                   icon={link.icon}
-                  isActive={activeSection === link.href}
+                  isActive={activeSection === link.href || pathname === link.href}
                   onClick={(e) => {
                     if (link.scrollTarget) {
                       if (pathname === "/") {

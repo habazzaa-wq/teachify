@@ -98,6 +98,7 @@ class TenantController extends Controller
             'platform_plan_id' => ['sometimes', 'nullable', 'integer', 'exists:platform_plans,id'],
             'feature_flags.has_instructors' => ['sometimes', 'boolean'],
             'feature_flags.has_blog' => ['sometimes', 'boolean'],
+            'feature_flags.has_services' => ['sometimes', 'boolean'],
             'feature_flags.has_wallet' => ['sometimes', 'boolean'],
             'feature_flags.has_regional_pricing' => ['sometimes', 'boolean'],
             'instructor_disable_mode' => ['sometimes', 'required', 'in:retain,purge'],

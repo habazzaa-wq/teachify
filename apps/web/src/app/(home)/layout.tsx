@@ -1,9 +1,5 @@
 import { Amiri } from "next/font/google";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { PublicLayout } from "@/layouts/PublicLayout";
-import { newsKeys } from "@/features/homepage/news/keys";
-import { newsServerService } from "@/features/homepage/news/server-services";
-import { getQueryClient } from "@/lib/get-query-client";
 
 /**
  * Editorial display face for the public pages (headings, catalogue stamps).
@@ -17,23 +13,14 @@ const displayFont = Amiri({
   display: "swap",
 });
 
-export default async function HomeRouteLayout({
+export default function HomeRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const queryClient = getQueryClient();
-  const news = await newsServerService.getPublicNews();
-
-  if (news) {
-    queryClient.setQueryData(newsKeys.public, news);
-  }
-
   return (
     <div className={displayFont.variable}>
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <PublicLayout>{children}</PublicLayout>
-      </HydrationBoundary>
+      <PublicLayout>{children}</PublicLayout>
     </div>
   );
 }

@@ -1,12 +1,9 @@
+import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { PublicFooter } from "@/components/home/PublicFooter";
 import { WhatsAppFloatButton } from "@/components/home/WhatsAppFloatButton";
 import { InstallAppBannerMount } from "@/components/pwa/InstallAppBannerMount";
-
-const NewsTicker = dynamic(
-  () => import("@/components/home/NewsTicker").then((m) => m.NewsTicker),
-  { ssr: true }
-);
+import { PublicNewsTicker } from "@/components/home/PublicNewsTicker";
 
 const PublicNavbar = dynamic(
   () => import("@/components/home/PublicNavbar").then((m) => m.PublicNavbar),
@@ -25,7 +22,9 @@ const MobileSecondaryNav = dynamic(
 function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="community-theme flex min-h-screen flex-col bg-background">
-      <NewsTicker />
+      <Suspense fallback={<div aria-hidden="true" className="h-11" />}>
+        <PublicNewsTicker />
+      </Suspense>
       <PublicNavbar />
       <MobileSecondaryNav />
       <InstallAppBannerMount />
