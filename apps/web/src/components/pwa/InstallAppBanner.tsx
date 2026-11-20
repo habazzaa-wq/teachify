@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Smartphone, X } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
-import { useTenantStore } from "@/stores/tenant.store";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { brandContrast } from "@/lib/brand";
 import { resolveBrandThemeColors } from "@/lib/brand-theme";
 import { cn } from "@/lib/cn";
@@ -37,7 +37,7 @@ const HINT_FIRST_DELAY_MS = 900;
  *    the navbar/hero use), resolved reactively from the store.
  */
 export function InstallAppBanner() {
-  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const platformBranding = usePlatformBranding();
 
   const { variant, clientReady, isIos, promptToInstall, dismiss } =
     useInstallPrompt();

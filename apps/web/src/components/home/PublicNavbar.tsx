@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useContext } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, useContext } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Sun, Moon, GraduationCap, LogIn, Users,
+  Sun, Moon, LogIn, Users,
   Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
   LayoutDashboard,
@@ -21,9 +21,9 @@ import { useTenantStore } from "@/stores/tenant.store";
 import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
 import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
-import { getNavbarIcon } from "@/features/settings/constants/navbar-icons";
 import { cn } from "@/lib/cn";
-import { toAbsoluteAssetUrl } from "@/lib/url";
+import { NavbarLogo } from "@/components/home/NavbarLogo";
+import { resolveNavbarLogo } from "@/features/settings/utils/navbar-logo";
 import { usePublicAboutPage } from "@/features/about-page/hooks";
 import { getAboutIcon } from "@/features/about-page/icons";
 import { routes } from "@/constants/routes";
@@ -200,58 +200,6 @@ function NavLinkItem({
         )}>{label}</span>
       </div>
     </Link>
-  );
-}
-
-function NavbarLogoImage({
-  src,
-  alt,
-  onError,
-}: {
-  src: string;
-  alt: string;
-  onError?: () => void;
-}) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      referrerPolicy="no-referrer"
-      decoding="async"
-      onError={onError}
-      className="h-auto w-auto max-h-9 max-w-[200px] object-contain transition-all duration-500 group-hover:scale-105"
-    />
-  );
-}
-
-// CDN logo images can fail on a subset of mobile networks. When the image
-// errors, fall back to the built-in cap icon instead of leaving an empty slot.
-// Keyed by `src` at the call site so a changed URL remounts fresh state.
-function BrandLogo({ src, alt }: { src: string; alt: string }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return <NavbarLogoIcon icon={GraduationCap} />;
-  }
-  return <NavbarLogoImage src={src} alt={alt} onError={() => setFailed(true)} />;
-}
-
-function NavbarLogoIcon({ icon: Icon }: { icon: React.ElementType }) {
-  return (
-    <div
-      className="relative flex h-9 w-9 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
-      style={{
-        backgroundColor: primary,
-        boxShadow: `0 2px 20px rgba(0,0,0,0.251)`,
-      }}
-    >
-      <Icon className="h-5 w-5 text-[var(--brand-primary-contrast)]" />
-      {/* Hover: border = secondary */}
-      <span
-        className="absolute -inset-[3.5px] rounded-[18px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.314)` }}
-      />
-    </div>
   );
 }
 
@@ -523,18 +471,22 @@ export function PublicNavbar() {
   // partially configured.
   const platformBranding = usePlatformBranding();
   const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
-  const logo = toAbsoluteAssetUrl(theme === "dark"
-    ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
-    : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo);
   const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
 
-  const logoType = platformBranding?.logoType ?? tenant?.branding?.logo_type ?? null;
-  const navbarLogoIcon = getNavbarIcon(platformBranding?.logoIcon ?? tenant?.branding?.logo_icon ?? null);
-  const navbarLogoImage = toAbsoluteAssetUrl(platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null);
-
-  const showDynamicImage = logoType === "image" && !!navbarLogoImage;
-  const showDynamicIcon = logoType === "icon" && !!navbarLogoIcon;
-  const showLegacyImage = !showDynamicImage && !showDynamicIcon && !!logo;
+  const navbarLogo = useMemo(
+    () =>
+      resolveNavbarLogo({
+        logoType: platformBranding?.logoType ?? tenant?.branding?.logo_type ?? null,
+        logoIcon: platformBranding?.logoIcon ?? tenant?.branding?.logo_icon ?? null,
+        logoImage: platformBranding?.logoImage ?? tenant?.branding?.logo_image ?? null,
+        alternateImage: tenant?.branding?.logo_image ?? null,
+        legacyLogo: brandLogo,
+        darkLogo: platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? null,
+        lightLogo: platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? null,
+        theme,
+      }),
+    [platformBranding, tenant, brandLogo, theme],
+  );
 
   return (
     <>
@@ -547,30 +499,8 @@ export function PublicNavbar() {
         >
             {/* ── Logo ── */}
             <div className="relative z-10 flex items-center">
-               <Link href="/" className="group relative flex items-center gap-2.5">
-                {showDynamicImage ? (
-                  <div className="relative">
-                    <BrandLogo key={navbarLogoImage!} src={navbarLogoImage!} alt={tenantName} />
-                    {/* Hover: border = secondary */}
-                    <span
-                      className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.271)` }}
-                    />
-                  </div>
-                ) : showDynamicIcon ? (
-                  <NavbarLogoIcon icon={navbarLogoIcon} />
-                ) : showLegacyImage ? (
-                  <div className="relative">
-                    <BrandLogo key={logo!} src={logo!} alt={tenantName} />
-                    {/* Hover: border = secondary */}
-                    <span
-                      className="absolute -inset-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 24px rgba(0,0,0,0.271)` }}
-                    />
-                  </div>
-                ) : (
-                  <NavbarLogoIcon icon={GraduationCap} />
-                )}
+               <Link href="/" aria-label={tenantName} className="group relative flex items-center gap-2.5">
+                <NavbarLogo plan={navbarLogo} />
                 <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
                   {tenantName}
                 </span>
