@@ -5,8 +5,9 @@
     rebuilds the frontend, restarts PM2, and health-checks the running site.
 
 .DESCRIPTION
-    Server connection is configured below. The script requires a clean local tree and that
-    your local 'deploy' is already pushed to GitHub (it verifies the exact SHA on the server).
+    Server connection is configured below. The deploy always uses origin/deploy from GitHub:
+    local uncommitted changes are never shipped, so a dirty tree only prints a warning.
+    Local commits that are not pushed are still blocked (they would deploy older code).
 
 .EXAMPLE
     .\scripts\deploy-server.ps1                 # shows plan, asks for confirmation
@@ -14,7 +15,7 @@
     .\scripts\deploy-server.ps1 -NoBuild        # skip composer/migrate/frontend build
     .\scripts\deploy-server.ps1 -NoMigrate      # build but do not run DB migrations
     .\scripts\deploy-server.ps1 -NoRestart      # deploy code but do not restart PM2
-    .\scripts\deploy-server.ps1 -LocalDirty      # deploy GitHub code even if local tree is dirty
+    .\scripts\deploy-server.ps1 -LocalDirty      # skip the local dirty/ahead checks entirely
 #>
 
 param(
@@ -48,29 +49,33 @@ if ($localBranch -ne $Branch) {
     exit 1
 }
 
-# By default we require a clean, pushed tree. With -LocalDirty we skip those
-# checks on purpose: the actual deploy is performed on the SERVER from
-# origin/deploy, so local uncommitted work never reaches production.
-if (-not $LocalDirty) {
-    if (-not (Test-CleanTree -Path $repo)) {
-        Write-Fail "Local working tree is dirty. Commit/stash it, or pass -LocalDirty to deploy what is on GitHub."
-        exit 1
-    }
-    $ahead = & git -C $repo rev-list --count "origin/$Branch..$Branch"
-    if ([int]$ahead -gt 0) {
-        Write-Fail "Local '$Branch' is $ahead commit(s) ahead of origin. Push to GitHub first, or pass -LocalDirty."
-        exit 1
-    }
-} else {
-    Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/deploy currently is."
-}
-
 # The deploy is performed from origin/$Branch on the server, so the expected
 # SHA must come from the LOCAL origin/$Branch ref (after a fetch), not the
 # possibly-stale local $Branch checkout. This avoids false mismatches when
 # finish-task has pushed but the local branch ref wasn't advanced.
-& git -C $repo fetch origin $Branch | Out-Null
+& git -C $repo fetch --quiet origin $Branch | Out-Null
 $localSha = (& git -C $repo rev-parse "origin/$Branch").Trim()
+
+# Local uncommitted work is never deployed: the server pulls origin/$Branch.
+# A dirty tree is therefore only a warning (listing what will be skipped).
+# Unpushed commits ARE blocked by default, because deploying would silently
+# ship an older commit than the one checked out here.
+if (-not $LocalDirty) {
+    $dirty = @(& git -C $repo status --porcelain)
+    if ($dirty.Count -gt 0) {
+        Write-Warn2 "Local working tree has $($dirty.Count) uncommitted change(s) - these will NOT be deployed."
+        $dirty | Select-Object -First 10 | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+        if ($dirty.Count -gt 10) { Write-Host "     ... and $($dirty.Count - 10) more" -ForegroundColor DarkGray }
+        Write-Warn2 "Deploying origin/$Branch ($localSha) only. Commit/push your work to include it."
+    }
+    $ahead = & git -C $repo rev-list --count "origin/$Branch..$Branch"
+    if ([int]$ahead -gt 0) {
+        Write-Fail "Local '$Branch' is $ahead commit(s) ahead of origin/$Branch. Push to GitHub first, or pass -LocalDirty."
+        exit 1
+    }
+} else {
+    Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/$Branch currently is."
+}
 $doBuild    = if ($NoBuild)    { 0 } else { 1 }
 $doMigrate  = if ($NoMigrate)  { 0 } else { 1 }
 $doRestart  = if ($NoRestart)  { 0 } else { 1 }
