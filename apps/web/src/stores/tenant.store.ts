@@ -300,8 +300,9 @@ export const useTenantStore = create<TenantState>()(
         domain: null,
         subdomain: null,
         branding: null,
-        // نحافظ على platformBranding بعد تسجيل الخروج عشان الموقع العام يفضل
-        // بلونه الصح فوراً من غير flicker (BrandThemeProvider بيعيد تحميله لو احتاج).
+        // نحافظ على platformBranding في الذاكرة بعد تسجيل الخروج عشان الموقع
+        // العام يفضل بلونه الصح فوراً من غير flicker. مش متخزّن في localStorage
+        // لأنه خاص بكل دومين وبيتقرأ من سياق السيرفر/API في كل تحميل.
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),
@@ -309,6 +310,15 @@ export const useTenantStore = create<TenantState>()(
     {
       name: "tenant-state",
       storage: createJSONStorage(() => localStorage),
+      // `platformBranding` is per-tenant and always resolved from the server
+      // context (or the by-domain endpoint). Persisting it globally let a
+      // stale value from another domain win after hydration and swap the
+      // navbar logo/colors. Ignore any previously persisted copy as well.
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<TenantState>),
+        platformBranding: null,
+      }),
       partialize: (state) => ({
         activeTenant: state.activeTenant,
         membership: state.membership,
@@ -319,7 +329,6 @@ export const useTenantStore = create<TenantState>()(
         domain: state.domain,
         subdomain: state.subdomain,
         branding: state.branding,
-        platformBranding: state.platformBranding,
       }),
     },
   ),
