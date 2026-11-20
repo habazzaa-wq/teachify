@@ -153,7 +153,7 @@ function ArticleCard({ post, index }: { post: BlogPost; index: number }) {
           </span>
           <ArrowUpLeft className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[var(--brand-primary)]" />
         </div>
-        <h3 className="line-clamp-2 font-display text-[15px] font-black leading-6 transition-colors group-hover:text-[var(--brand-primary)] sm:text-base sm:leading-7">
+        <h3 className="line-clamp-2 text-[15px] font-extrabold leading-6 transition-colors group-hover:text-[var(--brand-primary)] sm:text-base sm:leading-7">
           <Link href={`/blog/${post.slug}`}>{post.title}</Link>
         </h3>
         {post.excerpt && <p className="mt-1.5 line-clamp-2 text-[12px] leading-6 text-muted-foreground">{post.excerpt}</p>}
@@ -184,7 +184,7 @@ function FeaturedArticle({ post }: { post: BlogPost }) {
               </span>
             )}
           </div>
-          <h3 className="mt-3 font-display text-xl font-black leading-[1.45] sm:text-2xl">
+          <h3 className="mt-3 text-xl font-extrabold leading-[1.45] sm:text-2xl">
             <Link href={`/blog/${post.slug}`} className="transition-opacity hover:opacity-85">{post.title}</Link>
           </h3>
           <p className="mt-2 line-clamp-3 text-[13px] leading-7 sm:text-sm" style={{ color: colorMix(contrast, 82) }}>
@@ -255,7 +255,7 @@ export default async function BlogPage({ searchParams }: Props) {
                     <ArrowLeft className="h-3 w-3" /> الرئيسية
                   </Link>
                 </div>
-                <h1 className="mt-3 max-w-xl font-display text-2xl font-black leading-[1.35] tracking-tight sm:text-3xl lg:text-[2rem]">
+                <h1 className="mt-3 max-w-xl text-2xl font-extrabold leading-[1.35] tracking-tight sm:text-3xl lg:text-[2rem]">
                   أفكار تُقرأ بوضوح،
                   <span style={{ color: "var(--brand-primary)" }}> وتُبنى عليها خطوات.</span>
                 </h1>
@@ -287,7 +287,7 @@ export default async function BlogPage({ searchParams }: Props) {
                         <Icon className="h-3.5 w-3.5" />
                       </span>
                       <div className="min-w-0">
-                        <p className="font-display text-base font-black leading-none tabular-nums">{value}</p>
+                        <p className="text-base font-extrabold leading-none tabular-nums">{value}</p>
                         <p className="mt-0.5 truncate text-[10px] font-semibold text-muted-foreground">{label}</p>
                       </div>
                     </div>
@@ -295,19 +295,46 @@ export default async function BlogPage({ searchParams }: Props) {
                 </div>
               </div>
 
-              {/* 3D isometric geometric scene */}
+              {/* 3D editorial journal scene — expresses articles/pages */}
               <div className={`${styles.stage} border-t border-border/70 lg:border-r lg:border-t-0`} aria-hidden="true">
-                <div className={styles.isoGrid} />
-                <div className={`${styles.orbit} ${styles.orbitA}`} />
-                <div className={`${styles.orbit} ${styles.orbitB}`} />
-                <div className={styles.scene}>
-                  <div className={`${styles.prism} ${styles.p1}`}><span className={styles.prismTop} /><span className={styles.prismLeft} /><span className={styles.prismRight} /></div>
-                  <div className={`${styles.prism} ${styles.p2}`}><span className={styles.prismTop} /><span className={styles.prismLeft} /><span className={styles.prismRight} /></div>
-                  <div className={`${styles.prism} ${styles.p3}`}><span className={styles.prismTop} /><span className={styles.prismLeft} /><span className={styles.prismRight} /></div>
-                  <div className={`${styles.prism} ${styles.p4}`}><span className={styles.prismTop} /><span className={styles.prismLeft} /><span className={styles.prismRight} /></div>
+                <div className={styles.pageGrid} />
+                <div className={styles.halo} />
+                <div className={styles.journal}>
+                  <div className={`${styles.sheet} ${styles.sheetBack}`}>
+                    <span className={styles.sheetEdge} />
+                  </div>
+                  <div className={`${styles.sheet} ${styles.sheetMid}`}>
+                    <span className={styles.sheetEdge} />
+                  </div>
+                  <div className={`${styles.sheet} ${styles.sheetFront}`}>
+                    <span className={styles.sheetEdge} />
+                    <div className={styles.sheetHead}>
+                      <span className={styles.sheetTag}>مقال</span>
+                      <span className={styles.sheetDots}><i /><i /><i /></span>
+                    </div>
+                    <div className={styles.sheetTitle} />
+                    <div className={styles.sheetTitleShort} />
+                    <div className={styles.sheetBody}>
+                      <span className={styles.line} />
+                      <span className={styles.line} />
+                      <span className={styles.line} />
+                      <span className={styles.line} />
+                    </div>
+                    <div className={styles.sheetFoot}>
+                      <span className={styles.sheetMeta}>٥ د قراءة</span>
+                      <span className={styles.sheetBar} />
+                    </div>
+                  </div>
+                  <div className={styles.bookmark} />
                 </div>
-                <span className={`${styles.floatGlyph} ${styles.glyphA}`}>٣D</span>
-                <span className={`${styles.floatGlyph} ${styles.glyphB}`}>IDEAS</span>
+                <div className={`${styles.floatNote} ${styles.noteA}`}>
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>مدوّنة</span>
+                </div>
+                <div className={`${styles.floatNote} ${styles.noteB}`}>
+                  <Feather className="h-3 w-3" />
+                  <span>أفكار</span>
+                </div>
               </div>
             </div>
           </header>
@@ -339,7 +366,7 @@ export default async function BlogPage({ searchParams }: Props) {
                   <p className="text-[10px] font-extrabold" style={{ color: "var(--brand-secondary)" }}>دليل القراءة</p>
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <h2 className="mt-1 font-display text-base font-black">كيف تستفيد من المقال؟</h2>
+                <h2 className="mt-1 text-base font-extrabold leading-6">كيف تستفيد من المقال؟</h2>
                 <ul className="mt-3 space-y-2.5">
                   {readingCues.map(({ icon: Icon, title, text }, i) => (
                     <li key={title} className="flex items-start gap-2.5">
@@ -374,7 +401,7 @@ export default async function BlogPage({ searchParams }: Props) {
                 <span className={styles.geoIndex} aria-hidden="true">§</span>
                 <div>
                   <p className="text-[10px] font-extrabold" style={{ color: "var(--brand-primary)" }}>مسارات القراءة</p>
-                  <h2 className="font-display text-base font-black leading-6 sm:text-lg">تصفّح حسب الموضوع أو ابحث</h2>
+                  <h2 className="text-base font-extrabold leading-6 sm:text-lg">تصفّح حسب الموضوع أو ابحث</h2>
                 </div>
               </div>
               <span className="text-[10px] font-semibold text-muted-foreground">{categoryCountLabel} موضوع</span>
@@ -395,7 +422,7 @@ export default async function BlogPage({ searchParams }: Props) {
             <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg" style={{ background: colorMix("var(--brand-primary)", 12), color: "var(--brand-primary)" }}>
               {search || category ? <BookOpen className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
             </span>
-            <h2 className="mt-3 font-display text-lg font-black">
+            <h2 className="mt-3 text-lg font-extrabold">
               {search || category ? "لم نعثر على مقالات مطابقة" : "المكتبة تستعد لمقالاتها الأولى"}
             </h2>
             <p className="mx-auto mt-1.5 max-w-lg text-[13px] leading-6 text-muted-foreground">
@@ -418,7 +445,7 @@ export default async function BlogPage({ searchParams }: Props) {
                       <p className="text-[10px] font-extrabold" style={{ color: "var(--brand-primary)" }}>
                         {search || category ? "نتائج البحث" : "من دفتر المعرفة"}
                       </p>
-                      <h2 id="all-articles-heading" className="font-display text-lg font-black leading-7 sm:text-xl">
+                      <h2 id="all-articles-heading" className="text-lg font-extrabold leading-7 sm:text-xl">
                         {search || category ? "مقالات تناسب بحثك" : "أحدث المقالات"}
                       </h2>
                     </div>
@@ -450,7 +477,7 @@ export default async function BlogPage({ searchParams }: Props) {
                     <span className={styles.geoIndex} aria-hidden="true"><Layers3 className="h-3.5 w-3.5" /></span>
                     <div>
                       <p className="text-[10px] font-extrabold" style={{ color: "var(--brand-secondary)" }}>خريطة الاهتمامات</p>
-                      <h2 id="topics-heading" className="font-display text-base font-black leading-6 sm:text-lg">موضوعات للقراءة</h2>
+                      <h2 id="topics-heading" className="text-base font-extrabold leading-6 sm:text-lg">موضوعات للقراءة</h2>
                     </div>
                   </div>
                   <span className="text-[10px] font-semibold text-muted-foreground">{categoryCountLabel} موضوع</span>
@@ -477,7 +504,7 @@ export default async function BlogPage({ searchParams }: Props) {
                           <span className="font-mono text-[9px] tracking-widest opacity-70">{String(index + 1).padStart(2, "0")}</span>
                         </div>
                         <div>
-                          <h3 className="font-display text-sm font-black leading-6">{item}</h3>
+                          <h3 className="text-sm font-extrabold leading-6">{item}</h3>
                           <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold opacity-80">
                             تصفّح <ArrowUpLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
                           </span>
@@ -500,7 +527,7 @@ export default async function BlogPage({ searchParams }: Props) {
                 <div className={`${styles.facet} flex flex-1 flex-col justify-between rounded-xl p-4`} style={{ background: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}>
                   <div>
                     <p className="text-[10px] font-extrabold opacity-75">خطوتك التالية</p>
-                    <h3 className="mt-1 font-display text-base font-black leading-7">من القراءة إلى الممارسة</h3>
+                    <h3 className="mt-1 text-base font-extrabold leading-7">من القراءة إلى الممارسة</h3>
                     <p className="mt-1 text-[11px] leading-6 opacity-85">انتقل إلى الدورات وطبّق الأفكار ضمن مسار تعلّم واضح.</p>
                   </div>
                   <Link href={routes.publicCourse} className="mt-3 inline-flex w-fit items-center gap-2 rounded-lg px-3.5 py-2 text-[11px] font-extrabold transition-transform hover:-translate-y-0.5" style={{ background: "var(--brand-secondary-contrast)", color: "var(--brand-secondary)" }}>
