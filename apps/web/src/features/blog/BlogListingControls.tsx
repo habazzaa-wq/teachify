@@ -49,16 +49,16 @@ export function BlogListingControls({
 
   return (
     <div aria-busy={isPending} className="space-y-5">
-      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="تصفية المقالات حسب التصنيف">
           <button
             type="button"
             aria-pressed={!activeCategory}
             onClick={() => navigate(search, "")}
-            className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${
+            className={`rounded-full border px-4 py-2 text-[11px] font-extrabold transition-colors ${
               !activeCategory
-                ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-sm"
-                : "border-border bg-card text-muted-foreground hover:border-[var(--brand-primary)]/50 hover:text-[var(--brand-primary)]"
+                ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]"
+                : "border-border bg-background text-muted-foreground hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
             }`}
           >
             كل المقالات
@@ -69,10 +69,10 @@ export function BlogListingControls({
               type="button"
               aria-pressed={activeCategory === category}
               onClick={() => navigate(search, activeCategory === category ? "" : category)}
-              className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${
+              className={`rounded-full border px-4 py-2 text-[11px] font-extrabold transition-colors ${
                 activeCategory === category
-                  ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-sm"
-                  : "border-border bg-card text-muted-foreground hover:border-[var(--brand-primary)]/50 hover:text-[var(--brand-primary)]"
+                  ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)]"
+                  : "border-border bg-background text-muted-foreground hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
               }`}
             >
               {category}
@@ -80,7 +80,7 @@ export function BlogListingControls({
           ))}
         </div>
 
-        <form onSubmit={submitSearch} role="search" className="flex w-full shrink-0 items-center gap-2 rounded-xl border border-border/80 bg-card p-1.5 shadow-sm sm:w-[min(100%,19rem)]">
+        <form onSubmit={submitSearch} role="search" className="flex w-full shrink-0 items-center gap-2 rounded-xl border border-border/80 bg-background p-1.5 shadow-soft-xs lg:w-[min(100%,20rem)]">
           <Search className="mr-2 h-4 w-4 shrink-0 text-[var(--brand-primary)]" aria-hidden="true" />
           <input
             type="search"
@@ -104,7 +104,11 @@ export function BlogListingControls({
               <X className="h-4 w-4" />
             </button>
           )}
-          <button type="submit" disabled={isPending} className="rounded-lg bg-[var(--brand-primary)] px-3 py-2 text-xs font-bold text-[var(--brand-primary-contrast)] transition-opacity hover:opacity-90 disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="rounded-lg bg-[var(--brand-primary)] px-3 py-2 text-[11px] font-extrabold text-[var(--brand-primary-contrast)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
             بحث
           </button>
         </form>
@@ -116,7 +120,7 @@ export function BlogListingControls({
           {search && !isPending ? ` عن «${search}»` : ""}
         </p>
         {lastPage > 1 && (
-          <nav aria-label="صفحات المقالات" className="flex items-center gap-1">
+          <nav aria-label="صفحات المقالات" className="flex items-center gap-1.5">
             {currentPage > 1 ? (
               <Link
                 href={buildBlogUrl(currentPage - 1, search, activeCategory)}
@@ -133,7 +137,14 @@ export function BlogListingControls({
                 <span className="hidden sm:inline">السابق</span>
               </span>
             )}
-            <span className="px-2 font-bold text-foreground" aria-current="page">{currentPage} / {lastPage}</span>
+            <span
+              className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 font-extrabold text-[var(--brand-primary-contrast)]"
+              style={{ background: "var(--brand-primary)" }}
+              aria-current="page"
+            >
+              {currentPage}
+            </span>
+            <span className="px-1 font-bold text-muted-foreground">/ {lastPage}</span>
             {currentPage < lastPage ? (
               <Link
                 href={buildBlogUrl(currentPage + 1, search, activeCategory)}
