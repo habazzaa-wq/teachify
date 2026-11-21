@@ -7,10 +7,46 @@ use App\Models\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TenantServiceController extends Controller
 {
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $tenant = app('currentTenant');
+        abort_unless(($tenant->feature_flags['has_services'] ?? false) === true, 404);
+
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,image/avif', 'max:10240'],
+        ]);
+
+        $file = $validated['file'];
+        $extension = match ($file->getMimeType()) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/avif' => 'avif',
+            default => throw new \RuntimeException('Unsupported service image type.'),
+        };
+        $directory = 'services/'.$tenant->id;
+        $filename = Str::ulid().'.'.$extension;
+        $path = Storage::disk('public')->putFileAs($directory, $file, $filename, ['visibility' => 'public']);
+
+        if (! $path) {
+            throw new \RuntimeException('Failed to store service image on the server.');
+        }
+
+        return response()->json([
+            'data' => [
+                'url' => '/storage/'.$path,
+                'filename' => $file->getClientOriginalName(),
+            ],
+        ], 201);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $tenant = app('currentTenant');
