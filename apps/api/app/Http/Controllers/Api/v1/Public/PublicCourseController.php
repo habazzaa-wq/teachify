@@ -125,6 +125,7 @@ class PublicCourseController extends Controller
                     'id' => (string) $row->primary_instructor_tenant_user_id,
                     'name' => $name ?? 'مدرس',
                     'avatar' => $teacher?->avatar ?? $teacher?->user?->avatar,
+                    'gender' => $teacher?->gender,
                     'specialization' => $teacher?->job_title ?? null,
                     'coursesCount' => (int) $row->courses_count,
                 ];

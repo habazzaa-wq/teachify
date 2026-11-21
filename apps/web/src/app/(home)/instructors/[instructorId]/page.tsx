@@ -7,11 +7,13 @@ import axios from "axios";
 import { ArrowUpLeft, BookOpen, BriefcaseBusiness, Globe2, GraduationCap, Linkedin, Youtube } from "lucide-react";
 import { resolveApiBaseUrl } from "@/config/env";
 import { useTenantStore } from "@/stores/tenant.store";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 interface InstructorProfile {
   id: string;
   name: string;
   avatar: string | null;
+  gender?: string | null;
   jobTitle: string | null;
   department: string | null;
   bio: string | null;
@@ -66,7 +68,7 @@ export default function InstructorProfilePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" aria-hidden="true" />
         <div className="relative flex flex-col items-center gap-6 p-6 text-center sm:flex-row sm:p-9 sm:text-start">
           <img
-            src={profile.avatar || "/images/default-avatar.png"}
+            src={getTeacherAvatar(profile.avatar, profile.gender)}
             alt=""
             className="h-28 w-28 shrink-0 rounded-full border-4 border-background object-cover shadow-lg sm:h-32 sm:w-32"
           />

@@ -163,6 +163,7 @@ export const instructorApi = {
     first_name: string;
     last_name: string;
     avatar: string | null;
+    gender?: string | null;
     job_title: string;
     department: string;
     phone: string;

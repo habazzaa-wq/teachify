@@ -2,6 +2,7 @@
 
 import { Play, Bookmark, Clock, Folder, Users } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import type { PublicCourse } from "@/features/public-course/types";
 
 interface HeroSectionProps {
@@ -74,18 +75,12 @@ export function HeroSection({ course }: HeroSectionProps) {
             {course.instructor && (
               <div className="flex items-center gap-3">
                 <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-[var(--course-card-border)]">
-                  {course.instructor.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={course.instructor.avatar}
-                      alt={course.instructor.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-[var(--course-icon-bg)] text-sm font-bold course-accent-text">
-                      {instructorInitial}
-                    </div>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getTeacherAvatar(course.instructor.avatar, course.instructor.gender)}
+                    alt={course.instructor.name}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div>
                   <p className="text-sm font-semibold course-text-primary">{course.instructor.name}</p>

@@ -25,6 +25,7 @@ class TenantUser extends Model
         'must_change_password',
         'phone',
         'avatar',
+        'gender',
         'locale',
         'timezone',
         'department',

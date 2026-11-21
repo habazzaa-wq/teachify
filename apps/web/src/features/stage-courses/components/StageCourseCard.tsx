@@ -8,6 +8,7 @@ import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { formatNumber, initialsOf } from "@/lib/format";
 import { formatCoursePrice } from "@/features/public-course/utils";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import type { StageCourse } from "../types";
 import { ACCENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS, PRIMARY } from "../constants";
 
@@ -161,22 +162,13 @@ export function StageCourseCard({ course, index, enrolled = false }: StageCourse
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {instructors.map((instructor) => (
               <div key={instructor.id} className="flex items-center gap-2">
-                {instructor.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={instructor.avatar}
-                    alt={instructor.name ?? ""}
-                    className="h-7 w-7 rounded-full object-cover ring-2"
-                    style={{ "--tw-ring-color": isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" } as React.CSSProperties}
-                  />
-                ) : (
-                  <div
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ background: "var(--brand-primary)" }}
-                  >
-                    {initialsOf(instructor.name ?? "مدرب")}
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getTeacherAvatar(instructor.avatar, instructor.gender)}
+                  alt={instructor.name ?? ""}
+                  className="h-7 w-7 rounded-full object-cover ring-2"
+                  style={{ "--tw-ring-color": isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" } as React.CSSProperties}
+                />
                 <span className="text-xs font-medium" style={{ color: isDark ? "#a09898" : "#6B7280" }}>
                   {instructor.name}
                 </span>

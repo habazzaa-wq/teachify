@@ -3,6 +3,7 @@ export interface InstructorUser {
   name: string;
   email: string;
   avatar: string | null;
+  gender?: string | null;
 }
 
 export interface InstructorMembership {
@@ -15,6 +16,7 @@ export interface InstructorMembership {
   last_login_at?: string | null;
   first_name?: string | null;
   last_name?: string | null;
+  gender?: string | null;
   job_title?: string | null;
   department?: string | null;
   phone?: string | null;
@@ -61,6 +63,7 @@ export interface InstructorCourse {
     id: string;
     name: string | null;
     avatar: string | null;
+    gender?: string | null;
   } | null;
 }
 

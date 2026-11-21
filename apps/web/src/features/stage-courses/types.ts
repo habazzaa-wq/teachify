@@ -21,11 +21,13 @@ export interface StageCourse {
     id: string;
     name: string | null;
     avatar: string | null;
+    gender?: string | null;
   } | null;
   instructors?: Array<{
     id: string;
     name: string | null;
     avatar: string | null;
+    gender?: string | null;
     role?: string;
   }>;
   educationalStage: { id: string; name: string } | null;
@@ -42,6 +44,7 @@ export interface StageTeacher {
   id: string;
   name: string;
   avatar: string | null;
+  gender?: string | null;
   specialization: string | null;
   coursesCount: number;
 }

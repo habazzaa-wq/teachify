@@ -19,6 +19,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { AppBadge, Skeleton, PermissionGuard } from "@/components/ui";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import {
   COURSE_DIFFICULTY_CONFIG,
   COURSE_STATUS_CONFIG,
@@ -141,11 +142,8 @@ function WorkspaceOverview({ course, loading, onAddLecture, totalModules = 0 }: 
             {course.instructor && (
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-[9px] font-medium text-primary shrink-0 overflow-hidden ring-1 ring-border">
-                  {course.instructor.avatar ? (
-                    <img src={course.instructor.avatar} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-[9px]">{course.instructor.name.charAt(0)}</span>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={getTeacherAvatar(course.instructor.avatar, course.instructor.gender)} alt="" className="h-full w-full object-cover" />
                 </div>
                 <span className="text-xs text-muted-foreground/70">{course.instructor.name}</span>
               </div>
