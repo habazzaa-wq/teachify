@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowUpDown,
   BadgeCheck,
   BriefcaseBusiness,
   Check,
-  ChevronLeft,
   CircleHelp,
   GraduationCap,
   Lightbulb,
@@ -26,7 +25,6 @@ import {
 } from "lucide-react";
 import { api } from "@/services/api/axios";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
-import { useUiStore } from "@/stores/ui.store";
 import { formatNumber } from "@/lib/format";
 
 type Service = {
@@ -44,59 +42,11 @@ type Service = {
 
 type SortMode = "default" | "title" | "highlights";
 
-interface Palette {
-  page: string;
-  surface: string;
-  surfaceAlt: string;
-  text: string;
-  muted: string;
-  subtle: string;
-  border: string;
-  borderStrong: string;
-  shadow: string;
-  hero: string;
-  heroFade: string;
-  heroGlowPrimary: string;
-  heroGlowSecondary: string;
-}
+const PRIMARY = "var(--brand-primary)";
+const SECONDARY = "var(--brand-secondary)";
 
-function usePalette(): Palette {
-  const theme = useUiStore((state) => state.theme);
-  const isDark = theme === "dark";
-
-  return useMemo(
-    () => ({
-      page: isDark ? "#0b0a10" : "#f6f2ea",
-      surface: isDark ? "#16141e" : "#ffffff",
-      surfaceAlt: isDark
-        ? "rgba(255,255,255,0.04)"
-        : "rgba(255,255,255,0.76)",
-      text: isDark ? "#F0ECE6" : "#1a1510",
-      muted: isDark ? "#8a8290" : "#7a7168",
-      subtle: isDark ? "#55505c" : "#b3a99c",
-      border: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
-      borderStrong: isDark
-        ? "rgba(255,255,255,0.12)"
-        : "rgba(0,0,0,0.10)",
-      shadow: isDark
-        ? "0 24px 60px rgba(0,0,0,0.35)"
-        : "0 24px 60px rgba(120,90,60,0.10)",
-      hero: isDark
-        ? "linear-gradient(170deg, #0e0c14 0%, #171320 55%, #0e0c14 100%)"
-        : "linear-gradient(170deg, #faf6ef 0%, #f3e8dc 55%, #faf6ef 100%)",
-      heroFade: isDark
-        ? "linear-gradient(to top, #0b0a10, transparent)"
-        : "linear-gradient(to top, #f6f2ea, transparent)",
-      heroGlowPrimary: isDark
-        ? "rgba(216,123,99,0.18)"
-        : "rgba(216,123,99,0.16)",
-      heroGlowSecondary: isDark
-        ? "rgba(255,181,14,0.12)"
-        : "rgba(255,181,14,0.20)",
-    }),
-    [isDark],
-  );
-}
+const tint = (color: string, amount: number) =>
+  `color-mix(in srgb, ${color} ${amount}%, transparent)`;
 
 function whatsappLink(phone: string): string {
   const digits = phone.replace(/\D/g, "").replace(/^00/, "");
@@ -113,11 +63,11 @@ function initials(name: string): string {
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <span
-      className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-extrabold"
+      className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-extrabold"
       style={{
-        background: "var(--brand-primary)",
-        color: "var(--brand-primary-contrast)",
-        boxShadow: "0 10px 24px -14px var(--brand-primary)",
+        background: tint(PRIMARY, 14),
+        color: PRIMARY,
+        border: `1px solid ${tint(PRIMARY, 30)}`,
       }}
     >
       <Sparkles className="h-3.5 w-3.5" />
@@ -126,63 +76,68 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/* ───────────────────────── Hero ───────────────────────── */
+
+const HERO_SYMBOLS = [
+  { char: "π", x: "8%", y: "18%", size: 30, rotate: -12 },
+  { char: "∑", x: "91%", y: "24%", size: 28, rotate: 14 },
+  { char: "√", x: "16%", y: "82%", size: 24, rotate: -18 },
+  { char: "∞", x: "86%", y: "76%", size: 26, rotate: 10 },
+  { char: "Δ", x: "70%", y: "12%", size: 20, rotate: -8 },
+  { char: "∫", x: "5%", y: "56%", size: 24, rotate: -14 },
+  { char: "θ", x: "94%", y: "52%", size: 20, rotate: 12 },
+];
+
 function Hero({
   tenantName,
   stats,
   loading,
-  p,
 }: {
   tenantName: string;
   stats: { services: number; features: number; experts: number };
   loading: boolean;
-  p: Palette;
 }) {
   const statItems = [
-    { icon: BriefcaseBusiness, value: stats.services, label: "خدمة متاحة", color: "var(--brand-primary)" },
-    { icon: Star, value: stats.features, label: "ميزة واضحة", color: "var(--brand-secondary)" },
+    { icon: BriefcaseBusiness, value: stats.services, label: "خدمة متاحة", color: PRIMARY },
+    { icon: Star, value: stats.features, label: "ميزة واضحة", color: SECONDARY },
     { icon: Users, value: stats.experts, label: "خبير ومسؤول", color: "#22C55E" },
   ];
 
   return (
-    <section dir="rtl" className="relative w-full overflow-hidden" style={{ background: p.hero }}>
+    <section dir="rtl" className="relative w-full overflow-hidden border-b border-border/70 bg-background">
+      <div className="hero-backdrop pointer-events-none absolute inset-0" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        {HERO_SYMBOLS.map((s, i) => (
+          <span
+            key={`${s.char}-${i}`}
+            className="hero-symbol absolute select-none font-bold"
+            style={{
+              right: s.x,
+              top: s.y,
+              fontSize: s.size,
+              transform: `rotate(${s.rotate}deg)`,
+              fontFamily: "'Georgia', serif",
+            }}
+          >
+            {s.char}
+          </span>
+        ))}
+      </div>
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `radial-gradient(${p.text} 0.8px, transparent 0.8px)`,
-          backgroundSize: "24px 24px",
-        }}
+        className="pointer-events-none absolute -start-40 -top-24 h-[420px] w-[420px] rounded-full blur-[120px]"
+        style={{ background: tint(PRIMARY, 20) }}
+        aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -start-40 top-10 h-[420px] w-[420px] rounded-full blur-[130px]"
-        style={{ background: p.heroGlowPrimary }}
-      />
-      <div
-        className="pointer-events-none absolute -end-32 bottom-0 h-[360px] w-[360px] rounded-full blur-[120px]"
-        style={{ background: p.heroGlowSecondary }}
+        className="pointer-events-none absolute -end-32 bottom-0 h-[360px] w-[360px] rounded-full blur-[110px]"
+        style={{ background: tint(SECONDARY, 16) }}
+        aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-5 pb-14 pt-8 sm:px-6 sm:pt-10 lg:px-8 lg:pb-20 lg:pt-12">
-        <motion.nav
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          aria-label="مسار التصفح"
-          className="mb-8 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm"
-        >
-          <Link href="/" className="transition-opacity hover:opacity-75" style={{ color: p.muted }}>
-            الرئيسية
-          </Link>
-          <ChevronLeft className="h-3.5 w-3.5" style={{ color: p.subtle }} />
-          <span className="font-bold" style={{ color: p.text }}>الخدمات</span>
-        </motion.nav>
-
+      <div className="relative z-10 mx-auto max-w-7xl px-5 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8 lg:pb-24">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_minmax(0,0.95fr)] lg:gap-14">
           <div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
               <SectionLabel>خدمات تعليمية مخصصة</SectionLabel>
             </motion.div>
 
@@ -190,19 +145,16 @@ function Hero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="mt-5 text-4xl font-extrabold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl"
-              style={{ color: p.text }}
+              className="font-display mt-5 text-4xl font-bold leading-[1.2] text-foreground sm:text-5xl lg:text-6xl"
             >
-              خدماتنا
-              <span style={{ color: "var(--brand-primary)" }}>.</span>
+              خدماتنا<span style={{ color: PRIMARY }}>.</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-5 max-w-2xl text-sm leading-8 sm:text-base"
-              style={{ color: p.muted }}
+              className="mt-5 max-w-2xl text-sm leading-8 text-muted-foreground sm:text-base"
             >
               {tenantName
                 ? `اكتشف الخدمات التعليمية التي يقدمها ${tenantName}، وتواصل مباشرة مع مقدم الخدمة المناسب لاحتياجك.`
@@ -213,29 +165,24 @@ function Hero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="mt-7 flex flex-wrap gap-3"
+              className="mt-8 grid grid-cols-3 gap-2 sm:gap-3"
             >
               {statItems.map(({ icon: Icon, value, label, color }) => (
                 <div
                   key={label}
-                  className="flex min-w-[136px] items-center gap-3 rounded-2xl px-4 py-3"
-                  style={{
-                    background: p.surfaceAlt,
-                    border: `1px solid ${p.border}`,
-                    boxShadow: p.shadow,
-                  }}
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card/70 px-2 py-4 text-center backdrop-blur-sm sm:flex-row sm:justify-start sm:px-4 sm:text-start"
                 >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                    style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
+                    style={{ background: tint(color, 14), color }}
                   >
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="leading-tight">
-                    <p className="text-lg font-extrabold tabular-nums" style={{ color: p.text }}>
+                    <p className="text-lg font-extrabold tabular-nums text-foreground">
                       {loading ? "…" : formatNumber(value)}
                     </p>
-                    <p className="text-[11px] font-medium" style={{ color: p.muted }}>{label}</p>
+                    <p className="text-[10px] font-medium text-muted-foreground sm:text-[11px]">{label}</p>
                   </div>
                 </div>
               ))}
@@ -243,58 +190,39 @@ function Hero({
           </div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 18 }}
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.12 }}
             className="relative mx-auto w-full max-w-lg"
           >
-            <div
-              className="relative aspect-[4/3] overflow-hidden rounded-[2rem]"
-              style={{ border: `1px solid ${p.border}` }}
-            >
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-border bg-card/60 p-5 backdrop-blur-xl sm:p-6">
               <div
-                className="absolute inset-0"
-                style={{
-                  background: `radial-gradient(circle at 25% 15%, ${p.heroGlowPrimary}, transparent 55%), radial-gradient(circle at 85% 85%, ${p.heroGlowSecondary}, transparent 50%)`,
-                }}
+                className="absolute inset-x-10 inset-y-10 rounded-[1.5rem] border"
+                style={{ borderColor: tint(PRIMARY, 35) }}
+                aria-hidden="true"
               />
-              <div
-                className="absolute inset-0 opacity-[0.05]"
-                style={{
-                  backgroundImage: `radial-gradient(${p.text} 0.8px, transparent 0.8px)`,
-                  backgroundSize: "20px 20px",
-                }}
-              />
-
-              <div
-                className="absolute inset-x-6 inset-y-6 rounded-[1.6rem] p-5 backdrop-blur-xl sm:inset-x-8 sm:p-6"
-                style={{
-                  background: p.surfaceAlt,
-                  border: `1px solid ${p.borderStrong}`,
-                  boxShadow: p.shadow,
-                }}
-              >
+              <div className="relative flex h-full flex-col">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-extrabold" style={{ color: p.text }}>
+                  <span className="flex items-center gap-2 text-xs font-extrabold text-foreground">
                     <span
-                      className="flex h-7 w-7 items-center justify-center rounded-lg"
-                      style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl"
+                      style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
                     >
                       <GraduationCap className="h-4 w-4" />
                     </span>
                     باقة الخدمات
                   </span>
                   <span className="flex gap-1.5">
-                    <i className="h-2 w-2 rounded-full" style={{ background: "var(--brand-secondary)" }} />
-                    <i className="h-2 w-2 rounded-full" style={{ background: p.borderStrong }} />
-                    <i className="h-2 w-2 rounded-full" style={{ background: p.borderStrong }} />
+                    <i className="h-2 w-2 rounded-full" style={{ background: SECONDARY }} />
+                    <i className="h-2 w-2 rounded-full bg-border" />
+                    <i className="h-2 w-2 rounded-full bg-border" />
                   </span>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-auto space-y-3">
                   {[
-                    { icon: Target, label: "استشارات مخصصة", color: "var(--brand-primary)" },
-                    { icon: Lightbulb, label: "جلسات تطويرية", color: "var(--brand-secondary)" },
+                    { icon: Target, label: "استشارات مخصصة", color: PRIMARY },
+                    { icon: Lightbulb, label: "جلسات تطويرية", color: SECONDARY },
                     { icon: MessageCircle, label: "متابعة مباشرة", color: "#22C55E" },
                   ].map(({ icon: Icon, label, color }, index) => (
                     <motion.div
@@ -302,63 +230,52 @@ function Hero({
                       initial={{ opacity: 0, x: 18 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: 0.25 + index * 0.08 }}
-                      className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
-                      style={{ background: p.surface, border: `1px solid ${p.border}` }}
+                      className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-3"
                     >
                       <span
                         className="flex h-9 w-9 items-center justify-center rounded-xl"
-                        style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
+                        style={{ background: tint(color, 14), color }}
                       >
                         <Icon className="h-4 w-4" />
                       </span>
-                      <span className="flex-1 text-xs font-bold" style={{ color: p.text }}>{label}</span>
-                      <span className="h-1.5 w-14 rounded-full" style={{ background: p.border }} />
+                      <span className="flex-1 text-xs font-bold text-foreground">{label}</span>
+                      <span className="h-1.5 w-12 rounded-full bg-muted" />
                     </motion.div>
                   ))}
                 </div>
               </div>
-
-              <div
-                className="pointer-events-none absolute -end-3 -top-4 h-40 w-40 rounded-full border"
-                style={{ borderColor: "var(--brand-secondary)" }}
-              />
-              <div
-                className="pointer-events-none absolute -bottom-8 -start-8 h-44 w-44 rounded-full border"
-                style={{ borderColor: "var(--brand-primary)" }}
-              />
             </div>
 
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
-              className="absolute -bottom-5 -start-3 flex items-center gap-2 rounded-2xl px-4 py-3 shadow-lg sm:-start-6"
-              style={{ background: p.surface, border: `1px solid ${p.border}` }}
+              className="absolute -bottom-5 -start-3 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-lg sm:-start-6"
             >
-              <BadgeCheck className="h-5 w-5" style={{ color: "var(--brand-primary)" }} />
+              <BadgeCheck className="h-5 w-5" style={{ color: PRIMARY }} />
               <div className="leading-tight">
-                <p className="text-[11px] font-extrabold" style={{ color: p.text }}>تواصل مباشر</p>
-                <p className="text-[10px]" style={{ color: p.muted }}>بدون خطوات معقدة</p>
+                <p className="text-[11px] font-extrabold text-foreground">تواصل مباشر</p>
+                <p className="text-[10px] text-muted-foreground">بدون خطوات معقدة</p>
               </div>
             </motion.div>
           </motion.div>
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12" style={{ background: p.heroFade }} />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-background to-transparent" />
     </section>
   );
 }
 
+/* ─────────────────────── Service card ─────────────────────── */
+
 function ServiceCard({
   service,
   index,
-  p,
   onOpen,
 }: {
   service: Service;
   index: number;
-  p: Palette;
   onOpen: (service: Service) => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -372,13 +289,12 @@ function ServiceCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.35 }}
-      whileHover={{ y: -6 }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem]"
-      style={{ background: p.surface, border: `1px solid ${p.border}`, boxShadow: p.shadow }}
+      whileHover={{ y: -5 }}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-xl"
     >
       <div
         className="absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity group-hover:opacity-100"
-        style={{ background: "linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))" }}
+        style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
       />
 
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
@@ -395,12 +311,12 @@ function ServiceCard({
           <div
             className="flex h-full items-center justify-center"
             style={{
-              background: `radial-gradient(circle at 30% 20%, ${p.heroGlowPrimary}, transparent 60%), radial-gradient(circle at 80% 80%, ${p.heroGlowSecondary}, transparent 55%)`,
+              background: `radial-gradient(circle at 28% 18%, ${tint(PRIMARY, 18)}, transparent 60%), radial-gradient(circle at 82% 82%, ${tint(SECONDARY, 16)}, transparent 55%)`,
             }}
           >
             <span
-              className="flex h-20 w-20 items-center justify-center rounded-3xl backdrop-blur-md"
-              style={{ background: p.surfaceAlt, border: `1px solid ${p.borderStrong}`, color: "var(--brand-primary)" }}
+              className="flex h-20 w-20 items-center justify-center rounded-3xl border bg-card/70 backdrop-blur-md"
+              style={{ borderColor: tint(PRIMARY, 30), color: PRIMARY }}
             >
               <BriefcaseBusiness className="h-9 w-9" />
             </span>
@@ -408,31 +324,27 @@ function ServiceCard({
         )}
 
         <span
-          className="absolute right-4 top-4 rounded-full px-3 py-1 text-[11px] font-extrabold tabular-nums backdrop-blur-md"
-          style={{ background: p.surfaceAlt, color: p.text, border: `1px solid ${p.border}` }}
+          className="absolute right-4 top-4 rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-extrabold tabular-nums text-foreground backdrop-blur-md"
         >
           {String(index + 1).padStart(2, "0")}
         </span>
-
-        <div className="absolute inset-x-0 bottom-0 h-20" style={{ background: `linear-gradient(to top, ${p.surface}, transparent)` }} />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
       </div>
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <h2 className="text-lg font-extrabold leading-snug" style={{ color: p.text }}>{service.title}</h2>
+        <h2 className="font-display text-lg font-bold leading-snug text-foreground">{service.title}</h2>
 
         {service.summary && (
-          <p className="mt-2 line-clamp-2 text-sm leading-7" style={{ color: p.muted }}>
-            {service.summary}
-          </p>
+          <p className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">{service.summary}</p>
         )}
 
         {highlights.length > 0 && (
           <ul className="mt-4 space-y-2">
             {highlights.slice(0, 3).map((highlight, i) => (
-              <li key={`${service.id}-${i}`} className="flex items-start gap-2 text-xs leading-6" style={{ color: p.text }}>
+              <li key={`${service.id}-${i}`} className="flex items-start gap-2 text-xs leading-6 text-foreground">
                 <span
                   className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "color-mix(in srgb, var(--brand-primary) 14%, transparent)", color: "var(--brand-primary)" }}
+                  style={{ background: tint(PRIMARY, 14), color: PRIMARY }}
                 >
                   <Check className="h-3 w-3" />
                 </span>
@@ -440,7 +352,7 @@ function ServiceCard({
               </li>
             ))}
             {highlights.length > 3 && (
-              <li className="pe-6 text-[11px] font-semibold" style={{ color: "var(--brand-primary)" }}>
+              <li className="pe-6 text-[11px] font-semibold" style={{ color: PRIMARY }}>
                 و {formatNumber(highlights.length - 3)} ميزة أخرى
               </li>
             )}
@@ -448,21 +360,18 @@ function ServiceCard({
         )}
 
         <div className="mt-auto pt-5">
-          <div
-            className="mb-4 flex items-center gap-3 rounded-2xl px-3 py-2.5"
-            style={{ background: p.surfaceAlt, border: `1px solid ${p.border}` }}
-          >
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5">
             <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold"
-              style={{ background: "color-mix(in srgb, var(--brand-secondary) 22%, transparent)", color: p.text }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-foreground"
+              style={{ background: tint(SECONDARY, 22) }}
             >
               {initials(service.contact_name ?? "فريق الخدمات")}
             </span>
             <span className="min-w-0 leading-tight">
-              <span className="block text-xs font-bold" style={{ color: p.text }}>
+              <span className="block text-xs font-bold text-foreground">
                 {service.contact_name || "فريق الخدمات"}
               </span>
-              <span className="block truncate text-[10px]" style={{ color: p.muted }} dir="ltr">
+              <span className="block truncate text-[10px] text-muted-foreground" dir="ltr">
                 {service.contact_phone}
               </span>
             </span>
@@ -473,7 +382,11 @@ function ServiceCard({
               type="button"
               onClick={() => onOpen(service)}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold transition-transform hover:scale-[1.02]"
-              style={{ background: p.surface, color: p.text, border: `1px solid ${p.borderStrong}` }}
+              style={{
+                background: PRIMARY,
+                color: "var(--brand-primary-contrast)",
+                boxShadow: `0 10px 24px -14px ${PRIMARY}`,
+              }}
             >
               عرض التفاصيل
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -483,8 +396,7 @@ function ServiceCard({
               target="_blank"
               rel="noreferrer"
               aria-label={`تواصل واتساب بخصوص ${service.title}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white transition-transform hover:scale-105"
-              style={{ background: "#25D366", boxShadow: "0 8px 20px -10px #25D366" }}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white transition-transform hover:scale-105"
             >
               <MessageCircle className="h-4 w-4" />
             </a>
@@ -495,13 +407,13 @@ function ServiceCard({
   );
 }
 
+/* ─────────────────────── Details dialog ─────────────────────── */
+
 function ServiceDialog({
   service,
-  p,
   onClose,
 }: {
   service: Service;
-  p: Palette;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -537,15 +449,13 @@ function ServiceDialog({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
         transition={{ duration: 0.25 }}
-        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem]"
-        style={{ background: p.surface, border: `1px solid ${p.borderStrong}`, boxShadow: p.shadow }}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[1.75rem] border border-border bg-card text-card-foreground shadow-2xl"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="إغلاق التفاصيل"
-          className="absolute left-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition hover:scale-105"
-          style={{ background: p.surfaceAlt, color: p.text, border: `1px solid ${p.border}` }}
+          className="absolute left-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/80 text-foreground backdrop-blur-md transition hover:scale-105"
         >
           <X className="h-4 w-4" />
         </button>
@@ -557,40 +467,37 @@ function ServiceDialog({
           ) : (
             <div
               className="flex h-full items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${p.heroGlowPrimary}, ${p.heroGlowSecondary})` }}
+              style={{
+                background: `linear-gradient(135deg, ${tint(PRIMARY, 20)}, ${tint(SECONDARY, 18)})`,
+              }}
             >
-              <BriefcaseBusiness className="h-16 w-16" style={{ color: "var(--brand-primary)" }} />
+              <BriefcaseBusiness className="h-16 w-16" style={{ color: PRIMARY }} />
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 h-24" style={{ background: `linear-gradient(to top, ${p.surface}, transparent)` }} />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent" />
         </div>
 
         <div className="relative -mt-8 px-5 pb-6 sm:px-8 sm:pb-8">
           <SectionLabel>تفاصيل الخدمة</SectionLabel>
-          <h2 id="service-dialog-title" className="mt-4 text-2xl font-extrabold" style={{ color: p.text }}>
+          <h2 id="service-dialog-title" className="font-display mt-4 text-2xl font-bold text-foreground">
             {service.title}
           </h2>
 
-          {service.summary && (
-            <p className="mt-3 text-sm leading-8" style={{ color: p.muted }}>{service.summary}</p>
-          )}
+          {service.summary && <p className="mt-3 text-sm leading-8 text-muted-foreground">{service.summary}</p>}
           {service.description && (
-            <p className="mt-4 whitespace-pre-line text-sm leading-8" style={{ color: p.text }}>
-              {service.description}
-            </p>
+            <p className="mt-4 whitespace-pre-line text-sm leading-8 text-foreground">{service.description}</p>
           )}
 
           {highlights.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-sm font-extrabold" style={{ color: p.text }}>ما الذي ستحصل عليه؟</h3>
+              <h3 className="text-sm font-extrabold text-foreground">ما الذي ستحصل عليه؟</h3>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {highlights.map((highlight, i) => (
                   <div
                     key={`${service.id}-detail-${i}`}
-                    className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs leading-6"
-                    style={{ background: p.surfaceAlt, border: `1px solid ${p.border}`, color: p.text }}
+                    className="flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-xs leading-6 text-foreground"
                   >
-                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--brand-primary)" }} />
+                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: PRIMARY }} />
                     {highlight}
                   </div>
                 ))}
@@ -598,22 +505,19 @@ function ServiceDialog({
             </div>
           )}
 
-          <div
-            className="mt-6 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between"
-            style={{ background: p.surfaceAlt, border: `1px solid ${p.border}` }}
-          >
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span
-                className="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-extrabold"
-                style={{ background: "color-mix(in srgb, var(--brand-secondary) 22%, transparent)", color: p.text }}
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-extrabold text-foreground"
+                style={{ background: tint(SECONDARY, 22) }}
               >
                 {initials(service.contact_name ?? "فريق الخدمات")}
               </span>
               <div className="leading-tight">
-                <p className="text-xs font-extrabold" style={{ color: p.text }}>
+                <p className="text-xs font-extrabold text-foreground">
                   {service.contact_name || "فريق الخدمات"}
                 </p>
-                <p className="mt-0.5 text-[11px] font-semibold" style={{ color: p.muted }} dir="ltr">
+                <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground" dir="ltr">
                   {service.contact_phone}
                 </p>
               </div>
@@ -622,8 +526,7 @@ function ServiceDialog({
               href={whatsappLink(service.contact_phone)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-extrabold text-white"
-              style={{ background: "#25D366", boxShadow: "0 10px 24px -12px #25D366" }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-xs font-extrabold text-white"
             >
               <Send className="h-4 w-4" />
               ابدأ المحادثة
@@ -635,21 +538,19 @@ function ServiceDialog({
   );
 }
 
-function ServicesSkeleton({ p }: { p: Palette }) {
+/* ─────────────────────── Supporting sections ─────────────────────── */
+
+function ServicesSkeleton() {
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
       {[0, 1, 2].map((item) => (
-        <div
-          key={item}
-          className="overflow-hidden rounded-[1.75rem]"
-          style={{ background: p.surface, border: `1px solid ${p.border}` }}
-        >
-          <div className="h-44 animate-pulse" style={{ background: p.surfaceAlt }} />
+        <div key={item} className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="h-44 animate-pulse bg-muted" />
           <div className="space-y-3 p-6">
-            <div className="h-4 w-2/3 animate-pulse rounded-full" style={{ background: p.surfaceAlt }} />
-            <div className="h-3 w-full animate-pulse rounded-full" style={{ background: p.surfaceAlt }} />
-            <div className="h-3 w-4/5 animate-pulse rounded-full" style={{ background: p.surfaceAlt }} />
-            <div className="h-10 animate-pulse rounded-xl" style={{ background: p.surfaceAlt }} />
+            <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted" />
+            <div className="h-3 w-full animate-pulse rounded-full bg-muted" />
+            <div className="h-3 w-4/5 animate-pulse rounded-full bg-muted" />
+            <div className="h-10 animate-pulse rounded-xl bg-muted" />
           </div>
         </div>
       ))}
@@ -659,11 +560,9 @@ function ServicesSkeleton({ p }: { p: Palette }) {
 
 function EmptyState({
   filtered,
-  p,
   onReset,
 }: {
   filtered: boolean;
-  p: Palette;
   onReset: () => void;
 }) {
   const tracks = [
@@ -674,35 +573,22 @@ function EmptyState({
 
   return (
     <div className="space-y-6">
-      <div
-        className="relative overflow-hidden rounded-[2rem] px-6 py-12 text-center sm:px-10 sm:py-16"
-        style={{ background: p.surface, border: `1px solid ${p.border}`, boxShadow: p.shadow }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${p.text} 0.8px, transparent 0.8px)`,
-            backgroundSize: "22px 22px",
-          }}
-        />
+      <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card px-6 py-12 text-center shadow-sm sm:px-10 sm:py-16">
+        <div className="hero-backdrop pointer-events-none absolute inset-0 opacity-40" aria-hidden="true" />
         <div className="relative mx-auto max-w-xl">
           <motion.span
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem]"
-            style={{
-              background: "color-mix(in srgb, var(--brand-primary) 12%, transparent)",
-              color: "var(--brand-primary)",
-              border: "1px solid var(--brand-primary)",
-            }}
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border"
+            style={{ background: tint(PRIMARY, 12), borderColor: tint(PRIMARY, 40), color: PRIMARY }}
           >
             {filtered ? <Search className="h-9 w-9" /> : <Sparkles className="h-9 w-9" />}
           </motion.span>
 
-          <h2 className="mt-6 text-2xl font-extrabold sm:text-3xl" style={{ color: p.text }}>
+          <h2 className="font-display mt-6 text-2xl font-bold text-foreground sm:text-3xl">
             {filtered ? "لم نجد خدمة مطابقة" : "نجهّز لك تجربة تليق بطموحك"}
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-8" style={{ color: p.muted }}>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-8 text-muted-foreground">
             {filtered
               ? "جرّب كلمة أخرى أو امسح البحث لعرض كل الخدمات المتاحة."
               : "فريقنا يعمل على إطلاق باقة خدمات تعليمية مخصصة. تابع هذه المساحة لتكتشف الجديد قريباً."}
@@ -713,7 +599,7 @@ function EmptyState({
               type="button"
               onClick={onReset}
               className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-extrabold"
-              style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
+              style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
             >
               <RefreshCw className="h-4 w-4" />
               مسح البحث
@@ -731,25 +617,21 @@ function EmptyState({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="rounded-2xl p-5"
-              style={{ background: p.surface, border: `1px solid ${p.border}` }}
+              className="rounded-2xl border border-border bg-card p-5"
             >
               <span
                 className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{
-                  background: "color-mix(in srgb, var(--brand-secondary) 14%, transparent)",
-                  color: "var(--brand-primary)",
-                }}
+                style={{ background: tint(SECONDARY, 14), color: PRIMARY }}
               >
                 <Icon className="h-5 w-5" />
               </span>
               <div className="mt-4 flex items-center justify-between gap-2">
-                <h3 className="text-sm font-extrabold" style={{ color: p.text }}>{title}</h3>
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: p.surfaceAlt, color: p.muted }}>
+                <h3 className="text-sm font-extrabold text-foreground">{title}</h3>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                   قريباً
                 </span>
               </div>
-              <p className="mt-2 text-xs leading-6" style={{ color: p.muted }}>{desc}</p>
+              <p className="mt-2 text-xs leading-6 text-muted-foreground">{desc}</p>
             </motion.div>
           ))}
         </div>
@@ -758,7 +640,7 @@ function EmptyState({
   );
 }
 
-function ProcessSection({ p }: { p: Palette }) {
+function ProcessSection() {
   const steps = [
     { icon: Search, title: "اختر خدمتك", desc: "تصفّح الخدمات واقرأ المميزات بوضوح قبل أي خطوة." },
     { icon: MessageCircle, title: "تواصل مباشرة", desc: "اضغط زر واتساب وتحدث مع المسؤول عن الخدمة فوراً." },
@@ -774,29 +656,29 @@ function ProcessSection({ p }: { p: Palette }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.4, delay: i * 0.06 }}
-          className="relative rounded-2xl p-5"
-          style={{ background: p.surfaceAlt, border: `1px solid ${p.border}` }}
+          className="relative rounded-2xl border border-border bg-muted/30 p-5"
         >
           <div className="flex items-center gap-3">
             <span
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-extrabold"
-              style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
+              style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
             >
               {i + 1}
             </span>
-            <Icon className="h-5 w-5" style={{ color: "var(--brand-secondary)" }} />
+            <Icon className="h-5 w-5" style={{ color: SECONDARY }} />
           </div>
-          <h3 className="mt-4 text-sm font-extrabold" style={{ color: p.text }}>{title}</h3>
-          <p className="mt-1.5 text-xs leading-6" style={{ color: p.muted }}>{desc}</p>
+          <h3 className="mt-4 text-sm font-extrabold text-foreground">{title}</h3>
+          <p className="mt-1.5 text-xs leading-6 text-muted-foreground">{desc}</p>
         </motion.div>
       ))}
     </section>
   );
 }
 
+/* ─────────────────────── Page ─────────────────────── */
+
 export function ServicesPage() {
   const { tenant } = useActiveTenant();
-  const p = usePalette();
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("default");
@@ -849,28 +731,27 @@ export function ServicesPage() {
       return haystack.includes(term);
     });
 
-    if (sort === "title") {
-      result.sort((a, b) => a.title.localeCompare(b.title, "ar"));
-    } else if (sort === "highlights") {
+    if (sort === "title") result.sort((a, b) => a.title.localeCompare(b.title, "ar"));
+    else if (sort === "highlights")
       result.sort((a, b) => (b.highlights?.length ?? 0) - (a.highlights?.length ?? 0));
-    }
     return result;
   }, [services, query, sort]);
 
   const supportPhone = services.find((service) => service.contact_phone)?.contact_phone ?? "";
 
   return (
-    <div dir="rtl" className="relative min-h-screen" style={{ background: p.page }}>
-      <Hero tenantName={tenant?.name ?? ""} stats={stats} loading={loading} p={p} />
+    <div dir="rtl" className="relative min-h-screen bg-background text-foreground">
+      <Hero tenantName={tenant?.name ?? ""} stats={stats} loading={loading} />
 
       <div className="mx-auto max-w-7xl px-5 pb-16 sm:px-6 lg:px-8 lg:pb-24">
         <section id="services" className="pt-12 sm:pt-16">
           <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold sm:text-3xl" style={{ color: p.text }}>
+              <SectionLabel>دليل الخدمات</SectionLabel>
+              <h2 className="font-display mt-4 text-2xl font-bold text-foreground sm:text-3xl">
                 ما الذي نقدّمه؟
               </h2>
-              <p className="mt-2 text-sm leading-7" style={{ color: p.muted }}>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
                 كل خدمة مصممة لتكون خطوة عملية نحو هدفك، مع تواصل مباشر وشفاف من البداية.
               </p>
             </div>
@@ -878,43 +759,25 @@ export function ServicesPage() {
             {!loading && services.length > 0 && (
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <label className="relative block">
-                  <Search
-                    className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-                    style={{ color: p.muted }}
-                  />
+                  <Search className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="ابحث عن خدمة..."
-                    className="h-11 w-full rounded-xl pe-10 ps-4 text-sm outline-none placeholder:text-[color:var(--placeholder-color)] focus:ring-2 sm:w-64"
-                    style={
-                      {
-                        background: p.surface,
-                        color: p.text,
-                        border: `1px solid ${p.border}`,
-                        "--placeholder-color": p.muted,
-                      } as CSSProperties
-                    }
+                    className="h-11 w-full rounded-xl border border-border bg-card pe-10 ps-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 sm:w-64"
+                    style={{ "--tw-ring-color": tint(PRIMARY, 30) } as CSSProperties}
                   />
                 </label>
 
                 <label className="relative block">
-                  <ArrowUpDown
-                    className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-                    style={{ color: p.muted }}
-                  />
+                  <ArrowUpDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <select
                     value={sort}
                     onChange={(event) => setSort(event.target.value as SortMode)}
                     aria-label="ترتيب الخدمات"
-                    className="h-11 w-full appearance-none rounded-xl pe-10 ps-8 text-xs font-bold outline-none focus:ring-2 sm:w-44"
-                    style={{
-                      background: p.surface,
-                      color: p.text,
-                      border: `1px solid ${p.border}`,
-                      colorScheme: p.page === "#0b0a10" ? "dark" : "light",
-                    }}
+                    className="h-11 w-full appearance-none rounded-xl border border-border bg-card pe-10 ps-8 text-xs font-bold text-foreground outline-none focus:ring-2 sm:w-44"
+                    style={{ "--tw-ring-color": tint(PRIMARY, 30) } as CSSProperties}
                   >
                     <option value="default">الترتيب الافتراضي</option>
                     <option value="title">أبجدياً</option>
@@ -926,36 +789,39 @@ export function ServicesPage() {
           </div>
 
           {!loading && services.length > 0 && (
-            <div className="mb-5 flex items-center gap-2 text-xs" style={{ color: p.muted }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--brand-primary)" }} />
+            <div className="mb-5 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: PRIMARY }} />
               {formatNumber(visibleServices.length)} من {formatNumber(services.length)} خدمة معروضة
             </div>
           )}
 
           {error ? (
-            <div
-              className="flex flex-col items-center gap-4 rounded-[1.75rem] px-6 py-14 text-center"
-              style={{ background: p.surface, border: `1px solid ${p.border}` }}
-            >
-              <CircleHelp className="h-10 w-10" style={{ color: "var(--brand-primary)" }} />
+            <div className="flex flex-col items-center gap-4 rounded-[1.75rem] border border-border bg-card px-6 py-14 text-center">
+              <CircleHelp className="h-10 w-10" style={{ color: PRIMARY }} />
               <div>
-                <h2 className="text-lg font-extrabold" style={{ color: p.text }}>حدث خطأ أثناء التحميل</h2>
-                <p className="mt-2 text-sm" style={{ color: p.muted }}>{error}</p>
+                <h2 className="font-display text-lg font-bold text-foreground">حدث خطأ أثناء التحميل</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{error}</p>
               </div>
               <button
                 type="button"
                 onClick={() => void refetch()}
                 className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs font-extrabold"
-                style={{ background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
+                style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
               >
                 <RefreshCw className="h-4 w-4" />
                 إعادة المحاولة
               </button>
             </div>
           ) : loading ? (
-            <ServicesSkeleton p={p} />
+            <ServicesSkeleton />
           ) : visibleServices.length === 0 ? (
-            <EmptyState filtered={query.trim().length > 0 || services.length === 0} p={p} onReset={() => { setQuery(""); setSort("default"); }} />
+            <EmptyState
+              filtered={query.trim().length > 0 || services.length === 0}
+              onReset={() => {
+                setQuery("");
+                setSort("default");
+              }}
+            />
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               <AnimatePresence mode="popLayout">
@@ -964,7 +830,6 @@ export function ServicesPage() {
                     key={service.id}
                     service={service}
                     index={index}
-                    p={p}
                     onOpen={setSelected}
                   />
                 ))}
@@ -975,21 +840,21 @@ export function ServicesPage() {
 
         {!loading && !error && (
           <>
-            <div className="my-12 h-px" style={{ background: p.border }} />
+            <div className="my-12 h-px bg-border" />
             <section>
               <div className="mb-6 flex items-center gap-3">
                 <span
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ background: "color-mix(in srgb, var(--brand-secondary) 16%, transparent)", color: "var(--brand-primary)" }}
+                  style={{ background: tint(SECONDARY, 16), color: PRIMARY }}
                 >
                   <Sparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className="text-xl font-extrabold" style={{ color: p.text }}>كيف تعمل الخدمات؟</h2>
-                  <p className="text-xs" style={{ color: p.muted }}>ثلاث خطوات بسيطة تفصلك عن الهدف.</p>
+                  <h2 className="font-display text-xl font-bold text-foreground">كيف تعمل الخدمات؟</h2>
+                  <p className="text-xs text-muted-foreground">ثلاث خطوات بسيطة تفصلك عن الهدف.</p>
                 </div>
               </div>
-              <ProcessSection p={p} />
+              <ProcessSection />
             </section>
 
             <motion.section
@@ -999,13 +864,17 @@ export function ServicesPage() {
               transition={{ duration: 0.45 }}
               className="relative mt-12 overflow-hidden rounded-[2rem] px-6 py-10 text-center sm:px-10 sm:py-14"
               style={{
-                background: "linear-gradient(135deg, var(--brand-primary), var(--brand-secondary))",
+                background: `linear-gradient(135deg, ${PRIMARY}, ${SECONDARY})`,
                 color: "var(--brand-primary-contrast)",
               }}
             >
-              <div className="pointer-events-none absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`, backgroundSize: "20px 20px" }} />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-10"
+                style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+                aria-hidden="true"
+              />
               <div className="relative mx-auto max-w-2xl">
-                <h2 className="text-2xl font-extrabold sm:text-3xl">
+                <h2 className="font-display text-2xl font-bold sm:text-3xl">
                   {supportPhone ? "لديك سؤال قبل أن تبدأ؟" : "ابحث عن خطوتك التالية في رحلتك التعليمية"}
                 </h2>
                 <p className="mt-3 text-sm leading-8 opacity-90">
@@ -1013,16 +882,27 @@ export function ServicesPage() {
                     ? "تواصل مع فريق الخدمات مباشرة وسنجيبك على الفور ونحدد معك الأنسب لاحتياجك."
                     : "استكشف دوراتنا ومحتوانا التعليمي، وابنِ مهاراتك مع منصة تضعك أولاً."}
                 </p>
-                <a
-                  href={supportPhone ? whatsappLink(supportPhone) : "/courses"}
-                  target={supportPhone ? "_blank" : undefined}
-                  rel={supportPhone ? "noreferrer" : undefined}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/95 px-6 py-3 text-xs font-extrabold text-[#1a1510] transition-transform hover:scale-105"
-                >
-                  {supportPhone ? <MessageCircle className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
-                  {supportPhone ? "تحدث معنا الآن" : "استكشف الكورسات"}
-                  <ArrowLeft className="h-4 w-4" />
-                </a>
+                {supportPhone ? (
+                  <a
+                    href={whatsappLink(supportPhone)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/95 px-6 py-3 text-xs font-extrabold text-[#1a1510] transition-transform hover:scale-105"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    تحدث معنا الآن
+                    <ArrowLeft className="h-4 w-4" />
+                  </a>
+                ) : (
+                  <Link
+                    href="/courses"
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white/95 px-6 py-3 text-xs font-extrabold text-[#1a1510] transition-transform hover:scale-105"
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    استكشف الكورسات
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                )}
               </div>
             </motion.section>
           </>
@@ -1030,7 +910,7 @@ export function ServicesPage() {
       </div>
 
       <AnimatePresence>
-        {selected && <ServiceDialog service={selected} p={p} onClose={() => setSelected(null)} />}
+        {selected && <ServiceDialog service={selected} onClose={() => setSelected(null)} />}
       </AnimatePresence>
     </div>
   );
