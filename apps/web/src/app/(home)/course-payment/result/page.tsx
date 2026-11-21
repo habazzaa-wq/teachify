@@ -1,26 +1,68 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { publicCourseService } from "@/features/public-course/services";
+import {
+  courseDetailQueryKey,
+  enrollmentQueryKey,
+} from "@/features/public-course/hooks";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { resolveStudentAccessToken } from "@/services/api/tenant-student-fetch";
+
+function paymentSessionTag(): string {
+  const token = resolveStudentAccessToken();
+  if (!token) return "anon";
+  const id = token.split("|")[0];
+  return id ? `user:${id}` : "anon";
+}
 
 function CoursePaymentResult() {
   const searchParams = useSearchParams();
+  const qc = useQueryClient();
+  const { tenant } = useActiveTenant();
   const reference = searchParams.get("reference");
   const result = useQuery({
-    queryKey: ["direct-course-payment", reference],
+    // Payment status is tenant/user specific; scope the key so a context
+    // switch never shows another session's result.
+    queryKey: [
+      "direct-course-payment",
+      tenant?.id ?? "no-tenant",
+      paymentSessionTag(),
+      reference,
+    ],
     queryFn: () => publicCourseService.getDirectPaymentStatus(reference!),
     enabled: Boolean(reference),
-    refetchInterval: 3000,
+    // Stop polling once the gateway reached a terminal state.
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "paid" || status === "failed" || status === "expired"
+        ? false
+        : 3000;
+    },
     retry: 2,
   });
 
   const payment = result.data;
   const isPaid = payment?.status === "paid";
   const isFailed = payment?.status === "failed" || payment?.status === "expired";
+
+  // A paid webhook completes enrollment server-side. Refresh the cached
+  // enrollment/course detail so "ابدأ التعلم" reflects the new state even if
+  // the student checked enrollment just before paying (2-minute staleTime).
+  useEffect(() => {
+    if (isPaid && payment?.courseSlug) {
+      qc.setQueryData(enrollmentQueryKey(payment.courseSlug), {
+        enrolled: true,
+        enrollment: null,
+      });
+      qc.invalidateQueries({ queryKey: courseDetailQueryKey(payment.courseSlug) });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+    }
+  }, [isPaid, payment?.courseSlug, qc]);
 
   return (
     <main className="mx-auto flex min-h-[65vh] max-w-xl items-center justify-center px-4 py-12">
@@ -34,12 +76,6 @@ function CoursePaymentResult() {
               تصفح الدورات
             </Link>
           </>
-        ) : result.isPending || (payment?.status === "pending") ? (
-          <>
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-            <h1 className="mt-4 text-xl font-bold">جارٍ تأكيد الدفع</h1>
-            <p className="mt-2 text-sm text-muted-foreground">قد يستغرق تأكيد العملية لحظات، لا تغلق الصفحة.</p>
-          </>
         ) : result.isError ? (
           <>
             <AlertCircle className="mx-auto h-12 w-12 text-amber-500" />
@@ -50,6 +86,12 @@ function CoursePaymentResult() {
             <button type="button" onClick={() => void result.refetch()} className="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground">
               إعادة المحاولة
             </button>
+          </>
+        ) : result.isPending ? (
+          <>
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+            <h1 className="mt-4 text-xl font-bold">جارٍ تأكيد الدفع</h1>
+            <p className="mt-2 text-sm text-muted-foreground">قد يستغرق تأكيد العملية لحظات، لا تغلق الصفحة.</p>
           </>
         ) : isPaid ? (
           <>

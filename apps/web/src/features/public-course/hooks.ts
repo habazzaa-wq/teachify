@@ -17,9 +17,18 @@ function enrollmentSessionTag(): string {
   return id ? `user:${id}` : "anon";
 }
 
+/** Shared query-key builders so payment success can refresh the exact caches. */
+export function enrollmentQueryKey(slug: string) {
+  return [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug, enrollmentSessionTag()] as const;
+}
+
+export function courseDetailQueryKey(slug: string) {
+  return [PUBLIC_COURSE_QUERY_KEY, "detail", slug] as const;
+}
+
 export function usePublicCourse(slug: string | null) {
   return useQuery({
-    queryKey: [PUBLIC_COURSE_QUERY_KEY, "detail", slug],
+    queryKey: courseDetailQueryKey(slug ?? ""),
     queryFn: () => publicCourseService.getBySlug(slug!),
     enabled: !!slug,
     staleTime: 5 * 60 * 1000,
@@ -46,7 +55,7 @@ export function useRelatedCourses(slug: string | null) {
 
 export function useEnrollmentCheck(slug: string | null, enabled = true) {
   return useQuery({
-    queryKey: [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug, enrollmentSessionTag()],
+    queryKey: enrollmentQueryKey(slug ?? ""),
     queryFn: () => publicCourseService.checkEnrollment(slug!),
     enabled: !!slug && enabled,
     staleTime: 2 * 60 * 1000,
@@ -78,16 +87,11 @@ export function usePurchaseCourse(slug: string | null) {
     mutationFn: () => publicCourseService.purchaseCourse(slug!),
     onSuccess: (data) => {
       if (data.enrolled && slug) {
-        queryClient.setQueryData(
-          [PUBLIC_COURSE_QUERY_KEY, "enrollment", slug, enrollmentSessionTag()],
-          {
-            enrolled: true,
-            enrollment: data.enrollment ?? null,
-          },
-        );
-        queryClient.invalidateQueries({
-          queryKey: [PUBLIC_COURSE_QUERY_KEY, "detail", slug],
+        queryClient.setQueryData(enrollmentQueryKey(slug), {
+          enrolled: true,
+          enrollment: data.enrollment ?? null,
         });
+        queryClient.invalidateQueries({ queryKey: courseDetailQueryKey(slug) });
       }
 
       queryClient.invalidateQueries({ queryKey: ["wallet"] });

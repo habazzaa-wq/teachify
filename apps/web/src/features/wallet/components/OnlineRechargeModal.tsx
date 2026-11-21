@@ -46,7 +46,15 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
   const [busy, setBusy] = useState(false);
 
   const balance = walletData?.balance ?? 0;
-  const walletProviders = providers.filter((provider) => provider !== "paypal");
+  // Wallet top-ups are quoted in EGP. PayPal does not support EGP, so it is
+  // deliberately excluded here rather than offering a checkout that always
+  // fails. Direct course checkout converts EGP->USD and can offer PayPal.
+  const walletProviders: PaymentProvider[] = providers.filter((provider) => provider !== "paypal");
+  // Derive the effective provider and bind the select to it so an unsupported
+  // default (e.g. PayPal) can never be submitted for EGP wallet top-ups.
+  const activeWalletProvider = walletProviders.includes(selectedProvider)
+    ? selectedProvider
+    : walletProviders[0];
 
   const resetForm = useCallback(() => {
     setAmount("");
@@ -88,10 +96,7 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
     setError(null);
     setBusy(true);
     try {
-      const selectedWalletProvider = selectedProvider === "paypal" ? undefined : selectedProvider;
-      const provider = selectedWalletProvider && walletProviders.includes(selectedWalletProvider)
-        ? selectedWalletProvider
-        : walletProviders[0];
+      const provider = activeWalletProvider;
       if (!provider) {
         setError("لا توجد بوابة مفعّلة تدعم عملة شحن المحفظة (EGP) حالياً.");
         setBusy(false);
@@ -286,7 +291,7 @@ export function OnlineRechargeModal({ open, onClose }: OnlineRechargeModalProps)
                     </label>
                     <select
                       id="wallet-payment-provider"
-                      value={selectedProvider}
+                      value={activeWalletProvider ?? ""}
                       onChange={(event) => setSelectedProvider(event.target.value as PaymentProvider)}
                       disabled={busy || gatewaysLoading}
                       className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"

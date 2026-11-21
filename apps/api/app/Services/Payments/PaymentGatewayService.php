@@ -115,7 +115,7 @@ class PaymentGatewayService
             ];
         }
 
-        if (empty($gateway['api_key'])) {
+        if (empty($gateway['api_key']) || empty($gateway['secret_key'])) {
             return null;
         }
 
@@ -247,7 +247,11 @@ class PaymentGatewayService
             'fawaterk' => [
                 'provider' => 'fawaterk',
                 'environment' => $fawaterk['environment'] ?? 'test',
-                'is_active' => (bool) (! empty($fawaterk['is_active']) && ! empty($fawaterk['api_key'])),
+                'is_active' => (bool) (
+                    ! empty($fawaterk['is_active'])
+                    && ! empty($fawaterk['api_key'])
+                    && ! empty($fawaterk['secret_key'])
+                ),
                 'api_key_masked' => $this->mask((string) ($fawaterk['api_key'] ?? '')),
                 'has_api_key' => ! empty($fawaterk['api_key']),
                 'has_secret_key' => ! empty($fawaterk['secret_key']),

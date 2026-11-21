@@ -10,6 +10,7 @@ use App\Services\Commerce\DirectCoursePaymentService;
 use App\Services\Payments\Exceptions\PaymentGatewayException;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PayPalService;
+use App\Services\Payments\TenantPaymentUrl;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Request;
 
@@ -20,6 +21,7 @@ class PayPalReturnController extends Controller
         private readonly PayPalService $paypalService,
         private readonly WalletService $walletService,
         private readonly DirectCoursePaymentService $directCoursePaymentService,
+        private readonly TenantPaymentUrl $paymentUrl,
     ) {}
 
     public function complete(Request $request)
@@ -55,8 +57,11 @@ class PayPalReturnController extends Controller
                 (string) ($payment->metadata['paypal_currency'] ?? $payment->currency),
             );
         } catch (PaymentGatewayException $exception) {
+            // A transport/5xx failure may happen after PayPal captured the
+            // money. Keep the payment pending so the browser can retry the
+            // deterministic capture instead of marking a paid order as failed.
             $payment->update([
-                'status' => WalletPayment::STATUS_FAILED,
+                'status' => $exception->retryable ? WalletPayment::STATUS_PENDING : WalletPayment::STATUS_FAILED,
                 'failure_reason' => $exception->getMessage(),
             ]);
 
@@ -115,6 +120,7 @@ class PayPalReturnController extends Controller
             ? '/course-payment/result'
             : '/wallet/recharge-result';
 
-        return $request->schemeAndHttpHost().$path.'?reference='.rawurlencode($payment->reference);
+        return $this->paymentUrl->forTenant($payment->tenant, $request).$path
+            .'?reference='.rawurlencode($payment->reference);
     }
 }

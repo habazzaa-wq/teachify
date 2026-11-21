@@ -406,7 +406,12 @@ export function PublicNavbar() {
     (response: PublicRegisterResponse) => {
       setAuthTokens(response.access_token, response.refresh_token);
       setTenantContext({
-        tenant: response.tenant as any,
+        // Registration returns feature flags at the top level. Merge them so
+        // checkout uses the same tenant contract as login.
+        tenant: {
+          ...response.tenant,
+          feature_flags: response.feature_flags ?? null,
+        } as any,
         membership: response.membership as any,
         roles: response.roles as any,
         permissions: response.permissions as any,
