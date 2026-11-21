@@ -5,13 +5,13 @@
 .DESCRIPTION
     Accepts the task name (e.g. 'wallet'), the full branch (e.g. 'feat/wallet'),
     or the worktree folder leaf (e.g. 'tf-wallet').
-    By default it refuses to merge uncommitted changes; pass -Commit to stage and
-    commit them automatically before merging.
-    The integration (merge + push) runs in a throwaway detached worktree, so the
-    main copy's working tree is never touched - your unrelated local changes stay put.
+    Pending changes are committed automatically (-NoCommit opts out). The merge+push
+    runs in a throwaway detached worktree, so the main copy's working tree is never
+    touched. Conflicts stop the script with instructions, unless -TakeTheirs is given.
 .EXAMPLE
     .\scripts\finish-task.ps1 betaka
-    .\scripts\finish-task.ps1 betaka -Commit
+    .\scripts\finish-task.ps1 too1 -KeepWorktree
+    .\scripts\finish-task.ps1 too1 -TakeTheirs
     .\scripts\finish-task.ps1 feat/wallet -NoPush
     .\scripts\finish-task.ps1 -Help
 #>
@@ -25,6 +25,7 @@ param(
     [switch]$NoPush,
     [switch]$KeepWorktree,
     [switch]$RebaseOthers,   # opt-in: rewrite other task branches onto the new deploy
+    [switch]$TakeTheirs,     # on conflict, accept the incoming task branch's version
     [switch]$Help
 )
 
@@ -137,19 +138,24 @@ try {
         Write-Fail "Merge conflict while merging '$Branch'."
         Write-Warn2 "Conflicting files:"
         $conflicts | ForEach-Object { Write-Host "    $_" }
-        $ans = Read-Host "Auto-resolve ALL conflicts using the INCOMING branch ($Branch) version? [y/N] (else resolve manually)"
-        if ($ans -notmatch '^[yY]') {
+        if (-not $TakeTheirs) {
+            # Never prompt here: in CI/non-interactive shells Read-Host throws a
+            # terminating error that jumps to finally and the script then falsely
+            # reports success. Failing explicitly keeps the merge worktree for you.
             Write-Warn2 "Resolve manually in: $tmp"
-            Write-Warn2 "then: git add -A ; git commit ; git push origin HEAD:deploy ; git -C '$repo' worktree remove '$tmp'"
+            Write-Warn2 "then: git add -A ; git commit --no-edit ; git push origin HEAD:deploy"
+            Write-Warn2 "Or re-run with -TakeTheirs to accept '$Branch' versions of conflicting files."
             exit 1
         }
-        # Take the incoming branch's version for every conflicted file, then commit
-        # the merge. This is safe for styling-only clashes; choose 'n' for anything
-        # that needs a real 3-way resolution.
+        # Explicit opt-in only: take the incoming branch's version for every
+        # conflicted file. Good for whole-file replacement (redesigns), unsafe when
+        # both sides added unrelated lines to the same file.
         $conflicts | ForEach-Object { & git -C $tmp checkout --theirs -- "$_" | Out-Null }
-        & git -C $tmp add -A
-        & git -C $tmp commit -m "merge: $Branch into deploy" | Out-Null
-        Write-Ok "Auto-resolved conflicts using $Branch version"
+        $addOut = & git -C $tmp add -A 2>&1
+        if ($LASTEXITCODE -ne 0) { Write-Fail "'git add -A' failed after conflict resolution."; exit 1 }
+        & git -C $tmp commit --no-edit -m "merge: $Branch into deploy" | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Fail "Committing the resolved merge failed in '$tmp'."; exit 1 }
+        Write-Ok "Auto-resolved conflicts using $Branch version (-TakeTheirs)"
     }
     $mergeSucceeded = $true
 

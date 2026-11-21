@@ -76,6 +76,28 @@ if (-not $LocalDirty) {
         Write-Fail "Local '$Branch' is $ahead commit(s) ahead of origin/$Branch. Push to GitHub first, or pass -LocalDirty."
         exit 1
     }
+
+    # The classic "deployment finished but the page didn't change" trap: task
+    # work is still sitting on a local branch because finish-task was never run.
+    # Deploying origin/$Branch then correctly reports "Nothing changed".
+    $wtPath = $null
+    $activeTasks = @()
+    foreach ($line in (& git -C $repo worktree list --porcelain)) {
+        if ($line -match '^worktree (.+)$') { $wtPath = $matches[1] }
+        elseif ($line -match '^branch refs/heads/(.+)$') {
+            $b = $matches[1]
+            if ($b -ne $Branch -and $wtPath -and (Test-Path -LiteralPath $wtPath)) { $activeTasks += $b }
+        }
+    }
+    $unshipped = @()
+    foreach ($b in $activeTasks) {
+        & git -C $repo merge-base --is-ancestor $b "origin/$Branch" 2>$null
+        if ($LASTEXITCODE -ne 0) { $unshipped += $b }
+    }
+    if ($unshipped.Count -gt 0) {
+        Write-Warn2 "$($unshipped.Count) active task branch(es) are NOT in origin/${Branch}: $(($unshipped | Select-Object -First 3) -join ', ')"
+        Write-Warn2 "If you expected that work live, run: .\scripts\finish-task.ps1 <name>   THEN deploy again."
+    }
 } else {
     Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/$Branch currently is."
 }
