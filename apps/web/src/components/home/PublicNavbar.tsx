@@ -6,12 +6,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Sun, Moon, LogIn, Users,
-  Sparkles, ChevronLeft, Home, Layers, BookOpen, User,
+  Sun, Moon, LogIn,
+  Sparkles, ChevronLeft, User,
   LogOut, Settings, ChevronDown, KeyRound, Wallet, CreditCard, Loader2, Search,
   LayoutDashboard,
-  Newspaper,
-  BriefcaseBusiness,
 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -23,10 +21,8 @@ import type { PublicRegisterResponse } from "@/features/auth/services/public-reg
 import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
 import { cn } from "@/lib/cn";
 import { NavbarLogo } from "@/components/home/NavbarLogo";
+import { usePublicNavLinks, type PublicNavLink } from "@/components/home/usePublicNavLinks";
 import { resolveNavbarLogo } from "@/features/settings/utils/navbar-logo";
-import { usePublicAboutPage } from "@/features/about-page/hooks";
-import { getAboutIcon } from "@/features/about-page/icons";
-import { routes } from "@/constants/routes";
 
 const PublicRegisterCard = dynamic(
   () => import("@/features/auth/components/PublicRegisterCard").then((m) => m.PublicRegisterCard),
@@ -72,19 +68,6 @@ const primary = "var(--brand-primary)";
 const secondary = "var(--brand-secondary)";
 
 const STUDENT_PROFILE_QUERY_KEY = ["student-profile", "profile"];
-
-type NavLink = {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-  scrollTarget?: string;
-};
-
-const navLinks: NavLink[] = [
-  { label: "الرئيسية", href: "/", icon: Home },
-  { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
-  { label: "الكورسات", href: "/courses", icon: BookOpen },
-];
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -158,7 +141,7 @@ function ThemeBtn() {
 function NavLinkItem({
   href, label, icon: Icon, isActive, onClick,
 }: {
-  href: string; label: string; icon: React.ElementType;
+  href: string; label: string; icon: PublicNavLink["icon"];
   isActive: boolean; onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
@@ -206,19 +189,8 @@ function NavLinkItem({
 export function PublicNavbar() {
   const theme = useUiStore((s) => s.theme);
   const { tenant } = useActiveTenant();
-  const { data: aboutPage } = usePublicAboutPage();
+  const visibleNavLinks = usePublicNavLinks();
   const walletEnabled = tenant !== null && tenant.feature_flags?.has_wallet !== false;
-  const visibleNavLinks: NavLink[] = [
-    ...navLinks,
-    ...(tenant?.feature_flags?.has_services ? [{ label: "الخدمات", href: routes.publicServices, icon: BriefcaseBusiness }] : []),
-    { label: "المدونة", href: "/blog", icon: Newspaper },
-    ...(tenant?.feature_flags?.has_instructors
-      ? [{ label: "المدربون", href: "/instructors", icon: Users }]
-      : []),
-    ...(aboutPage?.enabled
-      ? [{ label: aboutPage.navLabel, href: routes.publicAbout, icon: getAboutIcon(aboutPage.navIcon) }]
-      : []),
-  ];
   const pathname = usePathname();
   const router = useRouter();
   const auth = useContext(AuthContext);
