@@ -49,7 +49,11 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const { isAuthenticated } = useCurrentUser();
   const { tenant } = useActiveTenant();
   const walletEnabled = tenant?.feature_flags?.has_wallet === true;
-  const { data: walletData } = useWallet(open && isAuthenticated && walletEnabled);
+  const {
+    data: walletData,
+    isError: isWalletError,
+    refetch: refetchWallet,
+  } = useWallet(open && isAuthenticated && walletEnabled);
   const {
     data: paymentProviders = [],
     isLoading: paymentProvidersLoading,
@@ -64,6 +68,8 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
   const [showRecharge, setShowRecharge] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("fawaterk");
   const [paypalCurrency, setPaypalCurrency] = useState("USD");
+  // Derive the effective provider from the loaded list and bind the select to
+  // it, so a stale selection never overrides the gateways the backend offers.
   const activeProvider = paymentProviders.includes(selectedProvider)
     ? selectedProvider
     : paymentProviders[0] ?? null;
@@ -77,7 +83,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
     activeProvider === "paypal" ? paypalCurrency : undefined,
   );
   const price = isFree ? 0 : (course.discountPrice ?? course.price ?? 0);
-  const walletLoading = walletEnabled && !isFree && !walletData;
+  const walletLoading = walletEnabled && !isFree && !walletData && !isWalletError;
   const insufficient = walletEnabled && !isFree && balance < price;
 
   const rawSupportNumber =
@@ -215,6 +221,24 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                           جارٍ التحقق من رصيد محفظتك...
                         </p>
                       </div>
+                    ) : isWalletError && walletEnabled && !isFree ? (
+                      <div className="flex flex-col items-center rounded-2xl border border-red-200 bg-red-50 px-4 py-8 text-center dark:bg-red-950/20">
+                        <AlertTriangle className="h-8 w-8 text-red-500" />
+                        <p className="mt-3 text-sm font-bold text-red-700 dark:text-red-400">
+                          تعذّر قراءة رصيد محفظتك
+                        </p>
+                        <p className="mt-1 text-xs text-red-600/70 dark:text-red-400/70">
+                          تحقق من اتصالك ثم أعد المحاولة.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void refetchWallet()}
+                          className="mt-4 h-10 rounded-xl px-4 text-sm font-bold text-white"
+                          style={{ background: primary }}
+                        >
+                          إعادة المحاولة
+                        </button>
+                      </div>
                     ) : insufficient ? (
                       <div className="flex flex-col items-center">
                         <div className="mb-4 w-full rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-4 dark:bg-amber-950/20">
@@ -342,7 +366,7 @@ export function PurchaseCourseModal({ open, onClose, course }: PurchaseCourseMod
                             </label>
                             <select
                               id="course-payment-provider"
-                              value={selectedProvider}
+                              value={activeProvider ?? ""}
                               onChange={(event) => setSelectedProvider(event.target.value as PaymentProvider)}
                               className="h-11 w-full rounded-xl border border-border/50 bg-background/80 px-3 text-sm"
                             >

@@ -86,6 +86,39 @@ class FawaterkService
     }
 
     /**
+     * Fetch the authoritative invoice data so webhooks can be checked against
+     * the amount Fawaterk actually recorded, not only the callback payload.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>
+     *
+     * @throws PaymentGatewayException
+     */
+    public function invoiceData(array $config, int|string $invoiceId): array
+    {
+        $apiKey = (string) ($config['api_key'] ?? '');
+        if ($apiKey === '') {
+            throw new PaymentGatewayException('مفتاح API الخاص ببوابة الدفع غير مُعدّ بعد.');
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->acceptJson()
+                ->timeout(self::TIMEOUT)
+                ->get($this->baseUrl($config).'/getInvoiceData/'.rawurlencode((string) $invoiceId));
+        } catch (ConnectionException $e) {
+            throw new PaymentGatewayException('تعذّر الاتصال ببوابة الدفع، حاول مرة أخرى لاحقاً.', previous: $e, retryable: true);
+        }
+
+        $body = $response->json();
+        if ($response->failed() || ! is_array($body) || ($body['status'] ?? '') !== 'success' || ! is_array($body['data'] ?? null)) {
+            throw new PaymentGatewayException('تعذّر التحقق من بيانات الفاتورة لدى بوابة الدفع.', retryable: $response->serverError() || $response->status() === 429);
+        }
+
+        return $body['data'];
+    }
+
+    /**
      * @param  array<string, mixed>  $config
      */
     private function baseUrl(array $config): string

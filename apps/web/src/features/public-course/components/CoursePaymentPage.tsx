@@ -64,9 +64,12 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
     isError: providersError,
   } = useAvailablePaymentGateways(isAuthenticated && isRegionalCheckoutEnabled);
   const directPayment = useCreateDirectCoursePayment(slug);
+  // Derive the effective provider from the loaded list so a stale/invalid
+  // selection never wins; the UI highlight below also uses this value.
   const activeProvider = selectedProvider && providers.includes(selectedProvider)
     ? selectedProvider
     : providers[0] ?? null;
+
   const quote = useDirectCoursePaymentQuote(
     slug,
     activeProvider,
@@ -75,10 +78,10 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
   );
 
   useEffect(() => {
-    if (tenant && !isRegionalCheckoutEnabled) {
+    if (tenant && (!isRegionalCheckoutEnabled || course?.pricingType === "free")) {
       router.replace(`/courses/${slug}`);
     }
-  }, [isRegionalCheckoutEnabled, router, slug, tenant]);
+  }, [course?.pricingType, isRegionalCheckoutEnabled, router, slug, tenant]);
 
   if ((courseLoading && !fetchedCourse) || !course) {
     return (
@@ -197,12 +200,25 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
               </div>
             )}
 
-            {directPayment.error && (
-              <p role="alert" className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {directPayment.error instanceof Error
-                  ? directPayment.error.message
-                  : "تعذر بدء عملية الدفع. حاول مرة أخرى."}
-              </p>
+            {(directPayment.error || quote.error) && (
+              <div role="alert" className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <p>
+                  {directPayment.error instanceof Error
+                    ? directPayment.error.message
+                    : quote.error instanceof Error
+                      ? quote.error.message
+                      : "تعذر بدء عملية الدفع. حاول مرة أخرى."}
+                </p>
+                {quote.isError && !directPayment.error && (
+                  <button
+                    type="button"
+                    onClick={() => void quote.refetch()}
+                    className="mt-2 text-xs font-bold underline underline-offset-2"
+                  >
+                    إعادة محاولة تحميل السعر
+                  </button>
+                )}
+              </div>
             )}
 
             <button
@@ -211,7 +227,7 @@ export function CoursePaymentPage({ slug, initialCourse }: CoursePaymentPageProp
                 provider: activeProvider,
                 ...(activeProvider === "paypal" ? { paypalCurrency } : {}),
               })}
-              disabled={!activeProvider || providersLoading || providersError || directPayment.isPending || quote.isLoading || quote.isError}
+              disabled={!activeProvider || providersLoading || providersError || directPayment.isPending || quote.isLoading}
               className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               style={{ background: CTA_GRADIENT }}
             >

@@ -13,6 +13,7 @@ use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PaymobService;
 use App\Services\Payments\PayPalService;
+use App\Services\Payments\TenantPaymentUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,6 +27,7 @@ class DirectCoursePaymentController extends Controller
         private readonly PaymobService $paymobService,
         private readonly PayPalService $paypalService,
         private readonly CourseRegionalPricing $regionalPricing,
+        private readonly TenantPaymentUrl $paymentUrl,
     ) {}
 
     public function quote(Request $request, string $slug): JsonResponse
@@ -189,12 +191,13 @@ class DirectCoursePaymentController extends Controller
 
         $user = $student->user;
         $nameParts = array_values(array_filter(array_map('trim', explode(' ', (string) ($user?->name ?? $student->phone ?? '')))));
-        $resultUrl = $request->schemeAndHttpHost().'/course-payment/result?reference='.urlencode($reference)
+        $baseUrl = $this->paymentUrl->forTenant($tenant, $request);
+        $resultUrl = $baseUrl.'/course-payment/result?reference='.urlencode($reference)
             .'&course='.urlencode($course->slug);
 
         try {
             if ($provider === 'paypal') {
-                $paypalReturnUrl = $request->schemeAndHttpHost().'/api/v1/payments/paypal/return?reference='.urlencode($reference);
+                $paypalReturnUrl = $baseUrl.'/api/v1/payments/paypal/return?reference='.urlencode($reference);
                 $paypalResult = $this->paypalService->createOrder(
                     $config,
                     $reference,
@@ -202,7 +205,7 @@ class DirectCoursePaymentController extends Controller
                     $gatewayAmount['currency'],
                     $course->title,
                     $paypalReturnUrl,
-                    $request->schemeAndHttpHost().'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),
+                    $baseUrl.'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),
                 );
                 $result = [
                     'url' => $paypalResult['url'],
@@ -229,8 +232,8 @@ class DirectCoursePaymentController extends Controller
                         'phone' => $student->phone ?? '',
                         'country' => $quote['country_code'],
                     ],
-                    $request->schemeAndHttpHost().'/api/v1/payments/paymob/webhook',
-                    $request->schemeAndHttpHost().'/api/v1/payments/paymob/return?reference='.urlencode($reference),
+                    $baseUrl.'/api/v1/payments/paymob/webhook',
+                    $baseUrl.'/api/v1/payments/paymob/return?reference='.urlencode($reference),
                 );
                 $result = [
                     'url' => $paymobResult['url'],
@@ -262,7 +265,7 @@ class DirectCoursePaymentController extends Controller
                         'successUrl' => $resultUrl.'&status=success',
                         'failUrl' => $resultUrl.'&status=failed',
                         'pendingUrl' => $resultUrl.'&status=pending',
-                        'webhookUrl' => $request->schemeAndHttpHost().'/api/v1/payments/fawaterk/webhook_json',
+                        'webhookUrl' => $baseUrl.'/api/v1/payments/fawaterk/webhook_json',
                     ],
                 ]);
             }

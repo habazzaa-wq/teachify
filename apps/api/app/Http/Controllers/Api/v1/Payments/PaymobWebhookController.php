@@ -9,6 +9,7 @@ use App\Models\WalletPayment;
 use App\Services\Commerce\DirectCoursePaymentService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PaymobService;
+use App\Services\Payments\TenantPaymentUrl;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,30 +22,48 @@ class PaymobWebhookController extends Controller
         private readonly PaymobService $paymobService,
         private readonly WalletService $walletService,
         private readonly DirectCoursePaymentService $directCoursePaymentService,
+        private readonly TenantPaymentUrl $paymentUrl,
     ) {}
 
     public function handle(Request $request): JsonResponse
     {
-        $payment = $this->process($request);
+        $this->process($request);
 
-        return response()->json(['message' => $payment ? 'ok' : 'ignored']);
+        return response()->json(['message' => 'ok']);
     }
 
+    /**
+     * Paymob redirects the browser with only the reference query string. The
+     * HMAC-protected transaction object is only sent to the webhook endpoint,
+     * so the browser route must never run through the webhook verifier.
+     */
     public function redirect(Request $request): RedirectResponse
     {
-        $payment = $this->process($request);
+        $reference = (string) $request->query('reference', '');
+        $payment = $reference === ''
+            ? null
+            : WalletPayment::query()
+                ->withoutGlobalScope(TenantScope::class)
+                ->where('provider', 'paymob')
+                ->where('reference', $reference)
+                ->first();
+
         abort_unless($payment, 404, 'عملية الدفع غير موجودة.');
+
+        app()->instance(Tenant::class, $payment->tenant);
+        app()->instance('currentTenant', $payment->tenant);
 
         $path = $payment->payment_type === 'course_purchase'
             ? '/course-payment/result'
             : '/wallet/recharge-result';
 
         return redirect(
-            $request->schemeAndHttpHost().$path.'?reference='.rawurlencode($payment->reference),
+            $this->paymentUrl->forTenant($payment->tenant, $request).$path
+            .'?reference='.rawurlencode($payment->reference),
         );
     }
 
-    private function process(Request $request): ?WalletPayment
+    private function process(Request $request): WalletPayment
     {
         $payload = $request->input('obj');
         if (! is_array($payload)) {
@@ -63,23 +82,18 @@ class PaymobWebhookController extends Controller
         );
         $orderId = (string) (is_array($order) ? ($order['id'] ?? '') : $order);
 
-        $query = WalletPayment::query()->withoutGlobalScope(TenantScope::class);
+        $query = WalletPayment::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->where('provider', 'paymob');
         $payment = $reference !== ''
-            ? $query->where('reference', $reference)->first()
+            ? (clone $query)->where('reference', $reference)->first()
             : null;
 
         if (! $payment && $orderId !== '') {
-            $payment = WalletPayment::query()
-                ->withoutGlobalScope(TenantScope::class)
-                ->where('provider', 'paymob')
-                ->where('provider_invoice_id', $orderId)
-                ->first();
+            $payment = (clone $query)->where('provider_invoice_id', $orderId)->first();
         }
 
-        if (! $payment || $payment->provider !== 'paymob') {
-            abort(404, 'عملية الدفع غير موجودة.');
-        }
-        $reference = $reference !== '' ? $reference : $payment->reference;
+        abort_unless($payment, 404, 'عملية الدفع غير موجودة.');
 
         app()->instance(Tenant::class, $payment->tenant);
         app()->instance('currentTenant', $payment->tenant);

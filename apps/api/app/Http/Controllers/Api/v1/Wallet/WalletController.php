@@ -13,6 +13,7 @@ use App\Services\Payments\FawaterkService;
 use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PaymobService;
 use App\Services\Payments\PayPalService;
+use App\Services\Payments\TenantPaymentUrl;
 use App\Services\Wallet\WalletService;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,7 @@ class WalletController extends Controller
         private readonly FawaterkService $fawaterkService,
         private readonly PayPalService $paypalService,
         private readonly PaymobService $paymobService,
+        private readonly TenantPaymentUrl $paymentUrl,
     ) {}
 
     /**
@@ -161,6 +163,7 @@ class WalletController extends Controller
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
             'provider' => ['nullable', 'string', 'in:fawaterk,paypal,paymob'],
+            'paypal_currency' => ['nullable', 'string', 'size:3'],
         ]);
 
         $tenant = currentTenant();
@@ -172,10 +175,21 @@ class WalletController extends Controller
         try {
             $provider = $this->gatewayService->resolveProvider($tenant, $validated['provider'] ?? null);
             $config = $this->gatewayService->requireConfig($tenant, $provider);
+            $paypalCurrency = strtoupper((string) ($validated['paypal_currency'] ?? 'USD'));
+            if ($provider === 'paypal' && ! in_array($paypalCurrency, $this->paypalService->supportedCurrencies(), true)) {
+                throw ValidationException::withMessages([
+                    'paypal_currency' => ['عملة الدفع المختارة غير مدعومة من PayPal. اختر عملة أخرى.'],
+                ]);
+            }
         } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages(['payment' => [$exception->getMessage()]]);
         }
 
+        $gatewayAmount = [
+            'amount' => (string) $amount,
+            'currency' => 'EGP',
+            'exchange_rate' => null,
+        ];
         $reference = $this->gatewayService->generateReference();
 
         $payment = WalletPayment::create([
@@ -194,7 +208,7 @@ class WalletController extends Controller
         $fullName = $user?->name ?? $membership->phone ?? '';
         $nameParts = array_values(array_filter(array_map('trim', explode(' ', (string) $fullName))));
 
-        $baseUrl = $request->schemeAndHttpHost();
+        $baseUrl = $this->paymentUrl->forTenant($tenant, $request);
 
         $payload = [
             'cartTotal' => $amount,
@@ -225,13 +239,13 @@ class WalletController extends Controller
 
         try {
             if ($provider === 'paypal') {
-                $paypalAmount = $this->paypalService->amountForPayment((string) $amount, 'EGP');
+                $gatewayAmount = $this->paypalService->amountForPayment((string) $amount, 'EGP', $paypalCurrency);
                 $paypalReturnUrl = $baseUrl.'/api/v1/payments/paypal/return?reference='.urlencode($reference);
                 $result = $this->paypalService->createOrder(
                     $config,
                     $reference,
-                    $paypalAmount['amount'],
-                    $paypalAmount['currency'],
+                    $gatewayAmount['amount'],
+                    $gatewayAmount['currency'],
                     'شحن محفظة الأكاديمية',
                     $paypalReturnUrl,
                     $baseUrl.'/api/v1/payments/paypal/cancel?reference='.urlencode($reference),
@@ -243,17 +257,20 @@ class WalletController extends Controller
                 ];
                 $payment->update([
                     'metadata' => array_merge($payment->metadata ?? [], [
-                        'paypal_amount' => $paypalAmount['amount'],
-                        'paypal_currency' => $paypalAmount['currency'],
+                        'gateway_amount' => $gatewayAmount['amount'],
+                        'gateway_currency' => $gatewayAmount['currency'],
+                        'gateway_exchange_rate' => $gatewayAmount['exchange_rate'],
+                        'paypal_amount' => $gatewayAmount['amount'],
+                        'paypal_currency' => $gatewayAmount['currency'],
                     ]),
                 ]);
             } elseif ($provider === 'paymob') {
-                $paymobAmount = $this->paymobService->amountForPayment((string) $amount, 'EGP');
+                $gatewayAmount = $this->paymobService->amountForPayment((string) $amount, 'EGP');
                 $result = $this->paymobService->createPaymentLink(
                     $config,
                     $reference,
-                    $paymobAmount['amount'],
-                    $paymobAmount['currency'],
+                    $gatewayAmount['amount'],
+                    $gatewayAmount['currency'],
                     [
                         'first_name' => $nameParts[0] ?? 'Student',
                         'last_name' => $nameParts[1] ?? 'Teachify',
@@ -271,8 +288,8 @@ class WalletController extends Controller
                 ];
                 $payment->update([
                     'metadata' => array_merge($payment->metadata ?? [], [
-                        'gateway_amount' => $paymobAmount['amount'],
-                        'gateway_currency' => $paymobAmount['currency'],
+                        'gateway_amount' => $gatewayAmount['amount'],
+                        'gateway_currency' => $gatewayAmount['currency'],
                     ]),
                 ]);
             } else {
@@ -313,12 +330,9 @@ class WalletController extends Controller
                 'payment_url' => $result['url'],
                 'amount' => $amount,
                 'currency' => 'EGP',
-                'gateway_amount' => $provider === 'paypal'
-                    ? $paypalAmount['amount']
-                    : ($provider === 'paymob' ? $paymobAmount['amount'] : $amount),
-                'gateway_currency' => $provider === 'paypal'
-                    ? $paypalAmount['currency']
-                    : ($provider === 'paymob' ? $paymobAmount['currency'] : 'EGP'),
+                'gateway_amount' => $gatewayAmount['amount'],
+                'gateway_currency' => $gatewayAmount['currency'],
+                'gateway_exchange_rate' => $gatewayAmount['exchange_rate'],
             ],
         ], 201);
     }

@@ -178,13 +178,16 @@ class PayPalService
         } catch (ConnectionException $exception) {
             $this->logConnectionFailure($path, $exception, $requestId);
 
-            throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal، حاول مرة أخرى لاحقاً.', previous: $exception);
+            throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal، حاول مرة أخرى لاحقاً.', previous: $exception, retryable: true);
         }
 
         if ($response->failed()) {
             $this->logPayPalFailure($path, $response, $requestId);
 
-            throw new PaymentGatewayException($this->failureMessage($response));
+            throw new PaymentGatewayException(
+                $this->failureMessage($response),
+                retryable: $response->serverError() || $response->status() === 429,
+            );
         }
 
         return $this->responseBody($response, $path, $requestId);
@@ -208,20 +211,26 @@ class PayPalService
         } catch (ConnectionException $exception) {
             $this->logConnectionFailure('oauth_token', $exception);
 
-            throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal للتحقق من بيانات الحساب.', previous: $exception);
+            throw new PaymentGatewayException('تعذّر الاتصال بـ PayPal للتحقق من بيانات الحساب.', previous: $exception, retryable: true);
         }
 
         if ($response->failed()) {
             $this->logPayPalFailure('oauth_token', $response);
 
-            throw new PaymentGatewayException($this->credentialFailureMessage($response));
+            throw new PaymentGatewayException(
+                $this->credentialFailureMessage($response),
+                retryable: $response->serverError() || $response->status() === 429,
+            );
         }
 
         $body = $this->responseBody($response, 'oauth_token');
         if (empty($body['access_token'])) {
             $this->logPayPalFailure('oauth_token', $response);
 
-            throw new PaymentGatewayException($this->credentialFailureMessage($response));
+            throw new PaymentGatewayException(
+                $this->credentialFailureMessage($response),
+                retryable: $response->serverError() || $response->status() === 429,
+            );
         }
 
         return (string) $body['access_token'];
@@ -323,7 +332,7 @@ class PayPalService
                 'http_status' => $response->status(),
             ], fn (mixed $value): bool => $value !== null && $value !== ''));
 
-            throw new PaymentGatewayException('أعاد PayPal استجابة غير صالحة.');
+            throw new PaymentGatewayException('أعاد PayPal استجابة غير صالحة.', retryable: true);
         }
 
         return $body;
@@ -363,12 +372,12 @@ class PayPalService
                 } catch (ConnectionException $exception) {
                     $this->logConnectionFailure('exchange_rate', $exception);
 
-                    throw new PaymentGatewayException('تعذّر الاتصال بخدمة أسعار العملات، حاول مرة أخرى لاحقاً.', previous: $exception);
+                    throw new PaymentGatewayException('تعذّر الاتصال بخدمة أسعار العملات، حاول مرة أخرى لاحقاً.', previous: $exception, retryable: true);
                 }
 
                 $body = $response->json();
                 if ($response->failed() || ! is_array($body) || ($body['result'] ?? null) !== 'success' || ! is_array($body['rates'] ?? null)) {
-                    throw new PaymentGatewayException('تعذّر الحصول على سعر تحويل العملات حالياً. حاول مرة أخرى لاحقاً.');
+                    throw new PaymentGatewayException('تعذّر الحصول على سعر تحويل العملات حالياً. حاول مرة أخرى لاحقاً.', retryable: true);
                 }
 
                 return $body['rates'];

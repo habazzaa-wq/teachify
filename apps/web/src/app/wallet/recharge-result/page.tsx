@@ -73,16 +73,16 @@ export default function WalletRechargeResultPage() {
           setFailureReason(res.data.failure_reason ?? "لم نتمكن من تأكيد العملية، يرجى المحاولة مرة أخرى.");
           setStatus("failed");
           polledRef.current = true;
+        } else if (initialStatus === "failed") {
+          setAmount(Number(res.data.amount));
+          setFailureReason(res.data.failure_reason ?? "لم يتم إتمام الدفع. يرجى المحاولة مرة أخرى.");
+          setStatus("failed");
+          polledRef.current = true;
         } else {
-          // pending/expired: keep polling for a short window to catch the webhook.
-          if (initialStatus === "success") {
-            setStatus("pending");
-            polledRef.current = false;
-          } else {
-            setStatus("failed");
-            setFailureReason(res.data.failure_reason ?? "لم يتم إتمام الدفع. يرجى المحاولة مرة أخرى.");
-            polledRef.current = true;
-          }
+          // pending/expired: the gateway webhook may still arrive. Keep polling
+          // regardless of the query hint (PayPal/Paymob never send one).
+          setStatus("pending");
+          polledRef.current = false;
         }
       } catch {
         if (cancelled) return;
@@ -92,7 +92,7 @@ export default function WalletRechargeResultPage() {
 
     fetchStatus();
 
-    // Poll up to ~15s so the webhook has time to mark the payment as paid.
+    // Poll up to ~20s so the webhook has time to mark the payment as paid.
     const interval = window.setInterval(async () => {
       if (polledRef.current) return;
       try {
@@ -118,10 +118,11 @@ export default function WalletRechargeResultPage() {
     }, 3000);
 
     const timeout = window.setTimeout(() => {
+      // Stop polling after the bounded window. Do not read `status` from this
+      // effect's closure — it is always the initial "loading" here. If no
+      // terminal result arrived, the status is already "pending" from the
+      // initial fetch, which is the correct "waiting for webhook" UI.
       window.clearInterval(interval);
-      if (!polledRef.current && status === "pending") {
-        setStatus("pending");
-      }
     }, 20000);
 
     return () => {

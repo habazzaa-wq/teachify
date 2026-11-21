@@ -89,14 +89,15 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
       return;
     }
     if (
-      tenant?.feature_flags?.has_wallet === false
+      course?.pricingType !== "free"
+      && tenant?.feature_flags?.has_wallet === false
       && tenant.feature_flags.has_regional_pricing === true
     ) {
       router.push(`/courses/${slug}/checkout`);
       return;
     }
     setPurchaseModalOpen(true);
-  }, [isEnrolled, isAuthenticated, router, tenant, slug]);
+  }, [course?.pricingType, isEnrolled, isAuthenticated, router, tenant, slug]);
 
   const handleLogin = useCallback(() => {
     setLoginOpen(true);
@@ -105,14 +106,15 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
   const handleLoginSuccess = useCallback(() => {
     setLoginOpen(false);
     if (
-      tenant?.feature_flags?.has_wallet === false
+      course?.pricingType !== "free"
+      && tenant?.feature_flags?.has_wallet === false
       && tenant.feature_flags.has_regional_pricing === true
     ) {
       router.push(`/courses/${slug}/checkout`);
       return;
     }
     setPurchaseModalOpen(true);
-  }, [router, slug, tenant]);
+  }, [course?.pricingType, router, slug, tenant]);
 
   const handleLockedClick = useCallback(() => {
     if (!isEnrolled) {

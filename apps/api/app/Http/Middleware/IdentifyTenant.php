@@ -9,9 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyTenant
 {
-    public function __construct(private readonly TenantRepository $tenants)
-    {
-    }
+    public function __construct(private readonly TenantRepository $tenants) {}
 
     public function handle(Request $request, \Closure $next): Response
     {
@@ -25,6 +23,7 @@ class IdentifyTenant
             if ($tenant && $this->tenants->isActive($tenant)) {
                 app()->instance(Tenant::class, $tenant);
                 app()->instance('currentTenant', $tenant);
+
                 return $next($request);
             }
         }
@@ -57,7 +56,7 @@ class IdentifyTenant
         if (! isset($tenant) || ! $tenant || ! $this->tenants->isActive($tenant)) {
             return response()->json([
                 'message' => 'Tenant not found or inactive.',
-                'error' => 'TENANT_NOT_FOUND'
+                'error' => 'TENANT_NOT_FOUND',
             ], 404);
         }
 
@@ -80,6 +79,8 @@ class IdentifyTenant
             || $request->is('api/v1/certificates/verify/*')
             || $request->is('api/v1/integrations/bunny/webhooks')
             || $request->is('api/v1/payments/fawaterk/webhook_json')
+            || $request->is('api/v1/payments/paymob/webhook')
+            || $request->is('api/v1/payments/paymob/return')
             || $request->is('api/v1/payments/paypal/return')
             || $request->is('api/v1/payments/paypal/cancel')
             || $request->is('api/v1/tenant/by-domain')

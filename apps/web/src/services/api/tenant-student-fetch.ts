@@ -325,14 +325,27 @@ export async function tenantStudentFetch<T>(
       clearExpiredPublicSession();
     }
     let message = `Request failed (${res.status})`;
+    let fieldErrors: Record<string, string[]> | undefined;
     try {
       const body = await res.json();
       if (body?.message) message = body.message;
+      if (body?.errors && typeof body.errors === "object") {
+        fieldErrors = Object.fromEntries(
+          Object.entries(body.errors as Record<string, unknown>).map(([field, value]) => [
+            field,
+            Array.isArray(value) ? value.map(String) : [String(value)],
+          ]),
+        );
+      }
     } catch {
       // ignore non-json bodies
     }
-    const error = new Error(message) as Error & { status?: number };
+    const error = new Error(message) as Error & {
+      status?: number;
+      fieldErrors?: Record<string, string[]>;
+    };
     error.status = res.status;
+    if (fieldErrors) error.fieldErrors = fieldErrors;
     throw error;
   }
 

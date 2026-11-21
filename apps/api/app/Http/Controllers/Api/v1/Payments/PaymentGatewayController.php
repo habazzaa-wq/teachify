@@ -114,10 +114,14 @@ class PaymentGatewayController extends Controller
                 ]);
             }
         }
-        if ($provider === 'fawaterk' && ! empty($merged['is_active']) && empty($merged['api_key'])) {
-            throw ValidationException::withMessages([
-                'api_key' => ['أدخل مفتاح API الخاص بفواتيرك قبل تفعيل البوابة.'],
-            ]);
+        if ($provider === 'fawaterk' && ! empty($merged['is_active'])) {
+            foreach (['api_key', 'secret_key'] as $key) {
+                if (empty($merged[$key])) {
+                    throw ValidationException::withMessages([
+                        $key => ['أكمل بيانات فواتيرك المطلوبة قبل تفعيل البوابة.'],
+                    ]);
+                }
+            }
         }
 
         $payload = $this->gatewayService->save(currentTenant(), $provider, $validated);
