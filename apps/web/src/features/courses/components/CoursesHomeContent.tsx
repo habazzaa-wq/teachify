@@ -1385,6 +1385,11 @@ function CoursesHomeContent({
                   </motion.section>
                 )}
 
+{/*
+  On the teacher panel a card click must open the course workspace.
+  `onOpen` overrides that default navigation, so it is only passed in
+  instructor mode; editing stays on the dedicated pencil/kebab (`onEdit`).
+*/}
 {/* ═══ 7. Pinned Courses ═══ */}
               {pinnedCourses.length > 0 &&
                 page === 1 &&
@@ -1408,7 +1413,7 @@ function CoursesHomeContent({
                         key={course.id}
                         course={course}
                         index={i}
-                        onOpen={instructorToken && !instructorPermissions?.includes("courses.update") ? undefined : handleOpenEdit}
+                        onOpen={instructorToken && instructorPermissions?.includes("courses.update") ? handleOpenEdit : undefined}
                         isPinned
                         selected={selectedCourseIds.has(course.id)}
                         onToggleSelect={handleSelectCourse}
@@ -1455,7 +1460,7 @@ function CoursesHomeContent({
                       key={course.id}
                       course={course}
                       index={i}
-                      onOpen={instructorToken && !instructorPermissions?.includes("courses.update") ? undefined : handleOpenEdit}
+                      onOpen={instructorToken && instructorPermissions?.includes("courses.update") ? handleOpenEdit : undefined}
                       isPinned={pinnedCourseIds.includes(course.id)}
                       selected={selectedCourseIds.has(course.id)}
                       onToggleSelect={handleSelectCourse}
