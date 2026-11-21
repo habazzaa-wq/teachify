@@ -32,6 +32,7 @@ export function formatCatalogCourse(raw: Raw): CatalogCourse {
           id: String(raw.instructor.id),
           name: raw.instructor.name ?? null,
           avatar: raw.instructor.avatar ?? null,
+          gender: raw.instructor.gender ?? null,
         }
       : null,
     instructors: Array.isArray(raw.instructors)
@@ -39,6 +40,7 @@ export function formatCatalogCourse(raw: Raw): CatalogCourse {
           id: String(instructor.id),
           name: instructor.name ?? null,
           avatar: instructor.avatar ?? null,
+          gender: instructor.gender ?? null,
           role: instructor.role ?? "co_instructor",
         }))
       : [],
@@ -68,6 +70,7 @@ function formatTeacher(raw: Raw): CatalogTeacher {
     id: String(raw.id),
     name: raw.name ?? "مدرس",
     avatar: raw.avatar ?? null,
+    gender: raw.gender ?? null,
     specialization: raw.specialization ?? null,
     coursesCount: raw.coursesCount ?? 0,
   };

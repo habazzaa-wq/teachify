@@ -5,11 +5,13 @@ import Link from "next/link";
 import axios from "axios";
 import { resolveApiBaseUrl } from "@/config/env";
 import { useTenantStore } from "@/stores/tenant.store";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 interface InstructorSummary {
   id: string;
   name: string;
   avatar: string | null;
+  gender?: string | null;
   jobTitle: string | null;
   department: string | null;
   expertise: string | null;
@@ -65,7 +67,7 @@ export default function InstructorsPage() {
               className="rounded-2xl border bg-card p-6 text-center transition hover:-translate-y-1 hover:shadow-lg"
             >
               <img
-                src={instructor.avatar || "/images/default-avatar.png"}
+                src={getTeacherAvatar(instructor.avatar, instructor.gender)}
                 alt=""
                 className="mx-auto h-24 w-24 rounded-full object-cover"
               />

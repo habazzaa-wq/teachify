@@ -79,7 +79,7 @@ class InstructorAccountService
     }
 
     /**
-     * @return list<array{id: int, name: string, email: string, avatar: ?string, status: string, courses: list<array{id: int, title: string, status: string}>}>
+     * @return list<array{id: int, name: string, email: string, avatar: ?string, gender: ?string, status: string, courses: list<array{id: int, title: string, status: string}>}>
      */
     public function list(Tenant $tenant): array
     {
@@ -127,6 +127,7 @@ class InstructorAccountService
                 'name' => $membership->user->name,
                 'email' => $membership->user->email,
                 'avatar' => $membership->avatar ?? $membership->user->avatar,
+                'gender' => $membership->gender,
                 'status' => $membership->status,
                 'courses' => $coursesByInstructor[$membership->id] ?? [],
             ])
@@ -134,7 +135,7 @@ class InstructorAccountService
     }
 
     /**
-     * @return list<array{id: int, name: string, avatar: ?string, status: string}>
+     * @return list<array{id: int, name: string, avatar: ?string, gender: ?string, status: string}>
      */
     public function options(Tenant $tenant): array
     {
@@ -151,6 +152,7 @@ class InstructorAccountService
                 'id' => $membership->id,
                 'name' => $membership->user->name,
                 'avatar' => $membership->avatar ?? $membership->user->avatar,
+                'gender' => $membership->gender,
                 'status' => $membership->status,
             ])
             ->all();

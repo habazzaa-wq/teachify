@@ -105,6 +105,7 @@ class PublicInstructorController extends Controller
             'id' => (string)$membership->id,
             'name' => $membership->user?->name ?? '',
             'avatar' => $membership->avatar ?? $membership->user?->avatar,
+            'gender' => $membership->gender,
             'jobTitle' => $membership->job_title,
             'department' => $membership->department,
             'bio' => $membership->bio,

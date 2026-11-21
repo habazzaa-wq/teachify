@@ -7,6 +7,7 @@ import { instructorAdminApi, type AssignableInstructor } from "@/features/instru
 import { COURSES_QUERY_KEY } from "@/features/courses/constants";
 import { coursesService } from "@/features/courses/services";
 import type { Course } from "@/features/courses/types";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 interface CourseInstructorAssignmentsProps {
   course: Course;
@@ -102,14 +103,8 @@ function CourseInstructorAssignmentsContent({ course }: CourseInstructorAssignme
           <div className="divide-y rounded-xl border">
             {course.instructors.map((instructor) => (
               <div key={instructor.assignmentId ?? instructor.id} className="flex items-center gap-3 p-3">
-                {instructor.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={instructor.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
-                ) : (
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-muted font-semibold">
-                    {instructor.name.slice(0, 1)}
-                  </span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-9 w-9 rounded-full object-cover" />
                 <span className="font-medium">{instructor.name}</span>
                 <span className="mr-auto rounded-full bg-muted px-2.5 py-1 text-xs">
                   {roleLabels[instructor.role] ?? roleLabels.co_instructor}

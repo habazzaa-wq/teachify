@@ -24,11 +24,13 @@ import { useInstructorAuth } from "@/features/instructors/InstructorAuthProvider
 import { instructorApi, instructorApiErrorMessage } from "@/features/instructors/api";
 import { useInstructorAuthStore } from "@/features/instructors/store";
 import type { InstructorMembership, InstructorUser } from "@/features/instructors/types";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 type ProfileValues = {
   firstName: string;
   lastName: string;
   avatar: string;
+  gender: string;
   jobTitle: string;
   department: string;
   phone: string;
@@ -105,6 +107,7 @@ function InstructorProfileForm({
     firstName: membership.first_name || firstName,
     lastName: membership.last_name || fallbackLastName,
     avatar: user.avatar ?? "",
+    gender: membership.gender ?? "",
     jobTitle: membership.job_title ?? "",
     department: membership.department ?? "",
     phone: membership.phone ?? "",
@@ -173,6 +176,7 @@ function InstructorProfileForm({
         first_name: values.firstName.trim(),
         last_name: values.lastName.trim(),
         avatar: values.avatar.trim() || null,
+        gender: values.gender.trim() || null,
         job_title: values.jobTitle.trim(),
         department: values.department.trim(),
         phone: values.phone.trim(),
@@ -228,12 +232,12 @@ function InstructorProfileForm({
               aria-label={user.name || "الصورة الشخصية"}
               className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-xl ring-1 ring-primary/20 sm:h-32 sm:w-32"
             >
-              {values.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={values.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                `${values.firstName.slice(0, 1)}${values.lastName.slice(0, 1)}` || <UserRound className="h-10 w-10" />
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getTeacherAvatar(values.avatar, values.gender)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </div>
             <label
               htmlFor="instructor-avatar"
@@ -308,6 +312,13 @@ function InstructorProfileForm({
               </ProfileField>
               <ProfileField label="اسم العائلة">
                 <input required maxLength={100} autoComplete="family-name" className={textInputClass()} value={values.lastName} onChange={(event) => update("lastName", event.target.value)} />
+              </ProfileField>
+              <ProfileField label="النوع" hint="يُستخدم لاختيار الأفاتار الافتراضي المناسب عند عدم رفع صورة.">
+                <select className={textInputClass()} value={values.gender} onChange={(event) => update("gender", event.target.value)}>
+                  <option value="">غير محدد</option>
+                  <option value="male">ذكر</option>
+                  <option value="female">أنثى</option>
+                </select>
               </ProfileField>
               <ProfileField label="البريد الإلكتروني" hint="لأمان حسابك، لا يمكن تغيير البريد من هذه الصفحة.">
                 <div className="relative">

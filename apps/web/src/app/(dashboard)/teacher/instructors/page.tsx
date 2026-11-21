@@ -7,6 +7,7 @@ import {
   type InstructorRemovalStrategy,
   type ManagedInstructor,
 } from "@/features/instructors/admin-api";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 export default function TenantInstructorsPage() {
   const [instructors, setInstructors] = useState<ManagedInstructor[]>([]);
@@ -170,14 +171,8 @@ export default function TenantInstructorsPage() {
           <div className="divide-y rounded-xl border bg-card">
             {instructors.map((instructor) => (
               <article key={instructor.id} className="flex flex-wrap items-center gap-4 p-4">
-                {instructor.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={instructor.avatar} alt="" className="h-11 w-11 rounded-full object-cover" />
-                ) : (
-                  <div className="grid h-11 w-11 place-items-center rounded-full bg-muted font-semibold">
-                    {instructor.name.slice(0, 1)}
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-11 w-11 rounded-full object-cover" />
                 <div className="min-w-0">
                   <h3 className="truncate font-semibold">{instructor.name}</h3>
                   <p dir="ltr" className="truncate text-sm text-muted-foreground">{instructor.email}</p>

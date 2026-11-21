@@ -1,12 +1,14 @@
 "use client";
 
 import { BadgeCheck, Linkedin, Github, Twitter, Youtube } from "lucide-react";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 interface InstructorSectionProps {
   instructor: {
     id: string;
     name: string;
     avatar: string | null;
+    gender?: string | null;
   } | null;
 }
 
@@ -39,18 +41,12 @@ export function InstructorSection({ instructor }: InstructorSectionProps) {
         {/* Instructor info */}
         <div className="flex items-start gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[var(--course-card-border)]">
-            {instructor.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={instructor.avatar}
-                alt={instructor.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[var(--course-icon-bg)] text-xl font-bold course-accent-text">
-                {initial}
-              </div>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getTeacherAvatar(instructor.avatar, instructor.gender)}
+              alt={instructor.name}
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <div className="flex-1 min-w-0">

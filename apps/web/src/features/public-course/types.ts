@@ -16,6 +16,7 @@ export interface PublicInstructor {
   id: string;
   name: string;
   avatar: string | null;
+  gender?: string | null;
   bio?: string | null;
   title?: string | null;
   coursesCount?: number | null;
@@ -149,6 +150,7 @@ export interface RelatedCourse {
     id: string;
     name: string;
     avatar: string | null;
+    gender?: string | null;
   } | null;
   instructors: PublicInstructor[];
   category: {

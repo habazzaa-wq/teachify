@@ -38,6 +38,7 @@ import {
 import { COURSE_STATUS_CONFIG, COURSE_DIFFICULTY_CONFIG, COURSE_VISIBILITY_CONFIG } from "@/features/courses/constants";
 import type { Course } from "@/features/courses/types";
 import { formatNumber, formatDate } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import { cn } from "@/lib/cn";
 
 interface CourseCardProps {
@@ -496,11 +497,8 @@ function CourseCard({
                   {instructors.map((instructor) => (
                     <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
                       <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-[7px] font-medium text-primary">
-                        {instructor.avatar ? (
-                          <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          instructor.name.charAt(0)
-                        )}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-full w-full object-cover" />
                       </span>
                       <span className="max-w-28 truncate">{instructor.name}</span>
                     </span>
@@ -589,11 +587,8 @@ function CourseCard({
                     {instructors.map((instructor) => (
                       <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
-                          {instructor.avatar ? (
-                            <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            instructor.name.charAt(0)
-                          )}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-full w-full object-cover" />
                         </span>
                         <span className="max-w-28 truncate text-[11px] text-muted-foreground/70">{instructor.name}</span>
                       </span>
@@ -626,11 +621,8 @@ function CourseCard({
                     {instructors.map((instructor) => (
                       <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-primary/10 ring-1 ring-border/50 text-[8px] font-medium text-primary">
-                          {instructor.avatar ? (
-                            <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            instructor.name.charAt(0)
-                          )}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-full w-full object-cover" />
                         </span>
                         <span className="max-w-28 truncate text-[11px] text-muted-foreground/70">{instructor.name}</span>
                       </span>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { formatNumber, initialsOf } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import type { StageTeacher } from "../types";
 import { PRIMARY } from "../constants";
 
@@ -48,21 +49,12 @@ export function StageTeachersStrip({ teachers, activeTeacherId, onSelect }: Stag
                   : "0 1px 3px rgba(120,90,60,0.05)",
             }}
           >
-            {teacher.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={teacher.avatar}
-                alt={teacher.name}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                style={{ background: "var(--brand-primary)" }}
-              >
-                {initialsOf(teacher.name)}
-              </span>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getTeacherAvatar(teacher.avatar, teacher.gender)}
+              alt={teacher.name}
+              className="h-8 w-8 rounded-full object-cover"
+            />
             <span
               className="text-xs font-bold"
               style={{ color: active ? "var(--brand-primary-contrast)" : isDark ? "#F0ECE6" : "#1a1510" }}

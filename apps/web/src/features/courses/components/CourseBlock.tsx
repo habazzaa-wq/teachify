@@ -43,6 +43,7 @@ import { COURSE_STATUS_CONFIG, COURSE_DIFFICULTY_CONFIG, COURSE_VISIBILITY_CONFI
 import type { Course } from "@/features/courses/types";
 import { formatNumber, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 interface CourseBlockProps {
   course: Course;
@@ -477,11 +478,8 @@ function CourseBlock({
                 {(course.instructors?.length ? course.instructors : [course.instructor!]).map((instructor) => (
                   <span key={instructor.id} className="flex min-w-0 items-center gap-2">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 ring-1 ring-tenant-border/50 text-[9px] font-medium text-tenant-accent">
-                      {instructor.avatar ? (
-                        <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        instructor.name.charAt(0)
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-full w-full object-cover" />
                     </span>
                     <span className="max-w-28 truncate text-xs font-medium text-tenant-fg-muted/70">
                       {instructor.name}

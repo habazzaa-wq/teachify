@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import { Star, BookOpen, Users as UsersIcon, GraduationCap, Linkedin, Twitter, Youtube, Globe } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { initialsOf, formatNumber } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import { SectionHeader } from "./primitives";
 import { CTA_GRADIENT } from "../brand";
 import type { PublicInstructor } from "../types";
@@ -20,29 +21,18 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
   website: Globe,
 };
 
-function InstructorPortrait({ avatar, name }: { avatar: string | null; name: string }) {
-  const [avatarFailed, setAvatarFailed] = useState(false);
-
+function InstructorPortrait({ avatar, name, gender }: { avatar: string | null; name: string; gender?: string | null }) {
   return (
     <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-[var(--brand-primary)] shadow-lg shadow-[rgba(0,0,0,0.1)] sm:h-28 sm:w-28">
-      {avatar && !avatarFailed ? (
-        // Render a native image in the server HTML so it begins loading before
-        // hydration instead of waiting for Avatar's client effect.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatar}
-          alt={name}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-          className="h-full w-full object-cover"
-          onError={() => setAvatarFailed(true)}
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[var(--brand-primary)] text-2xl font-extrabold text-[var(--brand-primary-contrast)]">
-          {initialsOf(name)}
-        </div>
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={getTeacherAvatar(avatar, gender)}
+        alt={name}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
+        className="h-full w-full object-cover"
+      />
     </div>
   );
 }
@@ -86,7 +76,7 @@ function InstructorCardInner({ instructor }: InstructorCardProps) {
         />
         <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:p-8">
           <div className="shrink-0 self-center sm:self-auto">
-            <InstructorPortrait avatar={instructor.avatar} name={instructor.name} />
+            <InstructorPortrait avatar={instructor.avatar} name={instructor.name} gender={instructor.gender} />
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-4 text-center sm:text-start">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, Users, Clock, GraduationCap } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import { formatCoursePrice } from "../utils";
 import { SectionHeader } from "./primitives";
 import { DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
@@ -76,14 +77,8 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
           </h3>
           {(course.instructors.length > 0 ? course.instructors : course.instructor ? [course.instructor] : []).map((instructor) => (
             <div key={instructor.id} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              {instructor.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={instructor.avatar} alt="" className="h-5 w-5 rounded-full object-cover" />
-              ) : (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-muted text-[10px]">
-                  {instructor.name.charAt(0)}
-                </span>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-5 w-5 rounded-full object-cover" />
               <span className="truncate">{instructor.name}</span>
             </div>
           ))}

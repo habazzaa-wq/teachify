@@ -5,6 +5,7 @@ export interface ManagedInstructor {
   name: string;
   email: string;
   avatar: string | null;
+  gender?: string | null;
   status: string;
   courses: Array<{ id: number; title: string; status: string }>;
 }
@@ -13,6 +14,7 @@ export interface AssignableInstructor {
   id: number;
   name: string;
   avatar: string | null;
+  gender?: string | null;
   status: string;
 }
 

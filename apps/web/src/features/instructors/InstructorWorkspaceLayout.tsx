@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useInstructorAuth } from "./InstructorAuthProvider";
 import { useTenantContext } from "@/providers/TenantProvider";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 
 const navigation = [
   { href: "/instructor", label: "نظرة عامة", icon: LayoutDashboard },
@@ -51,9 +52,12 @@ export function InstructorWorkspaceLayout({ children }: { children: React.ReactN
             href="/instructor/profile"
             className="hidden items-center gap-2 rounded-xl border border-studio-border px-3 py-2 text-sm transition hover:border-primary sm:flex"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 font-semibold text-primary">
-              {user?.name?.slice(0, 1) || "م"}
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getTeacherAvatar(user?.avatar, user?.gender)}
+              alt=""
+              className="h-8 w-8 rounded-full object-cover"
+            />
             <span className="max-w-40 truncate">{user?.name}</span>
           </Link>
           <button

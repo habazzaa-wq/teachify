@@ -31,6 +31,7 @@ class InstructorAuthController extends Controller
                 'name' => $result['user']->name,
                 'email' => $result['user']->email,
                 'avatar' => $membership->avatar ?? $result['user']->avatar,
+                'gender' => $membership->gender,
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -80,6 +81,7 @@ class InstructorAuthController extends Controller
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
                 'avatar' => $membership->avatar ?? $request->user()->avatar,
+                'gender' => $membership->gender,
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -89,6 +91,7 @@ class InstructorAuthController extends Controller
                 'last_login_at' => $membership->last_login_at?->toIso8601String(),
                 'first_name' => $membership->first_name,
                 'last_name' => $membership->last_name,
+                'gender' => $membership->gender,
                 'job_title' => $membership->job_title,
                 'department' => $membership->department,
                 'phone' => $membership->phone,
@@ -111,6 +114,7 @@ class InstructorAuthController extends Controller
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'avatar' => ['sometimes', 'nullable', 'url', 'max:2048'],
+            'gender' => ['sometimes', 'nullable', 'string', 'max:20'],
             'job_title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'department' => ['sometimes', 'nullable', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
@@ -132,6 +136,7 @@ class InstructorAuthController extends Controller
             ])->save();
             $membership->forceFill(collect($validated)->only([
                 'avatar',
+                'gender',
                 'job_title',
                 'department',
                 'first_name',
@@ -153,6 +158,7 @@ class InstructorAuthController extends Controller
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
                 'avatar' => $membership->avatar ?? $request->user()->avatar,
+                'gender' => $membership->gender,
             ],
             'membership' => [
                 'id' => $membership->id,
@@ -162,6 +168,7 @@ class InstructorAuthController extends Controller
                 'last_login_at' => $membership->last_login_at?->toIso8601String(),
                 'first_name' => $membership->first_name,
                 'last_name' => $membership->last_name,
+                'gender' => $membership->gender,
                 'job_title' => $membership->job_title,
                 'department' => $membership->department,
                 'phone' => $membership->phone,

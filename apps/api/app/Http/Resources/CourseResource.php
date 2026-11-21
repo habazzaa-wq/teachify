@@ -21,6 +21,7 @@ class CourseResource extends JsonResource
                 'assignmentId' => $assignment->id,
                 'name' => $assignment->membership?->user?->name ?? '',
                 'avatar' => $assignment->membership?->avatar ?? $assignment->membership?->user?->avatar,
+                'gender' => $assignment->membership?->gender,
                 'role' => $assignment->role,
             ])
             ->concat($instructorAttribution)
@@ -30,6 +31,7 @@ class CourseResource extends JsonResource
             'id' => (string) $primaryInstructor->id,
             'name' => $primaryInstructor->user?->name ?? '',
             'avatar' => $primaryInstructor->avatar ?? $primaryInstructor->user?->avatar,
+            'gender' => $primaryInstructor->gender,
         ] : $instructorAttribution->first();
 
         return [

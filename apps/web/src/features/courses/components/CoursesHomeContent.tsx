@@ -74,6 +74,7 @@ import { CourseBlock } from "./CourseBlock";
 import { useStudioPrefs } from "./studio/studio-prefs";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatDate } from "@/lib/format";
+import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import type {
   Course,
   CourseStatus,
@@ -1629,11 +1630,8 @@ function ContinueCourseCard({ course, instructorMode = false }: ContinueCourseCa
                 {(course.instructors?.length ? course.instructors : [course.instructor!]).map((instructor) => (
                   <span key={instructor.id} className="flex min-w-0 items-center gap-1.5">
                     <span className="flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-tenant-accent/20 to-tenant-accent/10 text-[7px] font-medium text-tenant-accent">
-                      {instructor.avatar ? (
-                        <img src={instructor.avatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        instructor.name.charAt(0)
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={getTeacherAvatar(instructor.avatar, instructor.gender)} alt="" className="h-full w-full object-cover" />
                     </span>
                     <span className="max-w-28 truncate">{instructor.name}</span>
                   </span>
