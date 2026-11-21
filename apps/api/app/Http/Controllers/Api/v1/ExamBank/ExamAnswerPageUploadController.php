@@ -10,6 +10,7 @@ use App\Models\ExamQuestion;
 use App\Models\MediaUploadSession;
 use App\Services\ExamBank\ExamAnswerPageUploadService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Gate;
  * saveAnswer() uses), NOT the media library `upload` permission. Every
  * additional constraint (attempt status, question-belongs-to-attempt, essay
  * type, session->attempt binding) is enforced inside
- * ExamAnswerPageUploadService, mirroring the ExamSessionService guard set.
+ * ExamAnswerPageUploadService.
  */
 class ExamAnswerPageUploadController extends Controller
 {
@@ -54,6 +55,35 @@ class ExamAnswerPageUploadController extends Controller
                 'expires_at' => $result['session']->expires_at?->toISOString(),
             ],
         ], 201);
+    }
+
+    public function upload(
+        Request $request,
+        ExamAttempt $attempt,
+        ExamQuestion $examQuestion,
+        MediaUploadSession $session,
+    ): JsonResponse {
+        abort_unless(Gate::allows('update', $attempt), 404);
+
+        $contents = $request->getContent();
+        $mimeType = $request->header('Content-Type');
+
+        $result = $this->pages->storeUploadedFile(
+            $request->user(),
+            $attempt,
+            $examQuestion,
+            $session,
+            is_string($contents) ? $contents : '',
+            is_string($mimeType) ? $mimeType : null,
+        );
+
+        return response()->json([
+            'data' => [
+                'session_id' => $result['session']->id,
+                'storage_key' => $result['storage_key'],
+                'size_bytes' => $result['size_bytes'],
+            ],
+        ]);
     }
 
     public function confirm(

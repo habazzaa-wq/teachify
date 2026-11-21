@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { normalizeApiError } from "@/services/api/errors";
+import { useAuthStore } from "@/stores/auth.store";
+import { useTenantStore } from "@/stores/tenant.store";
 import { EXAM_SESSION_QUERY_KEY } from "../constants";
 import { examSessionService } from "../services";
 import type {
@@ -105,7 +107,14 @@ function directPut(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    for (const [key, value] of Object.entries(headers)) {
+    const token = useAuthStore.getState().accessToken;
+    const tenantId = useTenantStore.getState().activeTenant?.id.toString() ?? null;
+    const domain = useTenantStore.getState().domain ?? null;
+    const mergedHeaders: Record<string, string> = { ...headers };
+    if (token && !mergedHeaders.Authorization) mergedHeaders.Authorization = `Bearer ${token}`;
+    if (tenantId && !mergedHeaders["X-Tenant-ID"]) mergedHeaders["X-Tenant-ID"] = tenantId;
+    else if (domain && !mergedHeaders["X-Tenant-Domain"]) mergedHeaders["X-Tenant-Domain"] = domain;
+    for (const [key, value] of Object.entries(mergedHeaders)) {
       if (value != null) xhr.setRequestHeader(key, value);
     }
     xhr.upload.addEventListener("progress", (event) => {

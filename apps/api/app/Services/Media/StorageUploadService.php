@@ -17,6 +17,7 @@ class StorageUploadService
         private readonly MediaLibraryService $media,
         private readonly MediaManager $manager,
         private readonly StoragePathGenerator $paths,
+        private readonly MediaStorage $storage,
     ) {
     }
 
@@ -36,7 +37,7 @@ class StorageUploadService
 
         return DB::transaction(function () use ($tenant, $creator, $data, $storageKey): array {
             $asset = $this->media->createAsset($tenant, [
-                'provider' => 'bunny',
+                'provider' => 'local',
                 'provider_service' => 'storage',
                 'type' => $data['type'],
                 'status' => 'pending',
@@ -53,7 +54,7 @@ class StorageUploadService
 
             $session = $this->media->createUploadSession($tenant, [
                 'media_asset_id' => $asset->id,
-                'provider' => 'bunny',
+                'provider' => 'local',
                 'provider_service' => 'storage',
                 'status' => 'draft',
                 'expires_at' => now()->addMinutes(30),
@@ -64,7 +65,7 @@ class StorageUploadService
                 ],
             ], $creator);
 
-            $intent = $this->manager->providerFor('bunny', 'storage')->createUploadIntent($session);
+            $intent = $this->manager->providerFor('local', 'storage')->createUploadIntent($session);
 
             return [
                 'asset' => $asset->refresh(),
@@ -90,11 +91,17 @@ class StorageUploadService
 
         $providerResult = $this->manager->providerFor($session->provider, $session->provider_service)->confirmUpload($session, $payload);
 
+        $cdnUrl = $payload['cdn_url'] ?? $providerResult['url'] ?? null;
+        if (! $cdnUrl && $session->asset->storage_key) {
+            $cdnUrl = $this->storage->url($session->asset->storage_key);
+        }
+
         $session->asset->forceFill([
             'status' => 'ready',
             'external_id' => $payload['external_id'] ?? $session->asset->external_id,
             'size_bytes' => $payload['size_bytes'] ?? $session->asset->size_bytes,
             'checksum' => $payload['checksum'] ?? $session->asset->checksum,
+            'cdn_url' => $cdnUrl ?? $session->asset->cdn_url,
         ])->save();
 
         $session->forceFill([

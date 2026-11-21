@@ -564,6 +564,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{attempt}', [ExamSessionController::class, 'show']);
         Route::put('/exam-sessions/{attempt}/answers/{examQuestion}', [ExamSessionController::class, 'saveAnswer'])->middleware('throttle:300,1');
         Route::post('/exam-sessions/{attempt}/answers/{examQuestion}/upload-intent', [ExamAnswerPageUploadController::class, 'uploadIntent'])->middleware('throttle:20,1');
+        Route::put('/exam-sessions/{attempt}/answers/{examQuestion}/pages/{session}/upload', [ExamAnswerPageUploadController::class, 'upload'])->name('exam-bank.answer-pages.upload')->middleware('throttle:300,1');
         Route::post('/exam-sessions/{attempt}/answers/{examQuestion}/pages/{session}/confirm', [ExamAnswerPageUploadController::class, 'confirm'])->middleware('throttle:300,1');
         Route::put('/exam-sessions/{attempt}/progress', [ExamSessionController::class, 'saveProgress'])->middleware('throttle:300,1');
         Route::post('/exam-sessions/{attempt}/submit', [ExamSessionController::class, 'submit'])->middleware('throttle:10,1');

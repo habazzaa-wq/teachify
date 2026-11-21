@@ -14,6 +14,7 @@ class BunnyIntegrationService
 {
     public function __construct(
         private readonly MediaManager $manager,
+        private readonly MediaStorage $storage,
     ) {
     }
 
@@ -23,24 +24,85 @@ class BunnyIntegrationService
         array $data,
         string $service = 'storage',
     ): array {
-        $integration = $this->getIntegration($tenant, $service);
-        $config = $integration->config ?? [];
-
-        $provider = $this->manager->providerFor('bunny', $service);
-
         $type = $data['type'] ?? 'file';
         $filename = $data['original_filename'] ?? 'untitled';
         $storageKey = $this->generateStorageKey($tenant, $type, $filename);
 
         if ($service === 'stream') {
+            $integration = $this->getIntegration($tenant, $service);
+            $config = $integration->config ?? [];
+            $provider = $this->manager->providerFor('bunny', 'stream');
             $videoId = $data['bunny_video_id'] ?? (string) Str::uuid();
-        } else {
-            $videoId = null;
+
+            return DB::transaction(function () use (
+                $tenant, $uploader, $data, $config, $provider,
+                $type, $filename, $storageKey, $videoId,
+            ) {
+                $asset = MediaAsset::create([
+                    'tenant_id' => $tenant->id,
+                    'uploader_id' => $uploader->id,
+                    'folder_id' => $data['folder_id'] ?? null,
+                    'type' => $type,
+                    'source' => $data['source'] ?? 'upload',
+                    'provider' => 'bunny',
+                    'provider_service' => 'stream',
+                    'status' => 'pending',
+                    'processing_status' => 'uploading',
+                    'visibility' => $data['visibility'] ?? 'private',
+                    'storage_key' => $storageKey,
+                    'external_id' => $videoId,
+                    'bunny_video_id' => $videoId,
+                    'bunny_library_id' => $config['library_id'] ?? null,
+                    'bunny_storage_path' => null,
+                    'original_filename' => $filename,
+                    'original_name' => $filename,
+                    'title' => $data['title'] ?? null,
+                    'mime_type' => $data['mime_type'] ?? null,
+                    'extension' => pathinfo($filename, PATHINFO_EXTENSION),
+                    'size_bytes' => $data['size_bytes'] ?? 0,
+                    'checksum' => $data['checksum'] ?? null,
+                    'metadata' => [
+                        'bunny_video_id' => $videoId,
+                        'upload_service' => 'stream',
+                        'collection' => $data['collection'] ?? null,
+                    ],
+                ]);
+
+                $session = MediaUploadSession::create([
+                    'tenant_id' => $tenant->id,
+                    'media_asset_id' => $asset->id,
+                    'created_by_tenant_user_id' => $uploader->id,
+                    'provider' => 'bunny',
+                    'provider_service' => 'stream',
+                    'status' => 'draft',
+                    'expires_at' => now()->addMinutes(60),
+                    'metadata' => [
+                        'storage_key' => $storageKey,
+                        'bunny_video_id' => $videoId,
+                        'asset_type' => $type,
+                    ],
+                ]);
+
+                $intent = $provider->createUploadIntent($session, [
+                    'storage_key' => $storageKey,
+                    'video_id' => $videoId,
+                    'collection' => $data['collection'] ?? null,
+                    'original_filename' => $filename,
+                ]);
+
+                return [
+                    'asset' => $asset->fresh()->load(['folder', 'uploader']),
+                    'session' => $session->fresh(),
+                    'intent' => $intent,
+                ];
+            });
         }
 
+        $provider = $this->manager->providerFor('local', 'storage');
+
         return DB::transaction(function () use (
-            $tenant, $uploader, $data, $config, $provider,
-            $service, $type, $filename, $storageKey, $videoId,
+            $tenant, $uploader, $data, $provider,
+            $type, $filename, $storageKey,
         ) {
             $asset = MediaAsset::create([
                 'tenant_id' => $tenant->id,
@@ -48,16 +110,16 @@ class BunnyIntegrationService
                 'folder_id' => $data['folder_id'] ?? null,
                 'type' => $type,
                 'source' => $data['source'] ?? 'upload',
-                'provider' => 'bunny',
-                'provider_service' => $service,
+                'provider' => 'local',
+                'provider_service' => 'storage',
                 'status' => 'pending',
                 'processing_status' => 'uploading',
                 'visibility' => $data['visibility'] ?? 'private',
                 'storage_key' => $storageKey,
-                'external_id' => $videoId,
-                'bunny_video_id' => $videoId,
-                'bunny_library_id' => $config['library_id'] ?? null,
-                'bunny_storage_path' => $service === 'storage' ? $storageKey : null,
+                'external_id' => null,
+                'bunny_video_id' => null,
+                'bunny_library_id' => null,
+                'bunny_storage_path' => null,
                 'original_filename' => $filename,
                 'original_name' => $filename,
                 'title' => $data['title'] ?? null,
@@ -66,8 +128,7 @@ class BunnyIntegrationService
                 'size_bytes' => $data['size_bytes'] ?? 0,
                 'checksum' => $data['checksum'] ?? null,
                 'metadata' => [
-                    'bunny_video_id' => $videoId,
-                    'upload_service' => $service,
+                    'upload_service' => 'storage',
                     'collection' => $data['collection'] ?? null,
                 ],
             ]);
@@ -76,21 +137,18 @@ class BunnyIntegrationService
                 'tenant_id' => $tenant->id,
                 'media_asset_id' => $asset->id,
                 'created_by_tenant_user_id' => $uploader->id,
-                'provider' => 'bunny',
-                'provider_service' => $service,
+                'provider' => 'local',
+                'provider_service' => 'storage',
                 'status' => 'draft',
                 'expires_at' => now()->addMinutes(60),
                 'metadata' => [
                     'storage_key' => $storageKey,
-                    'bunny_video_id' => $videoId,
                     'asset_type' => $type,
                 ],
             ]);
 
             $intent = $provider->createUploadIntent($session, [
                 'storage_key' => $storageKey,
-                'video_id' => $videoId,
-                'collection' => $data['collection'] ?? null,
                 'original_filename' => $filename,
             ]);
 
@@ -152,6 +210,10 @@ class BunnyIntegrationService
             }
             if (isset($payload['bunny_stream_url'])) {
                 $updateData['bunny_stream_url'] = $payload['bunny_stream_url'];
+            }
+
+            if (($asset->provider ?? $session->provider) === 'local' && empty($updateData['cdn_url']) && $asset->storage_key) {
+                $updateData['cdn_url'] = $this->storage->url($asset->storage_key);
             }
 
             $updateData['metadata'] = $metadata;

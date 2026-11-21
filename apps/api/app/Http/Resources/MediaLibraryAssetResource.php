@@ -140,6 +140,12 @@ class MediaLibraryAssetResource extends JsonResource
             return null;
         }
 
+        // Only Bunny storage assets are proxied through the Bunny media proxy.
+        // Local/server-stored assets use their own URLs.
+        if (($this->provider ?? null) !== 'bunny') {
+            return null;
+        }
+
         $key = $this->bunny_storage_path ?: $this->storage_key;
 
         if (empty($key)) {

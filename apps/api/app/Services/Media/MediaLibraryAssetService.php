@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Repositories\MediaAssetRepository;
 use App\Services\Bunny\BunnyCacheService;
+use App\Services\Media\MediaStorage;
 use App\Services\Bunny\BunnyQueueService;
 use App\Services\Bunny\Events\MediaDeleted;
 use App\Services\Bunny\Events\MediaDeleteFailed;
@@ -29,6 +30,7 @@ class MediaLibraryAssetService
         private readonly MediaManager $manager,
         private readonly BunnyCacheService $cache,
         private readonly BunnyQueueService $queue,
+        private readonly MediaStorage $storage,
     ) {}
 
     public function list(Tenant $tenant, array $params = []): LengthAwarePaginator
@@ -471,11 +473,24 @@ class MediaLibraryAssetService
     }
 
     /**
-     * Delete the remote object from Bunny. Throws on failure.
+     * Delete the remote/local object backing the asset. Throws on failure.
      */
     private function deleteFromBunny(MediaAsset $asset, string $providerService): void
     {
+        if ($asset->provider === 'local') {
+            $key = $asset->storage_key ?: $asset->bunny_storage_path;
+            if ($key) {
+                $this->storage->delete($key);
+            }
+            return;
+        }
+
         if ($asset->provider !== 'bunny') {
+            // Best-effort for unknown providers: try registered provider, else skip.
+            try {
+                $this->manager->providerFor($asset->provider, $providerService)->deleteAsset($asset);
+            } catch (\Throwable) {
+            }
             return;
         }
 
