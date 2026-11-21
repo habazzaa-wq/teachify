@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon, Users,
+  Plus, Home, Layers, BookOpen, MessageCircle, Gift, Facebook, Youtube, Star, Phone, Search, Sun, Moon, Users, Sparkles,
 } from "lucide-react";
 import { usePublicHero } from "@/features/homepage/hero/hooks";
 import { useUiStore } from "@/stores/ui.store";
@@ -28,6 +28,7 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
+  { label: "من نحن", href: "/about", icon: Sparkles },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
 ];

@@ -23,6 +23,7 @@ export async function GET() {
   const entries = includeDefault
     ? [
         publicEntry(origin, "/", { changeFrequency: "daily", priority: 1 }),
+        publicEntry(origin, "/about", { changeFrequency: "monthly", priority: 0.8 }),
         publicEntry(origin, "/courses", { changeFrequency: "daily", priority: 0.9 }),
       ]
     : [];

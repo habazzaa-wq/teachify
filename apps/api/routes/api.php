@@ -112,6 +112,7 @@ use App\Http\Controllers\Api\v1\Public\PublicEnrollmentCheckController;
 use App\Http\Controllers\Api\v1\Public\PublicInstructorController;
 use App\Http\Controllers\Api\v1\PublicCommunitySectionController;
 use App\Http\Controllers\Api\v1\PublicEducationalStageController;
+use App\Http\Controllers\Api\v1\PublicAboutController;
 use App\Http\Controllers\Api\v1\PublicFooterController;
 use App\Http\Controllers\Api\v1\PublicHeroController;
 use App\Http\Controllers\Api\v1\PublicLegalController;
@@ -403,6 +404,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/community-section', [PublicCommunitySectionController::class, 'index']);
     Route::get('/public/legal', [PublicLegalController::class, 'index']);
     Route::get('/public/footer', [PublicFooterController::class, 'index']);
+    Route::get('/public/about', [PublicAboutController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/stats', [PublicEducationalStageController::class, 'stats']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);
