@@ -449,6 +449,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'tenant.membership'])->group(function () {
         Route::get('/services', [TenantServiceController::class, 'index'])->middleware('permission:tenant.manage');
         Route::get('/services/instructors', [TenantServiceController::class, 'instructors'])->middleware('permission:tenant.manage');
+        Route::post('/services/upload-image', [TenantServiceController::class, 'uploadImage'])->middleware(['permission:tenant.manage', 'throttle:30,1']);
         Route::post('/services', [TenantServiceController::class, 'store'])->middleware('permission:tenant.manage');
         Route::put('/services/{service}', [TenantServiceController::class, 'update'])->whereNumber('service')->middleware('permission:tenant.manage');
         Route::delete('/services/{service}', [TenantServiceController::class, 'destroy'])->whereNumber('service')->middleware('permission:tenant.manage');

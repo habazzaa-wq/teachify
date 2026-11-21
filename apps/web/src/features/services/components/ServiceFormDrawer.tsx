@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   BadgeCheck,
   Contact,
   Image as ImageIcon,
+  Link2,
   ListChecks,
+  Loader2,
   Plus,
   Sparkles,
   Trash2,
+  UploadCloud,
 } from "lucide-react";
 import {
   AppButton,
@@ -24,6 +27,7 @@ import {
   Label,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { tenantServicesApi } from "../api";
 import type {
   ServiceInstructor,
   ServicePayload,
@@ -40,6 +44,29 @@ interface ServiceFormDrawerProps {
 }
 
 const NO_INSTRUCTOR = "__none__";
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+];
+
+type ImageMode = "upload" | "url";
+
+function getUploadErrorMessage(error: unknown): string {
+  const candidate = error as {
+    fieldErrors?: Record<string, string[]>;
+    message?: unknown;
+  };
+  const fieldError = Object.values(candidate?.fieldErrors ?? {}).flat()[0];
+  if (fieldError) return fieldError;
+  if (typeof candidate?.message === "string" && candidate.message.trim()) {
+    return candidate.message;
+  }
+  return "تعذر رفع الصورة إلى خادم الموقع.";
+}
 
 function FieldSection({
   icon: Icon,
@@ -84,6 +111,13 @@ export function ServiceFormDrawer({
   const [summary, setSummary] = useState(service?.summary ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
   const [imageUrl, setImageUrl] = useState(service?.image_url ?? "");
+  const [imageMode, setImageMode] = useState<ImageMode>(
+    service?.image_url ? "url" : "upload",
+  );
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [highlights, setHighlights] = useState<string[]>(
     service?.highlights?.length ? service.highlights : [""],
   );
@@ -112,6 +146,47 @@ export function ServiceFormDrawer({
     }
   };
 
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = "";
+
+    setError("");
+    setImageUploadError("");
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setImageUploadError(
+        "صيغة الصورة غير مدعومة. اختر JPEG أو PNG أو WebP أو GIF أو AVIF.",
+      );
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageUploadError("حجم الصورة كبير جداً. الحد الأقصى 10 ميجابايت.");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const url = await tenantServicesApi.uploadImage(file);
+      setImageUrl(url);
+      setUploadedFileName(file.name);
+    } catch (uploadError) {
+      setImageUploadError(getUploadErrorMessage(uploadError));
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImageUrl("");
+    setUploadedFileName("");
+    setImageUploadError("");
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
@@ -120,7 +195,11 @@ export function ServiceFormDrawer({
       setError("اسم الخدمة مطلوب.");
       return;
     }
-    if (imageUrl.trim()) {
+    if (uploadingImage) {
+      setError("انتظر اكتمال رفع الصورة قبل حفظ الخدمة.");
+      return;
+    }
+    if (imageMode === "url" && imageUrl.trim()) {
       try {
         new URL(imageUrl.trim());
       } catch {
@@ -153,10 +232,13 @@ export function ServiceFormDrawer({
       open={open}
       onOpenChange={onOpenChange}
       side="end"
-      className="sm:max-w-xl"
+      className="flex h-full max-h-full w-full max-w-none flex-col overflow-hidden sm:max-w-xl"
     >
-      <form onSubmit={handleSubmit} className="flex h-full flex-col">
-        <header className="border-b border-studio-border bg-studio-surface px-6 py-5">
+      <form
+        onSubmit={handleSubmit}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <header className="shrink-0 border-b border-studio-border bg-studio-surface px-6 py-5">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-studio-accent text-studio-accent-fg shadow-sm">
               <Sparkles className="h-5 w-5" />
@@ -174,7 +256,7 @@ export function ServiceFormDrawer({
           </div>
         </header>
 
-        <div className="studio-scrollbar flex-1 space-y-6 overflow-y-auto px-6 py-6">
+        <div className="studio-scrollbar min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-6 [touch-action:pan-y]">
           <FieldSection
             icon={Sparkles}
             title="المحتوى الأساسي"
@@ -228,18 +310,122 @@ export function ServiceFormDrawer({
             title="صورة الخدمة"
             hint="صورة جذابة ترفع ثقة الزائر. صنّفها بنسبة 16:9 لأفضل نتيجة."
           >
-            <div className="space-y-1.5">
-              <Label htmlFor="service-image">رابط الصورة</Label>
-              <AppInput
-                id="service-image"
-                type="url"
-                dir="ltr"
-                value={imageUrl}
-                onChange={(event) => setImageUrl(event.target.value)}
-                placeholder="https://example.com/service.jpg"
-                maxLength={2048}
-              />
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label="طريقة إدخال صورة الخدمة"
+            >
+              <AppButton
+                type="button"
+                variant={imageMode === "upload" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setImageMode("upload")}
+              >
+                <UploadCloud className="h-4 w-4" />
+                رفع صورة
+              </AppButton>
+              <AppButton
+                type="button"
+                variant={imageMode === "url" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setImageMode("url")}
+              >
+                <Link2 className="h-4 w-4" />
+                رابط
+              </AppButton>
             </div>
+
+            {imageMode === "upload" ? (
+              <div className="space-y-2">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                  className="hidden"
+                  onChange={handleImageFileChange}
+                  aria-label="اختيار صورة الخدمة"
+                />
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage || saving}
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-studio-border bg-studio-soft px-4 py-5 text-center transition-colors hover:border-studio-accent/50 hover:bg-studio-accent-soft disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-studio-accent" />
+                  ) : (
+                    <UploadCloud className="h-6 w-6 text-studio-accent" />
+                  )}
+                  <span className="text-xs font-medium text-studio-fg">
+                    {uploadingImage
+                      ? "جارٍ رفع الصورة..."
+                      : uploadedFileName
+                        ? "تغيير الصورة المرفوعة"
+                        : imageUrl
+                          ? "اختر صورة لاستبدال الصورة الحالية"
+                          : "اختر صورة من جهازك"}
+                  </span>
+                  <span className="text-[11px] text-studio-fg-subtle">
+                    JPEG, PNG, WebP, GIF أو AVIF — حتى 10 ميجابايت
+                  </span>
+                </button>
+                {(uploadedFileName || imageUrl) && !uploadingImage && (
+                  <div className="flex items-center justify-between gap-2 rounded-lg border border-studio-border bg-studio-surface px-3 py-2">
+                    <span
+                      className="min-w-0 truncate text-xs text-studio-fg-muted"
+                      dir="auto"
+                    >
+                      {uploadedFileName || "الصورة الحالية"}
+                    </span>
+                    <AppButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 shrink-0 px-2 text-destructive/70 hover:text-destructive"
+                      onClick={removeImage}
+                      disabled={saving}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      إزالة
+                    </AppButton>
+                  </div>
+                )}
+                {imageUploadError && (
+                  <p className="text-xs leading-relaxed text-destructive">
+                    {imageUploadError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="service-image">رابط الصورة</Label>
+                  {imageUrl && (
+                    <AppButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-destructive/70 hover:text-destructive"
+                      onClick={removeImage}
+                      disabled={saving}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      إزالة
+                    </AppButton>
+                  )}
+                </div>
+                <AppInput
+                  id="service-image"
+                  type="url"
+                  dir="ltr"
+                  value={imageUrl}
+                  onChange={(event) => setImageUrl(event.target.value)}
+                  placeholder="https://example.com/service.jpg"
+                  maxLength={2048}
+                />
+              </div>
+            )}
+
             <div className="relative h-32 overflow-hidden rounded-xl border border-studio-border bg-studio-soft">
               {imageUrl.trim() ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -252,6 +438,11 @@ export function ServiceFormDrawer({
                 <div className="flex h-full flex-col items-center justify-center gap-1.5 text-studio-fg-subtle">
                   <ImageIcon className="h-6 w-6" />
                   <span className="text-xs">معاينة الصورة ستظهر هنا</span>
+                </div>
+              )}
+              {uploadingImage && (
+                <div className="absolute inset-0 flex items-center justify-center bg-studio-surface/80 backdrop-blur-sm">
+                  <Loader2 className="h-6 w-6 animate-spin text-studio-accent" />
                 </div>
               )}
             </div>
@@ -415,7 +606,7 @@ export function ServiceFormDrawer({
 
         <footer
           className={cn(
-            "flex items-center justify-end gap-2 border-t border-studio-border",
+            "flex shrink-0 items-center justify-end gap-2 border-t border-studio-border",
             "bg-studio-surface px-6 py-4",
           )}
         >
@@ -423,11 +614,15 @@ export function ServiceFormDrawer({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={saving}
+            disabled={saving || uploadingImage}
           >
             إلغاء
           </AppButton>
-          <AppButton type="submit" loading={saving}>
+          <AppButton
+            type="submit"
+            loading={saving || uploadingImage}
+            disabled={uploadingImage}
+          >
             {service ? "حفظ التعديلات" : "إضافة الخدمة"}
           </AppButton>
         </footer>
