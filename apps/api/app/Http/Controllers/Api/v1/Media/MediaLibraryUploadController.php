@@ -257,17 +257,18 @@ class MediaLibraryUploadController extends Controller
     }
 
     /**
-     * Server-side upload: accepts a file directly and pushes it to Bunny Storage
-     * from the backend (no browser CORS involved), returning the ready asset.
-     * Falls back to local storage when Bunny is not configured for the tenant.
+     * Server-side upload: accepts a file directly and stores it on the server
+     * (tenant-isolated local media storage), returning the ready asset.
      */
     public function uploadFile(Request $request): JsonResponse
     {
         Gate::authorize('upload', MediaAsset::class);
 
         $data = $request->validate([
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file|max:102400',
             'visibility' => 'nullable|in:private,organization,public',
+            'folder_id' => 'nullable|integer|exists:media_folders,id',
+            'type' => 'nullable|string|max:50',
         ]);
 
         $tenant = currentTenant();
@@ -281,6 +282,14 @@ class MediaLibraryUploadController extends Controller
         $mime = $file->getMimeType() ?: 'application/octet-stream';
         $originalName = $file->getClientOriginalName() ?: 'upload';
         $visibility = $data['visibility'] ?? 'private';
+        $extension = strtolower((string) ($file->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION)));
+        $type = $data['type'] ?? $this->detectType($mime, $extension);
+
+        if ($type === 'video') {
+            return response()->json([
+                'message' => 'Video uploads must use the video/stream upload flow.',
+            ], 422);
+        }
 
         $this->guard->guardFileUpload(
             $tenant,
@@ -288,105 +297,43 @@ class MediaLibraryUploadController extends Controller
             $mime,
         );
 
-        // Detect whether Bunny Storage is actually configured for this tenant.
-        // Per-tenant credentials live on the platform-wide Bunny account, so when
-        // the tenant integration config lacks them, fall back to the platform
-        // settings (mirrors BunnyStorageProvider::config()).
-        $integration = \App\Models\TenantIntegration::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('provider', 'bunny')
-            ->where('service', 'storage')
-            ->whereIn('status', ['pending', 'active'])
-            ->first();
-        $config = $integration?->config ?? [];
+        $storageKey = app(\App\Services\Media\StoragePathGenerator::class)->generate($tenant, 'courses', $originalName);
 
-        $platform = \App\Models\PlatformBunnySetting::active();
-        if ($platform && $platform->hasStorageCredentials()
-            && (empty($config['upload_base_url']) || empty($config['client_upload_key']))) {
-            $config = array_merge($platform->toProviderConfig('storage'), $config);
-        }
-
-        $cdnBaseUrl = rtrim((string) ($config['cdn_base_url'] ?? ''), '/');
-        $accessKey = $config['client_upload_key'] ?? $config['password'] ?? null;
-        $bunnyReady = $integration && $accessKey && ! empty($cdnBaseUrl);
-
-        $cdnUrl = null;
-        $asset = null;
-
-        if ($bunnyReady) {
-            // Push to Bunny Storage server-to-server via the storage upload service.
-            $intent = $this->storageUploads->createUploadIntent($tenant, $uploader, [
-                'type' => 'image',
-                'storage_root' => 'courses',
-                'original_filename' => $originalName,
-                'mime_type' => $mime,
-                'size_bytes' => $file->getSize(),
-                'visibility' => $visibility,
-            ]);
-
-            $asset = $intent['asset'];
-            $session = $intent['session'];
-            $storageKey = $asset->storage_key;
-            $uploadUrl = $intent['intent']['upload_url'] ?? null;
-
-            if (! $uploadUrl || ! str_starts_with((string) $uploadUrl, 'http')) {
-                return response()->json(['message' => 'Bunny upload URL is invalid.'], 422);
+        $media = app(\App\Services\Media\MediaStorage::class);
+        $stream = fopen($file->getRealPath(), 'rb');
+        try {
+            \Illuminate\Support\Facades\Storage::disk($media->diskName())->put($storageKey, $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
             }
-
-            $response = Http::withHeaders(array_filter([
-                'AccessKey' => $accessKey,
-                'Content-Type' => $mime,
-            ]))->withBody($file->getContent(), $mime)
-                ->put($uploadUrl);
-
-            if (! $response->successful()) {
-                return response()->json([
-                    'message' => 'Failed to upload to storage.',
-                    'storage_status' => $response->status(),
-                ], 502);
-            }
-
-            $cdnUrl = "{$cdnBaseUrl}/{$storageKey}";
-
-            $result = $this->storageUploads->confirmUpload($tenant, $session, [
-                'size_bytes' => $file->getSize(),
-            ]);
-            $asset = $result['asset'];
-        } else {
-            // Local fallback: store the file on the public disk and create a
-            // minimal asset record without requiring Bunny integration.
-            $storageKey = "tenants/{$tenant->id}/courses/" . \Illuminate\Support\Str::random(12) . '.' . ($file->getClientOriginalExtension() ?: 'bin');
-            $localPath = "courses/" . basename($storageKey);
-
-            $media = app(\App\Services\Media\MediaStorage::class);
-            $media->put($localPath, $file->getContent());
-            $cdnUrl = $media->url($localPath);
-
-            $asset = \App\Models\MediaAsset::create([
-                'tenant_id' => $tenant->id,
-                'created_by_tenant_user_id' => $uploader->id,
-                'type' => 'image',
-                'source' => 'upload',
-                'provider' => 'local',
-                'provider_service' => 'storage',
-                'status' => 'ready',
-                'processing_status' => 'ready',
-                'visibility' => $visibility,
-                'storage_key' => $storageKey,
-                'original_filename' => $originalName,
-                'title' => pathinfo($originalName, PATHINFO_FILENAME),
-                'mime_type' => $mime,
-                'extension' => $file->getClientOriginalExtension(),
-                'size_bytes' => $file->getSize(),
-                'cdn_url' => $cdnUrl,
-                'metadata' => ['storage_root' => 'courses', 'local' => true],
-            ]);
         }
 
-        if ($asset && $cdnUrl) {
-            $asset->forceFill(['cdn_url' => $cdnUrl])->save();
-            $asset->refresh();
-        }
+        $cdnUrl = $media->url($storageKey);
+
+        $asset = \App\Models\MediaAsset::create([
+            'tenant_id' => $tenant->id,
+            'uploader_id' => $uploader->id,
+            'created_by_tenant_user_id' => $uploader->id,
+            'folder_id' => $data['folder_id'] ?? null,
+            'type' => $type,
+            'source' => 'upload',
+            'provider' => 'local',
+            'provider_service' => 'storage',
+            'status' => 'ready',
+            'processing_status' => 'ready',
+            'visibility' => $visibility,
+            'storage_key' => $storageKey,
+            'original_filename' => $originalName,
+            'original_name' => $originalName,
+            'title' => pathinfo($originalName, PATHINFO_FILENAME),
+            'mime_type' => $mime,
+            'extension' => $extension ?: null,
+            'size_bytes' => $file->getSize(),
+            'size' => $file->getSize(),
+            'cdn_url' => $cdnUrl,
+            'metadata' => ['storage_root' => 'courses', 'local' => true],
+        ]);
 
         return response()->json([
             'data' => [
@@ -394,5 +341,15 @@ class MediaLibraryUploadController extends Controller
                 'cdn_url' => $cdnUrl,
             ],
         ], 201);
+    }
+
+    private function detectType(string $mime, string $extension): string
+    {
+        if (str_starts_with($mime, 'image/')) return 'image';
+        if (str_starts_with($mime, 'video/')) return 'video';
+        if (str_starts_with($mime, 'audio/')) return 'audio';
+        if ($mime === 'application/pdf' || $extension === 'pdf') return 'pdf';
+        if (in_array($extension, ['zip', 'rar', '7z', 'tar', 'gz'], true)) return 'archive';
+        return 'file';
     }
 }

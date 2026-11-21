@@ -12,36 +12,31 @@ use App\Models\MediaUploadSession;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Bunny\Contracts\BunnyStorageInterface;
-use App\Services\Bunny\Exceptions\BunnyServiceException;
 use App\Services\Media\MediaLibraryAssetService;
 use App\Services\Media\MediaLibraryService;
-use App\Services\Media\MediaManager;
+use App\Services\Media\MediaStorage;
 use App\Services\Media\StoragePathGenerator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 use Throwable;
 
 /**
  * Private, exam-attempt-scoped image uploads (Phase B2).
  *
  * The student never touches the media library consent/upload policy: the
- * acceptable file set is defined by the attempt itself. The page upload flow
- * mirrors the generic storage intent mechanics (PUT URL + AccessKey header +
- * expiry, see BunnyStorageProvider::createUploadIntent) but:
- *  - the upload destination is scoped to `tenants/{tenant}/exam_attempts/...`
- *  - a `media_upload_sessions` row is created with NO asset yet (status
- *    `pending`, `media_asset_id` NULL) and carries the `exam_attempt_id` /
- *    `exam_question_id` binding so a session issued for attempt A cannot be
- *    confirmed against attempt B's answer,
- *  - confirm verifies the object actually landed on Bunny via an existence
- *    metadata lookup (BunnyStorageInterface::getMetadata — implemented against
- *    a directory listing, since Bunny rejects HEAD with 401) instead of trusting
- *    the client, then creates the private asset + answer page in one transaction.
+ * acceptable file set is defined by the attempt itself. Page uploads are stored
+ * on the server's configured media disk (tenant-isolated path), not on Bunny.
+ *
+ * Flow:
+ *  - intent creates a pending `media_upload_sessions` row (no asset yet) bound
+ *    to (tenant, attempt, question) and returns an internal upload URL.
+ *  - the client PUTs the image bytes to that internal upload endpoint.
+ *  - confirm verifies the object exists on local storage, then creates the
+ *    private asset + answer page in one transaction.
  */
 class ExamAnswerPageUploadService
 {
@@ -61,14 +56,13 @@ class ExamAnswerPageUploadService
     public function __construct(
         private readonly StoragePathGenerator $paths,
         private readonly MediaLibraryService $media,
-        private readonly MediaManager $manager,
-        private readonly BunnyStorageInterface $storage,
+        private readonly MediaStorage $storage,
         private readonly ExamGradingService $grading,
         private readonly MediaLibraryAssetService $mediaLibraryAssets,
     ) {}
 
     /**
-     * Issue a PUT intent for one photograph page of an answer.
+     * Issue an upload intent for one photograph page of an answer.
      *
      * @param  array<string, mixed>  $data
      * @return array{session: MediaUploadSession, intent: array<string, mixed>}
@@ -83,7 +77,7 @@ class ExamAnswerPageUploadService
 
         $session = $this->media->createUploadSession($tenant, [
             'media_asset_id' => null,
-            'provider' => 'bunny',
+            'provider' => 'local',
             'provider_service' => 'storage',
             'status' => self::SESSION_STATUS_PENDING,
             'expires_at' => now()->addMinutes(self::SESSION_TTL_MINUTES),
@@ -95,10 +89,13 @@ class ExamAnswerPageUploadService
                 'purpose' => 'exam_answer_page',
                 'exam_attempt_id' => (string) $attempt->id,
                 'exam_question_id' => (string) $examQuestion->id,
+                'expected_mime_type' => $data['mime_type'] ?? null,
+                'expected_size_bytes' => $data['size_bytes'] ?? null,
+                'original_filename' => $data['original_filename'] ?? null,
             ],
         ], $uploader);
 
-        $intent = $this->buildIntent($tenant, $storageKey, $session, $data['mime_type'] ?? null);
+        $intent = $this->buildIntent($attempt, $examQuestion, $session, $data['mime_type'] ?? null);
 
         return [
             'session' => $session->refresh(),
@@ -107,8 +104,59 @@ class ExamAnswerPageUploadService
     }
 
     /**
-     * Confirm an uploaded page: verify it exists on Bunny, then atomically
-     * create the private asset, upsert the answer row and insert the page.
+     * Receive raw image bytes for a pending upload session and store them on the
+     * local media disk. This replaces direct client->Bunny uploads for exam
+     * answer pages while keeping the same intent/confirm lifecycle.
+     *
+     * @return array{session: MediaUploadSession, storage_key: string, size_bytes: int}
+     */
+    public function storeUploadedFile(User $user, ExamAttempt $attempt, ExamQuestion $examQuestion, MediaUploadSession $session, string $contents, ?string $mimeType = null): array
+    {
+        $attempt = $this->assertAttemptWritable($attempt, $user);
+        $this->assertPageQuestion($examQuestion, $attempt);
+        $session = $this->resolvePendingSession($attempt, $examQuestion, $session);
+
+        $storageKey = (string) ($session->metadata['storage_key'] ?? '');
+        if ($storageKey === '') {
+            throw ValidationException::withMessages([
+                'session' => ['The upload session has no storage key.'],
+            ]);
+        }
+
+        if ($contents === '') {
+            throw ValidationException::withMessages([
+                'file' => ['The uploaded file is empty.'],
+            ]);
+        }
+
+        $disk = $this->storage->diskName();
+        Storage::disk($disk)->put($storageKey, $contents);
+
+        $size = Storage::disk($disk)->size($storageKey);
+        $metadata = $session->metadata ?? [];
+        $metadata['stored_at'] = now()->toIso8601String();
+        $metadata['stored_size_bytes'] = $size;
+        if ($mimeType !== null && $mimeType !== '') {
+            $metadata['stored_mime_type'] = $mimeType;
+        }
+
+        $session->forceFill([
+            'metadata' => $metadata,
+            'file_name' => $metadata['original_filename'] ?? $session->file_name,
+            'mime_type' => $mimeType ?: ($session->mime_type ?? $metadata['expected_mime_type'] ?? null),
+            'size' => $size,
+        ])->save();
+
+        return [
+            'session' => $session->refresh(),
+            'storage_key' => $storageKey,
+            'size_bytes' => (int) $size,
+        ];
+    }
+
+    /**
+     * Confirm an uploaded page: verify it exists on local storage, then
+     * atomically create the private asset, upsert the answer row and insert the page.
      *
      * @param  array<string, mixed>  $payload
      * @return array{asset: MediaAsset, answer: ExamAttemptAnswer, page: ExamAttemptAnswerPage, session: MediaUploadSession, verified: bool}
@@ -117,25 +165,7 @@ class ExamAnswerPageUploadService
     {
         $attempt = $this->assertAttemptWritable($attempt, $user);
         $this->assertPageQuestion($examQuestion, $attempt);
-
-        // Binding enforcement: the session row itself must point at this exact
-        // (tenant, attempt, question), be un-consumed (status pending) and be
-        // unexpired. The tenant predicate is the explicit half of the check;
-        // the TenantScope global scope applies as well.
-        $session = MediaUploadSession::query()
-            ->whereKey($session->id)
-            ->where('tenant_id', currentTenant()->id)
-            ->where('exam_attempt_id', $attempt->id)
-            ->where('exam_question_id', $examQuestion->id)
-            ->where('status', self::SESSION_STATUS_PENDING)
-            ->where(function ($query): void {
-                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->first();
-
-        if ($session === null) {
-            abort(404);
-        }
+        $session = $this->resolvePendingSession($attempt, $examQuestion, $session);
 
         $this->assertStored((string) ($session->metadata['storage_key'] ?? ''));
 
@@ -149,17 +179,19 @@ class ExamAnswerPageUploadService
                 $answer = $this->upsertAnswer($tenant, $attempt, $examQuestion);
 
                 $pageOrder = ((int) $answer->pages()->max('page_order')) + 1;
+                $storageKey = (string) ($session->metadata['storage_key'] ?? '');
 
                 $asset = $this->media->createAsset($tenant, [
-                    'provider' => 'bunny',
+                    'provider' => 'local',
                     'provider_service' => 'storage',
                     'type' => 'image',
                     'status' => 'ready',
                     'visibility' => 'private',
-                    'storage_key' => (string) ($session->metadata['storage_key'] ?? ''),
-                    'original_filename' => $payload['original_filename'] ?? $session->file_name,
-                    'mime_type' => $payload['mime_type'] ?? null,
-                    'size_bytes' => $payload['size_bytes'] ?? null,
+                    'storage_key' => $storageKey,
+                    'cdn_url' => $this->storage->url($storageKey),
+                    'original_filename' => $payload['original_filename'] ?? $session->file_name ?? ($session->metadata['original_filename'] ?? null),
+                    'mime_type' => $payload['mime_type'] ?? $session->mime_type ?? ($session->metadata['stored_mime_type'] ?? null),
+                    'size_bytes' => $payload['size_bytes'] ?? $session->size ?? ($session->metadata['stored_size_bytes'] ?? null),
                     'width' => $payload['width'] ?? null,
                     'height' => $payload['height'] ?? null,
                     'metadata' => [
@@ -194,9 +226,6 @@ class ExamAnswerPageUploadService
                 ];
             });
         } catch (QueryException $e) {
-            // Unique page_order / media_asset_id collision (or a lost race on
-            // page creation): surface as a client retryable error, mirroring the
-            // duplicate-active-attempt key handling in ExamSessionService.
             if ($e->getCode() === '23000') {
                 throw ValidationException::withMessages([
                     'page' => ['This page could not be saved. Please retry the upload.'],
@@ -211,15 +240,6 @@ class ExamAnswerPageUploadService
         return $result;
     }
 
-    /**
-     * Best-effort, behind-the-scenes variant generation (Phase F). Dispatched
-     * only after the page transaction COMMITS, so a failure can never roll back
-     * or break the student's confirm. The dispatch is wrapped so that on the
-     * sync (test) queue a job failure never propagates into the confirm
-     * response, and the tenant context the job's SetTenantContext middleware
-     * unbinds in its finally block is restored for the remainder of the request
-     * (mirroring ExamGradingService::reconcileExpiredAttempt, lines 117-126).
-     */
     private function dispatchVariantGeneration(Tenant $tenant, MediaAsset $asset): void
     {
         try {
@@ -238,26 +258,6 @@ class ExamAnswerPageUploadService
 
     /**
      * Delete one already-confirmed page (Phase D-FIX, §2).
-     *
-     * Guards are the SAME set used by intent/confirm (reused verbatim, not
-     * reinvented):
-     *  - ownership + attempt-status gate: assertAttemptWritable() — tenant +
-     *    owner-user match (404) then `status !== 'in_progress'` (422), the exact
-     *    check upload intent/confirm run.
-     *  - question binding: assertPageQuestion() — tenant + exam match, included
-     *    subset, essay/short-answer type.
-     *  - answer binding: the page rows are re-fetched through the answer row of
-     *    THIS (tenant, attempt, question) triple and each id is verified against
-     *    it, mirroring ExamAnswerPageReadService::page().
-     *
-     * Media cleanup mirrors MediaLibraryAssetService::softDelete() — the Media
-     * Library's own delete flow (Bunny object first, then a soft-deleted local
-     * MediaAsset row) — never a new/fresh behavior.
-     *
-     * If the deleted page was the answer's LAST one, the answer row is reverted
-     * to the unanswered state (answer_mode = text / grading_status =
-     * auto_graded / answer null / answered_at null), i.e. exactly the state a
-     * never-answered row has — never an ambiguous "answered but empty".
      *
      * @return array{answerId: string, answerMode: string, gradingStatus: string, pages: array<int, array{id: string, pageOrder: int}>}
      */
@@ -293,13 +293,6 @@ class ExamAnswerPageUploadService
 
     /**
      * Bulk reorder of an answer's already-confirmed pages (Phase D-FIX, §3).
-     *
-     * Same ownership + attempt-status + question-binding gates as deletePage.
-     * The submitted id list must contain EXACTLY the full current page set of
-     * the resolved (tenant, attempt, question) answer — no partial reorders,
-     * no foreign/extra ids, no duplicates (422 otherwise). The unique
-     * (tenant, answer, page_order) index is respected via a two-phase update
-     * inside the single transaction.
      *
      * @param  array<int, int>  $pageIds
      * @return array{answerId: string, answerMode: string, gradingStatus: string, pages: array<int, array{id: string, pageOrder: int}>}
@@ -356,9 +349,6 @@ class ExamAnswerPageUploadService
     }
 
     /**
-     * Renumber a page collection to 0..n-1, two-phase so the unique
-     * (tenant, answer, page_order) index is never transiently violated.
-     *
      * @param  Collection<int, ExamAttemptAnswerPage>  $pages
      */
     private function assignSequentialPageOrder(Collection $pages): void
@@ -372,11 +362,6 @@ class ExamAnswerPageUploadService
         });
     }
 
-    /**
-     * Revert the answer row to the never-answered state. Matches the column
-     * defaults added in 2026_09_08_000001 (answer_mode = 'text',
-     * grading_status = 'auto_graded') plus a cleared answer/score/grade trail.
-     */
     private function resetAnswerToUnanswered(ExamAttemptAnswer $answer): void
     {
         $answer->forceFill([
@@ -393,10 +378,6 @@ class ExamAnswerPageUploadService
         ])->save();
     }
 
-    /**
-     * Resolve the answer row of the (tenant, attempt, question) triple.
-     * Mirrors ExamAnswerPageReadService::answerFor().
-     */
     private function answerFor(ExamAttempt $attempt, ExamQuestion $examQuestion): ?ExamAttemptAnswer
     {
         return ExamAttemptAnswer::query()
@@ -407,9 +388,6 @@ class ExamAnswerPageUploadService
     }
 
     /**
-     * §2.5 / §3 response payload: the answer's id/mode/status plus the current
-     * page list (id, page_order) for the answer.
-     *
      * @param  Collection<int, ExamAttemptAnswerPage>  $pages
      * @return array{answerId: string, answerMode: string, gradingStatus: string, pages: array<int, array{id: string, pageOrder: int}>}
      */
@@ -426,16 +404,6 @@ class ExamAnswerPageUploadService
         ];
     }
 
-    /**
-     * Answer row lifecycle (B2): confirm auto-creates the answer row when the
-     * student uploads pages before typing a text answer, keyed by the
-     * (tenant, exam_attempt, exam_question) unique index. The critical
-     * invariant: when the row ALREADY exists (e.g. pending_manual_review from
-     * a prior page, or with a typed answer), confirm only touches the page-mode
-     * contract fields — it never overwrites `answer` or `is_correct`, and
-     * ExamSessionService::saveAnswer() never touches answer_mode/grading_status
-     * clobbering them either (see saveAnswer() updateOrCreate values).
-     */
     private function upsertAnswer(Tenant $tenant, ExamAttempt $attempt, ExamQuestion $examQuestion): ExamAttemptAnswer
     {
         $answer = ExamAttemptAnswer::query()
@@ -472,47 +440,50 @@ class ExamAnswerPageUploadService
     }
 
     /**
-     * Build the client-direct PUT intent. Mirrors
-     * BunnyStorageProvider::createUploadIntent() (upload_url = upload base +
-     * storage key, AccessKey header, expiry) but derives the key from the page
-     * path generator instead of an asset row that does not exist yet.
+     * Build the client upload intent. For local server storage this points to an
+     * authenticated internal upload endpoint instead of an external Bunny PUT URL.
      *
      * @return array<string, mixed>
      */
-    private function buildIntent(Tenant $tenant, string $storageKey, MediaUploadSession $session, ?string $mimeType): array
+    private function buildIntent(ExamAttempt $attempt, ExamQuestion $examQuestion, MediaUploadSession $session, ?string $mimeType): array
     {
-        $provider = $this->manager->providerFor('bunny', 'storage');
-
-        try {
-            $config = $provider->configForTenant($tenant->id);
-        } catch (RuntimeException $e) {
-            throw ValidationException::withMessages([
-                'integration' => ['File uploads are not available for this tenant.'],
-            ]);
-        }
-
         return [
-            'provider' => 'bunny',
+            'provider' => 'local',
             'provider_service' => 'storage',
             'method' => 'PUT',
-            'upload_url' => rtrim((string) ($config['upload_base_url'] ?? ''), '/')
-                .'/'.ltrim($storageKey, '/'),
-            'storage_key' => $storageKey,
+            'upload_url' => route('exam-bank.answer-pages.upload', [
+                'attempt' => $attempt->id,
+                'examQuestion' => $examQuestion->id,
+                'session' => $session->id,
+            ], false),
+            'storage_key' => (string) ($session->metadata['storage_key'] ?? ''),
             'expires_at' => $session->expires_at,
             'headers' => [
-                'AccessKey' => $config['client_upload_key'] ?? null,
                 'Content-Type' => $mimeType ?? 'application/octet-stream',
             ],
         ];
     }
 
-    /**
-     * Real existence verification: a HEAD metadata request against the storage
-     * key. The generic BunnyStorageProvider::confirmUpload() never does this (it
-     * returns confirmed=true unconditionally), so this is the explicit check the
-     * confirm endpoint relies on. Missing object (400/404) -> client error;
-     * auth/server failures bubble as-is.
-     */
+    private function resolvePendingSession(ExamAttempt $attempt, ExamQuestion $examQuestion, MediaUploadSession $session): MediaUploadSession
+    {
+        $resolved = MediaUploadSession::query()
+            ->whereKey($session->id)
+            ->where('tenant_id', currentTenant()->id)
+            ->where('exam_attempt_id', $attempt->id)
+            ->where('exam_question_id', $examQuestion->id)
+            ->where('status', self::SESSION_STATUS_PENDING)
+            ->where(function ($query): void {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->first();
+
+        if ($resolved === null) {
+            abort(404);
+        }
+
+        return $resolved;
+    }
+
     private function assertStored(string $storageKey): void
     {
         if ($storageKey === '') {
@@ -521,24 +492,19 @@ class ExamAnswerPageUploadService
             ]);
         }
 
-        try {
-            $this->storage->getMetadata($storageKey);
-        } catch (BunnyServiceException $e) {
-            if (in_array($e->getCode(), [400, 404, 403], true)) {
-                throw ValidationException::withMessages([
-                    'session' => ['The upload was not found on storage. Please upload the file again.'],
-                ]);
-            }
+        $disk = $this->storage->diskName();
+        $exists = Storage::disk($disk)->exists($storageKey);
+        if (! $exists && $disk !== 'public') {
+            $exists = Storage::disk('public')->exists($storageKey);
+        }
 
-            throw $e;
+        if (! $exists) {
+            throw ValidationException::withMessages([
+                'session' => ['The upload was not found on storage. Please upload the file again.'],
+            ]);
         }
     }
 
-    /**
-     * Mirrors saveAnswer()'s expiry handling + ensureInProgress() +
-     * ensureAttemptOwnedByUser() so page uploads share the exact same attempt
-     * state contract as every other session mutation.
-     */
     private function assertAttemptWritable(ExamAttempt $attempt, User $user): ExamAttempt
     {
         if ($attempt->tenant_id !== currentTenant()->id || $attempt->user_id !== $user->id) {
@@ -564,10 +530,6 @@ class ExamAnswerPageUploadService
         return $attempt;
     }
 
-    /**
-     * Mirrors assertQuestionBelongsToAttempt() plus the essay-type gate: pages
-     * are only meaningful for the manually graded question types.
-     */
     private function assertPageQuestion(ExamQuestion $examQuestion, ExamAttempt $attempt): void
     {
         if ($examQuestion->tenant_id !== currentTenant()->id || $examQuestion->exam_id !== $attempt->exam_id) {

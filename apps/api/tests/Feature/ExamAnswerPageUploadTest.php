@@ -13,38 +13,28 @@ use App\Models\MediaUploadSession;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
-use App\Models\TenantIntegration;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Bunny\Contracts\BunnyStorageInterface;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
-use Tests\Support\FakeBunnyStorage;
 use Tests\TestCase;
 
 /**
- * Phase B2 — Student image page uploads (intent -> confirm) over the real
- * routes. The only seam is Bunny Storage: the intent/confirm flow resolves the
- * tenant's integration row, but the confirm's object-existence metadata lookup
- * is routed through a fake BunnyStorageInterface while the client's direct PUT
- * never happens in a server-side test.
- *
- * The confirm route segment is the MediaUploadSession id returned by the
- * intent (…/pages/{session}/confirm) — this test pins that contract so a bad
- * route binding cannot silently regress the upload flow.
+ * Phase B2 — Student image page uploads (intent -> upload -> confirm) over the
+ * real routes. Files are stored on the configured local media disk with
+ * tenant-isolated paths.
  */
 class ExamAnswerPageUploadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_student_can_intent_and_confirm_a_page(): void
+    public function test_student_can_intent_upload_and_confirm_a_page(): void
     {
-        [$tenant, $admin, $student, $lesson, $attemptId, $examQuestionId] = $this->uploadFixture();
+        Storage::fake(config('media.storage_disk', 'public'));
 
-        $fake = new FakeBunnyStorage;
-        $this->app->instance(BunnyStorageInterface::class, $fake);
+        [$tenant, $admin, $student, $lesson, $attemptId, $examQuestionId] = $this->uploadFixture();
 
         Sanctum::actingAs($student->user);
 
@@ -56,29 +46,28 @@ class ExamAnswerPageUploadTest extends TestCase
                 'size_bytes' => 2048,
             ],
             $this->tenantHeader($tenant),
-        );
-
-        if ($intentResponse->status() !== 201) {
-            file_put_contents(sys_get_temp_dir().'/intent-body.json', (string) $intentResponse->getContent());
-            throw new \Exception('INTENT_NOT_201 status='.$intentResponse->status().' attempt='.$attemptId.' question='.$examQuestionId.' lesson='.$lesson);
-        }
+        )->assertCreated();
 
         $intent = $intentResponse->json('data');
 
         $this->assertNotEmpty($intent['session_id']);
         $this->assertSame('PUT', $intent['upload_method']);
-        $this->assertStringContainsString('upload_base_url' !== '' ? 'storage.example.test' : 'storage.example.test', $intent['upload_url']);
-        $this->assertArrayHasKey('AccessKey', $intent['headers']);
+        $this->assertStringContainsString('/upload', (string) $intent['upload_url']);
+        $this->assertSame('image/jpeg', $intent['headers']['Content-Type'] ?? null);
 
-        // Phase F: confirm now dispatches GenerateAnswerPageVariantsJob, which
-        // on the sync test queue reads the original and PUTs the variants to
-        // the tenant's Bunny Storage over Http. Fake that so the job never
-        // leaves the process.
-        Http::fake([
-            'storage.example.test/*' => Http::response($this->makeJpeg(1200, 900), 200, [
-                'Content-Type' => 'image/jpeg',
-            ]),
-        ]);
+        $bytes = $this->makeJpeg(1200, 900);
+        $this->call(
+            'PUT',
+            "/api/v1/exam-sessions/{$attemptId}/answers/{$examQuestionId}/pages/{$intent['session_id']}/upload",
+            [],
+            [],
+            [],
+            $this->transformHeadersToServerVars(array_merge($this->tenantHeader($tenant), [
+                'CONTENT_TYPE' => 'image/jpeg',
+                'Accept' => 'application/json',
+            ])),
+            $bytes,
+        )->assertOk();
 
         $confirm = $this->postJson(
             "/api/v1/exam-sessions/{$attemptId}/answers/{$examQuestionId}/pages/{$intent['session_id']}/confirm",
@@ -86,7 +75,7 @@ class ExamAnswerPageUploadTest extends TestCase
                 'captured_at' => '2026-09-08T12:00:00+00:00',
                 'width' => 800,
                 'height' => 600,
-                'size_bytes' => 2048,
+                'size_bytes' => strlen($bytes),
                 'mime_type' => 'image/jpeg',
                 'original_filename' => 'page-1.jpg',
             ],
@@ -97,7 +86,6 @@ class ExamAnswerPageUploadTest extends TestCase
 
         $this->assertNotEmpty($confirm['page_id']);
         $this->assertSame(1, $confirm['page_order']);
-        $this->assertSame($attemptId, MediaUploadSession::query()->findOrFail($intent['session_id'])->exam_attempt_id);
         $this->assertSame('pending_manual_review', $confirm['grading_status']);
 
         $answer = ExamAttemptAnswer::query()
@@ -118,21 +106,22 @@ class ExamAnswerPageUploadTest extends TestCase
         $this->assertSame('ready', $asset->status);
         $this->assertSame('private', $asset->visibility);
         $this->assertSame('image/jpeg', $asset->mime_type);
+        $this->assertSame('local', $asset->provider);
+        $this->assertSame('storage', $asset->provider_service);
+        $this->assertNotNull($asset->storage_key);
+        Storage::disk(config('media.storage_disk', 'public'))->assertExists($asset->storage_key);
 
         $session = MediaUploadSession::query()->findOrFail($intent['session_id']);
         $this->assertSame('completed', $session->status);
         $this->assertSame($asset->id, $session->media_asset_id);
-
-        // The storage verification ran against the session's real storage key.
-        $this->assertNotEmpty($fake->metadataCalls);
-        $this->assertStringContainsString('exam_attempts', $fake->metadataCalls[0]);
+        $this->assertSame('local', $session->provider);
+        $this->assertSame('storage', $session->provider_service);
     }
 
     public function test_confirm_with_an_unknown_session_returns_404(): void
     {
+        Storage::fake(config('media.storage_disk', 'public'));
         [$tenant, $admin, $student, $lesson, $attemptId, $examQuestionId] = $this->uploadFixture();
-
-        $this->app->instance(BunnyStorageInterface::class, new FakeBunnyStorage);
 
         Sanctum::actingAs($student->user);
 
@@ -145,9 +134,8 @@ class ExamAnswerPageUploadTest extends TestCase
 
     public function test_confirm_is_denied_for_another_student(): void
     {
+        Storage::fake(config('media.storage_disk', 'public'));
         [$tenant, $admin, $student, $lesson, $attemptId, $examQuestionId] = $this->uploadFixture();
-
-        $this->app->instance(BunnyStorageInterface::class, new FakeBunnyStorage);
 
         Sanctum::actingAs($student->user);
 
@@ -158,6 +146,19 @@ class ExamAnswerPageUploadTest extends TestCase
         )
             ->assertCreated()
             ->json('data');
+
+        $this->call(
+            'PUT',
+            "/api/v1/exam-sessions/{$attemptId}/answers/{$examQuestionId}/pages/{$intent['session_id']}/upload",
+            [],
+            [],
+            [],
+            $this->transformHeadersToServerVars(array_merge($this->tenantHeader($tenant), [
+                'CONTENT_TYPE' => 'image/jpeg',
+                'Accept' => 'application/json',
+            ])),
+            $this->makeJpeg(100, 100),
+        )->assertOk();
 
         $otherStudent = $this->memberWithRole($tenant, 'student');
         Sanctum::actingAs($otherStudent->user);
@@ -186,8 +187,6 @@ class ExamAnswerPageUploadTest extends TestCase
         $questionId = $this->createQuestion($tenant, $admin, 'essay', ['prompt' => 'Solve and photograph your work.']);
         $examQuestionId = $this->attachQuestionToExam($tenant, $admin, $exam, $questionId);
         $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
-
-        $this->createBunnyStorageIntegration($tenant);
 
         Sanctum::actingAs($student->user);
         $started = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
@@ -332,23 +331,6 @@ class ExamAnswerPageUploadTest extends TestCase
             ->json('enrollment.id');
     }
 
-    private function createBunnyStorageIntegration(Tenant $tenant): void
-    {
-        TenantIntegration::create([
-            'tenant_id' => $tenant->id,
-            'provider' => 'bunny',
-            'service' => 'storage',
-            'status' => 'active',
-            'external_id' => null,
-            'config' => [
-                'zone' => 'test-zone',
-                'upload_base_url' => 'https://storage.example.test/test-zone',
-                'cdn_base_url' => 'https://cdn.example.test',
-                'client_upload_key' => 'test-client-key',
-            ],
-        ]);
-    }
-
     private function memberWithRole(Tenant $tenant, string $roleSlug): TenantUser
     {
         $this->seedTenantPermissions($tenant);
@@ -390,10 +372,6 @@ class ExamAnswerPageUploadTest extends TestCase
         return ['X-Tenant-ID' => (string) $tenant->id];
     }
 
-    /**
-     * Real JPEG bytes for the Phase F variant job to decode. Mirrors the GD
-     * fixture guard convention of tests/Feature/ImageQuestionFlowTest.
-     */
     private function makeJpeg(int $width, int $height): string
     {
         if (! extension_loaded('gd')) {

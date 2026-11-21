@@ -9,56 +9,39 @@ use App\Models\ExamAttemptAnswerPage;
 use App\Models\ExamQuestion;
 use App\Models\MediaAsset;
 use App\Services\ExamBank\ExamAnswerPageReadService;
+use App\Services\Media\MediaStorage;
 use App\Services\Media\Providers\BunnyStorageProvider;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Private read-back of exam answer pages (Phase C).
  *
- * Deliberately NOT MediaProxyController: that route is public and, being
- * public-by-default, is exactly the reuse the Phase A audit flagged. This
- * controller is a NEW, exam-answer-specific read path that:
- *  - gates every request through ExamAttemptPolicy::viewPages (owner student
- *    OR teacher authorized for the exam), and
- *  - streams the bytes from Bunny Storage using the SAME per-tenant credential
- *    resolution the upload intent used (BunnyStorageProvider::configForTenant),
- *    mirroring MediaProxyController::serve()'s mechanics without inheriting its
- *    public visibility.
- *
- * The list endpoint returns page ids, ordering and an authenticated stream
- * route — never storage keys, internal paths or, for students, grading fields.
+ * Serves private exam page bytes from local tenant-isolated storage, with a
+ * legacy Bunny storage fallback for older assets. Every request is independently
+ * authorized (owner student OR teacher authorized for the exam).
  */
 class ExamAnswerPageReadController extends Controller
 {
     public function __construct(
         private readonly ExamAnswerPageReadService $pages,
-        private readonly BunnyStorageProvider $storage,
+        private readonly MediaStorage $storage,
+        private readonly BunnyStorageProvider $bunnyStorage,
     ) {}
 
-    /**
-     * Ordered page metadata for one answer of an attempt.
-     *
-     * Response shape (§3): page_id, page_order, capturedAt/width/height/mimeType
-     * and the stream route. Student callers never see manualScore / feedback /
-     * gradedBy / gradedAt (B1 contract §5); teacher callers do.
-     */
     public function index(Request $request, ExamAttempt $attempt, ExamQuestion $examQuestion): JsonResponse
     {
         abort_unless(Gate::allows('viewPages', $attempt), 404);
 
         $user = $request->user();
-
-        // Most restrictive default: an attempt owner always receives the
-        // student-shaped payload, even if that user could also hold an
-        // exam-management role in the tenant. The teacher-shaped payload is
-        // only returned on the teacher access leg.
         $teacherView = $attempt->user_id !== $user->id;
 
         ['answer' => $answer, 'pages' => $pages] = $this->pages->pages($attempt, $examQuestion);
@@ -72,11 +55,6 @@ class ExamAnswerPageReadController extends Controller
         ]);
     }
 
-    /**
-     * Stream one page's bytes after re-running the exact authorization and
-     * binding checks. The route parameters carry no secret; every request is
-     * independently authorized (no reliance on having listed pages first).
-     */
     public function show(Request $request, ExamAttempt $attempt, ExamQuestion $examQuestion, ExamAttemptAnswerPage $page): Response
     {
         abort_unless(Gate::allows('viewPages', $attempt), 404);
@@ -153,28 +131,73 @@ class ExamAnswerPageReadController extends Controller
         ];
     }
 
-    /**
-     * Server-side byte stream for a private asset. Mirrors
-     * MediaProxyController::serve()'s upstream mechanics (HTTP GET from Bunny
-     * Storage with the AccessKey header, pass-through of upstream headers) with
-     * three deliberate differences:
-     *  - the caller is already authorized by ExamAttemptPolicy::viewPages,
-     *  - credentials resolve through the SAME per-tenant path the upload intent
-     *    used (BunnyStorageProvider::configForTenant), so a tenant with its own
-     *    storage zone reads from that zone, and
-     *  - the response is never cached (private student data).
-     */
     private function streamAsset(int $tenantId, MediaAsset $asset): Response
     {
-        if ($asset->provider !== 'bunny'
-            || $asset->provider_service !== 'storage'
-            || $asset->status !== 'ready'
-            || ! filled($asset->storage_key)) {
+        if ($asset->status !== 'ready' || ! filled($asset->storage_key)) {
             return response('File not found.', 404);
         }
 
+        if ($asset->provider === 'local' && $asset->provider_service === 'storage') {
+            return $this->streamLocalAsset($tenantId, $asset);
+        }
+
+        if ($asset->provider === 'bunny' && $asset->provider_service === 'storage') {
+            return $this->streamLegacyBunnyAsset($tenantId, $asset);
+        }
+
+        return response('File not found.', 404);
+    }
+
+    private function streamLocalAsset(int $tenantId, MediaAsset $asset): Response
+    {
+        $storageKey = ltrim((string) $asset->storage_key, '/');
+        if ($storageKey === '') {
+            return response('File not found.', 404);
+        }
+
+        if (preg_match('#^tenants/(\d+)/#', $storageKey, $m) && (int) $m[1] !== $tenantId) {
+            return response('File not found.', 404);
+        }
+
+        $disk = $this->storage->diskName();
+        $fs = Storage::disk($disk);
+        if (! $fs->exists($storageKey) && $disk !== 'public' && Storage::disk('public')->exists($storageKey)) {
+            $fs = Storage::disk('public');
+        }
+
+        if (! $fs->exists($storageKey)) {
+            return response('File not found.', 404);
+        }
+
+        $mime = $asset->mime_type ?: ($fs->mimeType($storageKey) ?: 'application/octet-stream');
+        $size = $fs->size($storageKey);
+        $lastModified = gmdate('D, d M Y H:i:s', (int) $fs->lastModified($storageKey)).' GMT';
+
+        $headers = [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Length' => (string) $size,
+            'Last-Modified' => $lastModified,
+        ];
+
+        $stream = $fs->readStream($storageKey);
+        if (! is_resource($stream)) {
+            return response('File not found.', 404);
+        }
+
+        return new StreamedResponse(function () use ($stream): void {
+            fpassthru($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, 200, $headers);
+    }
+
+    private function streamLegacyBunnyAsset(int $tenantId, MediaAsset $asset): Response
+    {
         try {
-            $config = $this->storage->configForTenant($tenantId);
+            $config = $this->bunnyStorage->configForTenant($tenantId);
         } catch (RuntimeException $e) {
             Log::channel('bunny')->warning('Exam answer page: storage not configured', [
                 'tenant_id' => $tenantId,
@@ -186,7 +209,7 @@ class ExamAnswerPageReadController extends Controller
         }
 
         $storageUrl = rtrim((string) ($config['upload_base_url'] ?? ''), '/')
-            .'/'.ltrim($asset->storage_key, '/');
+            .'/'.ltrim((string) $asset->storage_key, '/');
 
         try {
             $response = Http::timeout(30)

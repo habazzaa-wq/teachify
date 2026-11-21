@@ -15,25 +15,21 @@ use App\Models\Tenant;
 use App\Models\TenantIntegration;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Bunny\Contracts\BunnyStorageInterface;
 use Database\Seeders\IdentityAccessSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
-use Tests\Support\FakeBunnyStorage;
 use Tests\TestCase;
 
 /**
  * Phase D-FIX — Student-side delete and reorder of already-confirmed answer
  * pages over the real routes.
  *
- * The only seam is Bunny Storage: deletion mirrors the Media Library's own
- * soft-delete flow (Bunny object via BunnyStorageInterface::deleteFile, then a
- * soft-deleted MediaAsset row), so the interface is bound to a recording fake
- * and the queue/events are faked so the library's clean-up jobs never run
- * against the sync queue.
+ * Deletion mirrors the Media Library's own soft-delete flow: local file is
+ * removed from the media disk and the MediaAsset row is soft-deleted. Queue and
+ * events are faked so library clean-up jobs never run against the sync queue.
  */
 class ExamAnswerPageManageTest extends TestCase
 {
@@ -42,7 +38,7 @@ class ExamAnswerPageManageTest extends TestCase
     public function test_student_can_delete_a_page_and_remaining_pages_are_renumbered(): void
     {
         [$tenant, $student, $attemptId, $examQuestionId, $pageIds, $answerId, $assetIds] = $this->manageFixture(2);
-        $fake = $this->sealDeletePath();
+        $this->sealDeletePath();
 
         Sanctum::actingAs($student->user);
 
@@ -64,11 +60,9 @@ class ExamAnswerPageManageTest extends TestCase
         $this->assertDatabaseMissing('exam_attempt_answer_pages', ['id' => $pageIds[0]]);
         $this->assertSame(0, (int) ExamAttemptAnswerPage::query()->findOrFail($pageIds[1])->page_order);
 
-        // §4: the MediaAsset was soft-deleted and the Bunny object purge was
-        // attempted through the recording interface.
+        // §4: the MediaAsset was soft-deleted and the local file was removed.
         $this->assertNotNull(MediaAsset::query()->onlyTrashed()->find($assetIds[0]));
         $this->assertNull(MediaAsset::query()->find($assetIds[0]));
-        $this->assertNotEmpty($fake->deleteCalls);
 
         // A second delete leaves the answer unanswered.
         $this->deleteJson(
@@ -226,15 +220,11 @@ class ExamAnswerPageManageTest extends TestCase
      * Bind the recording Bunny fake and freeze the Media Library's delete
      * side-effects (queues + events) so they never run against the sync queue.
      */
-    private function sealDeletePath(): FakeBunnyStorage
+    private function sealDeletePath(): void
     {
         Queue::fake();
         Event::fake();
-
-        $fake = new FakeBunnyStorage;
-        $this->app->instance(BunnyStorageInterface::class, $fake);
-
-        return $fake;
+        Storage::fake(config('media.storage_disk', 'public'));
     }
 
     /**
@@ -258,18 +248,7 @@ class ExamAnswerPageManageTest extends TestCase
         $examQuestionId = $this->attachQuestionToExam($tenant, $admin, $exam, $questionId);
         $this->attachExamToLesson($tenant, $admin, $course, $section, $lesson, $exam);
 
-        $this->createBunnyStorageIntegration($tenant);
-        $this->app->instance(BunnyStorageInterface::class, new FakeBunnyStorage);
-
-        // Phase F: each confirm dispatches GenerateAnswerPageVariantsJob, which
-        // on the sync test queue reads the original and PUTs the variants to
-        // the tenant's Bunny Storage over Http. Fake that so the fixture's
-        // uploads never leave the process.
-        Http::fake([
-            'storage.example.test/*' => Http::response($this->makeJpeg(1200, 900), 200, [
-                'Content-Type' => 'image/jpeg',
-            ]),
-        ]);
+        Storage::fake(config('media.storage_disk', 'public'));
 
         Sanctum::actingAs($student->user);
         $started = $this->postJson("/api/v1/lessons/{$lesson}/exam-sessions/start", [], $this->tenantHeader($tenant))
@@ -311,11 +290,25 @@ class ExamAnswerPageManageTest extends TestCase
                 $this->tenantHeader($tenant),
             )->assertCreated()->json('data');
 
+            $bytes = $this->makeJpeg(1200, 900);
+            $this->call(
+                'PUT',
+                "/api/v1/exam-sessions/{$attemptId}/answers/{$examQuestionId}/pages/{$intent['session_id']}/upload",
+                [],
+                [],
+                [],
+                $this->transformHeadersToServerVars(array_merge($this->tenantHeader($tenant), [
+                    'CONTENT_TYPE' => 'image/jpeg',
+                    'Accept' => 'application/json',
+                ])),
+                $bytes,
+            )->assertOk();
+
             $confirm = $this->postJson(
                 "/api/v1/exam-sessions/{$attemptId}/answers/{$examQuestionId}/pages/{$intent['session_id']}/confirm",
                 [
                     'mime_type' => 'image/jpeg',
-                    'size_bytes' => 2048,
+                    'size_bytes' => strlen($bytes),
                     'original_filename' => "page-{$i}.jpg",
                 ],
                 $this->tenantHeader($tenant),

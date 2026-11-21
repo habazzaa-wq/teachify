@@ -19,13 +19,19 @@ class MediaProxyController extends Controller
 
     public function serve(string $path, Request $request): Response
     {
+        $normalizedPath = ltrim($path, '/');
+
+        $local = $this->serveLocal($normalizedPath, $request);
+        if ($local !== null) {
+            return $local;
+        }
+
         $creds = $this->resolveCredentials($request);
 
         if ($creds === null) {
-            return response('Media service unavailable.', 503);
+            return response('File not found.', 404);
         }
 
-        $normalizedPath = ltrim($path, '/');
         $storageUrl = $this->buildStorageUrl($creds, $normalizedPath);
 
         try {
@@ -49,19 +55,7 @@ class MediaProxyController extends Controller
 
             if ($contentType === 'application/octet-stream') {
                 $ext = strtolower(pathinfo($normalizedPath, PATHINFO_EXTENSION));
-                $contentType = [
-                    'jpg' => 'image/jpeg',
-                    'jpeg' => 'image/jpeg',
-                    'png' => 'image/png',
-                    'webp' => 'image/webp',
-                    'gif' => 'image/gif',
-                    'svg' => 'image/svg+xml',
-                    'avif' => 'image/avif',
-                    'heic' => 'image/heic',
-                    'heif' => 'image/heif',
-                    'bmp' => 'image/bmp',
-                    'ico' => 'image/x-icon',
-                ][$ext] ?? $contentType;
+                $contentType = $this->guessContentType($ext, $contentType);
             }
 
             $contentLength = $response->header('Content-Length');
@@ -97,6 +91,59 @@ class MediaProxyController extends Controller
 
             return response('Media proxy error.', 502);
         }
+    }
+
+    private function serveLocal(string $path, Request $request): ?Response
+    {
+        $disk = app(\App\Services\Media\MediaStorage::class)->diskName();
+        $storage = \Illuminate\Support\Facades\Storage::disk($disk);
+        if (! $storage->exists($path)) {
+            if ($disk !== 'public' && \Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                $storage = \Illuminate\Support\Facades\Storage::disk('public');
+            } else {
+                return null;
+            }
+        }
+
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId !== null && preg_match('#^tenants/(\d+)/#', $path, $m) && (int) $m[1] !== $tenantId) {
+            return response('Not found.', 404);
+        }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $contentType = $this->guessContentType($ext, $storage->mimeType($path) ?: 'application/octet-stream');
+        $size = $storage->size($path);
+        $lastModified = gmdate('D, d M Y H:i:s', (int) $storage->lastModified($path)) . ' GMT';
+
+        return response($storage->get($path), 200, [
+            'Content-Type' => $contentType,
+            'Cache-Control' => self::CACHE_CONTROL,
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Length' => (string) $size,
+            'Last-Modified' => $lastModified,
+        ]);
+    }
+
+    private function guessContentType(string $ext, string $fallback): string
+    {
+        return [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+            'avif' => 'image/avif',
+            'heic' => 'image/heic',
+            'heif' => 'image/heif',
+            'bmp' => 'image/bmp',
+            'ico' => 'image/x-icon',
+            'pdf' => 'application/pdf',
+            'mp4' => 'video/mp4',
+            'webm' => 'video/webm',
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+        ][$ext] ?? $fallback;
     }
 
     /**

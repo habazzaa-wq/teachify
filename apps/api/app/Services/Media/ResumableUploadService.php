@@ -44,6 +44,7 @@ class ResumableUploadService
         private readonly BunnyIntegrationService $bunny,
         private readonly MediaManager $manager,
         private readonly BunnyCacheService $cache,
+        private readonly MediaStorage $storage,
     ) {
     }
 
@@ -419,6 +420,14 @@ class ResumableUploadService
             }
 
             \App\Services\Media\Jobs\PushResumableToBunnyJob::dispatch($session->id, $session->tenant_id);
+        } elseif (($session->provider ?? 'local') === 'local' || $session->provider_service === 'storage') {
+            try {
+                $asset = $this->storeLocally($session, $assembledAbs, $fileHash ? strtolower((string) $fileHash) : $combined);
+            } catch (\Throwable $e) {
+                throw $e;
+            }
+
+            $this->purgeTemporaryArtifacts($session, $assembledAbs);
         } else {
             try {
                 $asset = $this->pushToBunny($session, $assembledAbs);
@@ -453,6 +462,49 @@ class ResumableUploadService
             'session' => $session->fresh(),
             'asset' => $asset,
         ];
+    }
+
+    /**
+     * Store the assembled file on the local/server media disk and mark the asset ready.
+     */
+    public function storeLocally(MediaUploadSession $session, string $assembledAbs, string $fileHash): ?MediaAsset
+    {
+        $asset = $session->asset;
+        if (! $asset) {
+            return null;
+        }
+
+        $storageKey = $asset->storage_key ?: "tenants/{$session->tenant_id}/media/{$session->id}/" . basename($session->file_name ?: 'upload');
+        $disk = $this->storage->diskName();
+        $stream = fopen($assembledAbs, 'rb');
+        if ($stream === false) {
+            throw new RuntimeException('Unable to open the assembled file for local storage.');
+        }
+
+        try {
+            Storage::disk($disk)->put($storageKey, $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        $asset->forceFill([
+            'provider' => 'local',
+            'provider_service' => 'storage',
+            'status' => 'ready',
+            'processing_status' => 'ready',
+            'processing_progress' => 100,
+            'storage_key' => $storageKey,
+            'bunny_storage_path' => null,
+            'size_bytes' => $session->size ?: $asset->size_bytes,
+            'checksum' => $fileHash,
+            'cdn_url' => $this->storage->url($storageKey),
+        ])->save();
+
+        $asset->refresh();
+
+        return $asset;
     }
 
     /**

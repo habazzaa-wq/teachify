@@ -11,6 +11,7 @@ import {
 } from "@/components/ui";
 import { MAX_UPLOAD_SIZE } from "../constants";
 import { useCreateUploadIntent, useConfirmUpload } from "../hooks";
+import { mediaLibraryService } from "../services";
 
 interface UploadDrawerProps {
   open: boolean;
@@ -82,7 +83,6 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
           folder_id: folderId ?? undefined,
         });
 
-        // Upload to Bunny CDN
         if (intent.uploadUrl) {
           const xhr = new XMLHttpRequest();
 
@@ -96,7 +96,10 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
           });
 
           await new Promise<void>((resolve, reject) => {
-            xhr.addEventListener("load", () => resolve());
+            xhr.addEventListener("load", () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve();
+              else reject(new Error(`Upload failed (${xhr.status})`));
+            });
             xhr.addEventListener("error", () => reject(new Error("Upload failed")));
             xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
 
@@ -107,18 +110,23 @@ function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
             xhr.send(entry.file);
           });
 
-          // Confirm the upload
           await confirmUpload.mutateAsync({
             sessionId: intent.sessionId,
             payload: { size_bytes: entry.file.size },
           });
-
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === entry.id ? { ...f, status: "success" as const, progress: 100 } : f,
-            ),
+        } else {
+          await mediaLibraryService.uploadFileDirect(
+            entry.file,
+            undefined,
+            entry.file.type.startsWith("video") ? "stream" : "storage",
           );
         }
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === entry.id ? { ...f, status: "success" as const, progress: 100 } : f,
+          ),
+        );
       } catch (err) {
         setFiles((prev) =>
           prev.map((f) =>

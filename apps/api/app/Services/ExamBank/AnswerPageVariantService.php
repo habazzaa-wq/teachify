@@ -5,9 +5,11 @@ namespace App\Services\ExamBank;
 use App\Models\MediaAsset;
 use App\Models\MediaAssetVariant;
 use App\Services\Media\MediaLibraryService;
+use App\Services\Media\MediaStorage;
 use App\Services\Media\Providers\BunnyStorageProvider;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -19,41 +21,20 @@ use RuntimeException;
  * the byte flow is a read of the original storage key followed by writes to NEW
  * variant-only keys (`{dir}/{stem}.{type}.jpg`) and new MediaAssetVariant rows.
  *
- * Reuses the existing pattern seams instead of inventing new ones:
- *  - MediaAssetVariant rows are persisted through MediaLibraryService::createVariant()
- *    (app/Services/Media/MediaLibraryService.php:82).
- *  - Image work uses raw GD exactly like the exam document scanner
- *    (DocumentScanProcessor: decode/alpha-flatten = lines 424-445,
- *    bounded resize = lines 479-498, JPEG encode = lines 1991-2002). No new
- *    image-processing dependency is added.
- *  - Byte reads/writes use the SAME per-tenant Bunny Storage credential path and
- *    URL mechanics as the Phase C read endpoint (ExamAnswerPageReadController::
- *    streamAsset, lines 161-191) and the B2 upload intent (ExamAnswerPageUploadService::
- *    buildIntent, lines 449-474).
- *
- * Idempotency: before writing any variant the service checks whether a
- * MediaAssetVariant of that (tenant, asset, type) already exists and skips it —
- * a duplicate dispatch or a retry can never double-generate. The UNIQUE index
- * (tenant_id, media_asset_id, type) added in migration
- * 2026_09_09_000001 makes that guarantee database-level as well: a lost race
- * between the pre-check and the insert surfaces as a unique-constraint
- * violation, which the service catches and treats as "variant already exists"
- * rather than a job failure. Failure behavior: missing variants are simply
- * absent rows, and the Phase C read endpoint always serves the original, so a
- * processing failure never affects answer/page usability.
+ * Variants are stored on the same storage backend as the original asset:
+ * local tenant-isolated disk for local/storage assets, Bunny storage for legacy
+ * Bunny assets.
  */
 class AnswerPageVariantService
 {
     public function __construct(
         private readonly MediaLibraryService $media,
-        private readonly BunnyStorageProvider $storage,
+        private readonly MediaStorage $storage,
+        private readonly BunnyStorageProvider $bunnyStorage,
     ) {}
 
     /**
-     * Generate (or confirm already-generated) variants for one asset. No-op for
-     * missing assets and for anything that is not a ready, private Bunny Storage
-     * image with a storage key — the exact guard shape the Phase C read endpoint
-     * applies before streaming (ExamAnswerPageReadController::streamAsset).
+     * Generate (or confirm already-generated) variants for one asset.
      */
     public function generateForAsset(int $tenantId, int $assetId): void
     {
@@ -66,30 +47,20 @@ class AnswerPageVariantService
             return;
         }
 
-        $config = $this->storage->configForTenant($tenantId);
-
-        $original = $this->fetchOriginal($config, $asset);
+        $original = $this->fetchOriginal($asset);
         $sourceChecksum = hash('sha256', $original);
 
         $source = $this->decode($original);
 
         try {
             foreach ($this->variants() as $type => $spec) {
-                // Idempotency guard: a duplicate dispatch / retry must never
-                // produce a second variant row of the same type.
                 if ($this->hasVariant($asset, $type)) {
                     continue;
                 }
 
                 try {
-                    $this->storeVariant($tenantId, $asset, $type, $spec, $source, $sourceChecksum, $config);
+                    $this->storeVariant($tenantId, $asset, $type, $spec, $source, $sourceChecksum);
                 } catch (QueryException $e) {
-                    // Lost-race recovery: a concurrent worker created the same
-                    // (tenant, asset, type) row between the pre-check above and
-                    // this insert (enforced by the UNIQUE index added in
-                    // 2026_09_09_000001). Treat it as "variant already exists"
-                    // — never a job failure. Verified the winning row is really
-                    // there before swallowing the exception.
                     if ($this->isUniqueViolation($e) && $this->hasVariant($asset, $type)) {
                         continue;
                     }
@@ -102,13 +73,35 @@ class AnswerPageVariantService
         }
     }
 
-    /**
-     * @param  array<string, mixed>  $config
-     */
-    private function fetchOriginal(array $config, MediaAsset $asset): string
+    private function fetchOriginal(MediaAsset $asset): string
     {
+        $storageKey = (string) $asset->storage_key;
+        if ($storageKey === '') {
+            throw new RuntimeException('Answer page asset has no storage key.');
+        }
+
+        if ($this->isLocalAsset($asset)) {
+            $disk = $this->storage->diskName();
+            $fs = Storage::disk($disk);
+            if (! $fs->exists($storageKey) && $disk !== 'public' && Storage::disk('public')->exists($storageKey)) {
+                $fs = Storage::disk('public');
+            }
+
+            if (! $fs->exists($storageKey)) {
+                throw new RuntimeException('Answer page file was not found on local storage.');
+            }
+
+            $bytes = $fs->get($storageKey);
+            if (! is_string($bytes) || $bytes === '') {
+                throw new RuntimeException('Answer page file could not be read from local storage.');
+            }
+
+            return $bytes;
+        }
+
+        $config = $this->bunnyStorage->configForTenant((int) $asset->tenant_id);
         $url = rtrim((string) ($config['upload_base_url'] ?? ''), '/')
-            .'/'.ltrim((string) $asset->storage_key, '/');
+            .'/'.ltrim($storageKey, '/');
 
         $response = Http::timeout(60)
             ->withHeaders([
@@ -125,7 +118,6 @@ class AnswerPageVariantService
 
     /**
      * @param  array{max_dimension: int, jpeg_quality: int}  $spec
-     * @param  array<string, mixed>  $config
      */
     private function storeVariant(
         int $tenantId,
@@ -134,13 +126,12 @@ class AnswerPageVariantService
         array $spec,
         \GdImage $source,
         string $sourceChecksum,
-        array $config,
     ): void {
         [$bytes, $width, $height] = $this->makeVariant($source, $spec['max_dimension'], $spec['jpeg_quality']);
 
         $storageKey = $this->variantStorageKey($asset, $type);
 
-        $this->uploadVariant($config, $storageKey, $bytes);
+        $this->uploadVariant($asset, $storageKey, $bytes);
 
         $this->media->createVariant($asset, [
             'type' => $type,
@@ -160,11 +151,15 @@ class AnswerPageVariantService
         ]);
     }
 
-    /**
-     * @param  array<string, mixed>  $config
-     */
-    private function uploadVariant(array $config, string $storageKey, string $bytes): void
+    private function uploadVariant(MediaAsset $asset, string $storageKey, string $bytes): void
     {
+        if ($this->isLocalAsset($asset)) {
+            Storage::disk($this->storage->diskName())->put($storageKey, $bytes);
+
+            return;
+        }
+
+        $config = $this->bunnyStorage->configForTenant((int) $asset->tenant_id);
         $url = rtrim((string) ($config['upload_base_url'] ?? ''), '/')
             .'/'.ltrim($storageKey, '/');
 
@@ -183,11 +178,18 @@ class AnswerPageVariantService
 
     private function isProcessable(MediaAsset $asset): bool
     {
-        return $asset->provider === 'bunny'
-            && $asset->provider_service === 'storage'
+        $isSupportedProvider = ($asset->provider === 'local' && $asset->provider_service === 'storage')
+            || ($asset->provider === 'bunny' && $asset->provider_service === 'storage');
+
+        return $isSupportedProvider
             && $asset->status === 'ready'
             && $asset->type === 'image'
             && filled($asset->storage_key);
+    }
+
+    private function isLocalAsset(MediaAsset $asset): bool
+    {
+        return $asset->provider === 'local' && $asset->provider_service === 'storage';
     }
 
     private function hasVariant(MediaAsset $asset, string $type): bool
@@ -199,12 +201,6 @@ class AnswerPageVariantService
             ->exists();
     }
 
-    /**
-     * True when the query exception is a uniqueness violation on the
-     * (tenant_id, media_asset_id, type) index. SQLite reports 23000, MySQL
-     * reports 23000/1062, Postgres reports 23505 — checked alongside the
-     * vendor message text so the behavior is connection-agnostic.
-     */
     private function isUniqueViolation(QueryException $e): bool
     {
         $code = (string) $e->getCode();
@@ -241,13 +237,6 @@ class AnswerPageVariantService
         ];
     }
 
-    /**
-     * Decode the original bytes, promoting palette images to truecolor and
-     * flattening any alpha to white so the JPEG output never carries a black
-     * backdrop. Mirrors DocumentScanProcessor::decodeAndOrient
-     * (app/Services/ExamBank/Scan/DocumentScanProcessor.php:424-461) minus EXIF
-     * rotation, which the answer-page upload flow never captures.
-     */
     private function decode(string $bytes): \GdImage
     {
         $src = @imagecreatefromstring($bytes);
@@ -293,11 +282,6 @@ class AnswerPageVariantService
     }
 
     /**
-     * Produce one variant. Bounded downscale (DocumentScanProcessor::
-     * resizeWithinBounds convention, lines 479-498) followed by a JPEG encode
-     * (encodeJpeg convention, lines 1991-2002). The source image is never
-     * mutated or destroyed here.
-     *
      * @return array{0: string, 1: int, 2: int} [bytes, width, height]
      */
     private function makeVariant(\GdImage $source, int $maxDimension, int $quality): array
@@ -329,8 +313,6 @@ class AnswerPageVariantService
         $success = imagejpeg($image, null, $quality);
         $data = ob_get_clean();
 
-        // A 256px thumbnail can legitimately land just under the scanner's
-        // 1024-byte guard, hence the smaller floor here.
         if (! $success || $data === false || strlen($data) < 128) {
             throw new RuntimeException('JPEG encoding failed.');
         }
