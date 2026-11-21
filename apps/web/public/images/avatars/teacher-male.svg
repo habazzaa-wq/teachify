@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Male teacher avatar">
+  <defs>
+    <linearGradient id="mbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8F1FF"/>
+      <stop offset="100%" stop-color="#C9DCFF"/>
+    </linearGradient>
+    <linearGradient id="mshirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2F6FED"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="mskin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F4C7A1"/>
+      <stop offset="100%" stop-color="#E8B28A"/>
+    </linearGradient>
+    <clipPath id="mc"><circle cx="64" cy="64" r="64"/></clipPath>
+  </defs>
+  <g clip-path="url(#mc)">
+    <rect width="128" height="128" fill="url(#mbg)"/>
+    <circle cx="64" cy="38" r="34" fill="#ffffff" opacity="0.25"/>
+    <path d="M18 132c0-24 20-42 46-42s46 18 46 42" fill="url(#mshirt)"/>
+    <path d="M64 90c10 0 19 4 26 10-5 9-14 14-26 14s-21-5-26-14c7-6 16-10 26-10z" fill="#EEF4FF" opacity=".95"/>
+    <rect x="58" y="70" width="12" height="14" rx="5" fill="#E8B28A"/>
+    <path d="M41 54c0-14 10-25 23-25s23 11 23 25v7c0 14-10 26-23 26S41 75 41 61v-7z" fill="url(#mskin)"/>
+    <path d="M40 56c1-16 11-28 24-28 14 0 24 12 25 28-4-6-12-10-25-10S44 50 40 56z" fill="#2D3748"/>
+    <path d="M39 60c-2 0-4 2-4 5s2 5 4 5h1V60h-1z" fill="#E8B28A"/>
+    <path d="M89 60h1c2 0 4 2 4 5s-2 5-4 5h-1v-10z" fill="#E8B28A"/>
+    <path d="M53 60c2 0 3.5 1.6 3.5 3.5S55 67 53 67s-3.5-1.6-3.5-3.5S51 60 53 60zm22 0c2 0 3.5 1.6 3.5 3.5S77 67 75 67s-3.5-1.6-3.5-3.5S73 60 75 60z" fill="#334155"/>
+    <path d="M56 73c2.2 2.8 4.8 4 8 4s5.8-1.2 8-4" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M49 56.5c1.2-1.8 3-2.8 5-2.8s3.8 1 5 2.8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M69 56.5c1.2-1.8 3-2.8 5-2.8s3.8 1 5 2.8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="48" y="82" width="32" height="18" rx="4" fill="#ffffff" opacity=".18"/>
+    <path d="M64 84l12 6-12 6-12-6 12-6z" fill="#93C5FD" opacity=".55"/>
+  </g>
+</svg>
