@@ -13,8 +13,8 @@ export function normalizeTeacherGender(gender: TeacherGender): "male" | "female"
 
 export function getDefaultTeacherAvatar(gender?: TeacherGender): string {
   const normalized = normalizeTeacherGender(gender);
-  if (normalized === "female") return "/images/avatars/teacher-female.svg";
-  return "/images/avatars/teacher-male.svg";
+  if (normalized === "female") return "/images/avatars/teacher-female.jpg";
+  return "/images/avatars/teacher-male.jpg";
 }
 
 export function getTeacherAvatar(avatar?: string | null, gender?: TeacherGender): string {
