@@ -407,6 +407,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/about', [PublicAboutController::class, 'index']);
     Route::get('/public/legal', [PublicLegalController::class, 'index']);
     Route::get('/public/footer', [PublicFooterController::class, 'index']);
+    Route::get('/public/about', [PublicAboutController::class, 'index']);
     Route::get('/public/educational-stages', [PublicEducationalStageController::class, 'index']);
     Route::get('/public/educational-stages/stats', [PublicEducationalStageController::class, 'stats']);
     Route::get('/public/educational-stages/{id}', [PublicEducationalStageController::class, 'show']);

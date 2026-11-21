@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ElementType, MouseEvent } from "react";
-import { BookOpen, Home, Layers, Moon, Newspaper, Search, Sun, Users } from "lucide-react";
+import { BookOpen, Home, Layers, Moon, Newspaper, Search, Sparkles, Sun, Users } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 
@@ -16,6 +16,7 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { label: "الرئيسية", href: "/", icon: Home },
+  { label: "من نحن", href: "/about", icon: Sparkles },
   { label: "المراحل", href: "/#educational-stages", icon: Layers, scrollTarget: "educational-stages" },
   { label: "الكورسات", href: "/courses", icon: BookOpen },
   { label: "المدربون", href: "/instructors", icon: Users },

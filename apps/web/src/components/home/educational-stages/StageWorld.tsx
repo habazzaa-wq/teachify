@@ -26,7 +26,14 @@ function resolveImageSrc(raw: string | null | undefined): string | null {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   One stage as an interactive "world".
+   One stage as a lightweight "world".
+
+   Motion budget: zero JS runs on pointer move. The former spring-driven 3D
+   tilt, the infinite Ken-Burns/drift loops and the rAF count-up are gone —
+   they forced a style/layout read and React re-renders on every frame and
+   made the section feel janky on mid-range devices. Depth now comes from a
+   single short CSS transform on hover (GPU-composited, hover-capable only),
+   and the numbers render instantly.
    ──────────────────────────────────────────────────────────────── */
 interface StageWorldProps {
   stage: EducationalStage;
@@ -35,6 +42,7 @@ interface StageWorldProps {
   variant: StageVariant;
   priority?: boolean;
   stats?: StageStatsLike | null;
+  active?: boolean;
   /** Bento grid span classes (computed by the section). */
   className?: string;
 }
@@ -51,6 +59,7 @@ export function StageWorld({
   const accent = stageAccentTokens(stage, index, total);
   const href = stage.href ?? `/stages/${stage.id}`;
   const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(false);
   const src = resolveImageSrc(stage.image);
   const hasImage = Boolean(src) && !failed;
 
@@ -59,20 +68,20 @@ export function StageWorld({
   const isHero = variant === "hero";
 
   return (
-    <article
-      className={cn("group relative", className)}
-      style={accent.style}
-    >
+    <article className={cn("group relative", className)} style={accent.style}>
       <div
         className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft-md transition-shadow duration-500 ease-brand",
-          "hoverable:hover:shadow-[0_28px_70px_-28px_color-mix(in_srgb,var(--stage-color)_50%,transparent)]",
+          "relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft-md",
+          "transition-transform duration-150 ease-out",
+          "hoverable:hover:[transform:perspective(1000px)_translateY(-3px)_rotateX(1.5deg)_rotateY(-1.5deg)]",
           accent.className,
         )}
       >
         <Link
           href={href}
           prefetch
+          data-open={open || undefined}
+          onClick={() => setOpen((o) => !o)}
           aria-label={`${stage.name} — استكشف المرحلة`}
           className="flex flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--stage-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
@@ -82,8 +91,9 @@ export function StageWorld({
             <div
               aria-hidden="true"
               className={cn(
-                "absolute inset-0 z-[1] transition-transform duration-500 ease-brand",
+                "absolute inset-0 z-[1] transition-transform duration-200 ease-out",
                 "translate-y-[42%] group-hover:translate-y-0 group-focus-visible:translate-y-0",
+                "data-[open]:translate-y-0",
                 isHero ? "rounded-b-[2rem]" : "rounded-b-[1.75rem]",
               )}
               style={{
@@ -113,7 +123,7 @@ export function StageWorld({
                   decoding="async"
                   fetchPriority={priority ? "high" : "auto"}
                   draggable={false}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1.2s] ease-brand hoverable:group-hover:scale-[1.06]"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 ease-out hoverable:group-hover:scale-[1.03]"
                   onError={() => setFailed(true)}
                 />
               ) : (
@@ -134,11 +144,11 @@ export function StageWorld({
                 aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent"
               />
-              {/* ghost Arabic numeral watermark */}
+              {/* ghost Arabic numeral watermark — static, no drift loop */}
               <span
                 aria-hidden="true"
                 className={cn(
-                  "font-sans absolute -bottom-4 -start-1 z-[3] select-none font-extrabold leading-none text-[var(--stage-fg)] opacity-[0.16] drop-shadow-sm",
+                  "font-sans absolute -bottom-4 -start-1 z-[3] select-none font-extrabold leading-none text-[var(--stage-fg)] opacity-[0.16]",
                   isHero ? "text-[7rem]" : "text-[5rem]",
                 )}
               >
@@ -157,7 +167,7 @@ export function StageWorld({
               </span>
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-black/15 text-[var(--stage-fg)] shadow-soft-md backdrop-blur-sm"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-black/15 text-[var(--stage-fg)]"
               >
                 <StageIcon name={stage.icon ?? "auto"} className="h-5 w-5" />
               </span>
@@ -189,7 +199,7 @@ export function StageWorld({
               </p>
             ) : null}
 
-            {/* live metrics */}
+            {/* live metrics — rendered instantly, no frame-by-frame count-up */}
             {(showCourses || showTeachers) && stats ? (
               <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-5">
                 {showCourses ? (
@@ -213,7 +223,7 @@ export function StageWorld({
           {/* ── CTA bar ── */}
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-start scale-x-0 bg-[var(--stage-color)] transition-transform duration-500 ease-brand group-hover:scale-x-100 group-focus-visible:scale-x-100"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-start scale-x-0 bg-[var(--stage-color)] transition-transform duration-200 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100"
           />
           <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3.5 sm:px-6">
             <span className="font-sans text-sm font-extrabold" style={{ color: "var(--stage-color)" }}>
@@ -222,7 +232,7 @@ export function StageWorld({
             <span
               aria-hidden="true"
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-[var(--stage-fg)] transition-transform duration-300 ease-brand",
+                "flex h-8 w-8 items-center justify-center rounded-full text-[var(--stage-fg)] transition-transform duration-150 ease-out",
                 "hoverable:group-hover:-translate-x-1 group-active:scale-95",
               )}
               style={{ backgroundColor: "var(--stage-color)" }}

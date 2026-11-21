@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Pin,
   Star,
@@ -32,6 +31,7 @@ import {
   Compass,
   Newspaper,
   BriefcaseBusiness,
+  Info,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -409,6 +409,13 @@ export function WorkspaceLeftSidebar() {
                   onClick={() => handleNavigate(routes.dashboardBlog)}
                 />
               )}
+              <StudioSidebarItem
+                icon={<Info className="h-4 w-4" />}
+                label="صفحة من نحن"
+                active={pathname.startsWith(routes.teacherAbout)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherAbout)}
+              />
               <Suspense fallback={null}>
                 <LegalPageItems
                   collapsed={leftSidebarCollapsed}

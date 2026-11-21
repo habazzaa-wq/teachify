@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantSetting;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * Anonymous reader for the tenant's "About us" page content.
+ * Serves the raw saved `about` settings group; the web app merges
+ * defaults on top before rendering.
+ */
 class PublicAboutController extends Controller
 {
     public function index(): JsonResponse
@@ -15,10 +20,6 @@ class PublicAboutController extends Controller
             ->where('group', 'about')
             ->first();
 
-        $values = $setting?->values ?? [];
-
-        return response()->json([
-            'about' => ($values['enabled'] ?? false) === true ? $values : null,
-        ]);
+        return response()->json(['about' => $setting?->values ?? []]);
     }
 }

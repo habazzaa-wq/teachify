@@ -2,10 +2,6 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import {
-  motion,
-  useReducedMotion,
-} from "framer-motion";
 import { useUiStore } from "@/stores/ui.store";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
@@ -83,7 +79,6 @@ export function EducationalStagesSection({
   titleEmphasis?: string;
   priorityCount?: number;
 }) {
-  const reduce = useReducedMotion();
   const theme = useUiStore((s) => s.theme);
   const isDark = theme === "dark";
 
@@ -147,27 +142,19 @@ export function EducationalStagesSection({
         {/* ─────────────────────────  header  ───────────────────────── */}
         <header className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-14">
           <div className="max-w-2xl text-start">
-            <motion.h2
+            <h2
               id="stages-title"
-              initial={reduce ? false : { opacity: 0, y: 18 }}
-              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="font-sans text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
             >
               <span style={{ color: "var(--brand-primary)" }}>{titleLead}</span>{" "}
               <span style={{ color: "var(--brand-secondary)" }}>{titleEmphasis}</span>
-            </motion.h2>
+            </h2>
           </div>
 
           {/* editorial "contents" index — mobile-hidden, lends crafted structure */}
           {!showSkeleton && stages.length > 0 ? (
-            <motion.nav
+            <nav
               aria-label="فهرس المراحل"
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
               className="hidden w-full max-w-sm border-s-2 ps-5 lg:block"
               style={{ borderColor: "color-mix(in srgb, var(--brand-secondary) 40%, transparent)" }}
             >
@@ -191,19 +178,19 @@ export function EducationalStagesSection({
                       >
                         {arabicNumber(i + 1)}
                       </span>
-                      <span className="truncate font-semibold transition-transform duration-300 ease-brand group-hover:translate-x-1">
+                      <span className="truncate font-semibold transition-transform duration-150 ease-out group-hover:translate-x-0.5">
                         {s.name}
                       </span>
                       <span
                         aria-hidden="true"
-                        className="ms-auto h-px w-6 flex-shrink-0 transition-all duration-300 group-hover:w-10"
+                        className="ms-auto h-px w-6 flex-shrink-0"
                         style={{ background: "color-mix(in srgb, var(--brand-secondary) 55%, transparent)" }}
                       />
                     </Link>
                   </li>
                 ))}
               </ol>
-            </motion.nav>
+            </nav>
           ) : null}
         </header>
 
@@ -245,19 +232,13 @@ export function EducationalStagesSection({
         </div>
 
         {/* ─────────────────────────  closing note  ───────────────────────── */}
-        <motion.div
-          initial={reduce ? false : { opacity: 0 }}
-          whileInView={reduce ? undefined : { opacity: 1 }}
-          viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-3 sm:mt-16"
-        >
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3 sm:mt-16">
           <span className="h-px w-10 bg-[var(--brand-secondary)]" aria-hidden="true" />
           <span className="font-sans text-xs font-extrabold tracking-[0.22em] sm:text-sm" style={{ color: muted }}>
             {FOOTER_NOTE}
           </span>
           <span className="h-px w-10 bg-[var(--brand-primary)]" aria-hidden="true" />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
