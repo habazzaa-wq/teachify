@@ -1,4 +1,4 @@
-import type { MediaType } from "../../types";
+import type { MediaLibrary, MediaType } from "../../types";
 
 export type UploadStatus =
   | "queued"
@@ -87,6 +87,8 @@ export interface UploadSession {
   mime: string;
   size: number;
   category: MediaType;
+  /** Physical destination: Bunny Stream for videos, tenant server for everything else. */
+  library: MediaLibrary;
   folderId: number | null;
   chunkSize: number;
   totalChunks: number;
@@ -139,6 +141,8 @@ export interface UploadItem {
   size: number;
   mime: string;
   category: MediaType;
+  /** Physical destination chosen when the file was staged. */
+  library: MediaLibrary;
   /** Real percentage 0-100. */
   progress: number;
   /** Bytes per second (smoothed). */

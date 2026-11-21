@@ -8,10 +8,11 @@ import { Upload } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { routes } from "@/constants/routes";
 import { useUploadManagerStore } from "../store";
-import { uploadEngine } from "../services";
+import { stageFilesForLibrary, uploadEngine } from "../services";
 import { hashPool } from "../services/hashPool";
 import { useUploadDragDrop, useUploadPaste, useUploadShortcuts, useUploadManagerStats, UPLOAD_PICK_EVENT, useUploadEngineBootstrap } from "../hooks";
-import { MEDIA_QUERY_KEY } from "../../constants";
+import type { MediaLibrary } from "../../types";
+import { acceptForLibrary, MEDIA_QUERY_KEY } from "../../constants";
 import { BUNNY_CENTER_QUERY_KEY } from "../../../bunny-center/constants";
 import { UploadManagerPanel } from "./UploadManagerPanel";
 import { UploadDragOverlay } from "./UploadDragOverlay";
@@ -20,15 +21,24 @@ import { UPLOAD_LAUNCHER_COUNT_CAP } from "../constants";
 
 const folderInputProps = { webkitdirectory: "", directory: "", multiple: true } as Record<string, string | boolean>;
 
+function libraryForPathname(pathname: string): MediaLibrary {
+  return pathname.startsWith(routes.dashboardVideoLibrary) ? "videos" : "media";
+}
+
 export function UploadManager() {
   const isOpen = useUploadManagerStore((s) => s.isOpen);
   const setOpen = useUploadManagerStore((s) => s.setOpen);
   const toggleOpen = useUploadManagerStore((s) => s.toggleOpen);
+  const activeLibrary = useUploadManagerStore((s) => s.activeLibrary);
+  const setActiveLibrary = useUploadManagerStore((s) => s.setActiveLibrary);
   const stats = useUploadManagerStats();
   const queryClient = useQueryClient();
   const pathname = usePathname();
 
-  const isMediaLibrary = pathname === routes.dashboardMedia;
+  const isMediaLibrary =
+    pathname.startsWith(routes.dashboardVideoLibrary) ||
+    pathname.startsWith(routes.dashboardMediaLibrary) ||
+    pathname.startsWith(routes.dashboardMedia);
   const hasQueue = stats.total > 0;
   const showLauncher = isMediaLibrary || hasQueue;
 
@@ -39,6 +49,11 @@ export function UploadManager() {
   useUploadPaste();
   useUploadShortcuts();
   useUploadEngineBootstrap();
+
+  // The route is the source of truth while browsing either library.
+  useEffect(() => {
+    setActiveLibrary(libraryForPathname(pathname));
+  }, [pathname, setActiveLibrary]);
 
   // Dispose the hash worker pool on unmount to avoid leaking workers.
   useEffect(() => {
@@ -57,18 +72,19 @@ export function UploadManager() {
 
   useEffect(() => {
     const onPick = (e: Event) => {
-      const mode = (e as CustomEvent<{ mode?: string }>).detail?.mode;
-      if (mode === "folder") folderRef.current?.click();
+      const detail = (e as CustomEvent<{ mode?: string; library?: MediaLibrary }>).detail;
+      if (detail?.library) setActiveLibrary(detail.library);
+      if (detail?.mode === "folder") folderRef.current?.click();
       else fileRef.current?.click();
     };
     window.addEventListener(UPLOAD_PICK_EVENT, onPick);
     return () => window.removeEventListener(UPLOAD_PICK_EVENT, onPick);
-  }, []);
+  }, [setActiveLibrary]);
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0) {
-      useUploadManagerStore.getState().openRename(files, { source: "file-input" });
+      stageFilesForLibrary(files, { source: "file-input", library: activeLibrary });
     }
     e.target.value = "";
   };
@@ -76,7 +92,7 @@ export function UploadManager() {
   const handleFolder = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0) {
-      useUploadManagerStore.getState().openRename(files, { source: "folder-input" });
+      stageFilesForLibrary(files, { source: "folder-input", library: activeLibrary });
     }
     e.target.value = "";
   };
@@ -90,8 +106,25 @@ export function UploadManager() {
       <PrepareUploadDialog />
 
       {/* Hidden pickers */}
-      <input ref={fileRef} type="file" multiple hidden onChange={handleFiles} aria-hidden />
-      <input ref={folderRef} type="file" multiple hidden {...folderInputProps} onChange={handleFolder} aria-hidden />
+      <input
+        ref={fileRef}
+        type="file"
+        multiple
+        hidden
+        accept={acceptForLibrary(activeLibrary)}
+        onChange={handleFiles}
+        aria-hidden
+      />
+      <input
+        ref={folderRef}
+        type="file"
+        multiple
+        hidden
+        {...folderInputProps}
+        accept={acceptForLibrary(activeLibrary)}
+        onChange={handleFolder}
+        aria-hidden
+      />
 
       <div className="fixed z-50 bottom-4 end-4 flex flex-col items-end gap-3 max-md:inset-x-0 max-md:bottom-0 max-md:end-0 max-md:px-0">
         <AnimatePresence mode="popLayout">

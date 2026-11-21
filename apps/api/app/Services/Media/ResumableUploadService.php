@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Media\Providers\BunnyStorageProvider;
 use App\Services\Media\Providers\BunnyStreamProvider;
+use App\Services\Media\Providers\LocalProvider;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
@@ -32,9 +33,9 @@ use RuntimeException;
  * thread) and streams them to this service. We store each chunk in a
  * tenant-scoped temporary disk, verify its checksum, record completion in the
  * session bitmap, and — on finalize — assemble the chunks in order (streaming,
- * never loading the whole file into memory), verify the combined digest, push
- * the assembled file to Bunny exactly as the existing provider would, then
- * purge every temporary artifact.
+ * never loading the whole file into memory), verify the combined digest, then
+ * deliver the bytes to the correct destination: the tenant's own disk for the
+ * media library, Bunny Stream for the video library.
  */
 class ResumableUploadService
 {
@@ -42,8 +43,10 @@ class ResumableUploadService
 
     public function __construct(
         private readonly BunnyIntegrationService $bunny,
+        private readonly LocalUploadService $local,
         private readonly MediaManager $manager,
         private readonly BunnyCacheService $cache,
+        private readonly MediaStorage $storage,
     ) {
     }
 
@@ -60,9 +63,12 @@ class ResumableUploadService
         array $data,
         string $service = 'storage',
     ): array {
-        // Reuses the existing Bunny integration so the asset, storage key and
-        // provider intent are reserved exactly as before.
-        $result = $this->bunny->createUploadIntent($tenant, $uploader, $data, $service);
+        // Videos are reserved through Bunny Stream. Every other asset type is
+        // reserved through the local provider and written to the tenant's disk
+        // on finalize; Bunny Storage is never used for the media library.
+        $result = $service === 'stream'
+            ? $this->bunny->createUploadIntent($tenant, $uploader, $data, $service)
+            : $this->local->createUploadIntent($tenant, $uploader, $data);
 
         /** @var MediaUploadSession $session */
         $session = $result['session'];
@@ -72,7 +78,7 @@ class ResumableUploadService
             'file_name' => $data['original_filename'] ?? null,
             'mime_type' => $data['mime_type'] ?? null,
             'size' => (int) ($data['size_bytes'] ?? 0),
-            'storage_zone' => $this->resolveStorageZone($tenant, $service),
+            'storage_zone' => $service === 'stream' ? $this->resolveStorageZone($tenant, $service) : null,
             'total_chunks' => (int) ($data['total_chunks'] ?? 0),
             'uploaded_chunks' => [],
             'completed' => false,
@@ -267,7 +273,8 @@ class ResumableUploadService
 
     /**
      * Finalize: verify completeness + combined digest, assemble chunks in order
-     * (streaming), push the assembled file to Bunny, then purge temp artifacts.
+     * (streaming), deliver the file to its library (local disk for media,
+     * Bunny Stream for videos), then purge temp artifacts.
      *
      * @return array{session: MediaUploadSession, asset: MediaAsset|null}
      */
@@ -342,15 +349,31 @@ class ResumableUploadService
             ]);
         }
 
-        // Duplicate detection: if an existing active asset for this tenant has
-        // the same SHA-256 checksum, reuse it instead of assembling + pushing.
+        // Duplicate detection: if an existing active asset for this tenant AND
+        // destination has the same SHA-256 checksum, reuse it instead of
+        // assembling + pushing. Never reuse a Bunny video for a local file.
         $effectiveHash = $fileHash ? strtolower((string) $fileHash) : $combined;
-        $existingAsset = MediaAsset::query()
+        $duplicateQuery = MediaAsset::query()
             ->where('tenant_id', $session->tenant_id)
             ->where('checksum', $effectiveHash)
             ->where('status', 'ready')
             ->whereNull('deleted_at')
-            ->first();
+            ->where('provider', $session->provider)
+            ->where('provider_service', $session->provider_service)
+            ->whereNull('archived_at');
+
+        if ($session->asset) {
+            // A byte-identical file in another folder (or with another
+            // visibility/name) is not the same library entry — never repoint
+            // this upload at it and delete the newly reserved asset.
+            $duplicateQuery
+                ->where('type', $session->asset->type)
+                ->where('folder_id', $session->asset->folder_id)
+                ->where('visibility', $session->asset->visibility)
+                ->where('original_filename', $session->asset->original_filename);
+        }
+
+        $existingAsset = $duplicateQuery->first();
 
         if ($existingAsset) {
             $this->purgeTemporaryArtifacts($session);
@@ -401,6 +424,28 @@ class ResumableUploadService
         }
 
         if ($session->provider_service === 'stream') {
+            // Client metadata is not proof of content: a PNG renamed to .mp4
+            // would otherwise be sent to Bunny Stream. Inspect the assembled
+            // bytes first; only a generic (unknown) MIME falls back to the
+            // already-validated intent metadata.
+            $detectedMime = self::detectFileMime($assembledAbs);
+            if ($detectedMime !== null
+                && ! self::isGenericMime($detectedMime)
+                && ! str_starts_with($detectedMime, 'video/')) {
+                $this->purgeTemporaryArtifacts($session, $assembledAbs);
+
+                throw ValidationException::withMessages([
+                    'file' => ['Only video files can be uploaded to the video library.'],
+                ]);
+            }
+        }
+
+        if ($session->provider === 'local') {
+            // Non-video bytes never leave this machine. Stream the assembled
+            // file straight onto the configured media disk.
+            $asset = $this->pushToLocal($session, $assembledAbs, $effectiveHash);
+            $this->purgeTemporaryArtifacts($session, $assembledAbs);
+        } elseif ($session->provider_service === 'stream') {
             // Reserve the Bunny Stream video object (deterministic guid) and hand
             // the (potentially long) byte upload off to a queue worker. Doing
             // the upload inside this HTTP request would exceed nginx/fastcgi
@@ -436,23 +481,126 @@ class ResumableUploadService
         // completed once they reach Bunny.
         $session->forceFill([
             'status' => 'completed',
-            'completed' => $session->provider_service !== 'stream',
-            'final_file_hash' => $fileHash ? strtolower((string) $fileHash) : $combined,
+            'completed' => $session->provider !== 'bunny' || $session->provider_service !== 'stream',
+            'final_file_hash' => $effectiveHash,
             'expires_at' => null,
         ])->save();
 
-        // Invalidate Bunny usage cache so the storage meter reflects the new file.
-        try {
-            $this->cache->invalidateUsage();
-            $this->cache->invalidateStorage();
-        } catch (\Throwable) {
-            // Cache invalidation failure is non-fatal.
+        // Only Bunny-backed assets need the Bunny usage caches invalidated.
+        if ($session->provider === 'bunny') {
+            try {
+                $this->cache->invalidateUsage();
+                $this->cache->invalidateStorage();
+            } catch (\Throwable) {
+                // Cache invalidation failure is non-fatal.
+            }
         }
 
         return [
             'session' => $session->fresh(),
             'asset' => $asset,
         ];
+    }
+
+    /**
+     * Write an assembled non-video upload to the tenant's own storage disk.
+     * This method intentionally has no Bunny client dependency.
+     */
+    private function pushToLocal(MediaUploadSession $session, string $assembledAbs, string $checksum): ?MediaAsset
+    {
+        $asset = $session->asset;
+        if (! $asset) {
+            throw new RuntimeException('The local upload session has no media asset.');
+        }
+
+        $storageKey = $asset->storage_key;
+        if (! $storageKey) {
+            throw new RuntimeException('The local media asset has no storage key.');
+        }
+
+        if (MediaLibraryRouting::isVideoCandidate(
+            (string) $asset->type,
+            $asset->mime_type,
+            (string) ($asset->original_filename ?? ''),
+        ) || self::fileMimeIsVideo($assembledAbs)) {
+            throw ValidationException::withMessages([
+                'library' => ['Videos must be uploaded through the video library.'],
+            ]);
+        }
+
+        $handle = fopen($assembledAbs, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException('Unable to read the assembled upload.');
+        }
+
+        $visibility = $asset->visibility === 'private' ? 'private' : 'public';
+
+        try {
+            $written = $this->storage->putStream($storageKey, $handle, $visibility);
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+        }
+
+        if (! $written) {
+            throw new RuntimeException('Unable to write the assembled upload to local storage.');
+        }
+
+        /** @var LocalProvider $provider */
+        $provider = $this->manager->providerFor('local', 'storage');
+        $url = $provider->createSignedReadUrl($asset)['url'] ?? null;
+
+        $asset->forceFill([
+            'status' => 'ready',
+            'processing_status' => 'ready',
+            'processing_progress' => 100,
+            'size_bytes' => $session->size,
+            'checksum' => $checksum,
+            'cdn_url' => $url ?? $asset->cdn_url,
+        ])->save();
+
+        return $asset->refresh();
+    }
+
+    private static function detectFileMime(string $path): ?string
+    {
+        if (! function_exists('finfo_open')) {
+            return null;
+        }
+
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo === false) {
+            return null;
+        }
+
+        $mime = finfo_file($finfo, $path) ?: null;
+        finfo_close($finfo);
+
+        return $mime === null ? null : strtolower(trim($mime));
+    }
+
+    /** MIME values that carry no reliable media-type signal. */
+    private static function isGenericMime(?string $mime): bool
+    {
+        if ($mime === null) {
+            return true;
+        }
+
+        return in_array($mime, [
+            '',
+            'application/octet-stream',
+            'binary/octet-stream',
+            'application/binary',
+            'application/x-empty',
+        ], true);
+    }
+
+    private static function fileMimeIsVideo(string $path): bool
+    {
+        $mime = self::detectFileMime($path);
+
+        return $mime !== null && str_starts_with($mime, 'video/');
     }
 
     /**

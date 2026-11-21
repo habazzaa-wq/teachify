@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\MediaAsset;
 use App\Models\Tenant;
+use App\Services\Media\MediaLibraryRouting;
 use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -22,6 +23,7 @@ class MediaAssetRepository
         array $params = [],
     ): LengthAwarePaginator {
         $query = $this->query($tenant);
+        MediaLibraryRouting::applyToQuery($query, $params['library'] ?? null);
 
         if (! empty($params['folder_id'])) {
             $query->where('folder_id', $params['folder_id']);
@@ -133,9 +135,10 @@ class MediaAssetRepository
         return $this->query($tenant)->findOrFail($id);
     }
 
-    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null): array
+    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null, ?string $library = null): array
     {
         $query = MediaAsset::query()->where('tenant_id', $tenant->id);
+        MediaLibraryRouting::applyToQuery($query, $library);
         if ($ownerTenantUserId !== null) {
             $query->where(function (Builder $owner) use ($ownerTenantUserId): void {
                 $owner->where('created_by_tenant_user_id', $ownerTenantUserId)

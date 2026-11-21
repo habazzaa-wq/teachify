@@ -1,4 +1,5 @@
-import type { MediaType } from "../../types";
+import { looksLikeVideo } from "../../constants";
+import type { MediaLibrary, MediaType } from "../../types";
 import type { UploadItem, UploadWarning } from "../types";
 import { UPLOAD_LARGE_FILE_BYTES } from "../constants";
 
@@ -50,7 +51,20 @@ export function buildUploadWarnings(file: File): UploadWarning | null {
   return null;
 }
 
-export function buildUploadItem(file: File, folderId: number | null, nameOverride?: string): UploadItem {
+/** Keep each library physically isolated at the point files enter the client. */
+export function filterFilesForLibrary(files: File[], library: MediaLibrary): File[] {
+  return files.filter((file) => {
+    const isVideo = looksLikeVideo(file.type, file.name);
+    return library === "videos" ? isVideo : !isVideo;
+  });
+}
+
+export function buildUploadItem(
+  file: File,
+  folderId: number | null,
+  library: MediaLibrary,
+  nameOverride?: string,
+): UploadItem {
   const effectiveName = (nameOverride ?? "").trim() || file.name;
   // Wrapping the file in a renamed File keeps both the displayed name and the
   // underlying blob name in sync (the direct-upload path sends the File as-is),
@@ -68,6 +82,7 @@ export function buildUploadItem(file: File, folderId: number | null, nameOverrid
     size: effectiveFile.size,
     mime: effectiveFile.type || "application/octet-stream",
     category: getFileCategory(effectiveFile.type, effectiveFile.name),
+    library,
     progress: 0,
     speed: 0,
     eta: null,

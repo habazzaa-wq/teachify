@@ -25,8 +25,9 @@ class MediaLibraryMetricsController extends Controller
 
         $tenant = currentTenant();
         $ownerId = $this->instructorOwnerId($request);
-        $metrics = $this->assets->metrics($tenant, $ownerId);
-        $storage = $this->assets->storageUsage($tenant, $ownerId);
+        $library = $this->library($request);
+        $metrics = $this->assets->metrics($tenant, $ownerId, $library);
+        $storage = $this->assets->storageUsage($tenant, $ownerId, $library);
 
         return response()->json([
             'data' => new MediaLibraryMetricsResource(array_merge($metrics, $storage)),
@@ -38,7 +39,11 @@ class MediaLibraryMetricsController extends Controller
         Gate::authorize('view', MediaAsset::class);
 
         $tenant = currentTenant();
-        $storage = $this->assets->storageUsage($tenant, $this->instructorOwnerId($request));
+        $storage = $this->assets->storageUsage(
+            $tenant,
+            $this->instructorOwnerId($request),
+            $this->library($request),
+        );
 
         return response()->json([
             'data' => $storage,
@@ -51,7 +56,12 @@ class MediaLibraryMetricsController extends Controller
 
         $tenant = currentTenant();
         $limit = min((int) $request->integer('limit', 10), 50);
-        $assets = $this->assets->recent($tenant, $limit, $this->instructorOwnerId($request));
+        $assets = $this->assets->recent(
+            $tenant,
+            $limit,
+            $this->instructorOwnerId($request),
+            $this->library($request),
+        );
 
         return response()->json([
             'data' => MediaLibraryAssetResource::collection($assets),
@@ -63,5 +73,14 @@ class MediaLibraryMetricsController extends Controller
         $instructor = $request->attributes->get('instructorMembership');
 
         return $instructor instanceof TenantUser ? (int) $instructor->id : null;
+    }
+
+    private function library(Request $request): ?string
+    {
+        $library = $request->validate([
+            'library' => 'nullable|in:videos,media',
+        ]);
+
+        return $library['library'] ?? null;
     }
 }

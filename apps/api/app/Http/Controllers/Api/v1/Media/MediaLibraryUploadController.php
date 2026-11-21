@@ -7,22 +7,43 @@ use App\Http\Resources\MediaLibraryAssetResource;
 use App\Models\MediaAsset;
 use App\Models\MediaUploadSession;
 use App\Services\Media\BunnyIntegrationService;
+use App\Services\Media\LocalUploadService;
+use App\Services\Media\MediaLibraryRouting;
 use App\Services\Media\ResumableUploadService;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class MediaLibraryUploadController extends Controller
 {
     public function __construct(
         private readonly BunnyIntegrationService $bunny,
-        private readonly \App\Services\Media\StorageUploadService $storageUploads,
+        private readonly LocalUploadService $local,
         private readonly ResumableUploadService $resumable,
         private readonly UploadGuardService $guard,
     ) {
+    }
+
+    /**
+     * Resolve the physical destination from the request. The discriminator is
+     * authoritative; when it is missing we infer it from type/MIME/filename so
+     * older clients still cannot send a non-video file to Bunny.
+     *
+     * @param array<string, mixed> $data
+     * @return array{library: string, service: string}
+     */
+    private function resolveRoute(array $data): array
+    {
+        return MediaLibraryRouting::resolve(
+            $data['library'] ?? null,
+            $data['service'] ?? null,
+            (string) ($data['type'] ?? ''),
+            $data['mime_type'] ?? null,
+            (string) ($data['original_filename'] ?? ''),
+        );
     }
 
     public function uploadIntent(Request $request): JsonResponse
@@ -30,6 +51,7 @@ class MediaLibraryUploadController extends Controller
         Gate::authorize('upload', MediaAsset::class);
 
         $data = $request->validate([
+            'library' => 'nullable|in:videos,media',
             'type' => 'required|string|max:50',
             'original_filename' => 'required|string|max:255',
             'mime_type' => 'nullable|string|max:255',
@@ -48,24 +70,38 @@ class MediaLibraryUploadController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $service = $data['service'] ?? 'storage';
-        $uploadType = $service === 'stream' ? 'video' : 'file';
+        $route = $this->resolveRoute($data);
+        $data['library'] = $route['library'];
+        $data['service'] = $route['service'];
+
+        if ($route['library'] === MediaLibraryRouting::VIDEOS) {
+            // The legacy direct intent hands the client a provider URL without
+            // the bytes ever touching this app. Videos must use the resumable
+            // transport so their content can be inspected before Bunny receives
+            // anything; only non-video assets may use this endpoint.
+            throw ValidationException::withMessages([
+                'library' => ['Video uploads must use the resumable video upload endpoint.'],
+            ]);
+        }
 
         $this->guard->guardUpload(
             $tenant,
-            $uploadType,
+            'file',
             $data['size_bytes'] ?? null,
             $data['mime_type'] ?? null,
         );
 
-        $result = $this->bunny->createUploadIntent($tenant, $uploader, $data, $service);
+        $result = $this->local->createUploadIntent($tenant, $uploader, $data);
 
         return response()->json([
             'data' => [
                 'asset' => new MediaLibraryAssetResource($result['asset']),
                 'session_id' => $result['session']->id,
+                'library' => $route['library'],
                 'upload_url' => $result['intent']['upload_url'] ?? null,
-                'upload_method' => $result['intent']['method'] ?? 'PUT',
+                'upload_method' => $result['intent']['method']
+                    ?? $result['intent']['upload_method']
+                    ?? 'PUT',
                 'headers' => $result['intent']['headers'] ?? [],
                 'expires_at' => $result['session']->expires_at?->toISOString(),
             ],
@@ -74,14 +110,15 @@ class MediaLibraryUploadController extends Controller
 
     /**
      * Create a resumable upload session that streams chunks to the backend
-     * transport (chunk receive / resume / finalize) instead of to Bunny CDN
-     * directly. Used by the chunk upload engine.
+     * transport (chunk receive / resume / finalize). Local sessions are written
+     * to the tenant's disk; video sessions are handed to Bunny Stream.
      */
     public function resumableIntent(Request $request): JsonResponse
     {
         Gate::authorize('upload', MediaAsset::class);
 
         $data = $request->validate([
+            'library' => 'nullable|in:videos,media',
             'type' => 'required|string|max:50',
             'original_filename' => 'required|string|max:255',
             'mime_type' => 'nullable|string|max:255',
@@ -102,28 +139,64 @@ class MediaLibraryUploadController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $service = $data['service'] ?? 'storage';
-        $uploadType = $service === 'stream' ? 'video' : 'file';
+        $route = $this->resolveRoute($data);
+        $data['library'] = $route['library'];
+        $data['service'] = $route['service'];
+
+        if ($route['library'] === MediaLibraryRouting::VIDEOS) {
+            $data['type'] = 'video';
+        }
 
         $this->guard->guardUpload(
             $tenant,
-            $uploadType,
+            $route['service'] === 'stream' ? 'video' : 'file',
             $data['size_bytes'] ?? null,
             $data['mime_type'] ?? null,
         );
 
-        $result = $this->resumable->createResumableIntent($tenant, $uploader, $data, $service);
+        $result = $this->resumable->createResumableIntent(
+            $tenant,
+            $uploader,
+            $data,
+            $route['service'],
+        );
 
         return response()->json([
             'data' => [
                 'asset' => new MediaLibraryAssetResource($result['asset']),
                 'session_id' => $result['session']->id,
+                'library' => $route['library'],
                 'upload_url' => $result['intent']['upload_url'] ?? null,
                 'upload_method' => $result['intent']['upload_method'] ?? 'PUT',
                 'headers' => $result['intent']['headers'] ?? [],
                 'expires_at' => $result['session']->expires_at?->toISOString(),
             ],
         ], 201);
+    }
+
+    /**
+     * Receive a complete byte body for a local (non-video) upload intent.
+     */
+    public function uploadLocalBytes(Request $request, MediaUploadSession $session): JsonResponse
+    {
+        Gate::authorize('upload', MediaAsset::class);
+
+        $size = $request->header('Content-Length');
+        $size = is_numeric($size) ? (int) $size : null;
+
+        $result = $this->local->storeBytes(
+            currentTenant(),
+            $session,
+            $request->getContent(),
+            $size,
+        );
+
+        return response()->json([
+            'data' => [
+                'asset' => new MediaLibraryAssetResource($result['asset']),
+                'session_id' => $result['session']->id,
+            ],
+        ]);
     }
 
     /**
@@ -151,7 +224,7 @@ class MediaLibraryUploadController extends Controller
     }
 
     /**
-     * Finalize: assemble + verify + push to Bunny + purge temporary artifacts.
+     * Finalize: verify, assemble, then write locally or push to Bunny Stream.
      */
     public function resumableFinalize(Request $request, MediaUploadSession $session): JsonResponse
     {
@@ -161,7 +234,7 @@ class MediaLibraryUploadController extends Controller
 
         try {
             $result = $this->resumable->finalize($request, $session);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             // Let Laravel render validation failures as 422 as usual.
             throw $e;
         } catch (\Throwable $e) {
@@ -223,7 +296,10 @@ class MediaLibraryUploadController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $result = $this->bunny->confirmUpload($tenant, $session, $data);
+
+        $result = $session->provider === 'local'
+            ? $this->local->confirmUpload($tenant, $session, $data)
+            : $this->bunny->confirmUpload($tenant, $session, $data);
 
         return response()->json([
             'data' => [
@@ -237,7 +313,9 @@ class MediaLibraryUploadController extends Controller
         Gate::authorize('view', MediaAsset::class);
 
         $tenant = currentTenant();
-        $status = $this->bunny->status($tenant, $asset);
+        $status = $asset->provider === 'local'
+            ? $this->local->status($tenant, $asset)
+            : $this->bunny->status($tenant, $asset);
 
         return response()->json([
             'data' => $status,
@@ -248,8 +326,9 @@ class MediaLibraryUploadController extends Controller
     {
         Gate::authorize('download', MediaAsset::class);
 
-        $tenant = currentTenant();
-        $result = $this->bunny->getSignedUrl($asset);
+        $result = $asset->provider === 'local'
+            ? $this->local->signedUrl($asset)
+            : $this->bunny->getSignedUrl($asset);
 
         return response()->json([
             'data' => $result,
@@ -257,17 +336,19 @@ class MediaLibraryUploadController extends Controller
     }
 
     /**
-     * Server-side upload: accepts a file directly and pushes it to Bunny Storage
-     * from the backend (no browser CORS involved), returning the ready asset.
-     * Falls back to local storage when Bunny is not configured for the tenant.
+     * Server-side upload for the media library only. Non-video files are
+     * written directly to the tenant's disk; Bunny Storage is never contacted.
+     * Videos must use the Bunny-backed video library endpoints.
      */
     public function uploadFile(Request $request): JsonResponse
     {
         Gate::authorize('upload', MediaAsset::class);
 
         $data = $request->validate([
+            'library' => 'nullable|in:videos,media',
             'file' => 'required|file|max:10240',
             'visibility' => 'nullable|in:private,organization,public',
+            'service' => 'nullable|in:storage,stream',
         ]);
 
         $tenant = currentTenant();
@@ -280,7 +361,20 @@ class MediaLibraryUploadController extends Controller
         $file = $data['file'];
         $mime = $file->getMimeType() ?: 'application/octet-stream';
         $originalName = $file->getClientOriginalName() ?: 'upload';
-        $visibility = $data['visibility'] ?? 'private';
+
+        $route = MediaLibraryRouting::resolve(
+            $data['library'] ?? null,
+            $data['service'] ?? null,
+            '',
+            $mime,
+            $originalName,
+        );
+
+        if ($route['library'] === MediaLibraryRouting::VIDEOS) {
+            throw ValidationException::withMessages([
+                'library' => ['Videos must be uploaded through the video library.'],
+            ]);
+        }
 
         $this->guard->guardFileUpload(
             $tenant,
@@ -288,110 +382,19 @@ class MediaLibraryUploadController extends Controller
             $mime,
         );
 
-        // Detect whether Bunny Storage is actually configured for this tenant.
-        // Per-tenant credentials live on the platform-wide Bunny account, so when
-        // the tenant integration config lacks them, fall back to the platform
-        // settings (mirrors BunnyStorageProvider::config()).
-        $integration = \App\Models\TenantIntegration::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('provider', 'bunny')
-            ->where('service', 'storage')
-            ->whereIn('status', ['pending', 'active'])
-            ->first();
-        $config = $integration?->config ?? [];
+        $result = $this->local->storeDirect($tenant, $uploader, $file, [
+            'library' => MediaLibraryRouting::MEDIA,
+            'service' => 'storage',
+            'visibility' => $data['visibility'] ?? 'private',
+            'mime_type' => $mime,
+        ]);
 
-        $platform = \App\Models\PlatformBunnySetting::active();
-        if ($platform && $platform->hasStorageCredentials()
-            && (empty($config['upload_base_url']) || empty($config['client_upload_key']))) {
-            $config = array_merge($platform->toProviderConfig('storage'), $config);
-        }
-
-        $cdnBaseUrl = rtrim((string) ($config['cdn_base_url'] ?? ''), '/');
-        $accessKey = $config['client_upload_key'] ?? $config['password'] ?? null;
-        $bunnyReady = $integration && $accessKey && ! empty($cdnBaseUrl);
-
-        $cdnUrl = null;
-        $asset = null;
-
-        if ($bunnyReady) {
-            // Push to Bunny Storage server-to-server via the storage upload service.
-            $intent = $this->storageUploads->createUploadIntent($tenant, $uploader, [
-                'type' => 'image',
-                'storage_root' => 'courses',
-                'original_filename' => $originalName,
-                'mime_type' => $mime,
-                'size_bytes' => $file->getSize(),
-                'visibility' => $visibility,
-            ]);
-
-            $asset = $intent['asset'];
-            $session = $intent['session'];
-            $storageKey = $asset->storage_key;
-            $uploadUrl = $intent['intent']['upload_url'] ?? null;
-
-            if (! $uploadUrl || ! str_starts_with((string) $uploadUrl, 'http')) {
-                return response()->json(['message' => 'Bunny upload URL is invalid.'], 422);
-            }
-
-            $response = Http::withHeaders(array_filter([
-                'AccessKey' => $accessKey,
-                'Content-Type' => $mime,
-            ]))->withBody($file->getContent(), $mime)
-                ->put($uploadUrl);
-
-            if (! $response->successful()) {
-                return response()->json([
-                    'message' => 'Failed to upload to storage.',
-                    'storage_status' => $response->status(),
-                ], 502);
-            }
-
-            $cdnUrl = "{$cdnBaseUrl}/{$storageKey}";
-
-            $result = $this->storageUploads->confirmUpload($tenant, $session, [
-                'size_bytes' => $file->getSize(),
-            ]);
-            $asset = $result['asset'];
-        } else {
-            // Local fallback: store the file on the public disk and create a
-            // minimal asset record without requiring Bunny integration.
-            $storageKey = "tenants/{$tenant->id}/courses/" . \Illuminate\Support\Str::random(12) . '.' . ($file->getClientOriginalExtension() ?: 'bin');
-            $localPath = "courses/" . basename($storageKey);
-
-            $media = app(\App\Services\Media\MediaStorage::class);
-            $media->put($localPath, $file->getContent());
-            $cdnUrl = $media->url($localPath);
-
-            $asset = \App\Models\MediaAsset::create([
-                'tenant_id' => $tenant->id,
-                'created_by_tenant_user_id' => $uploader->id,
-                'type' => 'image',
-                'source' => 'upload',
-                'provider' => 'local',
-                'provider_service' => 'storage',
-                'status' => 'ready',
-                'processing_status' => 'ready',
-                'visibility' => $visibility,
-                'storage_key' => $storageKey,
-                'original_filename' => $originalName,
-                'title' => pathinfo($originalName, PATHINFO_FILENAME),
-                'mime_type' => $mime,
-                'extension' => $file->getClientOriginalExtension(),
-                'size_bytes' => $file->getSize(),
-                'cdn_url' => $cdnUrl,
-                'metadata' => ['storage_root' => 'courses', 'local' => true],
-            ]);
-        }
-
-        if ($asset && $cdnUrl) {
-            $asset->forceFill(['cdn_url' => $cdnUrl])->save();
-            $asset->refresh();
-        }
+        $asset = $result['asset'];
 
         return response()->json([
             'data' => [
                 'asset' => new MediaLibraryAssetResource($asset),
-                'cdn_url' => $cdnUrl,
+                'cdn_url' => $asset->cdn_url,
             ],
         ], 201);
     }

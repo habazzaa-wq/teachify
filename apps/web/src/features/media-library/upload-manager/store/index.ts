@@ -1,9 +1,9 @@
 "use client";
 
 import { create } from "zustand";
-import type { MediaType } from "../../types";
+import type { MediaLibrary, MediaType } from "../../types";
 import type { UploadItem, UploadBulkAction, UploadSource } from "../types";
-import { revokeFilePreview, getFileCategory } from "../utils/files";
+import { filterFilesForLibrary, revokeFilePreview, getFileCategory } from "../utils/files";
 
 /** A file awaiting a name before it is enqueued for upload. */
 export interface RenameDraftFile {
@@ -13,6 +13,7 @@ export interface RenameDraftFile {
   size: number;
   mime: string;
   category: MediaType;
+  library: MediaLibrary;
 }
 
 export interface UploadManagerState {
@@ -20,6 +21,12 @@ export interface UploadManagerState {
   order: string[];
   isOpen: boolean;
   isDragActive: boolean;
+  /**
+   * The library currently being browsed. Every intake surface (picker, drag &
+   * drop, paste, shortcut) inherits it so videos can never enter the media
+   * library and non-video files can never enter the video library.
+   */
+  activeLibrary: MediaLibrary;
   /** Reference counter so nested dragenter/leave pairs don't flicker the overlay. */
   dragDepth: number;
 
@@ -40,10 +47,14 @@ export interface UploadManagerState {
 
   setOpen: (open: boolean) => void;
   toggleOpen: () => void;
+  setActiveLibrary: (library: MediaLibrary) => void;
   setDragDepth: (depth: number) => void;
 
   /** Stage files so the teacher can rename them before they are uploaded. */
-  openRename: (files: File[], opts?: { folderId?: number | null; source?: UploadSource }) => void;
+  openRename: (
+    files: File[],
+    opts?: { folderId?: number | null; source?: UploadSource; library?: MediaLibrary },
+  ) => void;
   /** Discard the staged files without enqueuing anything. */
   closeRename: () => void;
 }
@@ -53,6 +64,7 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
   order: [],
   isOpen: false,
   isDragActive: false,
+  activeLibrary: "media",
   dragDepth: 0,
   renameDraft: [],
   renameFolderId: null,
@@ -219,22 +231,31 @@ export const useUploadManagerStore = create<UploadManagerState>((set) => ({
 
   setOpen: (open) => set({ isOpen: open }),
   toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
+  setActiveLibrary: (library) => set({ activeLibrary: library }),
   setDragDepth: (depth) =>
     set({ dragDepth: Math.max(0, depth), isDragActive: depth > 0 }),
 
   openRename: (files, opts) =>
-    set({
-      renameDraft: files.map((file) => ({
-        id: `rn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        defaultName: file.name,
-        size: file.size,
-        mime: file.type || "application/octet-stream",
-        category: getFileCategory(file.type, file.name),
-      })),
-      renameFolderId: opts?.folderId ?? null,
-      renameSource: opts?.source ?? null,
-      isRenameOpen: files.length > 0,
+    set((state) => {
+      const library = opts?.library ?? state.activeLibrary;
+      // Belt-and-braces: even if a caller forgets to filter, a video can only
+      // ever be staged for the video library and vice versa.
+      const accepted = filterFilesForLibrary(files, library);
+      return {
+        activeLibrary: library,
+        renameDraft: accepted.map((file) => ({
+          id: `rn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          file,
+          defaultName: file.name,
+          size: file.size,
+          mime: file.type || "application/octet-stream",
+          category: getFileCategory(file.type, file.name),
+          library,
+        })),
+        renameFolderId: opts?.folderId ?? null,
+        renameSource: opts?.source ?? null,
+        isRenameOpen: accepted.length > 0,
+      };
     }),
 
   closeRename: () => set({ isRenameOpen: false }),

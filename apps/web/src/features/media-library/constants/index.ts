@@ -1,4 +1,4 @@
-import type { MediaType, MediaStatus, ProcessingStatus, MediaVisibility } from "../types";
+import type { MediaType, MediaStatus, ProcessingStatus, MediaVisibility, MediaLibrary } from "../types";
 
 export const MEDIA_QUERY_KEY = "media-library";
 
@@ -85,6 +85,69 @@ export const ALLOWED_UPLOAD_TYPES = [
 
 export const MAX_UPLOAD_SIZE = 2_000_000_000; // 2GB
 
+const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|avi|mkv|ogv)$/i;
+
+const VIDEO_UPLOAD_MIME_TYPES = ALLOWED_UPLOAD_TYPES.filter((mime) => mime.startsWith("video/"));
+const MEDIA_UPLOAD_MIME_TYPES = ALLOWED_UPLOAD_TYPES.filter((mime) => !mime.startsWith("video/"));
+
+export const MEDIA_LIBRARY_LABELS: Record<MediaLibrary, string> = {
+  videos: "مكتبة الفيديوهات",
+  media: "مكتبة الوسائط",
+};
+
+/** `accept` string for a library's file input — videos never coexist with files. */
+export function acceptForLibrary(library: MediaLibrary): string {
+  return library === "videos"
+    ? [...VIDEO_UPLOAD_MIME_TYPES, ".mp4", ".webm", ".mov", ".m4v"].join(",")
+    : MEDIA_UPLOAD_MIME_TYPES.join(",");
+}
+
+export function isVideoType(type: MediaType | string | null | undefined): boolean {
+  return type === "video";
+}
+
+export function looksLikeVideo(mime: string | null | undefined, name?: string | null): boolean {
+  return Boolean(
+    (mime && mime.startsWith("video/")) ||
+      (name && VIDEO_EXTENSIONS.test(name)),
+  );
+}
+
+/** Resolve the only library a given media type is allowed to live in. */
+export function libraryForType(type: MediaType | string | null | undefined): MediaLibrary {
+  return isVideoType(type) ? "videos" : "media";
+}
+
+export function libraryForMime(mime: string | null | undefined, name?: string | null): MediaLibrary {
+  return looksLikeVideo(mime, name) ? "videos" : "media";
+}
+
+/**
+ * Pickers pass `allowedTypes`; derive the library from them so callers cannot
+ * accidentally offer videos from the media library (or vice versa).
+ * Defaults to `media` for backwards compatibility with existing callers.
+ */
+export function libraryForAllowedTypes(types?: MediaType[] | null): MediaLibrary {
+  if (!types || types.length === 0) return "media";
+  return types.every((type) => isVideoType(type)) ? "videos" : "media";
+}
+
+export function typesForLibrary(library: MediaLibrary): MediaType[] | undefined {
+  return library === "videos" ? ["video"] : undefined;
+}
+
+export function typeOptionsForLibrary(library: MediaLibrary): typeof TYPE_OPTIONS {
+  if (library === "videos") {
+    return TYPE_OPTIONS.filter((option) => option.value === "all" || option.value === "video");
+  }
+  return TYPE_OPTIONS.filter((option) => option.value !== "video");
+}
+
+export function isTypeAllowedForLibrary(type: MediaType | "all", library: MediaLibrary): boolean {
+  if (type === "all") return true;
+  return libraryForType(type) === library;
+}
+
 export const FILE_SIZE_FORMAT = [
   { threshold: 1_073_741_824, label: "GB", divisor: 1_073_741_824 },
   { threshold: 1_048_576, label: "MB", divisor: 1_048_576 },
@@ -101,6 +164,13 @@ export const SMART_FOLDERS: Array<{ id: string; label: string; icon: string; typ
   { id: "documents", label: "المستندات", icon: "FileText", type: "document" },
   { id: "archives", label: "الأرشيف", icon: "Archive", type: "zip" },
 ];
+
+/** Only show smart folders that can contain assets from the active library. */
+export function smartFoldersForLibrary(library: MediaLibrary): typeof SMART_FOLDERS {
+  return SMART_FOLDERS.filter(
+    (folder) => !folder.type || libraryForType(folder.type) === library,
+  );
+}
 
 export const VIEW_MODE_OPTIONS = [
   { value: "grid", label: "شبكة", icon: "Grid3X3" },

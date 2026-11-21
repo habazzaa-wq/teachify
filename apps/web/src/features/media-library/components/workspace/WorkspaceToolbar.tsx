@@ -26,14 +26,14 @@ import type { StudioContextMenuItem } from "@/components/studio";
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
 import {
-  TYPE_OPTIONS,
   STATUS_OPTIONS,
   SORT_OPTIONS,
   VIEW_MODE_OPTIONS,
   GROUP_BY_OPTIONS,
 } from "../../constants";
+import { typeOptionsForLibrary } from "../../constants";
 import type { AssetViewMode } from "../../store";
-import type { AssetGroupBy } from "../../types";
+import type { AssetGroupBy, MediaLibrary } from "../../types";
 
 const viewModeIcons: Record<AssetViewMode, React.ComponentType<{ className?: string }>> = {
   grid: Grid3X3,
@@ -43,6 +43,7 @@ const viewModeIcons: Record<AssetViewMode, React.ComponentType<{ className?: str
 };
 
 interface WorkspaceToolbarProps {
+  library?: MediaLibrary;
   totalAssets: number;
   selectedCount: number;
   onSelectAllToggle: (checked: boolean) => void;
@@ -52,8 +53,9 @@ interface WorkspaceToolbarProps {
   onOpenFolders?: () => void;
 }
 
-function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpload, onCreateFolder, onRefresh, onOpenFolders }: WorkspaceToolbarProps) {
+function WorkspaceToolbar({ library = "media", totalAssets, selectedCount, onSelectAllToggle, onUpload, onCreateFolder, onRefresh, onOpenFolders }: WorkspaceToolbarProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const typeOptions = useMemo(() => typeOptionsForLibrary(library), [library]);
   const {
     viewMode, setViewMode,
     groupBy, setGroupBy,
@@ -101,7 +103,7 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
         onChange={(e) => setTypeFilter(e.target.value as typeof filters.type)}
         className="h-9 w-full rounded-lg border bg-background px-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-auto"
       >
-        {TYPE_OPTIONS.map((opt) => (
+        {typeOptions.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
@@ -244,7 +246,7 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
         >
           <Upload className="h-3.5 w-3.5" />
-          <span>رفع</span>
+          <span>{library === "videos" ? "رفع فيديو" : "رفع ملف"}</span>
         </button>
       </div>
 
@@ -318,7 +320,7 @@ function WorkspaceToolbar({ totalAssets, selectedCount, onSelectAllToggle, onUpl
         )}
         {filters.type !== "all" && (
           <div className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
-            <span>{TYPE_OPTIONS.find((o) => o.value === filters.type)?.label}</span>
+            <span>{typeOptions.find((o) => o.value === filters.type)?.label}</span>
             <button onClick={() => setTypeFilter("all")}>
               <X className="h-3 w-3" />
             </button>

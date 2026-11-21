@@ -119,12 +119,13 @@ class MediaLibraryAssetService
     }
 
     /**
-     * Synchronized deletion: Bunny first, then local.
+     * Synchronized deletion: provider storage first (Bunny for videos, local
+     * disk for media), then the database record.
      *
      * Flow:
      *  1. Determine provider + service from asset metadata
      *  2. Dispatch MediaDeleting event
-     *  3. Delete from Bunny (Storage or Stream) — best effort
+     *  3. Delete from the asset's provider — best effort
      *  4. Begin DB transaction
      *  5. Clean up pivot/related records
      *  6. Soft delete the asset
@@ -149,9 +150,9 @@ class MediaLibraryAssetService
         ));
 
         try {
-            $this->deleteFromBunny($asset, $providerService);
+            $this->deleteRemoteAsset($asset, $providerService);
         } catch (\Throwable $e) {
-            Log::channel('bunny')->warning('Delete: Bunny deletion failed, continuing with local delete', [
+            Log::channel('bunny')->warning('Delete: provider storage deletion failed, continuing with record delete', [
                 'asset_id' => $asset->id,
                 'tenant_id' => $tenant->id,
                 'provider' => $asset->provider,
@@ -286,11 +287,11 @@ class MediaLibraryAssetService
             ));
 
             try {
-                $this->deleteFromBunny($asset, $providerService);
+                $this->deleteRemoteAsset($asset, $providerService);
             } catch (\Throwable $e) {
                 $remoteFailures++;
 
-                Log::channel('bunny')->warning('Bulk delete: Bunny deletion failed, continuing with local delete', [
+                Log::channel('bunny')->warning('Bulk delete: provider storage deletion failed, continuing with record delete', [
                     'asset_id' => $asset->id,
                     'tenant_id' => $tenant->id,
                     'provider' => $asset->provider,
@@ -401,18 +402,25 @@ class MediaLibraryAssetService
         return $count;
     }
 
-    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null): array
+    public function metrics(Tenant $tenant, ?int $ownerTenantUserId = null, ?string $library = null): array
     {
-        return $this->assets->metrics($tenant, $ownerTenantUserId);
+        return $this->assets->metrics($tenant, $ownerTenantUserId, $library);
     }
 
-    public function recent(Tenant $tenant, int $limit = 10, ?int $ownerTenantUserId = null): Collection
-    {
+    public function recent(
+        Tenant $tenant,
+        int $limit = 10,
+        ?int $ownerTenantUserId = null,
+        ?string $library = null,
+    ): Collection {
         $query = MediaAsset::query()
             ->where('tenant_id', $tenant->id)
             ->whereNull('archived_at')
             ->orderBy('created_at', 'desc')
             ->limit($limit);
+
+        MediaLibraryRouting::applyToQuery($query, $library);
+
         if ($ownerTenantUserId !== null) {
             $query->where(function ($owner) use ($ownerTenantUserId): void {
                 $owner->where('created_by_tenant_user_id', $ownerTenantUserId)
@@ -423,9 +431,14 @@ class MediaLibraryAssetService
         return $query->get();
     }
 
-    public function storageUsage(Tenant $tenant, ?int $ownerTenantUserId = null): array
-    {
+    public function storageUsage(
+        Tenant $tenant,
+        ?int $ownerTenantUserId = null,
+        ?string $library = null,
+    ): array {
         $query = MediaAsset::query()->where('tenant_id', $tenant->id);
+        MediaLibraryRouting::applyToQuery($query, $library);
+
         if ($ownerTenantUserId !== null) {
             $query->where(function ($owner) use ($ownerTenantUserId): void {
                 $owner->where('created_by_tenant_user_id', $ownerTenantUserId)
@@ -471,10 +484,17 @@ class MediaLibraryAssetService
     }
 
     /**
-     * Delete the remote object from Bunny. Throws on failure.
+     * Delete the stored object for the asset's actual provider. Local media
+     * uses LocalProvider; only Bunny assets ever reach Bunny.
      */
-    private function deleteFromBunny(MediaAsset $asset, string $providerService): void
+    private function deleteRemoteAsset(MediaAsset $asset, string $providerService): void
     {
+        if ($asset->provider === 'local') {
+            $this->manager->providerFor('local', 'storage')->deleteAsset($asset);
+
+            return;
+        }
+
         if ($asset->provider !== 'bunny') {
             return;
         }

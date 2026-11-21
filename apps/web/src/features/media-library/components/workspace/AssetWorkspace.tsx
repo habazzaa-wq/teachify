@@ -13,9 +13,10 @@ import { DamMediaCard } from "./DamMediaCard";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { MediaPagination } from "./MediaPagination";
 import { StudioGenericError } from "@/components/studio";
-import type { MediaAsset, MediaFilterParams } from "../../types";
+import type { MediaAsset, MediaFilterParams, MediaLibrary } from "../../types";
 
 interface AssetWorkspaceProps {
+  library?: MediaLibrary;
   onUpload: () => void;
   onCreateFolder: () => void;
   onRenameAsset: (asset: MediaAsset) => void;
@@ -79,6 +80,7 @@ const MEDIA_TYPE_CONFIG_MAP: Record<string, string> = {
 };
 
 function AssetWorkspaceBase({
+  library = "media",
   onUpload,
   onCreateFolder,
   onRenameAsset,
@@ -109,11 +111,18 @@ function AssetWorkspaceBase({
 
   const assetParams = useMemo((): MediaFilterParams => {
     const params: MediaFilterParams = {
+      library,
       sort: sortField,
       sort_dir: sortDirection,
     };
     if (filters.search) params.search = filters.search;
-    if (filters.type !== "all") params.type = filters.type;
+    // The active page is authoritative: videos live only in the Bunny library,
+    // every other type lives only on the tenant's own server.
+    if (library === "videos") {
+      params.type = "video";
+    } else if (filters.type !== "all" && filters.type !== "video") {
+      params.type = filters.type;
+    }
     if (filters.status !== "all" && filters.status !== "archived") params.status = filters.status;
     if (filters.visibility !== "all") params.visibility = filters.visibility;
     if (filters.extension) params.extension = filters.extension;
@@ -127,7 +136,7 @@ function AssetWorkspaceBase({
     if (currentPage > 1) params.page = currentPage;
     if (perPage) params.per_page = perPage;
     return params;
-  }, [selectedFolderId, sortField, sortDirection, filters, currentPage, perPage]);
+  }, [library, selectedFolderId, sortField, sortDirection, filters, currentPage, perPage]);
 
   const { data, isLoading, isError, refetch } = useMediaAssets(assetParams);
   const assets = useMemo(() => data?.data ?? [], [data]);
@@ -197,7 +206,7 @@ function AssetWorkspaceBase({
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFolderId, sortField, sortDirection, filters]);
+  }, [library, selectedFolderId, sortField, sortDirection, filters]);
 
   const breadcrumbItems = useMemo(() => {
     if (!breadcrumbs) return [];
@@ -211,6 +220,7 @@ function AssetWorkspaceBase({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <WorkspaceToolbar
+        library={library}
         totalAssets={totalAssets}
         selectedCount={selectedIds.size}
         onSelectAllToggle={handleSelectAllToggle}
@@ -282,16 +292,18 @@ function AssetWorkspaceBase({
             <p className="mb-4 text-xs text-muted-foreground">
               {filters.search || filters.type !== "all" || filters.favorites || filters.pinned
                 ? "جرّب تغيير معايير البحث"
-                : "ابدأ برفع ملفات أو إنشاء مجلد فرعي"}
+                : library === "videos"
+                  ? "ابدأ برفع الفيديوهات أو إنشاء مجلد فرعي"
+                  : "ابدأ برفع الملفات أو إنشاء مجلد فرعي"}
             </p>
-            {!filters.search && filters.type === "all" && (
+            {!filters.search && (library === "videos" || filters.type === "all") && (
               <div className="flex gap-2">
                 <button
                   onClick={onUpload}
                   className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/90"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  رفع ملف
+                  {library === "videos" ? "رفع فيديو" : "رفع ملف"}
                 </button>
                 <button
                   onClick={onCreateFolder}

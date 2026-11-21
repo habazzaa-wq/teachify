@@ -15,6 +15,7 @@ import {
   HelpCircle,
   GraduationCap,
   Images,
+  Video,
   SearchCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -119,8 +120,14 @@ export const dashboardNav: readonly NavItem[] = [
     featureFlag: "certificates",
   },
   {
-    labelKey: "nav.media",
-    href: routes.dashboardMedia,
+    labelKey: "nav.videoLibrary",
+    href: routes.dashboardVideoLibrary,
+    icon: Video,
+    permission: permissions.mediaView,
+  },
+  {
+    labelKey: "nav.mediaLibrary",
+    href: routes.dashboardMediaLibrary,
     icon: Images,
     permission: permissions.mediaView,
   },

@@ -1,13 +1,7 @@
-"use client";
+import { redirect } from "next/navigation";
+import { routes } from "@/constants/routes";
 
-import { MediaWorkspace } from "@/features/media-library/components/workspace";
-
-function MediaPage() {
-  return (
-    <div className="-mx-4 -my-6 h-[calc(100dvh-6rem)] w-full p-2 md:-mx-6 md:-my-6 lg:-mx-8 sm:p-3">
-      <MediaWorkspace />
-    </div>
-  );
+/** Old media-library links now open the self-hosted non-video library. */
+export default function LegacyMediaPage() {
+  redirect(routes.dashboardMediaLibrary);
 }
-
-export default MediaPage;

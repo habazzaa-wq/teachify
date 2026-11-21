@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUploadManagerStore } from "../store";
+import { stageFilesForLibrary } from "../services";
 import { extractFilesFromClipboard } from "../utils/files";
 
 /** Ctrl/⌘+V paste of images, screenshots and clipboard files. */
@@ -14,7 +14,7 @@ export function useUploadPaste() {
 
       const files = extractFilesFromClipboard(e.clipboardData as DataTransfer);
       if (files.length > 0) {
-        useUploadManagerStore.getState().openRename(files, { source: "paste" });
+        stageFilesForLibrary(files, { source: "paste" });
       }
     };
 

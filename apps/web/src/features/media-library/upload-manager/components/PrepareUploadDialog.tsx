@@ -170,11 +170,17 @@ export function PrepareUploadDialog() {
   const draft = useUploadManagerStore((s) => s.renameDraft);
   const folderId = useUploadManagerStore((s) => s.renameFolderId);
   const source = useUploadManagerStore((s) => s.renameSource);
+  const activeLibrary = useUploadManagerStore((s) => s.activeLibrary);
   const closeRename = useUploadManagerStore((s) => s.closeRename);
   const { enqueueFiles } = useUploadManager();
 
   const handleConfirm = (names: string[]) => {
-    enqueueFiles(draft.map((d) => d.file), { folderId, names, source: source ?? "file-input" });
+    enqueueFiles(draft.map((d) => d.file), {
+      folderId,
+      names,
+      source: source ?? "file-input",
+      library: draft[0]?.library ?? activeLibrary,
+    });
     closeRename();
   };
 

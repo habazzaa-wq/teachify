@@ -31,6 +31,7 @@ import type { ContentItem, ContentItemType } from "@/features/course-content/typ
 import { CONTENT_TYPE_CONFIG } from "@/features/course-content/constants";
 import { ExamPicker } from "@/features/exam-bank";
 import { MediaPicker } from "@/features/media-library/components/MediaPicker";
+import { libraryForAllowedTypes } from "@/features/media-library/constants";
 import type { MediaType } from "@/features/media-library/types";
 
 const MEDIA_PICKER_TYPES: Partial<Record<ContentItemType, MediaType[]>> = {
@@ -1066,6 +1067,7 @@ function CourseStudio({
         onSelect={handleMediaSelected}
         mode="single"
         allowedTypes={MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"]}
+        library={libraryForAllowedTypes(MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"])}
       />
 
       <CourseStudioEditContentDialog

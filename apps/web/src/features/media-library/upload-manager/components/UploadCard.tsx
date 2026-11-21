@@ -84,7 +84,7 @@ function UploadCardBase({ id, now }: UploadCardProps) {
   };
 
   const handleReveal = () => {
-    router.push(routes.dashboardMedia);
+    router.push(item?.library === "videos" ? routes.dashboardVideoLibrary : routes.dashboardMediaLibrary);
   };
 
   if (!item) return null;

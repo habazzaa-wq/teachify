@@ -1,9 +1,6 @@
 import { toast } from "sonner";
-import { mediaLibraryService } from "../../services";
+import { mediaLibraryService, mediaUploadHeaders, resolveMediaUploadUrl } from "../../services";
 import { useUploadManagerStore } from "../store";
-import { useAuthStore } from "@/stores/auth.store";
-import { useTenantStore } from "@/stores/tenant.store";
-import { resolveApiBaseUrl } from "@/config/env";
 import { uploadGuard } from "./uploadGuard";
 import { hashPool } from "./hashPool";
 import { networkMonitor } from "./networkMonitor";
@@ -43,7 +40,8 @@ import type {
   UploadSource,
   UploadStatus,
 } from "../types";
-import type { MediaType } from "../../types";
+import { libraryForType } from "../../constants";
+import type { MediaLibrary, MediaType } from "../../types";
 
 interface ActiveXhr {
   xhr: XMLHttpRequest;
@@ -150,6 +148,7 @@ function buildErrorMessage(type: UploadErrorType, status?: number): string {
 export interface EnqueueOptions {
   folderId?: number | null;
   canUpload?: boolean;
+  library?: MediaLibrary;
   source?: UploadSource;
   /** Chosen display names, parallel to `files`. Falls back to the file name. */
   names?: string[];
@@ -233,6 +232,8 @@ class UploadEngine {
   async enqueue(files: File[], options: EnqueueOptions = {}): Promise<void> {
     const folderId = options.folderId ?? null;
     const canUpload = options.canUpload ?? true;
+    const library = options.library ?? useUploadManagerStore.getState().activeLibrary;
+    useUploadManagerStore.getState().setActiveLibrary(library);
 
     if (!canUpload) {
       toast.error("غير مصرح لك برفع الملفات", { description: "تحقق من صلاحياتك في هذه المؤسسة" });
@@ -255,9 +256,11 @@ class UploadEngine {
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i]!;
       const name = options.names?.[i]?.trim() || file.name;
-      const item = buildUploadItem(file, folderId, name);
+      const item = buildUploadItem(file, folderId, library, name);
 
-      const validation = uploadGuard.validateFile(file);
+      // Validate the renamed File, not the original: a teacher can change the
+      // extension in the prepare dialog, and that is the name the backend sees.
+      const validation = uploadGuard.validateFile(item.file, library);
       if (!validation.ok && validation.error) {
         item.status = "failed";
         item.error = validation.error;
@@ -323,6 +326,7 @@ class UploadEngine {
       mime: item.mime,
       size: item.size,
       category: item.category,
+      library: item.library,
       folderId: item.folderId,
       chunkSize,
       totalChunks: chunks.length,
@@ -387,6 +391,9 @@ class UploadEngine {
   private async run(id: string): Promise<void> {
     const runtime = this.runtimes.get(id);
     if (!runtime) return;
+    const library = runtime.session.library ?? libraryForType(runtime.session.category);
+    const uploadService = library === "videos" ? "stream" : "storage";
+    runtime.session.library = library;
     const net = this.getNetwork();
     if (!net.online) {
       this.setItem(id, { status: "paused", speed: 0, eta: null });
@@ -431,6 +438,7 @@ class UploadEngine {
         };
       } else {
         intent = await mediaLibraryService.createResumableIntent({
+          library,
           type: mapTypeToApi(runtime.session.category),
           original_filename: runtime.session.filename,
           mime_type: runtime.session.mime,
@@ -438,7 +446,7 @@ class UploadEngine {
           folder_id: runtime.session.folderId ?? undefined,
           upload_id: runtime.session.uploadId,
           total_chunks: runtime.session.totalChunks,
-          service: runtime.session.category === "video" ? "stream" : "storage",
+          service: uploadService,
         });
       }
 
@@ -476,8 +484,12 @@ class UploadEngine {
           runtime.finalizeAbort = null;
         }
       } else {
-        const uploadService = runtime.session.category === "video" ? "stream" : "storage";
-        const res = await mediaLibraryService.uploadFileDirect(runtime.blob as File, undefined, uploadService);
+        const res = await mediaLibraryService.uploadFileDirect(
+          runtime.blob as File,
+          undefined,
+          uploadService,
+          library,
+        );
         this.completeItem(id, runtime, res.asset?.id ?? null, res.cdnUrl ?? res.asset?.cdnUrl ?? null);
       }
     } catch (err) {
@@ -622,12 +634,9 @@ class UploadEngine {
         return;
       }
 
-      // The backend chunk endpoint is addressed relative to the API base url;
-      // absolute urls (e.g. a direct CDN target) are used verbatim.
-      const base = resolveApiBaseUrl();
-      const url = /^https?:\/\//i.test(rawUrl)
-        ? rawUrl
-        : `${base}/${rawUrl.replace(/^\/+/, "")}`;
+      // Raw XHR bypasses the axios wrapper, so resolve the tenant/instructor
+      // prefix explicitly. Absolute urls (e.g. a direct CDN target) are verbatim.
+      const url = resolveMediaUploadUrl(rawUrl);
 
       const blob = sliceChunk(runtime.blob, chunk);
       const xhr = new XMLHttpRequest();
@@ -718,27 +727,13 @@ class UploadEngine {
       };
 
       try {
-        // Reuse the same auth context the axios interceptor would attach so the
-        // chunk request is authenticated and tenant-scoped on the backend.
-        const token = (() => {
-          try {
-            return useAuthStore.getState().accessToken;
-          } catch {
-            return null;
-          }
-        })();
-        const tenantId = (() => {
-          try {
-            return useTenantStore.getState().activeTenant?.id?.toString() ?? null;
-          } catch {
-            return null;
-          }
-        })();
-
+        // Reuse the same auth context the axios wrapper would attach so the
+        // chunk request is authenticated and tenant/instructor-scoped.
         xhr.open(session.uploadMethod || "PUT", url, true);
         xhr.withCredentials = true;
-        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        if (tenantId) xhr.setRequestHeader("X-Tenant-ID", tenantId);
+        Object.entries(mediaUploadHeaders()).forEach(([key, value]) => {
+          xhr.setRequestHeader(key, value);
+        });
         Object.entries(session.headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, String(v)));
         // Send chunks as opaque binary so the backend can stream the raw body
         // (and Laravel never attempts to parse the payload as form/JSON).
@@ -1208,6 +1203,8 @@ class UploadEngine {
 
   private hydrateFromRecord(record: PersistedUploadRecord): void {
     const { session, chunks, blob } = record;
+    const library = session.library ?? libraryForType(session.category);
+    session.library = library;
 
     const runtime: ItemRuntime = {
       sessionId: session.sessionId,
@@ -1235,6 +1232,7 @@ class UploadEngine {
       size: session.size,
       mime: session.mime,
       category: session.category,
+      library,
       progress: 0,
       speed: 0,
       eta: null,

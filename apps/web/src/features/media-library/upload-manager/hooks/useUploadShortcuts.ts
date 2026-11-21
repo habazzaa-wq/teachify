@@ -19,6 +19,7 @@ export function useUploadShortcuts() {
   const canUpload = useCan(UPLOAD_PERMISSION);
   const setDragDepth = useUploadManagerStore((s) => s.setDragDepth);
   const setOpen = useUploadManagerStore((s) => s.setOpen);
+  const activeLibrary = useUploadManagerStore((s) => s.activeLibrary);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -32,7 +33,9 @@ export function useUploadShortcuts() {
         e.preventDefault();
         setOpen(true);
         const mode: UploadPickerMode = e.shiftKey ? "folder" : "file";
-        window.dispatchEvent(new CustomEvent(UPLOAD_PICK_EVENT, { detail: { mode } }));
+        window.dispatchEvent(
+          new CustomEvent(UPLOAD_PICK_EVENT, { detail: { mode, library: activeLibrary } }),
+        );
         return;
       }
 
@@ -47,5 +50,5 @@ export function useUploadShortcuts() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canUpload, setDragDepth, setOpen]);
+  }, [activeLibrary, canUpload, setDragDepth, setOpen]);
 }

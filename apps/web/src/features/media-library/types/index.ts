@@ -1,5 +1,12 @@
 export type MediaType = "video" | "image" | "audio" | "document" | "pdf" | "zip" | "presentation" | "spreadsheet" | "link" | "file";
 
+/**
+ * The tenant media library is intentionally split in two:
+ * - `videos`: Bunny Stream only, videos only.
+ * - `media`: the tenant's own server, everything except video.
+ */
+export type MediaLibrary = "videos" | "media";
+
 export type MediaStatus = "pending" | "uploading" | "processing" | "ready" | "failed";
 
 export type ProcessingStatus = "uploading" | "processing" | "ready" | "failed" | "archived" | "deleted";
@@ -92,6 +99,7 @@ export interface MediaAsset {
 }
 
 export interface MediaFilterParams {
+  library?: MediaLibrary;
   folder_id?: number | "root";
   root?: boolean;
   search?: string;
