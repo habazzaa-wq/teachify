@@ -7,9 +7,10 @@ use App\Models\Usage\TenantUsageHistory;
 use App\Models\Usage\TenantUsageSnapshot;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Cache;
 
 class Tenant extends Model
@@ -285,6 +286,21 @@ class Tenant extends Model
     public function notificationEvents(): HasMany
     {
         return $this->hasMany(NotificationEvent::class);
+    }
+
+    public function courseSessions(): HasMany
+    {
+        return $this->hasMany(CourseSession::class);
+    }
+
+    public function whatsappIntegration(): HasOne
+    {
+        return $this->hasOne(TenantWhatsAppIntegration::class);
+    }
+
+    public function scheduledNotificationDispatches(): HasMany
+    {
+        return $this->hasMany(ScheduledNotificationDispatch::class);
     }
 
     public function discussionThreads(): HasMany

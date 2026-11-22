@@ -14,6 +14,19 @@ class Course extends Model
 {
     use BelongsToTenant, SoftDeletes;
 
+    public const DELIVERY_MODE_RECORDED_ONLY = 'recorded_only';
+
+    public const DELIVERY_MODE_SESSIONS_ONLY = 'sessions_only';
+
+    public const DELIVERY_MODE_RECORDED_AND_SESSIONS = 'recorded_and_sessions';
+
+    public const DELIVERY_MODES = [
+        self::DELIVERY_MODE_RECORDED_ONLY,
+        self::DELIVERY_MODE_SESSIONS_ONLY,
+        self::DELIVERY_MODE_RECORDED_AND_SESSIONS,
+        'blended',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'created_by_tenant_user_id',
@@ -29,6 +42,7 @@ class Course extends Model
         'thumbnail_path',
         'cover_image_path',
         'status',
+        'delivery_mode',
         'visibility',
         'difficulty',
         'language',
@@ -200,5 +214,10 @@ class Course extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(CourseSession::class);
     }
 }

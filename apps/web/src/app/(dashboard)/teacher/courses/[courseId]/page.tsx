@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { CourseStudio } from "@/features/course-studio";
 import { CourseInstructorAssignments } from "@/features/courses/components/CourseInstructorAssignments";
+import { CourseSessionsPanel } from "@/features/course-sessions/components/CourseSessionsPanel";
 import { useCourse, usePublishCourse } from "@/features/courses/hooks";
 
 function CourseWorkspacePage() {
@@ -41,6 +42,7 @@ function CourseWorkspacePage() {
         onPublish={course.status !== "published" ? handlePublish : undefined}
       />
       <CourseInstructorAssignments course={course} />
+      <div className="px-4 pb-8"><CourseSessionsPanel courseId={course.id} /></div>
     </>
   );
 }

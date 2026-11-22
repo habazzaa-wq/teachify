@@ -76,6 +76,7 @@ function serializeCoursePayload(
     fullDescription: "full_description",
     thumbnailPath: "thumbnail_path",
     coverImagePath: "cover_image_path",
+    deliveryMode: "delivery_mode",
     visibility: "visibility",
     difficulty: "difficulty",
     language: "language",

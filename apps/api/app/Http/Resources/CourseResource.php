@@ -46,6 +46,7 @@ class CourseResource extends JsonResource
             'thumbnail' => $this->proxyUrl($this->thumbnail_path),
             'coverImage' => $this->proxyUrl($this->cover_image_path),
             'status' => $this->status,
+            'deliveryMode' => $this->delivery_mode ?? 'recorded_only',
             'visibility' => $this->visibility,
             'difficulty' => $this->difficulty,
             'language' => $this->language,

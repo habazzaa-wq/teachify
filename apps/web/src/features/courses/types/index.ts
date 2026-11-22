@@ -1,7 +1,8 @@
-export type CourseStatus = "draft" | "review" | "published" | "scheduled" | "archived";
+﻿export type CourseStatus = "draft" | "review" | "published" | "scheduled" | "archived";
 export type CourseVisibility = "private" | "public" | "unlisted";
 export type CourseDifficulty = "beginner" | "intermediate" | "advanced" | "all_levels";
 export type PricingType = "free" | "one_time" | "subscription";
+export type CourseDeliveryMode = "recorded_only" | "sessions_only" | "recorded_and_sessions" | "blended";
 
 export interface Course {
   id: string;
@@ -15,6 +16,7 @@ export interface Course {
   thumbnail: string | null;
   coverImage: string | null;
   status: CourseStatus;
+  deliveryMode: CourseDeliveryMode;
   visibility: CourseVisibility;
   difficulty: CourseDifficulty;
   language: string;
@@ -82,6 +84,7 @@ export interface CreateCoursePayload {
   fullDescription?: string | null;
   thumbnailPath?: string | null;
   coverImagePath?: string | null;
+  deliveryMode?: CourseDeliveryMode;
   visibility?: CourseVisibility;
   difficulty?: CourseDifficulty;
   language?: string;
@@ -115,6 +118,7 @@ export interface UpdateCoursePayload {
   fullDescription?: string | null;
   thumbnailPath?: string | null;
   coverImagePath?: string | null;
+  deliveryMode?: CourseDeliveryMode;
   visibility?: CourseVisibility;
   difficulty?: CourseDifficulty;
   language?: string;
@@ -178,3 +182,6 @@ export interface CourseActivity {
   description: string;
   timestamp: string;
 }
+
+
+

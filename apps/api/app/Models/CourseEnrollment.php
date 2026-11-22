@@ -59,4 +59,9 @@ class CourseEnrollment extends Model
     {
         return $this->hasOne(CourseCompletion::class);
     }
+
+    public function sessionEnrollments(): HasMany
+    {
+        return $this->hasMany(CourseSessionEnrollment::class, 'course_enrollment_id');
+    }
 }

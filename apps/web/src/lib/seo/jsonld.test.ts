@@ -15,6 +15,7 @@ function baseCourse(): PublicCourse {
     thumbnail: null,
     coverImage: null,
     status: "published",
+    deliveryMode: "recorded_only",
     visibility: "public",
     difficulty: "beginner",
     language: "ar",

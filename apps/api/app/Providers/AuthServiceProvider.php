@@ -2,17 +2,19 @@
 
 namespace App\Providers;
 
+use App\Models\CourseSession;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\SessionAttendance;
 use App\Models\TenantUser;
-use App\Services\Authorization\PlatformAuthorizationService;
-use App\Policies\DashboardPolicy;
-use App\Policies\PermissionPolicy;
+use App\Models\TenantWhatsAppIntegration;
+use App\Policies\CourseSessionPolicy;
 use App\Policies\RolePolicy;
-use App\Policies\SettingsPolicy;
-use App\Policies\StudentPolicy;
+use App\Policies\SessionAttendancePolicy;
 use App\Policies\TenantUserPolicy;
+use App\Policies\TenantWhatsAppIntegrationPolicy;
 use App\Services\Authorization\AuthorizationService;
+use App\Services\Authorization\PlatformAuthorizationService;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -21,6 +23,9 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         Role::class => RolePolicy::class,
         TenantUser::class => TenantUserPolicy::class,
+        CourseSession::class => CourseSessionPolicy::class,
+        SessionAttendance::class => SessionAttendancePolicy::class,
+        TenantWhatsAppIntegration::class => TenantWhatsAppIntegrationPolicy::class,
     ];
 
     public function boot(): void

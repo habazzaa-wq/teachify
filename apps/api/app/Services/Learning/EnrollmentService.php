@@ -4,15 +4,20 @@ namespace App\Services\Learning;
 
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseSessionEnrollment;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Notifications\NotificationEventService;
+use App\Services\Sessions\CourseSessionEnrollmentSyncService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class EnrollmentService
 {
-    public function __construct(private readonly NotificationEventService $notificationEvents)
-    {
+    public function __construct(
+        private readonly NotificationEventService $notificationEvents,
+        private readonly CourseSessionEnrollmentSyncService $sessionEnrollmentSync,
+    ) {
     }
 
     /**
@@ -52,6 +57,10 @@ class EnrollmentService
             'course_id' => $course->id,
             'course_title' => $course->title,
         ]);
+
+        if ($enrollment->status === 'active') {
+            DB::afterCommit(fn () => $this->sessionEnrollmentSync->syncCourseEnrollment($enrollment->fresh(['course', 'student'])));
+        }
 
         return $enrollment;
     }
@@ -109,8 +118,15 @@ class EnrollmentService
         }
 
         $enrollment->forceFill(array_merge(['status' => $target], $extra))->save();
+        $enrollment = $enrollment->refresh()->load(['course', 'student.user']);
 
-        return $enrollment->refresh()->load(['course', 'student.user']);
+        if ($target === 'active') {
+            DB::afterCommit(fn () => $this->sessionEnrollmentSync->syncCourseEnrollment($enrollment->fresh(['course', 'student'])));
+        } elseif (in_array($target, ['suspended', 'cancelled'], true)) {
+            DB::afterCommit(fn () => $this->syncSessionEnrollmentStatus($enrollment->fresh(), $target));
+        }
+
+        return $enrollment;
     }
 
     private function activeEnrollmentExists(Course $course, TenantUser $student): bool
@@ -138,6 +154,22 @@ class EnrollmentService
                 'tenant_user_id' => ['The selected tenant membership is invalid.'],
             ]);
         }
+    }
+
+    private function syncSessionEnrollmentStatus(CourseEnrollment $enrollment, string $target): void
+    {
+        $status = $target === 'cancelled'
+            ? CourseSessionEnrollment::STATUS_CANCELLED
+            : CourseSessionEnrollment::STATUS_CANCELLED;
+
+        CourseSessionEnrollment::query()
+            ->where('tenant_id', $enrollment->tenant_id)
+            ->where('course_enrollment_id', $enrollment->id)
+            ->update([
+                'status' => $status,
+                'cancelled_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 
     private function ensureStatus(string $status): void

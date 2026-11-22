@@ -25,7 +25,7 @@ class NotificationPreferenceService
     }
 
     /**
-     * @param list<array{notification_type:string,in_app_enabled?:bool,email_enabled?:bool}> $preferences
+     * @param list<array{notification_type:string,in_app_enabled?:bool,email_enabled?:bool,whatsapp_enabled?:bool}> $preferences
      * @return Collection<int, NotificationPreference>
      */
     public function updateMany(Tenant $tenant, TenantUser $owner, array $preferences): Collection
@@ -34,6 +34,12 @@ class NotificationPreferenceService
         $this->ensureOwnerInTenant($tenant, $owner);
 
         foreach ($preferences as $preference) {
+            $existing = NotificationPreference::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('tenant_user_id', $owner->id)
+                ->where('notification_type', $preference['notification_type'])
+                ->first();
+
             NotificationPreference::updateOrCreate(
                 [
                     'tenant_id' => $tenant->id,
@@ -41,8 +47,9 @@ class NotificationPreferenceService
                     'notification_type' => $preference['notification_type'],
                 ],
                 [
-                    'in_app_enabled' => $preference['in_app_enabled'] ?? true,
-                    'email_enabled' => $preference['email_enabled'] ?? false,
+                    'in_app_enabled' => $preference['in_app_enabled'] ?? $existing?->in_app_enabled ?? true,
+                    'email_enabled' => $preference['email_enabled'] ?? $existing?->email_enabled ?? false,
+                    'whatsapp_enabled' => $preference['whatsapp_enabled'] ?? $existing?->whatsapp_enabled ?? false,
                 ],
             );
         }
@@ -67,8 +74,9 @@ class NotificationPreferenceService
         }
 
         return match ($channel) {
-            'in_app' => $preference->in_app_enabled,
-            'email' => $preference->email_enabled,
+            'in_app' => (bool) $preference->in_app_enabled,
+            'email' => (bool) $preference->email_enabled,
+            'whatsapp' => (bool) $preference->whatsapp_enabled,
             default => false,
         };
     }

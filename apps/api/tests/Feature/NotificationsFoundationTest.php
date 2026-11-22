@@ -129,7 +129,17 @@ class NotificationsFoundationTest extends TestCase
             'You passed.',
         );
 
-        $this->assertNull($notification);
+        $this->assertNotNull($notification);
+        $this->assertSame('archived', $notification->status);
+        $this->assertDatabaseMissing('notification_deliveries', [
+            'notification_id' => $notification->id,
+            'channel' => 'in_app',
+        ]);
+        $this->assertDatabaseHas('notification_deliveries', [
+            'notification_id' => $notification->id,
+            'channel' => 'email',
+            'status' => 'pending',
+        ]);
     }
 
     public function test_owner_and_admin_can_manage_templates_but_students_cannot(): void
