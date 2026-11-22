@@ -308,7 +308,11 @@ $payload = $payload -replace '__DO_RESTART__', $doRestart
 $payload = $payload -replace "`r", ""
 
 $remoteScript = '/tmp/deploy_teachify.sh'
-$remoteLog    = '/tmp/deploy_teachify.log'
+# One log per invocation. Launching with `> /tmp/deploy_teachify.log` truncated
+# the log of an already-running deploy, which made its wrapper report a false
+# "exited without a result marker" failure even though the deploy succeeded.
+$runStamp  = Get-Date -Format 'yyyyMMdd_HHmmss'
+$remoteLog = "/tmp/deploy_teachify_${runStamp}.log"
 
 # Upload the bash payload to the server, then run it DETACHED (setsid) so that a
 # local SSH disconnect or a flaky connection cannot kill the long `npm run build`.
@@ -318,37 +322,66 @@ $payload | & ssh @SshArgs "cat > $remoteScript"
 if ($LASTEXITCODE -ne 0) { Write-Fail "Could not upload deploy script."; exit 1 }
 
 Write-Step "Launching detached deployment on $SshUser@$SshHost ..."
-& ssh @SshArgs "setsid bash $remoteScript > $remoteLog 2>&1 < /dev/null & echo LAunched_PID=`$!"
+$launchOut = @(& ssh @SshArgs "setsid bash $remoteScript > $remoteLog 2>&1 < /dev/null & echo LAUNCHED_PID=`$!; ln -sfn $remoteLog /tmp/deploy_teachify.log" 2>$null)
 if ($LASTEXITCODE -ne 0) { Write-Fail "Could not launch the deployment."; exit 1 }
+$launchedPid = ''
+foreach ($line in $launchOut) {
+    if ($line -match 'LAUNCHED_PID=(\d+)') { $launchedPid = $Matches[1]; break }
+}
 
 Write-Step "Deployment running (detached). Streaming server log ..."
-$start = 1
+Write-Host "   Log: $remoteLog" -ForegroundColor DarkGray
+$printedChars = 0
 $result = $null
-for ($i = 0; $i -lt 120; $i++) {
+
+# Read the WHOLE log and the PID state in ONE ssh call. Separate tail/grep/pgrep
+# calls raced each other and could miss the final marker; the base64 payload is
+# small (a few KB) and makes marker detection deterministic.
+function Get-DeployLogText {
+    $encoded = @(& ssh @SshArgs "base64 $remoteLog 2>/dev/null | tr -d '\n'" 2>$null)
+    if ($encoded.Count -eq 0) { return '' }
+    try { return [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($encoded -join ''))) }
+    catch { return '' }
+}
+
+for ($i = 0; $i -lt 180; $i++) {
     # Poll fast at first so short/no-op deploys return almost immediately.
     Start-Sleep -Seconds $(if ($i -lt 3) { 3 } else { 5 })
-    $rawLines = @(& ssh @SshArgs "tail -n +$start $remoteLog" 2>$null) | ForEach-Object { $_ -split "`n" }
-    if ($rawLines.Count -gt 0) {
-        $rawLines | Where-Object { $_.Trim() -ne '' } | ForEach-Object { Write-Host $_ }
-        # Advance by ALL returned lines (including blank ones). Counting only the
-        # printed lines makes $start drift behind and re-prints old output.
-        $start += $rawLines.Count
+    $probe = @(& ssh @SshArgs "base64 $remoteLog 2>/dev/null | tr -d '\n'; echo; if [ -n '$launchedPid' ] && kill -0 $launchedPid 2>/dev/null; then echo DEPLOY_ALIVE=yes; else echo DEPLOY_ALIVE=no; fi" 2>$null)
+
+    $encoded = @()
+    $alive = 'unknown'
+    foreach ($line in $probe) {
+        if ($line -match '^DEPLOY_ALIVE=(yes|no)$') { $alive = $Matches[1] }
+        elseif ($line.Trim() -ne '') { $encoded += $line.Trim() }
     }
-    $marker = (& ssh @SshArgs "grep -E 'DEPLOY_OK|DEPLOY_FAILED' $remoteLog | tail -1" 2>$null)
-    if ($marker -match 'DEPLOY_OK')      { $result = 'OK';     break }
-    if ($marker -match 'DEPLOY_FAILED')  { $result = 'FAILED'; break }
-    # Remote process exited without a result marker -> fail loudly so the user can recover.
-    # Bracket the first letter so pgrep does not match its OWN ssh/bash command
-    # line (which contains the script path) and wait forever after a silent exit.
-    $alivePattern = $remoteScript -replace '/([^/])([^/]*)$', '/[$1]$2'
-    $alive = (& ssh @SshArgs "pgrep -f '$alivePattern' >/dev/null && echo yes || echo no" 2>$null)
-    if ($alive -eq 'no' -and $i -gt 2) {
-        $tail = @(& ssh @SshArgs "tail -n 30 $remoteLog" 2>$null)
-        if ($tail.Count -gt 0) { $tail | ForEach-Object { Write-Host "   $_" -ForegroundColor DarkGray } }
-        Write-Fail "Remote deployment process exited without a result marker (see $remoteLog)."
+    $logText = ''
+    if ($encoded.Count -gt 0) {
+        try { $logText = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($encoded -join ''))) } catch { $logText = '' }
+    }
+
+    if ($logText.Length -gt $printedChars) {
+        $newPart = $logText.Substring($printedChars)
+        $newPart -split "`r?`n" | Where-Object { $_.Trim() -ne '' } | ForEach-Object { Write-Host $_ }
+        $printedChars = $logText.Length
+    }
+
+    if ($logText -match 'DEPLOY_OK sha=')    { $result = 'OK';     break }
+    if ($logText -match 'DEPLOY_FAILED:')    { $result = 'FAILED'; break }
+
+    # The remote process may exit silently (e.g. killed by OOM). Fail loudly
+    # instead of waiting for the full timeout, but only after giving the marker
+    # a couple of polls to land.
+    if ($alive -eq 'no' -and $i -ge 2) {
         $result = 'FAILED'
         break
     }
+}
+
+if (-not $result) {
+    # Timeout fallback: re-read once in case the marker landed between polls.
+    $finalText = Get-DeployLogText
+    if ($finalText -match 'DEPLOY_OK sha=') { $result = 'OK' } else { $result = 'FAILED' }
 }
 
 if ($result -eq 'OK') {
@@ -363,8 +396,10 @@ if ($result -eq 'OK') {
     Write-Step "Deployment finished successfully."
     exit 0
 } else {
-    $tail = @(& ssh @SshArgs "tail -n 30 $remoteLog" 2>$null)
-    if ($tail.Count -gt 0) { $tail | ForEach-Object { Write-Host "   $_" -ForegroundColor DarkGray } }
-    Write-Fail "Deployment failed on the server. Inspect: ssh deplo@187.127.92.237 'tail -n 80 /tmp/deploy_teachify.log'. If a PM2 process is down, run: pm2 restart teachify-frontend (or the relevant worker)."
+    $tailText = Get-DeployLogText
+    if ($tailText) {
+        ($tailText -split "`r?`n" | Select-Object -Last 30) | ForEach-Object { Write-Host "   $_" -ForegroundColor DarkGray }
+    }
+    Write-Fail "Deployment failed on the server. Inspect: ssh $SshUser@$SshHost 'tail -n 80 $remoteLog'. If a PM2 process is down, run: pm2 restart teachify-frontend (or the relevant worker)."
     exit 1
 }
