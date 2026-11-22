@@ -3,7 +3,7 @@
 import { useState, type CSSProperties, type MouseEvent } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
+  ArrowUp,
   Clock,
   Facebook,
   Instagram,
@@ -20,39 +20,33 @@ import { toWhatsAppUrl, type FooterLinkGroup, type FooterSettings } from "@/feat
  * Presentational footer shared by the public storefront and the dashboard
  * editor preview.
  *
- * Concept: a two-color canvas (secondary over primary) with floating rounded
- * cards sitting across the split — a coral identity card, a light navigation
- * card and a gold contact card. The cards carry soft shadows so the color
- * change reads as depth rather than a flat band. Only the two live brand
- * variables are used for the colored surfaces.
+ * Design language (read from globals.css / tailwind.config.ts):
+ *  - surfaces: only --brand-primary and --brand-secondary, each a solid field
+ *    with a hard edge between them — no gradients or blended backgrounds
+ *  - type: font-display for the wordmark, tracked micro-labels for hierarchy
+ *  - structure: asymmetric two-part masthead + a ruled, uneven navigation
+ *    ledger, followed by a separate secondary copyright band
+ *  - detail: hairline separators, an animated underline on interactive text,
+ *    and a small arrow lift on back-to-top
  */
 
-const canvas: CSSProperties = {
-  background:
-    "linear-gradient(to bottom, var(--brand-secondary) 0%, var(--brand-secondary) 50%, var(--brand-primary) 50%, var(--brand-primary) 100%)",
+const onPrimaryMuted: CSSProperties = {
+  color: "color-mix(in srgb, var(--brand-primary-contrast) 72%, transparent)",
 };
-const coralCard: CSSProperties = {
-  backgroundColor: "var(--brand-primary)",
-  color: "var(--brand-primary-contrast)",
+const onPrimaryRule: CSSProperties = {
+  backgroundColor: "color-mix(in srgb, var(--brand-primary-contrast) 22%, transparent)",
 };
-const goldCard: CSSProperties = {
-  backgroundColor: "var(--brand-secondary)",
-  color: "var(--brand-secondary-contrast)",
-};
-const lightCard: CSSProperties = {
-  backgroundColor: "#fffdfa",
-  color: "#2a201d",
-};
-const coralAccent: CSSProperties = { color: "var(--brand-primary)" };
-const goldAccent: CSSProperties = { color: "var(--brand-secondary)" };
-const coralDivider: CSSProperties = {
-  backgroundColor: "color-mix(in srgb, var(--brand-secondary) 70%, transparent)",
-};
-const neutralDivider: CSSProperties = {
-  backgroundColor: "color-mix(in srgb, #2a201d 12%, transparent)",
-};
-const cardRadius = "rounded-[22px]";
-const cardBase = `${cardRadius} p-5 shadow-soft-lg ring-1 ring-black/5`;
+const secondaryInk: CSSProperties = { color: "var(--brand-secondary)" };
+const secondaryRule: CSSProperties = { backgroundColor: "var(--brand-secondary)" };
+
+const microLabel =
+  "text-[10px] font-bold tracking-[0.22em]";
+const animatedLink =
+  "relative inline-block text-[13px] leading-6 transition-colors duration-200 " +
+  "hover:text-[color:var(--brand-primary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "focus-visible:outline-[var(--brand-primary-contrast)] " +
+  "after:absolute after:bottom-0 after:right-0 after:h-px after:w-full after:origin-right " +
+  "after:scale-x-0 after:bg-current after:transition-transform after:duration-300 hover:after:scale-x-100";
 
 export interface FooterContentProps {
   settings: FooterSettings;
@@ -64,16 +58,23 @@ export interface FooterContentProps {
   className?: string;
 }
 
-function BrandMark({ logo, tenantName }: { logo: string | null; tenantName: string }) {
+function Wordmark({ logo, tenantName }: { logo: string | null; tenantName: string }) {
   const [failed, setFailed] = useState(false);
 
   return (
-    <div className="flex items-center gap-3.5">
+    <div className="flex items-center gap-4">
       {logo && !failed && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logo} alt={tenantName} onError={() => setFailed(true)} className="h-10 w-10 shrink-0 object-contain" />
+        <img
+          src={logo}
+          alt={tenantName}
+          onError={() => setFailed(true)}
+          className="h-9 w-9 shrink-0 object-contain"
+        />
       )}
-      <h2 className="min-w-0 font-display text-[24px] font-bold leading-tight">{tenantName}</h2>
+      <h2 className="font-display text-[38px] font-bold leading-none tracking-tight sm:text-[50px] lg:text-[56px]">
+        {tenantName}
+      </h2>
     </div>
   );
 }
@@ -89,21 +90,17 @@ function LinkGroup({
 }) {
   return (
     <nav aria-label={group.heading}>
-      <h3 className="flex items-center gap-2 text-[12px] font-bold">
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={coralAccent} />
-        {group.heading}
-      </h3>
-      <ul className="mt-3 space-y-1.5">
+      <div aria-hidden="true" className="mb-4 h-0.5 w-7" style={secondaryRule} />
+      <h3 className={`${microLabel} text-[color:var(--brand-primary-contrast)]`}>{group.heading}</h3>
+      <ul className="mt-4 space-y-1.5">
         {group.links.map((link) => {
           const key = `${group.heading}-${link.label}-${link.href}`;
           const resolved = link.href.trim() !== "" ? link.href : whatsappUrl || routes.community;
-          const className =
-            "inline-block text-[13px] leading-5 transition-colors duration-150 hover:text-[color:var(--brand-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]";
 
           if (resolved.startsWith("http")) {
             return (
               <li key={key}>
-                <a href={resolved} target="_blank" rel="noopener noreferrer" onClick={guard} className={className}>
+                <a href={resolved} target="_blank" rel="noopener noreferrer" onClick={guard} className={animatedLink}>
                   {link.label}
                 </a>
               </li>
@@ -111,7 +108,7 @@ function LinkGroup({
           }
           return (
             <li key={key}>
-              <Link href={resolved} onClick={guard} className={className}>
+              <Link href={resolved} onClick={guard} className={animatedLink}>
                 {link.label}
               </Link>
             </li>
@@ -150,25 +147,27 @@ function buildContactRows(contact: FooterSettings["contact"]): ContactRow[] {
 
 function ContactList({ contact, guard }: { contact: FooterSettings["contact"]; guard: (event: MouseEvent<HTMLElement>) => void }) {
   const rows = buildContactRows(contact);
+
   return (
-    <ul className="space-y-2.5">
+    <ul className="mt-5 space-y-4">
       {rows.map((row) => {
         const Icon = row.Icon;
         const body = (
           <>
-            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={coralAccent} aria-hidden="true" />
-            <span className="min-w-0 text-[12px] leading-5">{row.value}</span>
+            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={secondaryInk} aria-hidden="true" />
+            <span className="min-w-0 text-[13px] leading-5">{row.value}</span>
           </>
         );
+
         return (
-          <li key={row.label} className="flex items-start gap-2.5">
+          <li key={row.label} className="flex items-start gap-3">
             {row.href ? (
               <a
                 href={row.href}
                 {...(row.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 onClick={guard}
                 aria-label={row.label}
-                className="flex min-w-0 items-start gap-2.5 rounded-sm transition-opacity duration-150 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                className="flex min-w-0 items-start gap-3 rounded-sm transition-opacity duration-200 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
               >
                 {body}
               </a>
@@ -204,7 +203,7 @@ function SocialLinks({
   if (entries.length === 0) return null;
 
   return (
-    <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+    <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
       {entries.map((entry) => {
         const Icon = entry.Icon;
         const href = socials[entry.key];
@@ -214,9 +213,9 @@ function SocialLinks({
               href={href}
               {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               onClick={guard}
-              className="inline-flex items-center gap-2 text-[12px] font-bold transition-opacity duration-150 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+              className="group inline-flex items-center gap-2 text-[11px] font-bold tracking-wide transition-opacity duration-200 hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary-contrast)]"
             >
-              <Icon className="h-4 w-4" style={goldAccent} aria-hidden="true" />
+              <Icon className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5" style={secondaryInk} aria-hidden="true" />
               {entry.label}
             </a>
           </li>
@@ -239,48 +238,11 @@ function BackToTop({ preview }: { preview?: boolean }) {
       onClick={preview ? undefined : scrollToTop}
       title="العودة للأعلى"
       aria-label="العودة للأعلى"
-      className="inline-flex items-center gap-1.5 text-[11px] font-semibold transition-opacity duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+      className="group inline-flex items-center gap-1.5 text-[11px] font-bold transition-opacity duration-200 hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
     >
       <span>أعلى الصفحة</span>
-      <ArrowLeft className="h-3.5 w-3.5 rotate-90" aria-hidden="true" />
+      <ArrowUp className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true" />
     </button>
-  );
-}
-
-function Colophon({
-  year,
-  tenantName,
-  preview,
-}: {
-  year: number;
-  tenantName: string;
-  preview?: boolean;
-}) {
-  const guard = (event: MouseEvent<HTMLElement>) => {
-    if (preview) event.preventDefault();
-  };
-
-  return (
-    <div className="flex flex-col justify-center gap-2 px-1 text-[11px] text-[color:var(--brand-primary-contrast)] lg:col-span-7">
-      <p className="opacity-85">© {year} {tenantName}. جميع الحقوق محفوظة.</p>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-        <Link
-          href={routes.publicPrivacy}
-          onClick={guard}
-          className="underline underline-offset-2 transition-opacity duration-150 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-        >
-          سياسة الخصوصية
-        </Link>
-        <Link
-          href={routes.publicTerms}
-          onClick={guard}
-          className="underline underline-offset-2 transition-opacity duration-150 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-        >
-          شروط الاستخدام
-        </Link>
-        <BackToTop preview={preview} />
-      </div>
-    </div>
   );
 }
 
@@ -299,64 +261,92 @@ export function FooterContent({
   const whatsappUrl = toWhatsAppUrl(settings.contact.whatsapp);
 
   return (
-    <footer dir="rtl" className={className}>
-      <div className="relative overflow-hidden">
-        {/* two-color canvas */}
-        <div aria-hidden="true" className="absolute inset-0" style={canvas} />
+    <footer
+      dir="rtl"
+      className={className}
+      style={{ backgroundColor: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
+    >
+      {/* single secondary accent rule — a solid line, not a gradient */}
+      <div aria-hidden="true" className="h-[3px] w-full" style={secondaryRule} />
 
+      <div
+        className={
+          preview
+            ? "mx-auto w-full max-w-[1180px] px-5 pb-10 pt-10 sm:px-7"
+            : "mx-auto w-full max-w-[1180px] px-5 pb-12 pt-12 sm:px-8 lg:px-10 lg:pb-14 lg:pt-14"
+        }
+      >
+        {/* asymmetric masthead: wide identity, narrow contact set lower */}
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)] lg:gap-20">
+          <div className="min-w-0">
+            <p className={microLabel} style={onPrimaryMuted}>
+              {settings.tagline}
+            </p>
+            <div className="mt-4">
+              <Wordmark logo={logo} tenantName={tenantName} />
+            </div>
+            <p className="mt-5 max-w-md text-[13px] leading-6" style={onPrimaryMuted}>
+              {settings.aboutText}
+            </p>
+            <SocialLinks socials={settings.socials} guard={guard} />
+          </div>
+
+          <div className="min-w-0 lg:pt-10">
+            <p className={microLabel} style={onPrimaryMuted}>
+              تواصل معنا
+            </p>
+            <ContactList contact={settings.contact} guard={guard} />
+          </div>
+        </div>
+
+        {/* hairline separator */}
+        <div aria-hidden="true" className={`${preview ? "my-8" : "my-10"} h-px w-full`} style={onPrimaryRule} />
+
+        {/* uneven navigation ledger */}
+        <nav
+          aria-label="روابط الفوتر"
+          className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-12"
+        >
+          {settings.groups.map((group) => (
+            <LinkGroup
+              key={`${group.heading}-${group.links.length}`}
+              group={group}
+              whatsappUrl={whatsappUrl}
+              guard={guard}
+            />
+          ))}
+        </nav>
+      </div>
+
+      {/* independent secondary field — hard edge, no blend */}
+      <div
+        className="py-4"
+        style={{ backgroundColor: "var(--brand-secondary)", color: "var(--brand-secondary-contrast)" }}
+      >
         <div
           className={
             preview
-              ? "relative mx-auto w-full max-w-[1200px] px-5 py-7 sm:px-6"
-              : "relative mx-auto w-full max-w-[1200px] px-5 py-7 sm:px-8 lg:px-12"
+              ? "mx-auto flex w-full max-w-[1180px] flex-col gap-2 px-5 text-[11px] sm:px-7 sm:flex-row sm:items-center sm:justify-between"
+              : "mx-auto flex w-full max-w-[1180px] flex-col gap-2 px-5 text-[11px] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10"
           }
         >
-          <div className="grid gap-4 lg:grid-cols-12">
-            {/* identity card — primary surface */}
-            <section className={`${cardBase} lg:col-span-5`} style={coralCard}>
-              <BrandMark key={logo ?? "fallback"} logo={logo} tenantName={tenantName} />
-              <p className="mt-3 text-[12px] font-bold opacity-90">{settings.tagline}</p>
-              <div aria-hidden="true" className="my-3.5 h-px w-full" style={coralDivider} />
-              <p className="max-w-sm text-[13px] leading-6 opacity-90">{settings.aboutText}</p>
-              <div aria-hidden="true" className="my-3.5 h-px w-full" style={coralDivider} />
-              <SocialLinks socials={settings.socials} guard={guard} />
-            </section>
-
-            {/* navigation card — light surface */}
-            <nav aria-label="روابط الفوتر" className={`${cardBase} lg:col-span-7`} style={lightCard}>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                {settings.groups.map((group) => (
-                  <LinkGroup
-                    key={`${group.heading}-${group.links.length}`}
-                    group={group}
-                    whatsappUrl={whatsappUrl}
-                    guard={guard}
-                  />
-                ))}
-              </div>
-            </nav>
-
-            {/* contact card — secondary surface */}
-            <section className={`${cardBase} lg:col-span-5`} style={goldCard}>
-              <h3 className="mb-3.5 flex items-center gap-2 text-[12px] font-bold">
-                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={coralAccent} />
-                تواصل معنا
-              </h3>
-              <ContactList contact={settings.contact} guard={guard} />
-              <div aria-hidden="true" className="my-3.5 h-px w-full" style={neutralDivider} />
-              <a
-                href={whatsappUrl || (settings.contact.email ? `mailto:${settings.contact.email}` : routes.community)}
-                {...(whatsappUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                onClick={guard}
-                className="inline-flex h-9 items-center gap-2 rounded-full px-4 text-[12px] font-bold transition-opacity duration-150 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-                style={coralCard}
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                راسلنا الآن
-              </a>
-            </section>
-
-            <Colophon year={year} tenantName={tenantName} preview={preview} />
+          <p className="font-semibold">© {year} {tenantName}. جميع الحقوق محفوظة.</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link
+              href={routes.publicPrivacy}
+              onClick={guard}
+              className="underline underline-offset-2 transition-opacity duration-200 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+            >
+              سياسة الخصوصية
+            </Link>
+            <Link
+              href={routes.publicTerms}
+              onClick={guard}
+              className="underline underline-offset-2 transition-opacity duration-200 hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+            >
+              شروط الاستخدام
+            </Link>
+            <BackToTop preview={preview} />
           </div>
         </div>
       </div>
