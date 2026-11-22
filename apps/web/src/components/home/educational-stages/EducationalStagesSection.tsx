@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import { useUiStore } from "@/stores/ui.store";
 import { useInViewOnce } from "@/hooks/useInViewOnce";
 import { usePublicStages, useStageStatsState } from "@/features/homepage/educational-stages/hooks";
+import {
+  mergeEducationalStagesSection,
+} from "@/features/homepage/educational-stages/types";
 import { toEducationalStage, type EducationalStage } from "../stages/types";
 import { StageWorld } from "./StageWorld";
 import { StageWorldSkeleton } from "./StageWorldSkeleton";
@@ -19,12 +21,7 @@ import type { StageVariant } from "./types";
  * inherits whatever font the platform sets globally.
  */
 
-const DEFAULT_TITLE_LEAD = "المراحل";
-const DEFAULT_TITLE_EMPHASIS = "الدراسية";
-
 const FOOTER_NOTE = "ابدأ الرحلة من حيث يناسب سِنّه";
-
-const arabicNumber = (n: number) => new Intl.NumberFormat("ar-EG").format(n);
 
 /**
  * Deterministic bento span for a stage, so the mosaic stays intentional and
@@ -70,8 +67,8 @@ function variantFor(index: number): StageVariant {
  */
 export function EducationalStagesSection({
   stages: stagesProp,
-  titleLead = DEFAULT_TITLE_LEAD,
-  titleEmphasis = DEFAULT_TITLE_EMPHASIS,
+  titleLead: titleLeadProp,
+  titleEmphasis: titleEmphasisProp,
   priorityCount = 0,
 }: {
   stages?: EducationalStage[];
@@ -92,6 +89,9 @@ export function EducationalStagesSection({
     [data],
   );
   const stages = stagesProp ?? fetched;
+  const section = mergeEducationalStagesSection(data?.section);
+  const titleLead = titleLeadProp ?? section.titleLead;
+  const titleEmphasis = titleEmphasisProp ?? section.titleEmphasis;
 
   const stageIds = useMemo(
     () => stages.map((s) => Number(s.id)).filter((id) => Number.isFinite(id) && id > 0),
@@ -102,7 +102,6 @@ export function EducationalStagesSection({
   if (stages.length === 0 && !isLoading) return null;
   const showSkeleton = isLoading && stagesProp === undefined;
 
-  const ink = isDark ? "#F2EDE6" : "#211B14";
   const muted = isDark ? "#A79E92" : "#6E665C";
 
   return (
@@ -140,58 +139,14 @@ export function EducationalStagesSection({
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* ─────────────────────────  header  ───────────────────────── */}
-        <header className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-14">
-          <div className="max-w-2xl text-start">
-            <h2
-              id="stages-title"
-              className="font-sans text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
-            >
-              <span style={{ color: "var(--brand-primary)" }}>{titleLead}</span>{" "}
-              <span style={{ color: "var(--brand-secondary)" }}>{titleEmphasis}</span>
-            </h2>
-          </div>
-
-          {/* editorial "contents" index — mobile-hidden, lends crafted structure */}
-          {!showSkeleton && stages.length > 0 ? (
-            <nav
-              aria-label="فهرس المراحل"
-              className="hidden w-full max-w-sm border-s-2 ps-5 lg:block"
-              style={{ borderColor: "color-mix(in srgb, var(--brand-secondary) 40%, transparent)" }}
-            >
-              <p
-                className="font-sans mb-4 text-[11px] font-extrabold uppercase tracking-[0.24em]"
-                style={{ color: muted }}
-              >
-                فهرس المراحل
-              </p>
-              <ol className="space-y-1">
-                {stages.slice(0, 5).map((s, i) => (
-                  <li key={String(s.id)}>
-                    <Link
-                      href={s.href ?? `/stages/${s.id}`}
-                      className="font-sans group flex items-baseline gap-3 py-1.5 text-sm transition-colors outline-none focus-visible:text-[var(--brand-primary)]"
-                      style={{ color: i === 0 ? ink : muted }}
-                    >
-                      <span
-                        className="font-sans text-xs font-extrabold tabular-nums"
-                        style={{ color: i === 0 ? "var(--brand-primary)" : "var(--brand-secondary)" }}
-                      >
-                        {arabicNumber(i + 1)}
-                      </span>
-                      <span className="truncate font-semibold transition-transform duration-150 ease-out group-hover:translate-x-0.5">
-                        {s.name}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="ms-auto h-px w-6 flex-shrink-0"
-                        style={{ background: "color-mix(in srgb, var(--brand-secondary) 55%, transparent)" }}
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-            </nav>
-          ) : null}
+        <header className="max-w-2xl text-start">
+          <h2
+            id="stages-title"
+            className="font-sans text-balance text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl"
+          >
+            <span style={{ color: "var(--brand-primary)" }}>{titleLead}</span>{" "}
+            <span style={{ color: "var(--brand-secondary)" }}>{titleEmphasis}</span>
+          </h2>
         </header>
 
         {/* ─────────────────────────  bento mosaic  ───────────────────────── */}

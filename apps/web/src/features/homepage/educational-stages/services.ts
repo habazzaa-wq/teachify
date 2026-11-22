@@ -2,6 +2,7 @@ import api from "@/services/api/axios";
 import type {
   EducationalStageInput,
   EducationalStageRecord,
+  EducationalStagesSectionSettings,
   PublicStagesResponse,
   PublicStagesStatsResponse,
   StageStats,
@@ -30,6 +31,20 @@ export const educationalStagesService = {
     const { data } = await api.get<PublicStagesStatsResponse>(
       "/public/educational-stages/stats",
     );
+    return data;
+  },
+
+  async getSectionSettings() {
+    const { data } = await api.get<{
+      values: { educationalStages?: Partial<EducationalStagesSectionSettings> | null };
+    }>("/settings/homepage");
+    return data.values.educationalStages ?? null;
+  },
+
+  async updateSectionSettings(section: EducationalStagesSectionSettings) {
+    const { data } = await api.put("/settings/homepage", {
+      values: { educationalStages: section },
+    });
     return data;
   },
 
