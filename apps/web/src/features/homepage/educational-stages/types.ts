@@ -6,8 +6,34 @@ export interface StageItem {
   link: string | null;
 }
 
+export interface EducationalStagesSectionSettings {
+  titleLead: string;
+  titleEmphasis: string;
+}
+
+export const DEFAULT_EDUCATIONAL_STAGES_SECTION: EducationalStagesSectionSettings = {
+  titleLead: "المراحل",
+  titleEmphasis: "الدراسية",
+};
+
+export function mergeEducationalStagesSection(
+  saved?: Partial<EducationalStagesSectionSettings> | null,
+): EducationalStagesSectionSettings {
+  return {
+    titleLead:
+      typeof saved?.titleLead === "string" && saved.titleLead.trim()
+        ? saved.titleLead
+        : DEFAULT_EDUCATIONAL_STAGES_SECTION.titleLead,
+    titleEmphasis:
+      typeof saved?.titleEmphasis === "string" && saved.titleEmphasis.trim()
+        ? saved.titleEmphasis
+        : DEFAULT_EDUCATIONAL_STAGES_SECTION.titleEmphasis,
+  };
+}
+
 export interface PublicStagesResponse {
   items: StageItem[];
+  section?: Partial<EducationalStagesSectionSettings> | null;
 }
 
 export interface StageStats {

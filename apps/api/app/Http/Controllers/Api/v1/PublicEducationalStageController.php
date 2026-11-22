@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\EducationalStage;
+use App\Models\TenantSetting;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -29,8 +30,16 @@ class PublicEducationalStageController extends Controller
                 'link' => $stage->link,
             ]);
 
+        $setting = TenantSetting::query()
+            ->where('tenant_id', $tenantId)
+            ->where('group', 'homepage')
+            ->first();
+
+        $section = $setting?->values['educationalStages'] ?? null;
+
         return response()->json([
             'items' => $items,
+            'section' => is_array($section) ? $section : null,
         ]);
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   Pencil,
@@ -44,10 +44,18 @@ import {
   useUpdateEducationalStage,
   useDeleteEducationalStage,
   useReorderEducationalStages,
+  useEducationalStagesSectionSettings,
+  useUpdateEducationalStagesSectionSettings,
 } from "@/features/homepage/educational-stages/hooks";
 import { mediaLibraryService } from "@/features/media-library/services";
 import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
-import type { EducationalStageInput, EducationalStageRecord } from "@/features/homepage/educational-stages/types";
+import {
+  DEFAULT_EDUCATIONAL_STAGES_SECTION,
+  mergeEducationalStagesSection,
+  type EducationalStageInput,
+  type EducationalStageRecord,
+  type EducationalStagesSectionSettings,
+} from "@/features/homepage/educational-stages/types";
 
 const emptyForm: EducationalStageInput = {
   name: "",
@@ -239,6 +247,17 @@ export default function HomepageEducationalStagesPage() {
   const [editing, setEditing] = useState<EducationalStageRecord | null>(null);
 
   const items = data?.data ?? [];
+  const { data: sectionData } = useEducationalStagesSectionSettings();
+  const updateSection = useUpdateEducationalStagesSectionSettings();
+  const [sectionForm, setSectionForm] = useState<EducationalStagesSectionSettings>(
+    DEFAULT_EDUCATIONAL_STAGES_SECTION,
+  );
+
+  useEffect(() => {
+    // Sync saved settings into the local form once loaded.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSectionForm(mergeEducationalStagesSection(sectionData));
+  }, [sectionData]);
 
   const openCreate = () => {
     setEditing(null);
@@ -268,6 +287,48 @@ export default function HomepageEducationalStagesPage() {
         description="إدارة المراحل الدراسية التي تظهر في الصفحة الرئيسية للأكاديمية"
       />
       <AppDivider className="mb-6" />
+
+      <AppCard className="mb-6">
+        <AppCardHeader>
+          <AppCardTitle>عنوان قسم المراحل الدراسية</AppCardTitle>
+          <AppCardDescription>
+            هذا العنوان يظهر في قسم المراحل الدراسية بالصفحة الرئيسية.
+          </AppCardDescription>
+        </AppCardHeader>
+        <div className="space-y-4 p-6 pt-0">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium">الجزء الأول من العنوان</label>
+              <AppInput
+                value={sectionForm.titleLead}
+                onChange={(e) =>
+                  setSectionForm((prev) => ({ ...prev, titleLead: e.target.value }))
+                }
+                placeholder="المراحل"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">الجزء الثاني من العنوان</label>
+              <AppInput
+                value={sectionForm.titleEmphasis}
+                onChange={(e) =>
+                  setSectionForm((prev) => ({ ...prev, titleEmphasis: e.target.value }))
+                }
+                placeholder="الدراسية"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <AppButton
+              onClick={() => updateSection.mutate(sectionForm)}
+              loading={updateSection.isPending}
+              disabled={!sectionForm.titleLead.trim() || !sectionForm.titleEmphasis.trim()}
+            >
+              حفظ العنوان
+            </AppButton>
+          </div>
+        </div>
+      </AppCard>
 
       {isLoading ? (
         <AppLoadingState />

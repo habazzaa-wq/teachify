@@ -12,7 +12,12 @@ import { toast } from "@/lib/toast";
 import { educationalStagesService } from "./services";
 import { instructorApi } from "@/features/instructors/api";
 import { stagesKeys } from "./keys";
-import type { EducationalStageInput, EducationalStageRecord, StageStats } from "./types";
+import type {
+  EducationalStageInput,
+  EducationalStageRecord,
+  EducationalStagesSectionSettings,
+  StageStats,
+} from "./types";
 
 type EducationalStageList = Awaited<ReturnType<typeof educationalStagesService.list>>;
 type InstructorStageList = {
@@ -25,6 +30,27 @@ export function usePublicStages() {
     queryKey: stagesKeys.public,
     queryFn: educationalStagesService.getPublicStages,
     staleTime: 30_000,
+  });
+}
+
+export function useEducationalStagesSectionSettings() {
+  return useQuery({
+    queryKey: stagesKeys.settings,
+    queryFn: educationalStagesService.getSectionSettings,
+  });
+}
+
+export function useUpdateEducationalStagesSectionSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (section: EducationalStagesSectionSettings) =>
+      educationalStagesService.updateSectionSettings(section),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: stagesKeys.settings });
+      qc.invalidateQueries({ queryKey: stagesKeys.public });
+      toast.success("تم حفظ إعدادات قسم المراحل الدراسية");
+    },
+    onError: () => toast.error("تعذّر حفظ إعدادات قسم المراحل الدراسية"),
   });
 }
 
