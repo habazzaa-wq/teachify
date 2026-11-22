@@ -14,11 +14,18 @@ class NotificationDelivery extends Model
         'tenant_id',
         'notification_id',
         'channel',
+        'provider',
+        'provider_message_id',
         'status',
         'attempts',
         'last_attempt_at',
         'delivered_at',
         'last_error',
+        'payload_snapshot',
+        'sent_at',
+        'failed_at',
+        'next_retry_at',
+        'dedupe_key',
     ];
 
     protected function casts(): array
@@ -27,6 +34,10 @@ class NotificationDelivery extends Model
             'attempts' => 'integer',
             'last_attempt_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'payload_snapshot' => 'array',
+            'sent_at' => 'datetime',
+            'failed_at' => 'datetime',
+            'next_retry_at' => 'datetime',
         ];
     }
 

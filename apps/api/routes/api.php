@@ -53,6 +53,8 @@ use App\Http\Controllers\Api\v1\Courses\LessonFileController;
 use App\Http\Controllers\Api\v1\Courses\LessonTextController;
 use App\Http\Controllers\Api\v1\Courses\LessonVideoController;
 use App\Http\Controllers\Api\v1\Courses\TagController;
+use App\Http\Controllers\Api\v1\Sessions\CourseSessionController;
+use App\Http\Controllers\Api\v1\Sessions\SessionAttendanceController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionPostController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionReportController;
 use App\Http\Controllers\Api\v1\Discussions\DiscussionThreadController;
@@ -74,6 +76,8 @@ use App\Http\Controllers\Api\v1\Instructor\InstructorAuthController;
 use App\Http\Controllers\Api\v1\Instructor\InstructorController;
 use App\Http\Controllers\Api\v1\Instructor\InstructorWorkspaceController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
+use App\Http\Controllers\Api\v1\Integrations\TenantWhatsAppIntegrationController;
+use App\Http\Controllers\Api\v1\Integrations\WhatsAppWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
 use App\Http\Controllers\Api\v1\Learning\EnrollmentController;
 use App\Http\Controllers\Api\v1\Learning\LessonBookmarkController;
@@ -316,6 +320,20 @@ Route::prefix('v1')->group(function () {
         Route::prefix('courses/{course}')
             ->middleware('instructor.course')
             ->group(function () {
+                Route::get('/sessions', [CourseSessionController::class, 'index']);
+                Route::post('/sessions', [CourseSessionController::class, 'store']);
+                Route::get('/sessions/{session}', [CourseSessionController::class, 'show']);
+                Route::put('/sessions/{session}', [CourseSessionController::class, 'update']);
+                Route::delete('/sessions/{session}', [CourseSessionController::class, 'destroy']);
+                Route::post('/sessions/{session}/schedule', [CourseSessionController::class, 'schedule']);
+                Route::post('/sessions/{session}/cancel', [CourseSessionController::class, 'cancel']);
+                Route::post('/sessions/{session}/complete', [CourseSessionController::class, 'complete']);
+                Route::get('/sessions/{session}/enrollments', [CourseSessionController::class, 'enrollments']);
+                Route::get('/sessions/{session}/statistics', [CourseSessionController::class, 'statistics']);
+                Route::get('/sessions/{session}/attendance', [SessionAttendanceController::class, 'index']);
+                Route::get('/sessions/{session}/attendance/me', [SessionAttendanceController::class, 'me']);
+                Route::post('/sessions/{session}/attendance/bulk', [SessionAttendanceController::class, 'bulkMark']);
+                Route::post('/sessions/{session}/attendance/{tenantUserId}', [SessionAttendanceController::class, 'mark']);
                 Route::get('/modules', [CourseModuleController::class, 'index']);
                 Route::post('/modules', [CourseModuleController::class, 'store']);
                 Route::get('/modules/export', [CourseModuleController::class, 'export']);
@@ -425,6 +443,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/public/subjects', [PublicSubjectController::class, 'index']);
     Route::get('/certificates/verify/{code}', [CertificateVerificationController::class, 'show']);
     Route::post('/integrations/bunny/webhooks', BunnyWebhookController::class);
+    Route::get('/webhooks/whatsapp/{tenant}', [WhatsAppWebhookController::class, 'verify']);
+    Route::post('/webhooks/whatsapp/{tenant}', [WhatsAppWebhookController::class, 'handle']);
     Route::post('/payments/fawaterk/webhook_json', [FawaterkWebhookController::class, 'handle'])
         ->middleware('throttle:60,1')
         ->name('payments.fawaterk.webhook');
@@ -537,6 +557,20 @@ Route::prefix('v1')->group(function () {
         Route::post('/courses/{course}/feature', [CourseController::class, 'feature']);
         Route::apiResource('courses', CourseController::class);
         Route::put('/courses/{course}/instructor', [CourseController::class, 'assignInstructor']);
+        Route::get('/courses/{course}/sessions', [CourseSessionController::class, 'index']);
+        Route::post('/courses/{course}/sessions', [CourseSessionController::class, 'store']);
+        Route::get('/courses/{course}/sessions/{session}', [CourseSessionController::class, 'show']);
+        Route::put('/courses/{course}/sessions/{session}', [CourseSessionController::class, 'update']);
+        Route::delete('/courses/{course}/sessions/{session}', [CourseSessionController::class, 'destroy']);
+        Route::post('/courses/{course}/sessions/{session}/schedule', [CourseSessionController::class, 'schedule']);
+        Route::post('/courses/{course}/sessions/{session}/cancel', [CourseSessionController::class, 'cancel']);
+        Route::post('/courses/{course}/sessions/{session}/complete', [CourseSessionController::class, 'complete']);
+        Route::get('/courses/{course}/sessions/{session}/enrollments', [CourseSessionController::class, 'enrollments']);
+        Route::get('/courses/{course}/sessions/{session}/statistics', [CourseSessionController::class, 'statistics']);
+        Route::get('/courses/{course}/sessions/{session}/attendance', [SessionAttendanceController::class, 'index']);
+        Route::get('/courses/{course}/sessions/{session}/attendance/me', [SessionAttendanceController::class, 'me']);
+        Route::post('/courses/{course}/sessions/{session}/attendance/bulk', [SessionAttendanceController::class, 'bulkMark']);
+        Route::post('/courses/{course}/sessions/{session}/attendance/{tenantUserId}', [SessionAttendanceController::class, 'mark']);
         Route::get('/analytics/overview', [TenantAnalyticsController::class, 'overview']);
         Route::get('/analytics/courses', [TenantAnalyticsController::class, 'courses']);
         Route::get('/analytics/learners', [TenantAnalyticsController::class, 'learners']);
@@ -549,6 +583,9 @@ Route::prefix('v1')->group(function () {
         Route::patch('/notifications/{notification}/archive', [NotificationController::class, 'archive']);
         Route::get('/notification-preferences', [NotificationPreferenceController::class, 'index']);
         Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update']);
+        Route::get('/tenant/whatsapp-integration', [TenantWhatsAppIntegrationController::class, 'show']);
+        Route::put('/tenant/whatsapp-integration', [TenantWhatsAppIntegrationController::class, 'update']);
+        Route::post('/tenant/whatsapp-integration/test', [TenantWhatsAppIntegrationController::class, 'test']);
         Route::get('/notification-templates', [NotificationTemplateController::class, 'index']);
         Route::post('/notification-templates', [NotificationTemplateController::class, 'store']);
         Route::put('/notification-templates/{template}', [NotificationTemplateController::class, 'update']);
@@ -1098,3 +1135,8 @@ Route::get('/diag/ping', function () {
 use App\Http\Controllers\Api\v1\Platform\BunnyDebugController;
 
 Route::post('/diag/bunny-test', [BunnyDebugController::class, 'test']);
+
+
+
+
+

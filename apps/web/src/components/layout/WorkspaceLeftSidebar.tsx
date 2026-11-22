@@ -16,6 +16,7 @@ import {
   Images,
   Video,
   Megaphone,
+  MessageSquare,
   Home,
   User,
   Award,
@@ -353,7 +354,15 @@ export function WorkspaceLeftSidebar() {
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/settings/payment-gateway")}
               />
-            </StudioSidebarSection>
+            
+              <StudioSidebarItem
+                icon={<MessageSquare className="h-4 w-4" />}
+                label="إعدادات واتساب"
+                active={pathname.startsWith("/teacher/settings/whatsapp")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/whatsapp")}
+              />
+</StudioSidebarSection>
 
             {/* Homepage management */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "إدارة الصفحة الرئيسية"} collapsed={leftSidebarCollapsed}>

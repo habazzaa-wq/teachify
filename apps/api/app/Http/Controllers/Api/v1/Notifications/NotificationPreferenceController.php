@@ -24,6 +24,7 @@ class NotificationPreferenceController extends Controller
             'preferences.*.notification_type' => ['required', 'string', 'max:255'],
             'preferences.*.in_app_enabled' => ['sometimes', 'boolean'],
             'preferences.*.email_enabled' => ['sometimes', 'boolean'],
+            'preferences.*.whatsapp_enabled' => ['sometimes', 'boolean'],
         ]);
 
         return response()->json([
@@ -32,3 +33,4 @@ class NotificationPreferenceController extends Controller
         ]);
     }
 }
+

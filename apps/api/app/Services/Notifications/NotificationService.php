@@ -51,7 +51,11 @@ class NotificationService
         $this->ensureRecipientInTenant($tenant, $recipient);
         $this->ensurePriority($priority);
 
-        if (! $this->preferences->channelEnabled($tenant, $recipient, $type, 'in_app')) {
+        $inAppEnabled = $this->preferences->channelEnabled($tenant, $recipient, $type, 'in_app');
+        $emailEnabled = $this->preferences->channelEnabled($tenant, $recipient, $type, 'email');
+        $whatsappEnabled = $this->preferences->channelEnabled($tenant, $recipient, $type, 'whatsapp');
+
+        if (! $inAppEnabled && ! $emailEnabled && ! $whatsappEnabled) {
             return null;
         }
 
@@ -61,13 +65,13 @@ class NotificationService
             'type' => $type,
             'title' => $title,
             'body' => $body,
-            'status' => 'unread',
+            'status' => $inAppEnabled ? 'unread' : 'archived',
             'priority' => $priority,
             'data' => $this->safeData($data),
-            'read_at' => null,
+            'read_at' => $inAppEnabled ? null : now(),
         ])->refresh();
 
-        $this->dispatchDeliveryRecords($tenant, $notification, $recipient);
+        $this->dispatchDeliveryRecords($tenant, $notification, $recipient, $inAppEnabled, $emailEnabled, $whatsappEnabled);
 
         return $notification->load('deliveries');
     }
@@ -95,20 +99,29 @@ class NotificationService
         return $notification->refresh();
     }
 
-    private function dispatchDeliveryRecords(Tenant $tenant, Notification $notification, TenantUser $recipient): void
+    private function dispatchDeliveryRecords(
+        Tenant $tenant,
+        Notification $notification,
+        TenantUser $recipient,
+        bool $inAppEnabled,
+        bool $emailEnabled,
+        bool $whatsappEnabled,
+    ): void
     {
-        NotificationDelivery::create([
-            'tenant_id' => $tenant->id,
-            'notification_id' => $notification->id,
-            'channel' => 'in_app',
-            'status' => 'delivered',
-            'attempts' => 1,
-            'last_attempt_at' => now(),
-            'delivered_at' => now(),
-            'last_error' => null,
-        ]);
+        if ($inAppEnabled) {
+            NotificationDelivery::create([
+                'tenant_id' => $tenant->id,
+                'notification_id' => $notification->id,
+                'channel' => 'in_app',
+                'status' => 'delivered',
+                'attempts' => 1,
+                'last_attempt_at' => now(),
+                'delivered_at' => now(),
+                'last_error' => null,
+            ]);
+        }
 
-        if ($this->preferences->channelEnabled($tenant, $recipient, $notification->type, 'email')) {
+        if ($emailEnabled) {
             NotificationDelivery::create([
                 'tenant_id' => $tenant->id,
                 'notification_id' => $notification->id,
@@ -119,6 +132,27 @@ class NotificationService
                 'delivered_at' => null,
                 'last_error' => null,
             ]);
+        }
+
+        if ($whatsappEnabled) {
+            $dedupe = 'whatsapp:notification:'.$notification->id.':recipient:'.$recipient->id;
+            $delivery = NotificationDelivery::query()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'dedupe_key' => $dedupe],
+                [
+                    'notification_id' => $notification->id,
+                    'channel' => 'whatsapp',
+                    'provider' => 'meta_whatsapp_cloud_api',
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'last_attempt_at' => null,
+                    'delivered_at' => null,
+                    'last_error' => null,
+                ]
+            );
+
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($delivery, $tenant) {
+                \App\Jobs\Notifications\SendWhatsAppNotificationJob::dispatch($delivery->id, $tenant->id)->onQueue('notifications');
+            });
         }
     }
 
@@ -166,3 +200,5 @@ class NotificationService
         app()->instance('currentTenant', $tenant);
     }
 }
+
+

@@ -16,6 +16,7 @@ class NotificationPreference extends Model
         'notification_type',
         'in_app_enabled',
         'email_enabled',
+        'whatsapp_enabled',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class NotificationPreference extends Model
         return [
             'in_app_enabled' => 'boolean',
             'email_enabled' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
         ];
     }
 

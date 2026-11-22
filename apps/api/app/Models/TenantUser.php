@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Database\Factories\TenantUserFactory;
 use App\Services\Authorization\AuthorizationService;
+use Database\Factories\TenantUserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -210,5 +210,20 @@ class TenantUser extends Model
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function courseSessionEnrollments(): HasMany
+    {
+        return $this->hasMany(CourseSessionEnrollment::class, 'tenant_user_id');
+    }
+
+    public function sessionAttendanceRecords(): HasMany
+    {
+        return $this->hasMany(SessionAttendance::class, 'tenant_user_id');
+    }
+
+    public function markedSessionAttendanceRecords(): HasMany
+    {
+        return $this->hasMany(SessionAttendance::class, 'marked_by_tenant_user_id');
     }
 }

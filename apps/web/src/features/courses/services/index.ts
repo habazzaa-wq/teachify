@@ -28,6 +28,7 @@ export function formatCourse(raw: any): Course {
     thumbnail: raw.thumbnail ?? null,
     coverImage: raw.coverImage ?? null,
     status: raw.status ?? "draft",
+    deliveryMode: raw.deliveryMode ?? "recorded_only",
     visibility: raw.visibility ?? "private",
     difficulty: raw.difficulty ?? "beginner",
     language: raw.language ?? "ar",
@@ -138,6 +139,7 @@ export const coursesService = {
       full_description: payload.fullDescription,
       thumbnail_path: payload.thumbnailPath,
       cover_image_path: payload.coverImagePath,
+      delivery_mode: payload.deliveryMode,
       visibility: payload.visibility,
       difficulty: payload.difficulty,
       language: payload.language,
@@ -174,6 +176,7 @@ export const coursesService = {
     if (payload.fullDescription !== undefined) body.full_description = payload.fullDescription;
     if (payload.thumbnailPath !== undefined) body.thumbnail_path = payload.thumbnailPath;
     if (payload.coverImagePath !== undefined) body.cover_image_path = payload.coverImagePath;
+    if (payload.deliveryMode !== undefined) body.delivery_mode = payload.deliveryMode;
     if (payload.visibility !== undefined) body.visibility = payload.visibility;
     if (payload.difficulty !== undefined) body.difficulty = payload.difficulty;
     if (payload.language !== undefined) body.language = payload.language;

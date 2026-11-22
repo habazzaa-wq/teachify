@@ -14,7 +14,7 @@ import {
   AppTextarea,
 } from "@/components/ui";
 import { COURSE_NON_FILTER_VISIBILITY_OPTIONS, COURSE_NON_FILTER_DIFFICULTY_OPTIONS, COURSE_NON_FILTER_PRICING_OPTIONS, LANGUAGE_OPTIONS } from "../constants";
-import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType } from "../types";
+import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType, CourseDeliveryMode } from "../types";
 import { CourseImageUploader } from "./CourseImageUploader";
 import { useCourseTags } from "../hooks/useCourseTags";
 import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
@@ -31,6 +31,12 @@ const REGIONAL_COUNTRIES = [
   { code: "QA", name: "قطر", currency: "QAR" },
   { code: "BH", name: "البحرين", currency: "BHD" },
   { code: "US", name: "الولايات المتحدة", currency: "USD" },
+];
+
+const DELIVERY_MODE_OPTIONS: Array<{ value: CourseDeliveryMode; label: string }> = [
+  { value: "recorded_only", label: "محتوى مسجل فقط" },
+  { value: "sessions_only", label: "جلسات فقط" },
+  { value: "recorded_and_sessions", label: "مسجل + جلسات" },
 ];
 
 const EMPTY_FORM: CreateCoursePayload = {
@@ -401,6 +407,24 @@ function CourseFormPanel({
               الإعدادات
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="form-delivery-mode">نوع تقديم الدورة</Label>
+                <AppSelect
+                  value={formData.deliveryMode ?? "recorded_only"}
+                  onValueChange={(val) => updateField("deliveryMode", val as CourseDeliveryMode)}
+                >
+                  <AppSelectTrigger id="form-delivery-mode" className="h-9">
+                    <AppSelectValue placeholder="اختر نوع التقديم" />
+                  </AppSelectTrigger>
+                  <AppSelectContent>
+                    {DELIVERY_MODE_OPTIONS.map((opt) => (
+                      <AppSelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </AppSelectItem>
+                    ))}
+                  </AppSelectContent>
+                </AppSelect>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="form-visibility">الظهور</Label>
                 <AppSelect

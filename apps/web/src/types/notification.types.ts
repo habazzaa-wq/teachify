@@ -38,6 +38,7 @@ export interface NotificationPreferenceItem {
   notification_type: string;
   in_app_enabled: boolean;
   email_enabled: boolean;
+  whatsapp_enabled: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -51,6 +52,7 @@ export interface UpdateNotificationPreferencesRequest {
     notification_type: string;
     in_app_enabled?: boolean;
     email_enabled?: boolean;
+    whatsapp_enabled?: boolean;
   }>;
 }
 

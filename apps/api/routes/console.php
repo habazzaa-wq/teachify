@@ -30,3 +30,9 @@ Schedule::command(CleanupAbandonedScanUploads::class)
 Schedule::command(SyncStreamVideoStatusCommand::class)
     ->cron('2,7,12,17,22,27,32,37,42,47,52,57 * * * *')
     ->withoutOverlapping();
+
+// Dispatch due session reminders. Idempotent; safe to run frequently.
+Schedule::command(\App\Console\Commands\DispatchDueSessionRemindersCommand::class)
+    ->everyMinute()
+    ->withoutOverlapping();
+

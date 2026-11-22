@@ -18,6 +18,7 @@ function formatCourse(raw: Raw): PublicCourse {
     thumbnail: raw.thumbnail ?? null,
     coverImage: raw.coverImage ?? null,
     status: raw.status ?? "draft",
+    deliveryMode: raw.deliveryMode ?? "recorded_only",
     visibility: raw.visibility ?? "private",
     difficulty: raw.difficulty ?? "beginner",
     language: raw.language ?? "ar",
