@@ -403,6 +403,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/platform/domain-check', [PlatformDomainCheckController::class, 'check']);
     Route::get('/public/news', [PublicNewsController::class, 'index']);
     Route::get('/public/services', [TenantServiceController::class, 'publicIndex']);
+    Route::get('/public/services/{service}', [TenantServiceController::class, 'publicShow']);
     Route::get('/public/blog', [BlogController::class, 'publicIndex']);
     Route::get('/public/blog/{slug}', [BlogController::class, 'publicShow']);
     Route::get('/public/payment-gateways', [PaymentGatewayController::class, 'available']);

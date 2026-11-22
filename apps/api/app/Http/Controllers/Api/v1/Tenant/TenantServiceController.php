@@ -62,6 +62,14 @@ class TenantServiceController extends Controller
         return response()->json(['services' => TenantService::where('tenant_id', $tenant->id)->where('is_published', true)->orderBy('sort_order')->orderByDesc('created_at')->get()]);
     }
 
+    public function publicShow(TenantService $service): JsonResponse
+    {
+        $tenant = app('currentTenant');
+        abort_unless(($tenant->feature_flags['has_services'] ?? false) === true, 404);
+        abort_unless($service->tenant_id === $tenant->id && $service->is_published, 404);
+        return response()->json(['service' => $service]);
+    }
+
     public function instructors(): JsonResponse
     {
         $tenant = app('currentTenant');
