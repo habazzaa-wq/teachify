@@ -21,6 +21,7 @@ import { CourseStudioContentPicker } from "./CourseStudioContentPicker";
 import { CourseStudioEditContentDialog } from "./CourseStudioEditContentDialog";
 import { CourseStudioContentDetailsDialog } from "./CourseStudioContentDetailsDialog";
 import { CourseStudioSessionPickerDialog } from "./CourseStudioSessionPickerDialog";
+import { CourseStudioAddItemChoiceDialog } from "./CourseStudioAddItemChoiceDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
 import { useSectionsList, useCreateSectionAction, useUpdateSectionAction, useDeleteSectionAction, usePublishSectionAction, useArchiveSectionAction, useDuplicateSectionAction, useRestoreSectionAction, useReorderSectionsAction, useMoveSectionAction, useSelectAndScrollSection } from "../hooks/useSections";
@@ -111,6 +112,8 @@ function CourseStudio({
     defaultTitle: string;
   } | null>(null);
   const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
+  const [addChoiceOpen, setAddChoiceOpen] = useState(false);
+  const [sessionModulePickerOpen, setSessionModulePickerOpen] = useState(false);
 
   const { data: lecturesData, isLoading: lecturesLoading } = useLectures(courseId ?? null);
   const lectures: CourseModule[] = (lecturesData?.data ?? []).sort(
@@ -218,6 +221,28 @@ function CourseStudio({
 
   const { selectAndScroll: selectAndScrollSection } = useSelectAndScrollSection(
     store.selectSection,
+  );
+
+  const openAddChoice = useCallback(() => setAddChoiceOpen(true), []);
+  const closeAddChoice = useCallback(() => setAddChoiceOpen(false), []);
+
+  const handleSessionModuleSelected = useCallback(
+    async (session: any) => {
+      if (!courseId) return;
+      try {
+        await createLecture.create(courseId, {
+          title: session.title,
+          course_session_id: Number(session.id),
+          order: lectures.length,
+        } as any);
+        setSessionModulePickerOpen(false);
+        toast.success(`تم إضافة الجلسة "${session.title}" إلى المنهج`);
+      } catch (e: any) {
+        const msg = e?.response?.data?.message || "فشل إضافة الجلسة إلى المنهج";
+        toast.error(String(msg));
+      }
+    },
+    [courseId, createLecture, lectures.length],
   );
 
   const handleCreateLecture = useCallback(
@@ -524,7 +549,7 @@ function CourseStudio({
         return;
       }
 
-      if (type === "session") {
+      if (type === "session" || type === "live") {
         setSessionPickerOpen(true);
         return;
       }
@@ -872,7 +897,7 @@ function CourseStudio({
               selectedContent={selectedContent}
               sectionContents={contentItems}
               canvasView={canvasView}
-              onCreateLecture={store.openCreateDialog}
+              onCreateLecture={openAddChoice}
               onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
               onAddContent={handleAddContent}
               onSelectContent={handleSelectContent}
@@ -955,7 +980,7 @@ function CourseStudio({
               onSelectLecture={handleSelectLecture}
               onToggleLecture={handleToggleLecture}
               onSelectSection={handleSelectSection}
-              onCreateLecture={store.openCreateDialog}
+              onCreateLecture={openAddChoice}
               onEditLecture={(l) => store.openEditDialog(l)}
               onPublishLecture={handlePublishLecture}
               onArchiveLecture={handleArchiveLecture}
@@ -996,7 +1021,7 @@ function CourseStudio({
               lectureSections={selectedLecture ? sectionsByLecture[selectedLecture.id] : undefined}
               sectionContents={contentItems}
               canvasView={canvasView}
-              onCreateLecture={store.openCreateDialog}
+              onCreateLecture={openAddChoice}
               onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
               onAddContent={handleAddContent}
               onEditSection={(s) => store.openEditSectionDialog(s)}
@@ -1049,6 +1074,13 @@ function CourseStudio({
         )}
       </div>
 
+      <CourseStudioAddItemChoiceDialog
+        open={addChoiceOpen}
+        onClose={closeAddChoice}
+        onSelectLecture={() => store.openCreateDialog()}
+        onSelectSession={() => setSessionModulePickerOpen(true)}
+      />
+
       <CourseStudioCreateLectureDialog
         open={store.createDialogOpen}
         onClose={store.closeCreateDialog}
@@ -1056,6 +1088,15 @@ function CourseStudio({
         saving={createLecture.isPending}
         nextOrder={lectures.length}
       />
+
+      {courseId && (
+        <CourseStudioSessionPickerDialog
+          open={sessionModulePickerOpen}
+          courseId={courseId}
+          onClose={() => setSessionModulePickerOpen(false)}
+          onSelect={handleSessionModuleSelected}
+        />
+      )}
 
       <CourseStudioEditLectureDialog
         open={!!store.editLecture}

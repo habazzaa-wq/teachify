@@ -6,6 +6,16 @@ function formatModule(raw: any): CourseModule {
     id: String(raw.id),
     tenantId: String(raw.tenantId),
     courseId: String(raw.courseId),
+    courseSessionId: raw.courseSessionId != null ? String(raw.courseSessionId) : null,
+    courseSession: raw.courseSession ? {
+      id: String(raw.courseSession.id),
+      title: raw.courseSession.title,
+      sessionType: raw.courseSession.sessionType,
+      status: raw.courseSession.status,
+      startsAtUtc: raw.courseSession.startsAtUtc ?? null,
+      endsAtUtc: raw.courseSession.endsAtUtc ?? null,
+      timezone: raw.courseSession.timezone ?? null,
+    } : null,
     title: raw.title,
     slug: raw.slug ?? null,
     description: raw.description ?? null,
@@ -72,6 +82,7 @@ export const modulesService = {
       color: payload.color,
       icon: payload.icon,
       notes: payload.notes,
+      course_session_id: payload.course_session_id,
     });
     return formatModule(data.data);
   },
@@ -87,6 +98,7 @@ export const modulesService = {
     if (payload.color !== undefined) body.color = payload.color;
     if (payload.icon !== undefined) body.icon = payload.icon;
     if (payload.notes !== undefined) body.notes = payload.notes;
+    if (payload.course_session_id !== undefined) body.course_session_id = payload.course_session_id;
 
     const { data } = await api.put(`/courses/${courseId}/modules/${id}`, body);
     return data.data ? formatModule(data.data) : null;

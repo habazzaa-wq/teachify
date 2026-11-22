@@ -32,6 +32,7 @@ class CourseModuleService
             $module = $this->repository->create([
                 'tenant_id' => $course->tenant_id,
                 'course_id' => $course->id,
+                'course_session_id' => $data['course_session_id'] ?? null,
                 'title' => $data['title'],
                 'slug' => $this->uniqueModuleSlug($course, $data['slug'] ?? $data['title']),
                 'description' => $data['description'] ?? null,
@@ -57,7 +58,7 @@ class CourseModuleService
 
             $updateData = collect($data)->only([
                 'title', 'description', 'order', 'estimated_duration',
-                'featured', 'color', 'icon', 'notes',
+                'featured', 'color', 'icon', 'notes', 'course_session_id',
             ])->all();
 
             if (array_key_exists('slug', $data)) {
