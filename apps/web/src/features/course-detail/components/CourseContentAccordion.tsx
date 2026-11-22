@@ -7,11 +7,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { PublicCourseModule, PublicCourseSection, PublicCourseLesson } from "@/features/public-course/types";
+import { LessonViewerDialog } from "./LessonViewerDialog";
 
 interface CourseContentAccordionProps {
   modules: PublicCourseModule[];
   isLoading: boolean;
   isEnrolled: boolean;
+  slug?: string;
+  onProgressChanged?: () => void;
 }
 
 function formatLessonDuration(seconds: number | null): string {
@@ -47,17 +50,22 @@ function getLessonIcon(type: string) {
   return map[type] ?? PlayCircle;
 }
 
-function SectionView({ section, isEnrolled }: { section: PublicCourseSection; isEnrolled: boolean }) {
+function SectionView({ section, isEnrolled, onOpenLesson }: { section: PublicCourseSection; isEnrolled: boolean; onOpenLesson: (lesson: PublicCourseLesson) => void }) {
   return (
     <div className="bg-[var(--course-page-bg)]">
       {section.lessons.map((lesson) => {
-        const canWatch = !section.locked || isEnrolled;
+        const canWatch = !section.locked || isEnrolled || lesson.freePreview;
         const Icon = getLessonIcon(lesson.lessonType);
 
         return (
-          <div
+          <button
+            type="button"
             key={lesson.id}
-            className="flex items-center gap-3 border-b border-[var(--course-card-border)] px-4 py-3 last:border-b-0"
+            onClick={() => canWatch && onOpenLesson(lesson)}
+            className={cn(
+              "flex w-full items-center gap-3 border-b border-[var(--course-card-border)] px-4 py-3 last:border-b-0 text-right",
+              canWatch ? "hover:bg-[var(--course-icon-bg)] cursor-pointer" : "cursor-default"
+            )}
           >
             {canWatch && lesson.freePreview ? (
               <PlayCircle className="h-4 w-4 shrink-0 course-accent-text" />
@@ -80,17 +88,18 @@ function SectionView({ section, isEnrolled }: { section: PublicCourseSection; is
               <Clock className="h-3 w-3" />
               {formatLessonDuration(lesson.durationSeconds ?? lesson.estimatedDuration)}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
   );
 }
 
-export function CourseContentAccordion({ modules, isLoading, isEnrolled }: CourseContentAccordionProps) {
+export function CourseContentAccordion({ modules, isLoading, isEnrolled, slug, onProgressChanged }: CourseContentAccordionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(() => {
     return modules.length > 0 ? modules[0]!.id : null;
   });
+  const [selectedLesson, setSelectedLesson] = useState<PublicCourseLesson | null>(null);
 
   const toggleSection = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -198,7 +207,7 @@ export function CourseContentAccordion({ modules, isLoading, isEnrolled }: Cours
                 <div>
                   {mod.sections.length > 0 ? (
                     mod.sections.map((section) => (
-                      <SectionView key={section.id} section={section} isEnrolled={isEnrolled} />
+                      <SectionView key={section.id} section={section} isEnrolled={isEnrolled} onOpenLesson={setSelectedLesson} />
                     ))
                   ) : (
                     <div className="bg-[var(--course-page-bg)] px-4 py-6 text-center">
@@ -223,6 +232,15 @@ export function CourseContentAccordion({ modules, isLoading, isEnrolled }: Cours
           لديك وصول كامل إلى جميع محتويات الدورة بعد الاشتراك
         </p>
       </div>
+
+      {slug && (
+        <LessonViewerDialog
+          slug={slug}
+          lesson={selectedLesson}
+          onClose={() => setSelectedLesson(null)}
+          onProgressChanged={onProgressChanged}
+        />
+      )}
     </div>
   );
 }

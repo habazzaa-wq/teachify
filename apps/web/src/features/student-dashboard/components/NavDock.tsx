@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
+  Award,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -27,6 +28,7 @@ export type DashboardViewId =
   | "tasks"
   | "wallet"
   | "achievements"
+  | "certificates"
   | "calendar";
 
 interface DashboardViewMeta {
@@ -42,6 +44,7 @@ export const DASHBOARD_VIEWS: DashboardViewMeta[] = [
   { id: "tasks", label: "المهام", icon: CalendarClock },
   { id: "wallet", label: "سجل المحفظة", icon: Wallet },
   { id: "achievements", label: "الإنجازات", icon: Medal },
+  { id: "certificates", label: "الشهادات", icon: Award },
   { id: "calendar", label: "المواعيد", icon: CalendarDays },
 ];
 

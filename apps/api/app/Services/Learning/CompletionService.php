@@ -6,7 +6,6 @@ use App\Models\CourseCompletion;
 use App\Models\CourseEnrollment;
 use App\Models\CourseLesson;
 use App\Models\LessonProgress;
-use App\Services\Certificates\CertificateIssuanceService;
 use App\Services\Notifications\NotificationEventService;
 
 class CompletionService
@@ -57,8 +56,6 @@ class CompletionService
                 'course_title' => $enrollment->course?->title,
             ]);
         }
-
-        app(CertificateIssuanceService::class)->evaluateAndIssue($completion->refresh());
 
         return $completion->refresh();
     }

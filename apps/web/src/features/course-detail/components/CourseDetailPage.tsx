@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import {
@@ -113,6 +114,7 @@ function FaqSection() {
 export function CourseDetailPage({ slug }: CourseDetailPageProps) {
   const [activeTab, setActiveTab] = useState("content");
   const { isAuthenticated } = useCurrentUser();
+  const queryClient = useQueryClient();
 
   const { data: course, isLoading: courseLoading } = usePublicCourse(slug);
   const { data: modules, isLoading: modulesLoading } = usePublicCourseModules(slug);
@@ -169,6 +171,12 @@ export function CourseDetailPage({ slug }: CourseDetailPageProps) {
                 modules={modules ?? []}
                 isLoading={modulesLoading}
                 isEnrolled={isEnrolled}
+                slug={slug}
+                onProgressChanged={() => {
+                  queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
+                  queryClient.invalidateQueries({ queryKey: ["certificates"] });
+                  queryClient.invalidateQueries({ queryKey: ["PUBLIC_COURSE"] });
+                }}
               />
             )}
             {activeTab === "instructor" && (

@@ -237,6 +237,22 @@ export const publicCourseService = {
     }
   },
 
+  async startLessonProgress(lessonId: string): Promise<void> {
+    await tenantStudentFetch(`/lessons/${lessonId}/progress/start`, { method: "POST" });
+  },
+
+  async updateLessonProgress(lessonId: string, progressPercent: number): Promise<void> {
+    await tenantStudentFetch(`/lessons/${lessonId}/progress/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress_percent: Math.max(0, Math.min(100, Math.round(progressPercent))) }),
+    });
+  },
+
+  async completeLessonProgress(lessonId: string): Promise<void> {
+    await tenantStudentFetch(`/lessons/${lessonId}/progress/complete`, { method: "POST" });
+  },
+
   async purchaseCourse(slug: string): Promise<{
     message: string;
     enrolled: boolean;
