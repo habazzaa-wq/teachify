@@ -327,11 +327,12 @@ $result = $null
 for ($i = 0; $i -lt 120; $i++) {
     # Poll fast at first so short/no-op deploys return almost immediately.
     Start-Sleep -Seconds $(if ($i -lt 3) { 3 } else { 5 })
-    $raw = & ssh @SshArgs "tail -n +$start $remoteLog" 2>$null
-    $lines = @($raw) | ForEach-Object { $_ -split "`n" } | Where-Object { $_.Trim() -ne '' }
-    if ($lines.Count -gt 0) {
-        $lines | ForEach-Object { Write-Host $_ }
-        $start += $lines.Count
+    $rawLines = @(& ssh @SshArgs "tail -n +$start $remoteLog" 2>$null) | ForEach-Object { $_ -split "`n" }
+    if ($rawLines.Count -gt 0) {
+        $rawLines | Where-Object { $_.Trim() -ne '' } | ForEach-Object { Write-Host $_ }
+        # Advance by ALL returned lines (including blank ones). Counting only the
+        # printed lines makes $start drift behind and re-prints old output.
+        $start += $rawLines.Count
     }
     $marker = (& ssh @SshArgs "grep -E 'DEPLOY_OK|DEPLOY_FAILED' $remoteLog | tail -1" 2>$null)
     if ($marker -match 'DEPLOY_OK')      { $result = 'OK';     break }
