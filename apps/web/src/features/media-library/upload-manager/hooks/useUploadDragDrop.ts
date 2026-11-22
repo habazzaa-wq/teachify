@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { stageFilesForLibrary } from "../services";
 import { useUploadManagerStore } from "../store";
 import { extractFilesFromDataTransfer, hasFilesInDataTransfer } from "../utils/files";
 
@@ -56,7 +57,7 @@ export function useUploadDragDrop() {
       setDragDepth(0);
       const files = extractFilesFromDataTransfer(e.dataTransfer as DataTransfer);
       if (files.length > 0) {
-        useUploadManagerStore.getState().openRename(files, { source: "drag-drop" });
+        stageFilesForLibrary(files, { source: "drag-drop" });
       }
     };
 

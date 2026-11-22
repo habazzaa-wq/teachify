@@ -14,6 +14,7 @@ import {
   ClipboardList,
   GripVertical,
   Images,
+  Video,
   Megaphone,
   Home,
   User,
@@ -245,10 +246,18 @@ export function WorkspaceLeftSidebar() {
                 />
               )}
               <StudioSidebarItem
+                icon={<Video className="h-4 w-4" />}
+                label="مكتبة الفيديوهات"
+                active={pathname.startsWith(routes.dashboardVideoLibrary)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardVideoLibrary)}
+              />
+              <StudioSidebarItem
                 icon={<Images className="h-4 w-4" />}
                 label="مكتبة الوسائط"
+                active={pathname.startsWith(routes.dashboardMediaLibrary)}
                 collapsed={leftSidebarCollapsed}
-                onClick={() => handleNavigate("/teacher/media")}
+                onClick={() => handleNavigate(routes.dashboardMediaLibrary)}
               />
               <StudioSidebarItem
                 icon={<ClipboardList className="h-4 w-4" />}

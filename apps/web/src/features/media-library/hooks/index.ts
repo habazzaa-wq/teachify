@@ -61,10 +61,10 @@ export function useFolderBreadcrumbs(folderId: number | null) {
   });
 }
 
-export function useMediaMetrics() {
+export function useMediaMetrics(library?: "videos" | "media") {
   return useQuery({
-    queryKey: mediaQueryKey("metrics"),
-    queryFn: () => mediaLibraryService.getMetrics(),
+    queryKey: mediaQueryKey("metrics", library ?? "all"),
+    queryFn: () => mediaLibraryService.getMetrics(library),
   });
 }
 
@@ -75,10 +75,10 @@ export function useMediaStorage() {
   });
 }
 
-export function useRecentAssets(limit?: number) {
+export function useRecentAssets(limit?: number, library?: "videos" | "media") {
   return useQuery({
-    queryKey: mediaQueryKey("recent", limit),
-    queryFn: () => mediaLibraryService.getRecent(limit),
+    queryKey: mediaQueryKey("recent", library ?? "all", limit),
+    queryFn: () => mediaLibraryService.getRecent(library, limit),
   });
 }
 

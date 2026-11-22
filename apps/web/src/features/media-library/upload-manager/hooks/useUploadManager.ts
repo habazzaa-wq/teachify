@@ -4,13 +4,23 @@ import { useCallback, useMemo } from "react";
 import { useCan } from "@/hooks/useCan";
 import { useUploadManagerStore } from "../store";
 import { uploadEngine, UPLOAD_PERMISSION } from "../services";
+import type { MediaLibrary } from "../../types";
 import type { UploadItem, UploadSource, UploadManagerStats } from "../types";
 
 export function useUploadManager() {
   const canUpload = useCan(UPLOAD_PERMISSION);
 
   const enqueueFiles = useCallback(
-    (files: File[], opts?: { folderId?: number | null; source?: UploadSource; names?: string[] }) => {
+    (
+      files: File[],
+      opts?: {
+        folderId?: number | null;
+        source?: UploadSource;
+        names?: string[];
+        library?: MediaLibrary;
+      },
+    ) => {
+      if (opts?.library) useUploadManagerStore.getState().setActiveLibrary(opts.library);
       uploadEngine.enqueue(files, { ...opts, canUpload });
     },
     [canUpload],

@@ -21,10 +21,11 @@ import { RenameDialog } from "../RenameDialog";
 import { DeleteDialog } from "../DeleteDialog";
 import { MoveDialog } from "../MoveDialog";
 import { UploadDrawer } from "../UploadDrawer";
-import type { MediaAsset } from "../../types";
+import type { MediaAsset, MediaLibrary } from "../../types";
 
 interface MediaWorkspaceProps {
   className?: string;
+  library?: MediaLibrary;
 }
 
 function ResizablePanel({
@@ -103,7 +104,7 @@ function ResizablePanel({
   );
 }
 
-function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
+function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProps) {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const {
     leftPanelOpen,
@@ -118,6 +119,9 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
     setInspectorAssetId,
     selectedIds,
     clearSelection,
+    resetFilters,
+    setTypeFilter,
+    setSelectedFolderId,
   } = useMediaWorkspaceStore();
 
   // On mobile the side panels become slide-over drawers. The folders drawer
@@ -141,6 +145,16 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
   const duplicateAsset = useDuplicateAsset();
 
   const selectedFolderId = useMediaWorkspaceStore((s) => s.selectedFolderId);
+
+  // Switching between the two libraries must never carry a video-only filter
+  // (or a stale folder selection) into the non-video library.
+  useEffect(() => {
+    resetFilters();
+    setTypeFilter(library === "videos" ? "video" : "all");
+    setSelectedFolderId("root");
+    clearSelection();
+    setInspectorAssetId(null);
+  }, [library, resetFilters, setTypeFilter, setSelectedFolderId, clearSelection, setInspectorAssetId]);
 
   const handleRenameSave = useCallback((title: string) => {
     if (!renameTarget) return;
@@ -199,7 +213,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
               maxWidth={400}
               side="left"
             >
-              <FolderExplorer />
+              <FolderExplorer library={library} />
             </ResizablePanel>
           </motion.div>
         </AnimatePresence>
@@ -234,6 +248,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
         </div>
 
         <AssetWorkspace
+          library={library}
           onUpload={() => setUploadOpen(true)}
           onCreateFolder={() => setCreateFolderOpen(true)}
           onRenameAsset={setRenameTarget}
@@ -304,7 +319,9 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
               aria-label="المجلدات"
             >
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <span className="text-sm font-semibold">المكتبة</span>
+                <span className="text-sm font-semibold">
+                  {library === "videos" ? "مكتبة الفيديوهات" : "مكتبة الوسائط"}
+                </span>
                 <button
                   onClick={() => setMobileFoldersOpen(false)}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -313,7 +330,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
                 </button>
               </div>
               <div className="min-h-0 flex-1">
-                <FolderExplorer />
+                <FolderExplorer library={library} />
               </div>
             </motion.aside>
           </>
@@ -365,6 +382,7 @@ function MediaWorkspaceBase({ className }: MediaWorkspaceProps) {
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         folderId={handleFolderId}
+        library={library}
       />
 
       <RenameDialog

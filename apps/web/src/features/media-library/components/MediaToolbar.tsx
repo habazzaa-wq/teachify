@@ -10,8 +10,8 @@ import {
   AppSelectTrigger,
   AppSelectValue,
 } from "@/components/ui";
-import { TYPE_OPTIONS, STATUS_OPTIONS, SORT_OPTIONS } from "../constants";
-import type { ViewMode, MediaType, MediaStatus } from "../types";
+import { STATUS_OPTIONS, SORT_OPTIONS, typeOptionsForLibrary } from "../constants";
+import type { ViewMode, MediaType, MediaStatus, MediaLibrary } from "../types";
 
 interface Breadcrumb {
   id: number;
@@ -19,6 +19,7 @@ interface Breadcrumb {
 }
 
 interface MediaToolbarProps {
+  library?: MediaLibrary;
   search: string;
   onSearchChange: (value: string) => void;
   typeFilter: MediaType | "all";
@@ -37,6 +38,7 @@ interface MediaToolbarProps {
 }
 
 function MediaToolbar({
+  library = "media",
   search,
   onSearchChange,
   typeFilter,
@@ -53,6 +55,8 @@ function MediaToolbar({
   breadcrumbs,
   onBreadcrumbClick,
 }: MediaToolbarProps) {
+  const typeOptions = typeOptionsForLibrary(library);
+
   return (
     <div className="sticky top-0 z-20 -mx-4 -mt-4 bg-background px-4 pb-3 pt-4 shadow-sm md:-mx-6 md:px-6">
       {/* Breadcrumbs */}
@@ -99,7 +103,7 @@ function MediaToolbar({
             <AppSelectValue placeholder="النوع" />
           </AppSelectTrigger>
           <AppSelectContent>
-            {TYPE_OPTIONS.map((opt) => (
+            {typeOptions.map((opt) => (
               <AppSelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </AppSelectItem>

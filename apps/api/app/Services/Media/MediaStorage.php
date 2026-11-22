@@ -22,9 +22,32 @@ class MediaStorage
         return (string) config('media.storage_disk', 'public');
     }
 
-    public function put(string $path, $contents): bool
+    public function put(string $path, $contents, string $visibility = 'public'): bool
     {
-        return Storage::disk($this->diskName())->put($path, $contents);
+        return Storage::disk($this->diskName())->put($path, $contents, [
+            'visibility' => $visibility,
+        ]);
+    }
+
+    /**
+     * Write a large upload without loading it into PHP memory. The stream is
+     * closed by Laravel; pass a fresh handle for a single write.
+     */
+    public function putStream(string $path, $resource, string $visibility = 'public'): bool
+    {
+        return Storage::disk($this->diskName())->writeStream($path, $resource, [
+            'visibility' => $visibility,
+        ]);
+    }
+
+    public function exists(string $path): bool
+    {
+        return Storage::disk($this->diskName())->exists($path);
+    }
+
+    public function size(string $path): int
+    {
+        return (int) Storage::disk($this->diskName())->size($path);
     }
 
     public function url(string $path): string

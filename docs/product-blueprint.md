@@ -163,11 +163,17 @@ The approved direction is a modular JSONB settings table grouped by settings dom
 
 ## Media Strategy
 
-Documents, images, certificates, and exported files will use Bunny Storage.
+The tenant media library is split into two isolated pages and storages:
 
-Videos will use Bunny Stream.
+- **Video library** — videos only; uploaded to Bunny Stream.
+- **Media library** — images, audio, documents, archives and every other
+  non-video asset; uploaded to the tenant's own configured media disk.
 
-The LMS application remains responsible for tenant authorization. Bunny paths and metadata are supporting structure, not the primary access-control layer.
+Bunny Storage is not used for tenant library uploads. Course Studio pickers
+route `video` content to the video library and all other content types to the
+media library. The LMS application remains responsible for tenant authorization;
+provider paths and metadata are supporting structure, not the primary
+access-control layer.
 
 ## Domain Strategy
 

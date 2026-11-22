@@ -24,7 +24,7 @@ use App\Services\Audit\AuditLogService;
 use App\Services\Media\MediaManager;
 use App\Services\Media\Providers\BunnyStorageProvider;
 use App\Services\Media\Providers\BunnyStreamProvider;
-use App\Services\Media\Providers\LocalStorageProvider;
+use App\Services\Media\Providers\LocalProvider;
 use App\Services\Platform\PlatformBunnySettingService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -53,9 +53,8 @@ class AppServiceProvider extends ServiceProvider
         app(MediaManager::class)->register('bunny', app(BunnyStorageProvider::class));
         app(MediaManager::class)->registerService('bunny', 'storage', app(BunnyStorageProvider::class));
         app(MediaManager::class)->registerService('bunny', 'stream', app(BunnyStreamProvider::class));
-
-        app(MediaManager::class)->register('local', app(LocalStorageProvider::class));
-        app(MediaManager::class)->registerService('local', 'storage', app(LocalStorageProvider::class));
+        app(MediaManager::class)->register('local', app(LocalProvider::class));
+        app(MediaManager::class)->registerService('local', 'storage', app(LocalProvider::class));
 
         Gate::policy(Course::class, CoursePolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);

@@ -285,6 +285,15 @@ Route::prefix('v1')->group(function () {
         Route::post('/media-library/upload/intent', [MediaLibraryUploadController::class, 'uploadIntent']);
         Route::post('/media-library/upload/{session}/confirm', [MediaLibraryUploadController::class, 'confirmUpload']);
         Route::post('/media-library/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
+        Route::put('/media-library/upload/local/{session}', [MediaLibraryUploadController::class, 'uploadLocalBytes']);
+        Route::post('/media-library/upload/resumable/intent', [MediaLibraryUploadController::class, 'resumableIntent']);
+        Route::put('/media-library/upload/resumable/{session}/chunk', [MediaLibraryUploadController::class, 'resumableChunk'])
+            ->withoutMiddleware('throttle:api')
+            ->middleware('throttle:resumable-upload');
+        Route::get('/media-library/upload/resumable/{session}/resume', [MediaLibraryUploadController::class, 'resumableResume']);
+        Route::post('/media-library/upload/resumable/{session}/finalize', [MediaLibraryUploadController::class, 'resumableFinalize']);
+        Route::get('/media-library/assets/{asset}/status', [MediaLibraryUploadController::class, 'status']);
+        Route::get('/media-library/assets/{asset}/signed-url', [MediaLibraryUploadController::class, 'signedUrl']);
 
         Route::get('/courses', [CourseController::class, 'index']);
         Route::post('/courses', [CourseController::class, 'store']);
@@ -652,6 +661,7 @@ Route::prefix('v1')->group(function () {
 
             Route::post('/upload/intent', [MediaLibraryUploadController::class, 'uploadIntent']);
             Route::post('/upload/file', [MediaLibraryUploadController::class, 'uploadFile']);
+            Route::put('/upload/local/{session}', [MediaLibraryUploadController::class, 'uploadLocalBytes']);
             Route::post('/upload/{session}/confirm', [MediaLibraryUploadController::class, 'confirmUpload']);
             Route::get('/assets/{asset}/status', [MediaLibraryUploadController::class, 'status']);
             Route::get('/assets/{asset}/signed-url', [MediaLibraryUploadController::class, 'signedUrl']);

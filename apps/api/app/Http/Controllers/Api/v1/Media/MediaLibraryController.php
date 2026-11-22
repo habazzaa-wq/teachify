@@ -8,6 +8,7 @@ use App\Models\MediaAsset;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Services\Media\MediaLibraryAssetService;
+use App\Services\Media\MediaLibraryRouting;
 use App\Services\UploadGuard\UploadGuardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class MediaLibraryController extends Controller
 
         $tenant = currentTenant();
         $params = $request->validate([
+            'library' => 'nullable|in:videos,media',
             'folder_id' => 'nullable|integer|exists:media_folders,id',
             'root' => 'nullable|boolean',
             'search' => 'nullable|string|max:255',
@@ -48,6 +50,12 @@ class MediaLibraryController extends Controller
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
+
+        MediaLibraryRouting::assertQueryMatchesLibrary(
+            $params['library'] ?? null,
+            $params['type'] ?? null,
+            $params['types'] ?? null,
+        );
 
         $instructor = $request->attributes->get('instructorMembership');
         if ($instructor) {

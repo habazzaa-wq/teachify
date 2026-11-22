@@ -20,12 +20,12 @@ import {
 import { cn } from "@/lib/cn";
 import { useMediaWorkspaceStore } from "../../store";
 import { useFolderTree, useMediaMetrics, useCreateFolder, useDeleteFolder, useRenameFolder, useMoveFolder } from "../../hooks";
-import { SMART_FOLDERS } from "../../constants";
+import { MEDIA_LIBRARY_LABELS, smartFoldersForLibrary } from "../../constants";
 import { StorageWidget } from "../StorageWidget";
 import { CreateFolderDialog } from "../CreateFolderDialog";
 import { RenameDialog } from "../RenameDialog";
 import { DeleteDialog } from "../DeleteDialog";
-import type { MediaFolder } from "../../types";
+import type { MediaFolder, MediaLibrary } from "../../types";
 import type { SmartFolderType } from "../../types";
 
 const smartFolderIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -41,6 +41,7 @@ const smartFolderIcons: Record<string, React.ComponentType<{ className?: string 
 
 interface FolderExplorerProps {
   className?: string;
+  library?: MediaLibrary;
 }
 
 function formatCount(n: number | undefined): string {
@@ -167,7 +168,7 @@ function FolderTreeItem({
   );
 }
 
-function FolderExplorer({ className }: FolderExplorerProps) {
+function FolderExplorer({ className, library = "media" }: FolderExplorerProps) {
   const {
     selectedFolderId,
     setSelectedFolderId,
@@ -178,7 +179,8 @@ function FolderExplorer({ className }: FolderExplorerProps) {
   } = useMediaWorkspaceStore();
 
   const { data: folders = [], isLoading: foldersLoading } = useFolderTree();
-  const { data: metrics } = useMediaMetrics();
+  const { data: metrics } = useMediaMetrics(library);
+  const visibleSmartFolders = useMemo(() => smartFoldersForLibrary(library), [library]);
   const createFolder = useCreateFolder();
   const deleteFolder = useDeleteFolder();
   const renameFolder = useRenameFolder();
@@ -263,7 +265,7 @@ function FolderExplorer({ className }: FolderExplorerProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2.5">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-            المكتبة
+            {MEDIA_LIBRARY_LABELS[library]}
           </h2>
           <button
             onClick={() => setCreateOpen(true)}
@@ -289,7 +291,7 @@ function FolderExplorer({ className }: FolderExplorerProps) {
 
         {/* Smart Folders */}
         <div className="px-2 pb-1">
-          {SMART_FOLDERS.map((sf) => {
+          {visibleSmartFolders.map((sf) => {
             const Icon = smartFolderIcons[sf.icon] ?? Folder;
             const isActive = selectedFolderId === sf.id;
             const count =
@@ -351,7 +353,9 @@ function FolderExplorer({ className }: FolderExplorerProps) {
                 )}
               >
                 <FolderOpen className="h-4 w-4 text-accent" />
-                <span className="flex-1 truncate">جميع الملفات</span>
+                <span className="flex-1 truncate">
+                  {library === "videos" ? "جميع الفيديوهات" : "جميع الملفات"}
+                </span>
                 {metrics && (
                   <span className="text-[10px] text-muted-foreground/60">
                     {formatCount(metrics.totalAssets)}

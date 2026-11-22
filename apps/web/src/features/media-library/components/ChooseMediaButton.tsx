@@ -21,11 +21,13 @@ import { ImagePlus } from "lucide-react";
 import { AppButton } from "@/components/ui";
 import { MediaPicker } from "./MediaPicker";
 import type { MediaPickerResult } from "./MediaPicker";
-import type { MediaType } from "../types";
+import { libraryForAllowedTypes } from "../constants";
+import type { MediaLibrary, MediaType } from "../types";
 
 interface ChooseMediaButtonProps {
   mode?: "single" | "multi";
   allowedTypes?: MediaType[];
+  library?: MediaLibrary;
   label?: string;
   variant?: "default" | "outline" | "ghost" | "secondary" | "link" | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
@@ -35,6 +37,7 @@ interface ChooseMediaButtonProps {
 function ChooseMediaButton({
   mode = "single",
   allowedTypes,
+  library,
   label = "اختيار وسائط",
   variant = "outline",
   size = "sm",
@@ -67,6 +70,7 @@ function ChooseMediaButton({
         onSelect={handleSelect}
         mode={mode}
         allowedTypes={allowedTypes}
+        library={library ?? libraryForAllowedTypes(allowedTypes)}
       />
     </>
   );

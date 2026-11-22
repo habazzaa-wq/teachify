@@ -3,6 +3,7 @@ import { resolveApiBaseUrl } from "@/config/env";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { instructorApi } from "@/features/instructors/api";
+import { useInstructorAuthStore } from "@/features/instructors/store";
 import type {
   MediaAsset,
   MediaCaption,
@@ -20,6 +21,61 @@ type RawFolder = Record<string, unknown>;
 
 export function isInstructorMediaWorkspace(): boolean {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/instructor/");
+}
+
+/**
+ * Raw upload requests (XHR/fetch) bypass the axios wrapper, so they must build
+ * the instructor/tenant API prefix and auth headers themselves.
+ */
+export function resolveMediaUploadUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const base = resolveApiBaseUrl();
+  const trimmed = path.replace(/^\/+/, "");
+  if (trimmed.startsWith("api/v1/")) {
+    return `${base}/${trimmed.slice("api/v1/".length)}`;
+  }
+
+  return isInstructorMediaWorkspace()
+    ? `${base}/instructor/${trimmed}`
+    : `${base}/${trimmed}`;
+}
+
+export function mediaUploadHeaders(includeContentType = false): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (includeContentType) headers["Content-Type"] = "application/json";
+
+  const instructor = isInstructorMediaWorkspace();
+  const token = (() => {
+    try {
+      return instructor
+        ? useInstructorAuthStore.getState().accessToken
+        : useAuthStore.getState().accessToken;
+    } catch {
+      return null;
+    }
+  })();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const tenantId = (() => {
+    try {
+      return useTenantStore.getState().activeTenant?.id?.toString() ?? null;
+    } catch {
+      return null;
+    }
+  })();
+  const domain = (() => {
+    try {
+      return useTenantStore.getState().domain ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  if (tenantId) headers["X-Tenant-ID"] = tenantId;
+  else if (domain) headers["X-Tenant-Domain"] = domain;
+
+  return headers;
 }
 
 function instructorMediaRequest<T>(
@@ -155,6 +211,7 @@ function buildListParams(params?: MediaFilterParams): Record<string, string | st
   if (!params) return {};
   const q: Record<string, string | string[]> = {};
 
+  if (params.library) q.library = params.library;
   if (params.folder_id === "root") q.root = "true";
   else if (params.folder_id !== undefined) q.folder_id = String(params.folder_id);
 
@@ -309,8 +366,10 @@ export const mediaLibraryService = {
     return data.data ?? [];
   },
 
-  async getMetrics(): Promise<MediaMetricData> {
-    const { data } = await api.get("/media-library/metrics");
+  async getMetrics(library?: "videos" | "media"): Promise<MediaMetricData> {
+    const { data } = await api.get("/media-library/metrics", {
+      params: library ? { library } : undefined,
+    });
     return data.data;
   },
 
@@ -319,14 +378,18 @@ export const mediaLibraryService = {
     return data.data;
   },
 
-  async getRecent(limit?: number): Promise<MediaAsset[]> {
+  async getRecent(library?: "videos" | "media", limit?: number): Promise<MediaAsset[]> {
     const { data } = await api.get("/media-library/recent", {
-      params: limit ? { limit } : undefined,
+      params: {
+        ...(library ? { library } : {}),
+        ...(limit ? { limit } : {}),
+      },
     });
     return (data.data ?? []).map(formatAsset);
   },
 
   async createUploadIntent(payload: {
+    library: "videos" | "media";
     type: string;
     original_filename: string;
     mime_type?: string;
@@ -350,6 +413,7 @@ export const mediaLibraryService = {
   },
 
   async createResumableIntent(payload: {
+    library: "videos" | "media";
     type: string;
     original_filename: string;
     mime_type?: string;
@@ -432,56 +496,18 @@ export const mediaLibraryService = {
     file: File,
     visibility?: string,
     service?: string,
+    library: "videos" | "media" = "media",
   ): Promise<{ asset: MediaAsset | null; cdnUrl: string | null }> {
     const form = new FormData();
     form.append("file", file);
+    form.append("library", library);
     if (visibility) form.append("visibility", visibility);
     if (service) form.append("service", service);
 
-    // Build the same auth/tenant context the axios interceptor would, but use
-    // the native fetch API so the browser sets the multipart boundary and the
-    // file is transmitted correctly (axios forced a JSON content-type).
-    const token =
-      (() => {
-        try {
-          return useAuthStore.getState().accessToken;
-        } catch {
-          return null;
-        }
-      })() ?? undefined;
-
-    const tenantId =
-      (() => {
-        try {
-          return useTenantStore.getState().activeTenant?.id?.toString() ?? null;
-        } catch {
-          return null;
-        }
-      })() ?? undefined;
-
-    const domain =
-      (() => {
-        try {
-          return useTenantStore.getState().domain ?? null;
-        } catch {
-          return null;
-        }
-      })() ?? undefined;
-
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    if (tenantId) headers["X-Tenant-ID"] = tenantId;
-    else if (domain) headers["X-Tenant-Domain"] = domain;
-
-    const baseUrl = (() => {
-      try {
-        return resolveApiBaseUrl();
-      } catch {
-        return "/api";
-      }
-    })();
-
-    const res = await fetch(`${baseUrl}/media-library/upload/file`, {
+    // Build the same auth/tenant context the axios wrapper would, including the
+    // instructor prefix when this is the instructor media workspace.
+    const headers = mediaUploadHeaders();
+    const res = await fetch(resolveMediaUploadUrl("/media-library/upload/file"), {
       method: "POST",
       headers,
       body: form,

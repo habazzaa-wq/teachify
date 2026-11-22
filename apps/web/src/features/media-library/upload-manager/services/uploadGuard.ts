@@ -1,5 +1,6 @@
 import { mediaLibraryService } from "../../services";
-import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_SIZE } from "../../constants";
+import { ALLOWED_UPLOAD_TYPES, looksLikeVideo, MAX_UPLOAD_SIZE } from "../../constants";
+import type { MediaLibrary } from "../../types";
 import type { UploadError } from "../types";
 
 export interface GuardResult {
@@ -24,7 +25,7 @@ class UploadGuardService {
   private storageFetchedAt = 0;
   private readonly cacheTtl = 15_000;
 
-  validateFile(file: File): GuardResult {
+  validateFile(file: File, library: MediaLibrary = "media"): GuardResult {
     if (file.size <= 0) {
       return {
         ok: false,
@@ -42,6 +43,28 @@ class UploadGuardService {
         error: {
           type: "validation",
           message: `حجم الملف يتجاوز الحد المسموح (${Math.round(MAX_UPLOAD_SIZE / 1_000_000_000)}GB)`,
+          retryable: false,
+        },
+      };
+    }
+
+    const isVideo = looksLikeVideo(file.type, file.name);
+    if (library === "videos" && !isVideo) {
+      return {
+        ok: false,
+        error: {
+          type: "validation",
+          message: "مكتبة الفيديوهات تقبل الفيديوهات فقط",
+          retryable: false,
+        },
+      };
+    }
+    if (library === "media" && isVideo) {
+      return {
+        ok: false,
+        error: {
+          type: "validation",
+          message: "الفيديوهات تُرفع من مكتبة الفيديوهات فقط",
           retryable: false,
         },
       };

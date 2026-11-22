@@ -27,13 +27,19 @@ import {
   AppButton,
 } from "@/components/ui";
 import { useMediaAssets } from "../hooks";
+import {
+  libraryForAllowedTypes,
+  MEDIA_LIBRARY_LABELS,
+  typeOptionsForLibrary,
+  typesForLibrary,
+} from "../constants";
 import { MediaGrid } from "./MediaGrid";
 import { MediaToolbar } from "./MediaToolbar";
 import { MediaEmptyState } from "./MediaEmptyState";
 import { MediaLoadingState } from "./MediaLoadingState";
 import { MediaErrorState } from "./MediaErrorState";
 import { MediaPagination } from "./workspace/MediaPagination";
-import type { ViewMode, MediaType, MediaStatus } from "../types";
+import type { ViewMode, MediaType, MediaStatus, MediaLibrary } from "../types";
 
 interface MediaPickerResult {
   id: number;
@@ -47,17 +53,28 @@ interface MediaPickerProps {
   onSelect: (result: MediaPickerResult) => void;
   mode?: "single" | "multi";
   allowedTypes?: MediaType[];
+  /** Which physical library to browse. Derived from `allowedTypes` when omitted. */
+  library?: MediaLibrary;
 }
 
-function MediaPicker({
+function MediaPickerDialog({
   open,
   onClose,
   onSelect,
   mode = "single",
   allowedTypes,
+  library,
 }: MediaPickerProps) {
+  const activeLibrary = library ?? libraryForAllowedTypes(allowedTypes);
+  const typeOptions = useMemo(() => typeOptionsForLibrary(activeLibrary), [activeLibrary]);
+  const libraryTypes = useMemo(
+    () => typesForLibrary(activeLibrary) ?? allowedTypes,
+    [activeLibrary, allowedTypes],
+  );
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<MediaType | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<MediaType | "all">(
+    activeLibrary === "videos" ? "video" : "all",
+  );
   const [statusFilter, setStatusFilter] = useState<MediaStatus | "all">("all");
   const [sort, setSort] = useState("created_at");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -80,10 +97,10 @@ function MediaPicker({
   );
   const handleTypeChange = useCallback(
     (value: MediaType | "all") => {
-      setTypeFilter(value);
+      setTypeFilter(typeOptions.some((option) => option.value === value) ? value : "all");
       gotoFirstPage();
     },
-    [gotoFirstPage],
+    [gotoFirstPage, typeOptions],
   );
   const handleStatusChange = useCallback(
     (value: MediaStatus | "all") => {
@@ -113,11 +130,12 @@ function MediaPicker({
   }, [page, perPage]);
 
   const { data, isLoading, isError, refetch, isFetching } = useMediaAssets({
+    library: activeLibrary,
     search: search || undefined,
     type: typeFilter !== "all" ? typeFilter : undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     sort,
-    types: allowedTypes,
+    types: libraryTypes,
     page,
     per_page: perPage,
   });
@@ -168,12 +186,13 @@ function MediaPicker({
         }}
       >
         <AppDialogHeader className="border-b px-5 py-4">
-          <AppDialogTitle>اختيار ملف وسائط</AppDialogTitle>
+          <AppDialogTitle>اختيار من {MEDIA_LIBRARY_LABELS[activeLibrary]}</AppDialogTitle>
         </AppDialogHeader>
 
         {/* Scrollable results area */}
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 md:px-6">
           <MediaToolbar
+            library={activeLibrary}
             search={search}
             onSearchChange={handleSearchChange}
             typeFilter={typeFilter}
@@ -248,6 +267,22 @@ function MediaPicker({
         )}
       </AppDialogContent>
     </AppDialog>
+  );
+}
+
+/**
+ * Remount the dialog when it opens or targets another library. This keeps
+ * filters and selections from leaking between video and media pickers without
+ * resetting state inside an effect.
+ */
+function MediaPicker(props: MediaPickerProps) {
+  const activeLibrary = props.library ?? libraryForAllowedTypes(props.allowedTypes);
+
+  return (
+    <MediaPickerDialog
+      key={`${activeLibrary}:${props.open ? "open" : "closed"}`}
+      {...props}
+    />
   );
 }
 

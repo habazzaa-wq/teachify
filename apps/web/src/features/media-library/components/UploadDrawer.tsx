@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { Upload, X, FileUp } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { Upload, X, FileUp, Image as ImageIcon, Video } from "lucide-react";
 import {
   AppDialog,
   AppDialogContent,
@@ -9,284 +9,124 @@ import {
   AppDialogTitle,
   AppButton,
 } from "@/components/ui";
-import { MAX_UPLOAD_SIZE } from "../constants";
-import { useCreateUploadIntent, useConfirmUpload } from "../hooks";
-import { mediaLibraryService } from "../services";
+import { acceptForLibrary, MEDIA_LIBRARY_LABELS } from "../constants";
+import { stageFilesForLibrary } from "../upload-manager/services";
+import { useUploadManager } from "../upload-manager/hooks";
+import type { MediaLibrary } from "../types";
 
 interface UploadDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folderId?: number | null;
+  library?: MediaLibrary;
 }
 
-interface FileEntry {
-  id: string;
-  file: File;
-  progress: number;
-  status: "pending" | "uploading" | "processing" | "success" | "error";
-  error?: string;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
-  if (bytes >= 1_024) return `${(bytes / 1_024).toFixed(0)} KB`;
-  return `${bytes} B`;
-}
-
-function UploadDrawer({ open, onOpenChange, folderId }: UploadDrawerProps) {
-  const [files, setFiles] = useState<FileEntry[]>([]);
-  const [dragOver, setDragOver] = useState(false);
+/**
+ * The drawer is only a file intake surface. Every byte is handed to the shared
+ * UploadManager so validation, chunking, resume, routing and progress all have
+ * one implementation. `library` makes the routing explicit: videos go to
+ * Bunny Stream, everything else is written to the tenant's own server.
+ */
+function UploadDrawer({ open, onOpenChange, folderId, library = "media" }: UploadDrawerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const createIntent = useCreateUploadIntent();
-  const confirmUpload = useConfirmUpload();
+  const [isDragging, setIsDragging] = useState(false);
+  const { canUpload } = useUploadManager();
 
-  const uploadFileRef = useRef<((entry: FileEntry) => void) | null>(null);
-
-  const addFiles = useCallback((newFiles: FileList | File[]) => {
-    const entries: FileEntry[] = Array.from(newFiles)
-      .filter((f) => {
-        if (f.size > MAX_UPLOAD_SIZE) {
-          console.warn(`File too large: ${f.name}`);
-          return false;
-        }
-        return true;
-      })
-      .map((f) => ({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        file: f,
-        progress: 0,
-        status: "pending" as const,
-      }));
-
-    setFiles((prev) => [...prev, ...entries]);
-
-    // Start uploading each file
-    entries.forEach((entry) => uploadFileRef.current?.(entry));
-  }, []);
-
-  const uploadFile = useCallback(
-    async (entry: FileEntry) => {
-      setFiles((prev) =>
-        prev.map((f) => (f.id === entry.id ? { ...f, status: "uploading" as const, progress: 0 } : f)),
-      );
-
-      try {
-        const intent = await createIntent.mutateAsync({
-          type: entry.file.type.startsWith("video") ? "video" :
-                entry.file.type.startsWith("image") ? "image" :
-                entry.file.type.startsWith("audio") ? "audio" :
-                entry.file.type === "application/pdf" ? "pdf" :
-                "file",
-          original_filename: entry.file.name,
-          mime_type: entry.file.type,
-          size_bytes: entry.file.size,
-          folder_id: folderId ?? undefined,
-        });
-
-        if (intent.uploadUrl) {
-          const xhr = new XMLHttpRequest();
-
-          xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-              const progress = Math.round((e.loaded / e.total) * 100);
-              setFiles((prev) =>
-                prev.map((f) => (f.id === entry.id ? { ...f, progress } : f)),
-              );
-            }
-          });
-
-          await new Promise<void>((resolve, reject) => {
-            xhr.addEventListener("load", () => {
-              if (xhr.status >= 200 && xhr.status < 300) resolve();
-              else reject(new Error(`Upload failed (${xhr.status})`));
-            });
-            xhr.addEventListener("error", () => reject(new Error("Upload failed")));
-            xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
-
-            xhr.open(intent.uploadMethod || "PUT", intent.uploadUrl!);
-            Object.entries(intent.headers || {}).forEach(([k, v]) =>
-              xhr.setRequestHeader(k, v as string),
-            );
-            xhr.send(entry.file);
-          });
-
-          await confirmUpload.mutateAsync({
-            sessionId: intent.sessionId,
-            payload: { size_bytes: entry.file.size },
-          });
-        } else {
-          await mediaLibraryService.uploadFileDirect(
-            entry.file,
-            undefined,
-            entry.file.type.startsWith("video") ? "stream" : "storage",
-          );
-        }
-
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === entry.id ? { ...f, status: "success" as const, progress: 100 } : f,
-          ),
-        );
-      } catch (err) {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === entry.id
-              ? { ...f, status: "error" as const, error: err instanceof Error ? err.message : "فشل الرفع" }
-              : f,
-          ),
-        );
-      }
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      if (files.length === 0 || !canUpload) return;
+      // Filtering + the rename dialog live in the shared intake path so drawer,
+      // global drag/drop, paste and keyboard shortcut behave identically.
+      stageFilesForLibrary(files, {
+        folderId: folderId ?? null,
+        library,
+        source: "file-input",
+      });
+      onOpenChange(false);
     },
-    [createIntent, confirmUpload, folderId],
+    [canUpload, folderId, library, onOpenChange],
   );
 
-  uploadFileRef.current = uploadFile;
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
-    },
-    [addFiles],
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => setDragOver(false), []);
-
-  const removeFile = useCallback((id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  }, []);
-
-  const retryFile = useCallback(
-    (id: string) => {
-      const entry = files.find((f) => f.id === id);
-      if (entry) uploadFile(entry);
-    },
-    [files, uploadFile],
-  );
-
-  const handleClose = useCallback(() => {
-    if (files.some((f) => f.status === "uploading")) {
-      if (!confirm("هل أنت متأكد؟ هناك ملفات قيد الرفع.")) return;
-    }
-    onOpenChange(false);
-    setFiles([]);
-  }, [files, onOpenChange]);
-
-  const succeeded = files.filter((f) => f.status === "success").length;
-  const failed = files.filter((f) => f.status === "error").length;
+  const isVideos = library === "videos";
+  const Icon = isVideos ? Video : ImageIcon;
+  const accept = acceptForLibrary(library);
 
   return (
-    <AppDialog open={open} onOpenChange={handleClose}>
-      <AppDialogContent className="max-w-lg sm:max-w-xl">
+    <AppDialog open={open} onOpenChange={onOpenChange}>
+      <AppDialogContent>
         <AppDialogHeader>
-          <AppDialogTitle>رفع الملفات</AppDialogTitle>
+          <AppDialogTitle>
+            رفع {isVideos ? "فيديو" : "ملف"} إلى {MEDIA_LIBRARY_LABELS[library]}
+          </AppDialogTitle>
         </AppDialogHeader>
 
-        {/* Drop zone */}
         <div
-          className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${
-            dragOver
-              ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-muted-foreground/40"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            // The window-level drop hook must not stage the same files twice.
+            e.stopPropagation();
+            setIsDragging(false);
+            handleFiles(Array.from(e.dataTransfer.files));
+          }}
+          className={`flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+            isDragging
+              ? "border-accent bg-accent/5"
+              : "border-border bg-muted/20 hover:border-accent/60"
           }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => inputRef.current?.click()}
         >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Upload className="h-6 w-6 text-primary" />
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <Icon className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-sm font-medium">
+              اسحب {isVideos ? "الفيديوهات" : "الملفات"} هنا أو اختر من جهازك
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isVideos
+                ? "يتم رفع الفيديوهات فقط إلى باني ستريم."
+                : "الصور والملفات تُحفظ على سيرفر المؤسسة، ولا تُرفع إلى باني."}
+            </p>
           </div>
-          <p className="text-sm font-medium">اسحب وأفلت الملفات هنا</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            أو انقر لاختيار الملفات
-          </p>
+          <AppButton
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={!canUpload}
+          >
+            <Upload className="me-2 h-4 w-4" />
+            اختيار {isVideos ? "فيديو" : "ملفات"}
+          </AppButton>
           <input
             ref={inputRef}
             type="file"
             multiple
-            className="hidden"
-            onChange={(e) => e.target.files && addFiles(e.target.files)}
+            accept={accept}
+            hidden
+            onChange={(e) => {
+              handleFiles(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
           />
         </div>
 
-        {/* File list */}
-        {files.length > 0 && (
-          <div className="max-h-48 space-y-2 overflow-y-auto">
-            {files.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center gap-3 rounded-lg border p-2.5"
-              >
-                <FileUp className="h-5 w-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{entry.file.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {formatSize(entry.file.size)}
-                  </p>
-                  {entry.status === "uploading" && (
-                    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all duration-300"
-                        style={{ width: `${entry.progress}%` }}
-                      />
-                    </div>
-                  )}
-                  {entry.status === "error" && entry.error && (
-                    <p className="text-[11px] text-destructive">{entry.error}</p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {entry.status === "success" && (
-                    <span className="text-xs text-success">تم</span>
-                  )}
-                  {(entry.status === "error" || entry.status === "pending") && (
-                    <AppButton
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-1.5 text-xs"
-                      onClick={() => retryFile(entry.id)}
-                    >
-                      إعادة
-                    </AppButton>
-                  )}
-                  <AppButton
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => removeFile(entry.id)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </AppButton>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+          <FileUp className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            ستظهر الملفات في نافذة مدير الرفع حيث يمكنك متابعة التقدم أو الإيقاف
+            المؤقت. اختر المجلد من الشريط الجانبي قبل الرفع عند الحاجة.
+          </span>
+        </div>
 
-        {/* Summary */}
-        {(succeeded > 0 || failed > 0) && (
-          <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
-            <span>
-              {succeeded > 0 && `${succeeded} تم بنجاح`}
-              {failed > 0 && (succeeded > 0 ? " | " : "") + `${failed} فشل`}
-            </span>
-            {failed > 0 && (
-              <button
-                className="text-primary hover:underline"
-                onClick={() => files.filter((f) => f.status === "error").forEach((f) => retryFile(f.id))}
-              >
-                إعادة الكل
-              </button>
-            )}
-          </div>
-        )}
+        <div className="mt-4 flex justify-end">
+          <AppButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <X className="me-2 h-4 w-4" />
+            إغلاق
+          </AppButton>
+        </div>
       </AppDialogContent>
     </AppDialog>
   );

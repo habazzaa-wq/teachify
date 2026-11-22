@@ -19,6 +19,16 @@ class ResumableUploadTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The media library writes non-video bytes to the configured media
+        // disk (public in tests), while chunk staging uses the uploads disk.
+        Storage::fake('public');
+        Storage::fake('uploads');
+    }
+
     private function createBunnyStorageIntegration(Tenant $tenant): void
     {
         TenantIntegration::create([
@@ -33,6 +43,23 @@ class ResumableUploadTest extends TestCase
                 'client_upload_key' => 'upload-key',
                 'password' => 'secret',
                 'status' => 'active',
+            ],
+        ]);
+    }
+
+    private function createBunnyStreamIntegration(Tenant $tenant): void
+    {
+        TenantIntegration::create([
+            'tenant_id' => $tenant->id,
+            'provider' => 'bunny',
+            'service' => 'stream',
+            'status' => 'active',
+            'external_id' => null,
+            'config' => [
+                'library_id' => 'library-'.$tenant->id,
+                'api_region' => 'video',
+                'client_upload_key' => 'upload-key',
+                'webhook_secret' => 'test-secret',
             ],
         ]);
     }
@@ -130,6 +157,46 @@ class ResumableUploadTest extends TestCase
         );
     }
 
+    public function test_finalize_rejects_non_video_bytes_renamed_as_a_video(): void
+    {
+        $tenant = $this->createTenant();
+        $this->createBunnyStreamIntegration($tenant);
+        $member = $this->memberWithRole($tenant, 'tenant_owner');
+        Sanctum::actingAs($member->user);
+
+        // Real PNG bytes deliberately declared as a video so Bunny is never
+        // handed an image even when the client spoofs name + MIME + type.
+        $content = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+            true,
+        );
+        $hash = hash('sha256', $content);
+        $fileHash = $this->combinedHash([0 => $hash]);
+
+        $intent = $this->postJson('/api/v1/media-library/upload/resumable/intent', [
+            'library' => 'videos',
+            'type' => 'video',
+            'original_filename' => 'poster.mp4',
+            'mime_type' => 'video/mp4',
+            'size_bytes' => strlen($content),
+            'total_chunks' => 1,
+        ], $this->tenantHeader($tenant))->assertCreated();
+
+        $session = MediaUploadSession::findOrFail($intent->json('data.session_id'));
+        $this->putChunk($tenant, $session, 0, $content, $hash)->assertOk();
+
+        $this->postJson(
+            "/api/v1/media-library/upload/resumable/{$session->id}/finalize",
+            ['file_hash' => $fileHash],
+            $this->tenantHeader($tenant),
+        )->assertStatus(422);
+
+        $asset = MediaAsset::findOrFail($intent->json('data.asset.id'));
+        $this->assertSame('bunny', $asset->provider);
+        $this->assertSame('stream', $asset->provider_service);
+        $this->assertNotSame('ready', $asset->status);
+    }
+
     public function test_resumable_pipeline_assembles_verifies_and_cleans_up(): void
     {
         Storage::fake('uploads');
@@ -172,22 +239,8 @@ class ResumableUploadTest extends TestCase
         $resume->assertJsonPath('data.remaining_chunks', []);
         $resume->assertJsonPath('data.next_chunk', null);
 
-        // Finalize: stub the Bunny push so we never touch the network.
-        $mock = \Mockery::mock(ResumableUploadService::class)->makePartial();
-        $mock->shouldAllowMockingProtectedMethods();
-        $mock->shouldReceive('pushToBunny')->once()->andReturnUsing(function (MediaUploadSession $s, string $path) {
-            $asset = $s->asset;
-            $asset->forceFill([
-                'status' => 'ready',
-                'processing_status' => 'ready',
-                'storage_key' => "tenants/{$s->tenant_id}/sample.bin",
-                'external_id' => 'fake-ext',
-            ])->save();
-
-            return $asset;
-        });
-        app()->instance(ResumableUploadService::class, $mock);
-
+        // Finalize writes the assembled bytes to the tenant's own disk; no
+        // Bunny storage/stream client is involved for a non-video upload.
         $finalize = $this->postJson(
             "/api/v1/media-library/upload/resumable/{$sessionId}/finalize",
             ['file_hash' => $fileHash],
@@ -195,6 +248,11 @@ class ResumableUploadTest extends TestCase
         );
         $finalize->assertOk();
         $finalize->assertJsonPath('data.asset.status', 'ready');
+
+        $asset = MediaAsset::findOrFail($finalize->json('data.asset.id'));
+        $this->assertSame('local', $asset->provider);
+        Storage::disk('public')->assertExists($asset->storage_key);
+        $this->assertSame($content, Storage::disk('public')->get($asset->storage_key));
 
         // Chunks and their temporary files are gone; the session is complete.
         $this->assertDatabaseHas('media_upload_sessions', [
@@ -386,20 +444,17 @@ class ResumableUploadTest extends TestCase
                 ->count(),
         );
 
-        $mock = \Mockery::mock(ResumableUploadService::class)->makePartial();
-        $mock->shouldAllowMockingProtectedMethods();
-        $mock->shouldReceive('pushToBunny')->once()->andReturnUsing(function (MediaUploadSession $s, string $path) {
-            $asset = $s->asset;
-            $asset->forceFill(['status' => 'ready', 'processing_status' => 'ready'])->save();
-            return $asset;
-        });
-        app()->instance(ResumableUploadService::class, $mock);
-
-        $this->postJson(
+        $finalize = $this->postJson(
             "/api/v1/media-library/upload/resumable/{$f['sessionId']}/finalize",
             ['file_hash' => $f['fileHash']],
             $this->tenantHeader($f['tenant']),
-        )->assertOk();
+        );
+        $finalize->assertOk();
+
+        $asset = MediaAsset::findOrFail($finalize->json('data.asset.id'));
+        $this->assertSame('local', $asset->provider);
+        Storage::disk('public')->assertExists($asset->storage_key);
+        $this->assertSame($f['content'], Storage::disk('public')->get($asset->storage_key));
     }
 
     /** An incomplete upload (missing chunk) can never become ready. */
@@ -454,20 +509,21 @@ class ResumableUploadTest extends TestCase
         $this->putChunk($f['tenant'], $f['session'], 0, $f['chunk0'], $f['hash0'])->assertOk();
         $this->putChunk($f['tenant'], $f['session'], 1, $f['chunk1'], $f['hash1'], 1500)->assertOk();
 
-        $mock = \Mockery::mock(ResumableUploadService::class)->makePartial();
-        $mock->shouldAllowMockingProtectedMethods();
-        $mock->shouldReceive('pushToBunny')->once()->andReturnUsing(function (MediaUploadSession $s, string $path) {
-            $asset = $s->asset;
-            $asset->forceFill(['status' => 'ready', 'processing_status' => 'ready'])->save();
-            return $asset;
-        });
-        app()->instance(ResumableUploadService::class, $mock);
-
         $url = "/api/v1/media-library/upload/resumable/{$f['sessionId']}/finalize";
-        $this->postJson($url, ['file_hash' => $f['fileHash']], $this->tenantHeader($f['tenant']))->assertOk();
+        $first = $this->postJson($url, ['file_hash' => $f['fileHash']], $this->tenantHeader($f['tenant']));
+        $first->assertOk();
 
         // A second finalize returns 200 and does not create a second asset.
-        $this->postJson($url, ['file_hash' => $f['fileHash']], $this->tenantHeader($f['tenant']))->assertOk();
+        $second = $this->postJson($url, ['file_hash' => $f['fileHash']], $this->tenantHeader($f['tenant']));
+        $second->assertOk();
+        $this->assertSame(
+            $first->json('data.asset.id'),
+            $second->json('data.asset.id'),
+        );
+
+        $asset = MediaAsset::findOrFail($first->json('data.asset.id'));
+        Storage::disk('public')->assertExists($asset->storage_key);
+        $this->assertSame($f['content'], Storage::disk('public')->get($asset->storage_key));
 
         $this->assertSame(
             1,
@@ -521,20 +577,17 @@ class ResumableUploadTest extends TestCase
 
         $fileHash = $this->combinedHash($hashes);
 
-        $mock = \Mockery::mock(ResumableUploadService::class)->makePartial();
-        $mock->shouldAllowMockingProtectedMethods();
-        $mock->shouldReceive('pushToBunny')->once()->andReturnUsing(function (MediaUploadSession $s, string $path) {
-            $asset = $s->asset;
-            $asset->forceFill(['status' => 'ready', 'processing_status' => 'ready'])->save();
-            return $asset;
-        });
-        app()->instance(ResumableUploadService::class, $mock);
-
-        $this->postJson(
+        $finalize = $this->postJson(
             "/api/v1/media-library/upload/resumable/{$sessionId}/finalize",
             ['file_hash' => $fileHash],
             $this->tenantHeader($tenant),
-        )->assertOk();
+        );
+        $finalize->assertOk();
+
+        $asset = MediaAsset::findOrFail($finalize->json('data.asset.id'));
+        $this->assertSame('local', $asset->provider);
+        Storage::disk('public')->assertExists($asset->storage_key);
+        $this->assertSame($content, Storage::disk('public')->get($asset->storage_key));
     }
 
     /** A session created by one tenant cannot be written to by another. */

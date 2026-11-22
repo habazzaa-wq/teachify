@@ -26,7 +26,10 @@ export const routes = {
   seoKeywords: "/teacher/seo/keywords",
   seoFaqs: "/teacher/seo/faqs",
   seoSettings: "/teacher/seo/settings",
+  /** Legacy route — redirects to the non-video media library. */
   dashboardMedia: "/teacher/media",
+  dashboardVideoLibrary: "/teacher/video-library",
+  dashboardMediaLibrary: "/teacher/media-library",
   dashboardExams: "/teacher/exams",
   dashboardGrading: "/teacher/grading",
   dashboardSubjects: "/teacher/subjects",
