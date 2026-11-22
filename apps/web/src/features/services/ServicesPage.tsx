@@ -116,7 +116,7 @@ function Hero({
               top: s.y,
               fontSize: s.size,
               transform: `rotate(${s.rotate}deg)`,
-              fontFamily: "'Georgia', serif",
+              fontFamily: "var(--font-sans)",
             }}
           >
             {s.char}
@@ -145,7 +145,7 @@ function Hero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
-              className="font-display mt-5 text-4xl font-bold leading-[1.2] text-foreground sm:text-5xl lg:text-6xl"
+              className="font-sans mt-5 text-4xl font-bold leading-[1.2] text-foreground sm:text-5xl lg:text-6xl"
             >
               خدماتنا<span style={{ color: PRIMARY }}>.</span>
             </motion.h1>
@@ -189,76 +189,118 @@ function Hero({
             </motion.div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.12 }}
-            className="relative mx-auto w-full max-w-lg"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-border bg-card/60 p-5 backdrop-blur-xl sm:p-6">
-              <div
-                className="absolute inset-x-10 inset-y-10 rounded-[1.5rem] border"
-                style={{ borderColor: tint(PRIMARY, 35) }}
-                aria-hidden="true"
-              />
-              <div className="relative flex h-full flex-col">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-xs font-extrabold text-foreground">
-                    <span
-                      className="flex h-8 w-8 items-center justify-center rounded-xl"
-                      style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
-                    >
-                      <GraduationCap className="h-4 w-4" />
-                    </span>
-                    باقة الخدمات
-                  </span>
-                  <span className="flex gap-1.5">
-                    <i className="h-2 w-2 rounded-full" style={{ background: SECONDARY }} />
-                    <i className="h-2 w-2 rounded-full bg-border" />
-                    <i className="h-2 w-2 rounded-full bg-border" />
-                  </span>
-                </div>
-
-                <div className="mt-auto space-y-3">
-                  {[
-                    { icon: Target, label: "استشارات مخصصة", color: PRIMARY },
-                    { icon: Lightbulb, label: "جلسات تطويرية", color: SECONDARY },
-                    { icon: MessageCircle, label: "متابعة مباشرة", color: "#22C55E" },
-                  ].map(({ icon: Icon, label, color }, index) => (
-                    <motion.div
-                      key={label}
-                      initial={{ opacity: 0, x: 18 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.25 + index * 0.08 }}
-                      className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-3"
-                    >
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-xl"
-                        style={{ background: tint(color, 14), color }}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="flex-1 text-xs font-bold text-foreground">{label}</span>
-                      <span className="h-1.5 w-12 rounded-full bg-muted" />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          <div className="relative mx-auto w-full max-w-[430px]" style={{ perspective: "1200px" }}>
+            {/* stacked sheets — pure CSS transforms, no filters or canvas */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-7 top-8 h-full rounded-[1.6rem] border border-border/60 bg-muted/25"
+              style={{ transform: "translateY(18px) scale(0.965)" }}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-3 top-4 h-full rounded-[1.6rem] border border-border/70 bg-card/60"
+              style={{ transform: "translateY(9px) scale(0.982)" }}
+            />
 
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.5 }}
-              className="absolute -bottom-5 -start-3 flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 shadow-lg sm:-start-6"
+              initial={{ opacity: 0, y: 26, rotateX: 9, rotateY: -10 }}
+              animate={{ opacity: 1, y: 0, rotateX: 4, rotateY: -6 }}
+              whileHover={{ rotateX: 1, rotateY: -2, y: -6 }}
+              transition={{ type: "spring", stiffness: 120, damping: 18, delay: 0.12 }}
+              className="group relative overflow-hidden rounded-[1.6rem] border border-border bg-card"
+              style={{
+                transformStyle: "preserve-3d",
+                boxShadow: `0 26px 55px -30px rgba(0,0,0,0.65), inset 0 1px 0 ${tint("#ffffff", 14)}`,
+              }}
             >
-              <BadgeCheck className="h-5 w-5" style={{ color: PRIMARY }} />
-              <div className="leading-tight">
-                <p className="text-[11px] font-extrabold text-foreground">تواصل مباشر</p>
-                <p className="text-[10px] text-muted-foreground">بدون خطوات معقدة</p>
+              <div
+                className="absolute inset-x-0 top-0 h-[3px]"
+                style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
+              />
+
+              <div className="relative p-5 sm:p-6">
+                <header className="flex items-start justify-between gap-3 border-b border-border pb-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
+                      style={{
+                        borderColor: tint(PRIMARY, 35),
+                        background: tint(PRIMARY, 12),
+                        color: PRIMARY,
+                        transform: "translateZ(16px)",
+                      }}
+                    >
+                      <GraduationCap className="h-[18px] w-[18px]" />
+                      <span
+                        className="absolute -end-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-card"
+                        style={{ background: SECONDARY }}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold tracking-[0.12em] text-muted-foreground">حزمة متكاملة</p>
+                      <h3 className="mt-0.5 text-sm font-extrabold text-foreground">باقة الخدمات</h3>
+                    </div>
+                  </div>
+                  <span className="rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-bold tabular-nums text-muted-foreground">
+                    03 خدمات
+                  </span>
+                </header>
+
+                <ul className="mt-2">
+                  {[
+                    { no: "01", icon: Target, label: "استشارات مخصصة", meta: "تخطيط", color: PRIMARY },
+                    { no: "02", icon: Lightbulb, label: "جلسات تطويرية", meta: "تنفيذ", color: SECONDARY },
+                    { no: "03", icon: MessageCircle, label: "متابعة مباشرة", meta: "دعم", color: "#22C55E" },
+                  ].map(({ no, icon: Icon, label, meta, color }, index) => (
+                    <motion.li
+                      key={label}
+                      initial={{ opacity: 0, x: 14 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.35, delay: 0.25 + index * 0.07 }}
+                      className="flex items-center gap-3 border-b border-border/70 py-3 last:border-0"
+                    >
+                      <span className="w-5 text-[10px] font-extrabold tabular-nums text-muted-foreground">{no}</span>
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                        style={{ borderColor: tint(color, 25), background: tint(color, 10), color }}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="flex-1 text-xs font-bold text-foreground">{label}</span>
+                      <span className="text-[10px] font-medium text-muted-foreground">{meta}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                  <span className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    جاهزة للانطلاق
+                  </span>
+                  <span className="text-[10px] font-bold text-foreground">ابدأ من أول خطوة ←</span>
+                </div>
               </div>
             </motion.div>
-          </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.5 }}
+              className="absolute -bottom-4 -start-4 flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-2.5 shadow-xl"
+              style={{ transform: "translateZ(38px)" }}
+            >
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
+              >
+                <BadgeCheck className="h-4 w-4" />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-[11px] font-extrabold text-foreground">تواصل مباشر</span>
+                <span className="block text-[10px] text-muted-foreground">بدون خطوات معقدة</span>
+              </span>
+            </motion.div>
+          </div>
         </div>
       </div>
 
@@ -332,7 +374,7 @@ function ServiceCard({
       </div>
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <h2 className="font-display text-lg font-bold leading-snug text-foreground">{service.title}</h2>
+        <h2 className="font-sans text-lg font-bold leading-snug text-foreground">{service.title}</h2>
 
         {service.summary && (
           <p className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">{service.summary}</p>
@@ -479,7 +521,7 @@ function ServiceDialog({
 
         <div className="relative -mt-8 px-5 pb-6 sm:px-8 sm:pb-8">
           <SectionLabel>تفاصيل الخدمة</SectionLabel>
-          <h2 id="service-dialog-title" className="font-display mt-4 text-2xl font-bold text-foreground">
+          <h2 id="service-dialog-title" className="font-sans mt-4 text-2xl font-bold text-foreground">
             {service.title}
           </h2>
 
@@ -585,7 +627,7 @@ function EmptyState({
             {filtered ? <Search className="h-9 w-9" /> : <Sparkles className="h-9 w-9" />}
           </motion.span>
 
-          <h2 className="font-display mt-6 text-2xl font-bold text-foreground sm:text-3xl">
+          <h2 className="font-sans mt-6 text-2xl font-bold text-foreground sm:text-3xl">
             {filtered ? "لم نجد خدمة مطابقة" : "نجهّز لك تجربة تليق بطموحك"}
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-8 text-muted-foreground">
@@ -748,7 +790,7 @@ export function ServicesPage() {
           <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <SectionLabel>دليل الخدمات</SectionLabel>
-              <h2 className="font-display mt-4 text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="font-sans mt-4 text-2xl font-bold text-foreground sm:text-3xl">
                 ما الذي نقدّمه؟
               </h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
@@ -799,7 +841,7 @@ export function ServicesPage() {
             <div className="flex flex-col items-center gap-4 rounded-[1.75rem] border border-border bg-card px-6 py-14 text-center">
               <CircleHelp className="h-10 w-10" style={{ color: PRIMARY }} />
               <div>
-                <h2 className="font-display text-lg font-bold text-foreground">حدث خطأ أثناء التحميل</h2>
+                <h2 className="font-sans text-lg font-bold text-foreground">حدث خطأ أثناء التحميل</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{error}</p>
               </div>
               <button
@@ -850,7 +892,7 @@ export function ServicesPage() {
                   <Sparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className="font-display text-xl font-bold text-foreground">كيف تعمل الخدمات؟</h2>
+                  <h2 className="font-sans text-xl font-bold text-foreground">كيف تعمل الخدمات؟</h2>
                   <p className="text-xs text-muted-foreground">ثلاث خطوات بسيطة تفصلك عن الهدف.</p>
                 </div>
               </div>
@@ -874,7 +916,7 @@ export function ServicesPage() {
                 aria-hidden="true"
               />
               <div className="relative mx-auto max-w-2xl">
-                <h2 className="font-display text-2xl font-bold sm:text-3xl">
+                <h2 className="font-sans text-2xl font-bold sm:text-3xl">
                   {supportPhone ? "لديك سؤال قبل أن تبدأ؟" : "ابحث عن خطوتك التالية في رحلتك التعليمية"}
                 </h2>
                 <p className="mt-3 text-sm leading-8 opacity-90">
