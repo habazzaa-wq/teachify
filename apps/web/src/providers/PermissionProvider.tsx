@@ -47,14 +47,14 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
   );
 }
 
+const FALLBACK_PERMISSION_CONTEXT: PermissionProviderValue = {
+  permissions: [],
+  roles: [],
+  hasPermission: () => true,
+  hasAnyPermission: () => true,
+  hasRole: () => false,
+};
+
 export function usePermissionContext(): PermissionProviderValue {
-  const ctx = useContext(PermissionContext);
-
-  if (!ctx) {
-    throw new Error(
-      "usePermissionContext must be used within a PermissionProvider",
-    );
-  }
-
-  return ctx;
+  return useContext(PermissionContext) ?? FALLBACK_PERMISSION_CONTEXT;
 }
