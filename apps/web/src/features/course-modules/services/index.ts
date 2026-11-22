@@ -1,4 +1,4 @@
-import { api } from "@/services/api";
+import { courseContentApi as api } from "@/features/instructors/course-content-api";
 import type { CourseModule, ModuleFilterParams, ModuleMetricData, CreateCourseModulePayload, UpdateCourseModulePayload } from "../types";
 
 function formatModule(raw: any): CourseModule {

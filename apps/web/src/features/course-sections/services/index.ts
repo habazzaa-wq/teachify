@@ -1,4 +1,4 @@
-import { api } from "@/services/api";
+import { courseContentApi as api } from "@/features/instructors/course-content-api";
 import type { CourseSection, SectionFilterParams, SectionMetricData, CreateCourseSectionPayload, UpdateCourseSectionPayload } from "../types";
 
 function formatSection(raw: any): CourseSection {

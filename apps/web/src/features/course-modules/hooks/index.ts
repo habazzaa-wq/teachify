@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { modulesService } from "../services";
 import { MODULES_QUERY_KEY } from "../constants";
+import { courseContentQueryScope } from "@/features/instructors/workspace";
 import type { ModuleFilterParams, CreateCourseModulePayload, UpdateCourseModulePayload } from "../types";
 
 const SECTIONS_QUERY_KEY = "course-sections";
@@ -11,7 +12,7 @@ const COURSES_QUERY_KEY = "courses";
 
 export function useModules(courseId: string | null, params?: ModuleFilterParams) {
   return useQuery({
-    queryKey: [MODULES_QUERY_KEY, "list", courseId, params],
+    queryKey: [MODULES_QUERY_KEY, courseContentQueryScope(), "list", courseId, params],
     queryFn: () => modulesService.list(courseId!, params),
     enabled: !!courseId,
   });
@@ -19,7 +20,7 @@ export function useModules(courseId: string | null, params?: ModuleFilterParams)
 
 export function useModulesMetrics(courseId?: string) {
   return useQuery({
-    queryKey: [MODULES_QUERY_KEY, "metrics", courseId],
+    queryKey: [MODULES_QUERY_KEY, courseContentQueryScope(), "metrics", courseId],
     queryFn: () => modulesService.getMetrics(courseId),
   });
 }

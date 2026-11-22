@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sectionsService } from "../services";
 import { SECTIONS_QUERY_KEY } from "../constants";
+import { courseContentQueryScope } from "@/features/instructors/workspace";
 import type { SectionFilterParams, CreateCourseSectionPayload, UpdateCourseSectionPayload } from "../types";
 
 const LESSONS_QUERY_KEY = "lessons";
@@ -10,7 +11,7 @@ const COURSES_QUERY_KEY = "courses";
 
 export function useSections(courseId: string | null, params?: SectionFilterParams) {
   return useQuery({
-    queryKey: [SECTIONS_QUERY_KEY, "list", courseId, params],
+    queryKey: [SECTIONS_QUERY_KEY, courseContentQueryScope(), "list", courseId, params],
     queryFn: () => sectionsService.list(courseId!, params),
     enabled: !!courseId,
   });
@@ -18,7 +19,7 @@ export function useSections(courseId: string | null, params?: SectionFilterParam
 
 export function useSectionsMetrics(courseId?: string) {
   return useQuery({
-    queryKey: [SECTIONS_QUERY_KEY, "metrics", courseId],
+    queryKey: [SECTIONS_QUERY_KEY, courseContentQueryScope(), "metrics", courseId],
     queryFn: () => sectionsService.getMetrics(courseId),
   });
 }

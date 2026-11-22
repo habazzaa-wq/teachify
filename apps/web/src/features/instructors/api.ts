@@ -212,6 +212,18 @@ export const instructorApi = {
     });
   },
 
+  courseContentRequest<T>(
+    path: string,
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+    options: Pick<InstructorRequestOptions, "data" | "params" | "multipart" | "responseType" | "signal" | "timeout"> = {},
+  ) {
+    const token = useInstructorAuthStore.getState().accessToken;
+    return request<T>(`instructor/${path.replace(/^\/+/, "")}`, method, {
+      ...options,
+      token,
+    });
+  },
+
   fetchAnswerPage(url: string) {
     const apiBase = new URL(resolveApiBaseUrl());
     const pageUrl = new URL(url, apiBase);
