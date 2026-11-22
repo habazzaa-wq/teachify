@@ -353,8 +353,6 @@ for ($i = 0; $i -lt 120; $i++) {
 
 if ($result -eq 'OK') {
     Write-Host ''
-    $summary = ((& ssh @SshArgs "grep 'DEPLOY_SUMMARY' $remoteLog | tail -1" 2>$null) | Select-Object -Last 1).Trim()
-    if ($summary) { Write-Host " $summary" -ForegroundColor DarkGray }
     # Last line of defence: re-read the actual server HEAD after the build.
     $finalServerSha = ((& ssh @SshArgs "git -C $RemoteDir rev-parse HEAD" 2>$null) | Select-Object -Last 1).Trim()
     if ($finalServerSha -ne $localSha) {
