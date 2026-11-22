@@ -9,6 +9,7 @@ import {
   FileText,
   ChevronDown,
   BookOpen,
+  CalendarDays,
   MoreHorizontal,
   Pencil,
   Copy,
@@ -160,10 +161,10 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
             isSelected
               ? "bg-studio-accent text-studio-accent-fg"
-              : "bg-studio-soft text-studio-fg-muted",
+              : lecture.courseSessionId ? "bg-teal-500/10 text-teal-600" : "bg-studio-soft text-studio-fg-muted",
           )}
         >
-          <BookOpen className="h-4 w-4" />
+          {lecture.courseSessionId ? <CalendarDays className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -172,6 +173,9 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
           </span>
           <div className="flex items-center gap-2">
             <StudioStatusBadge status={lecture.status} />
+            {lecture.courseSessionId && (
+              <span className="text-[10px] rounded-full bg-teal-500/10 text-teal-600 px-1.5 py-0.5">جلسة</span>
+            )}
             {lecture.estimatedDuration && (
               <span className="flex items-center gap-1 text-[10px] text-studio-fg-muted">
                 <Clock className="h-3 w-3" />

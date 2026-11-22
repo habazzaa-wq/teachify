@@ -230,6 +230,10 @@ class CourseModuleController extends Controller
             'color' => ['nullable', 'string', 'max:20'],
             'icon' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
+            'course_session_id' => ['nullable', 'integer', Rule::exists('course_sessions', 'id')->where(function ($q) use ($request) {
+                $course = $request->route('course');
+                $q->where('course_id', $course?->id)->where('tenant_id', currentTenant()->id);
+            })],
         ]);
     }
 

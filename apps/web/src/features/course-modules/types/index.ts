@@ -4,6 +4,16 @@ export interface CourseModule {
   id: string;
   tenantId: string;
   courseId: string;
+  courseSessionId: string | null;
+  courseSession?: {
+    id: string;
+    title: string;
+    sessionType: string;
+    status: string;
+    startsAtUtc: string | null;
+    endsAtUtc: string | null;
+    timezone: string | null;
+  } | null;
   title: string;
   slug: string | null;
   description: string | null;
@@ -37,6 +47,7 @@ export interface CreateCourseModulePayload {
   color?: string | null;
   icon?: string | null;
   notes?: string | null;
+  course_session_id?: number | null;
 }
 
 export interface UpdateCourseModulePayload {
@@ -49,6 +60,7 @@ export interface UpdateCourseModulePayload {
   color?: string | null;
   icon?: string | null;
   notes?: string | null;
+  course_session_id?: number | null;
 }
 
 export interface ModuleFilterParams {

@@ -15,6 +15,7 @@ class CourseModule extends Model
     protected $fillable = [
         'tenant_id',
         'course_id',
+        'course_session_id',
         'title',
         'slug',
         'description',
@@ -49,5 +50,10 @@ class CourseModule extends Model
     public function sections(): HasMany
     {
         return $this->hasMany(CourseSection::class, 'course_module_id');
+    }
+
+    public function courseSession(): BelongsTo
+    {
+        return $this->belongsTo(CourseSession::class, 'course_session_id');
     }
 }
