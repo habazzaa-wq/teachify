@@ -11,6 +11,7 @@ import { ExamsView } from "./ExamsView";
 import { TasksView } from "./TasksView";
 import { WalletHistoryView } from "./WalletHistoryView";
 import { AchievementsView } from "./AchievementsView";
+import { CertificatesView } from "./CertificatesView";
 import { CalendarView } from "./CalendarView";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 
@@ -51,6 +52,7 @@ export function StudentDashboardPage() {
         {activeView === "tasks" && <TasksView tasks={data.upcomingTasks} />}
         {activeView === "wallet" && walletEnabled && <WalletHistoryView />}
         {activeView === "achievements" && <AchievementsView achievements={data.achievements} />}
+        {activeView === "certificates" && <CertificatesView courses={data.continueLearning} />}
         {activeView === "calendar" && <CalendarView calendar={data.calendar} />}
       </div>
     </div>

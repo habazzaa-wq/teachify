@@ -4,11 +4,13 @@ namespace App\Services\Certificates;
 
 use App\Models\Assignment;
 use App\Models\AssignmentResult;
+use App\Models\CertificateApplication;
 use App\Models\CertificateVerification;
 use App\Models\CourseCompletion;
 use App\Models\IssuedCertificate;
 use App\Models\Quiz;
 use App\Models\QuizResult;
+use App\Models\TenantUser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -73,6 +75,7 @@ class CertificateIssuanceService
         $existing = IssuedCertificate::query()
             ->where('course_id', $completion->course_id)
             ->where('tenant_user_id', $completion->enrollment->tenant_user_id)
+            ->where('status', 'issued')
             ->first();
 
         if ($existing) {
@@ -86,13 +89,13 @@ class CertificateIssuanceService
                 'course_id' => $completion->course_id,
                 'course_completion_id' => $completion->id,
                 'tenant_user_id' => $completion->enrollment->tenant_user_id,
-                'certificate_template_id' => $rule->certificate_template_id,
+                'certificate_template_id' => $rule?->certificate_template_id,
                 'certificate_number' => $this->certificateNumber(),
                 'issued_at' => now(),
                 'status' => 'issued',
                 'metadata' => [
                     'completion_percent' => $completion->completion_percent,
-                    'rule_id' => $rule->id,
+                    'rule_id' => $rule?->id,
                 ],
             ]);
 
@@ -114,6 +117,51 @@ class CertificateIssuanceService
         ]);
 
         return $certificate;
+    }
+
+    public function issueForApplication(CertificateApplication $application, CourseCompletion $completion, TenantUser $reviewer): IssuedCertificate
+    {
+        $existing = IssuedCertificate::query()
+            ->where('tenant_id', $application->tenant_id)
+            ->where('course_id', $application->course_id)
+            ->where('tenant_user_id', $application->tenant_user_id)
+            ->where('status', 'issued')
+            ->first();
+
+        if ($existing) {
+            return $existing->load(['course', 'student.user', 'template', 'verification']);
+        }
+
+        return DB::transaction(function () use ($application, $completion, $reviewer): IssuedCertificate {
+            $completion->loadMissing(['enrollment.student.user', 'course']);
+            $templateId = $application->certificate_template_id
+                ?: $completion->course?->certificateRule?->certificate_template_id;
+
+            $certificate = IssuedCertificate::create([
+                'tenant_id' => $completion->tenant_id,
+                'course_id' => $completion->course_id,
+                'course_completion_id' => $completion->id,
+                'tenant_user_id' => $application->tenant_user_id,
+                'certificate_template_id' => $templateId,
+                'certificate_number' => $this->certificateNumber(),
+                'issued_at' => now(),
+                'status' => 'issued',
+                'metadata' => [
+                    'completion_percent' => $completion->completion_percent,
+                    'application_id' => $application->id,
+                    'reviewed_by_tenant_user_id' => $reviewer->id,
+                ],
+            ]);
+
+            CertificateVerification::create([
+                'tenant_id' => $certificate->tenant_id,
+                'issued_certificate_id' => $certificate->id,
+                'verification_code' => $this->verificationCode(),
+                'verified_at' => null,
+            ]);
+
+            return $certificate->refresh()->load(['course', 'student.user', 'template', 'verification']);
+        });
     }
 
     private function hasPassedRequiredQuizzes(CourseCompletion $completion): bool

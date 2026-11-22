@@ -50,11 +50,35 @@ class CertificateController extends Controller
 
         return response()->json([
             'certificates' => IssuedCertificate::query()
-                ->with(['course', 'template', 'verification'])
+                ->with(['course', 'student.user', 'template', 'verification', 'completion'])
                 ->where('tenant_user_id', app(TenantUser::class)->id)
                 ->latest('issued_at')
                 ->get(),
         ]);
+    }
+
+    public function show(IssuedCertificate $certificate): JsonResponse
+    {
+        abort_if($certificate->tenant_id !== currentTenant()->id, 404);
+
+        $user = request()->user();
+        $tenant = currentTenant();
+        $authorization = app(TenantAuthorizationService::class);
+        $membership = app(TenantUser::class);
+
+        $isOwner = $membership && $certificate->tenant_user_id === $membership->id;
+        $canManage = $authorization->hasRole($user, $tenant, 'tenant_owner')
+            || $authorization->hasRole($user, $tenant, 'admin')
+            || (
+                $authorization->hasRole($user, $tenant, 'instructor')
+                && $authorization->hasPermission($user, $tenant, 'certificates.view')
+            );
+
+        abort_unless($isOwner || $canManage, 403);
+
+        $certificate->load(['course', 'student.user', 'template', 'verification', 'completion']);
+
+        return response()->json(['certificate' => $certificate]);
     }
 
     public function revoke(IssuedCertificate $certificate, CertificateIssuanceService $certificates): JsonResponse
