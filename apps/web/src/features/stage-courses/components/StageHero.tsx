@@ -66,8 +66,8 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
       />
 
       {/* orbs */}
-      <div className="pointer-events-none absolute -start-32 top-1/4 h-[420px] w-[420px] rounded-full blur-[130px]" />
-      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-[360px] w-[360px] rounded-full blur-[120px]" />
+      <div className="pointer-events-none absolute -start-32 top-1/4 h-[420px] w-[420px] rounded-full bg-[var(--brand-primary)] opacity-[0.10] blur-[130px]" />
+      <div className="pointer-events-none absolute -end-32 bottom-1/4 h-[360px] w-[360px] rounded-full bg-[var(--brand-secondary)] opacity-[0.08] blur-[120px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8 lg:pb-14 lg:pt-12">
         {/* breadcrumb */}
@@ -188,38 +188,88 @@ export function StageHero({ stage, aggregates, isLoading }: StageHeroProps) {
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative"
+            className="relative mx-auto w-full max-w-[460px]"
           >
+            {/* ambient brand glow */}
             <div
-              className="relative aspect-[4/3] overflow-hidden rounded-[2rem]"
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-8 rounded-[3rem] blur-3xl"
               style={{
-                border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}`,
+                background:
+                  "linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 28%, transparent), transparent 55%), linear-gradient(315deg, color-mix(in srgb, var(--brand-secondary) 26%, transparent), transparent 55%)",
+              }}
+            />
+
+            {/* corner accents behind the frame */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -end-5 -top-5 h-28 w-28 rounded-full border"
+              style={{ borderColor: "color-mix(in srgb, var(--brand-secondary) 55%, transparent)" }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-5 -start-5 h-36 w-36 rounded-full border"
+              style={{ borderColor: "color-mix(in srgb, var(--brand-primary) 55%, transparent)" }}
+            />
+
+            {/* layered gradient frame */}
+            <div
+              className="relative rounded-[28px] p-[3px] shadow-[0_28px_70px_-28px_rgba(0,0,0,0.55)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-secondary) 85%, white) 48%, color-mix(in srgb, var(--brand-primary) 55%, transparent))",
               }}
             >
-              {stage.image ? (
-                <Image
-                  src={stage.image}
-                  alt={stage.name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 420px"
-                  className="object-contain"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="h-24 w-24" style={{ color: "var(--brand-primary)" }} />
-                </div>
-              )}
+              <div
+                className="relative aspect-video overflow-hidden rounded-[25px] bg-[#100c0a]"
+                style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.10)" }}
+              >
+                {stage.image ? (
+                  <Image
+                    src={stage.image}
+                    alt={stage.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 460px"
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{
+                      background:
+                        "radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--brand-primary) 35%, transparent), transparent 65%)",
+                    }}
+                  >
+                    <GraduationCap className="h-24 w-24" style={{ color: "var(--brand-secondary)" }} />
+                  </div>
+                )}
 
-              {/* decorative ring */}
-              <div
-                className="pointer-events-none absolute -end-8 -top-8 h-40 w-40 rounded-full border"
-                style={{ borderColor: "var(--brand-secondary)" }}
-              />
-              <div
-                className="pointer-events-none absolute -bottom-10 -start-10 h-48 w-48 rounded-full border"
-                style={{ borderColor: "var(--brand-primary)" }}
-              />
+                {/* subtle sheen + depth on the glass */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, rgba(255,255,255,0.10), transparent 32%, transparent 68%, rgba(0,0,0,0.22))",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16)",
+                  }}
+                />
+
+                {/* floating stage chip */}
+                <div className="absolute bottom-4 start-4 flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3.5 py-2 backdrop-blur-md">
+                  <span
+                    className="flex h-6 w-6 items-center justify-center rounded-full"
+                    style={{
+                      background: "var(--brand-secondary)",
+                      color: "var(--brand-secondary-contrast)",
+                    }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-white">{stage.name}</span>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
