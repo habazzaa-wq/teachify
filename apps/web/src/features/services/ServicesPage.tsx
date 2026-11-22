@@ -22,43 +22,17 @@ import {
   Target,
   Users,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { api } from "@/services/api/axios";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { formatNumber } from "@/lib/format";
+import type { ServiceRecord } from "./types";
+import { PRIMARY, SECONDARY, initials, tint, whatsappLink } from "./ui";
 
-type Service = {
-  id: number;
-  title: string;
-  image_url: string | null;
-  summary: string | null;
-  description: string | null;
-  highlights: string[] | null;
-  contact_name: string | null;
-  contact_phone: string;
-  instructor_tenant_user_id: number | null;
-  is_published: boolean;
-};
+type Service = ServiceRecord;
 
 type SortMode = "default" | "title" | "highlights";
-
-const PRIMARY = "var(--brand-primary)";
-const SECONDARY = "var(--brand-secondary)";
-
-const tint = (color: string, amount: number) =>
-  `color-mix(in srgb, ${color} ${amount}%, transparent)`;
-
-function whatsappLink(phone: string): string {
-  const digits = phone.replace(/\D/g, "").replace(/^00/, "");
-  return `https://wa.me/${digits}`;
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "TM";
-  if (parts.length === 1) return parts[0]!.slice(0, 2);
-  return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
-}
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -423,7 +397,7 @@ function ServiceCard({
             <button
               type="button"
               onClick={() => onOpen(service)}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold transition-transform hover:scale-[1.02]"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-extrabold transition-transform hover:scale-[1.02]"
               style={{
                 background: PRIMARY,
                 color: "var(--brand-primary-contrast)",
@@ -433,6 +407,14 @@ function ServiceCard({
               عرض التفاصيل
               <ArrowLeft className="h-3.5 w-3.5" />
             </button>
+            <Link
+              href={`/services/${service.id}`}
+              aria-label={`فتح صفحة ${service.title}`}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-[11px] font-extrabold text-foreground transition-colors hover:border-[color:var(--brand-primary)]"
+            >
+              الصفحة
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
             <a
               href={whatsappLink(service.contact_phone)}
               target="_blank"
@@ -564,15 +546,24 @@ function ServiceDialog({
                 </p>
               </div>
             </div>
-            <a
-              href={whatsappLink(service.contact_phone)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-xs font-extrabold text-white"
-            >
-              <Send className="h-4 w-4" />
-              ابدأ المحادثة
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/services/${service.id}`}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-xs font-extrabold text-foreground transition-colors hover:border-[color:var(--brand-primary)]"
+              >
+                الصفحة الكاملة
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+              <a
+                href={whatsappLink(service.contact_phone)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-xs font-extrabold text-white"
+              >
+                <Send className="h-4 w-4" />
+                ابدأ المحادثة
+              </a>
+            </div>
           </div>
         </div>
       </motion.div>
