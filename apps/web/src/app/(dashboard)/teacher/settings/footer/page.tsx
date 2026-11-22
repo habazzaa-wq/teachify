@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, LinkIcon, GripVertical } from "lucide-react";
+import { Eye, Plus, Save, Trash2, LinkIcon, GripVertical } from "lucide-react";
 import {
   AppPage,
   AppPageHeader,
@@ -20,6 +20,10 @@ import {
   AppTabsTrigger,
   AppTabsContent,
 } from "@/components/ui";
+import { FooterContent } from "@/components/footer/FooterContent";
+import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
+import { useUiStore } from "@/stores/ui.store";
 import { useFooterSettings, useUpdateFooterSettings } from "@/features/footer/hooks";
 import type { FooterSettings, FooterLink, FooterLinkGroup } from "@/features/footer/types";
 
@@ -215,7 +219,7 @@ function ContactTab({
       <AppCardHeader>
         <AppCardTitle>بيانات التواصل</AppCardTitle>
         <AppCardDescription>
-          معلومات الاتصال التي تظهر في شريط التواصل أسفل الفوتر
+          معلومات الاتصال التي تظهر في شريط التواصل أسفل روابط الفوتر
         </AppCardDescription>
       </AppCardHeader>
       <AppCardContent className="space-y-4">
@@ -264,7 +268,7 @@ function SocialsTab({
       <AppCardHeader>
         <AppCardTitle>روابط التواصل الاجتماعي</AppCardTitle>
         <AppCardDescription>
-          الروابط التي تظهر كأيقونات دائرية في الفوتر (يُظهر فقط الروابط غير الفارغة)
+          الروابط التي تظهر كأيقونات موحّدة بجانب نبذة المنصة (يُظهر فقط الروابط غير الفارغة)
         </AppCardDescription>
       </AppCardHeader>
       <AppCardContent className="space-y-4">
@@ -285,8 +289,38 @@ function SocialsTab({
           </div>
         ))}
         <p className="text-xs text-muted-foreground">
-          الروابط الفارغة لن تظهر في الفوتر حتى تدخلها. احفظ ثم افتح الصفحة الرئيسية للمعاينة.
+          الروابط الفارغة لن تظهر في الفوتر. الألوان تُقرأ تلقائيًا من إعدادات الهوية في المنصة.
         </p>
+      </AppCardContent>
+    </AppCard>
+  );
+}
+
+function FooterPreview({ draft }: { draft: FooterSettings }) {
+  const theme = useUiStore((s) => s.theme);
+  const { tenant } = useActiveTenant();
+  const platformBranding = usePlatformBranding();
+
+  const brandLogo = platformBranding?.logo ?? tenant?.branding?.logo ?? null;
+  const logo =
+    theme === "dark"
+      ? platformBranding?.darkLogo ?? tenant?.branding?.dark_logo ?? brandLogo
+      : platformBranding?.lightLogo ?? tenant?.branding?.light_logo ?? brandLogo;
+  const tenantName = platformBranding?.name ?? tenant?.name ?? "أكاديميتي";
+
+  return (
+    <AppCard>
+      <AppCardHeader className="flex-row items-center justify-between gap-3">
+        <div>
+          <AppCardTitle>معاينة مباشرة</AppCardTitle>
+          <AppCardDescription>التغييرات تظهر هنا قبل الحفظ</AppCardDescription>
+        </div>
+        <Eye className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </AppCardHeader>
+      <AppCardContent className="bg-muted/30 p-3 sm:p-4">
+        <div className="max-h-[560px] overflow-y-auto rounded-xl border border-border bg-background shadow-sm lg:max-h-[calc(100vh-14rem)]">
+          <FooterContent settings={draft} tenantName={tenantName} logo={logo} preview />
+        </div>
       </AppCardContent>
     </AppCard>
   );
@@ -296,6 +330,7 @@ function FooterDraftEditor({ initial }: { initial: FooterSettings }) {
   const [draft, setDraft] = useState<FooterSettings>(() => cloneFooter(initial));
   const updateFooter = useUpdateFooterSettings();
   const saving = updateFooter.isPending;
+  const hasChanges = JSON.stringify(draft) !== JSON.stringify(initial);
 
   const onSave = () => {
     updateFooter.mutate(draft);
@@ -305,36 +340,58 @@ function FooterDraftEditor({ initial }: { initial: FooterSettings }) {
     <AppPage maxWidth="xl">
       <AppPageHeader
         title="محتوى الفوتر"
-        description="إدارة نصوص المنصة، روابط التنقل، بيانات التواصل، وحسابات التواصل الاجتماعي"
+        description="إدارة نصوص المنصة، روابط التنقل، بيانات التواصل، وحسابات التواصل الاجتماعي بمعاينة مباشرة تُطابق شكل الفوتر في الموقع."
+        actions={
+          <>
+            {hasChanges && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
+                style={{
+                  borderColor: "color-mix(in srgb, var(--brand-primary) 35%, transparent)",
+                  backgroundColor: "color-mix(in srgb, var(--brand-primary) 8%, transparent)",
+                  color: "var(--brand-primary-deep)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: "var(--brand-primary)" }}
+                />
+                تغييرات غير محفوظة
+              </span>
+            )}
+            <AppButton onClick={onSave} loading={saving}>
+              <Save className="ml-1.5 h-4 w-4" /> حفظ محتوى الفوتر
+            </AppButton>
+          </>
+        }
       />
       <AppDivider className="mb-6" />
 
-      <AppTabs defaultValue="content">
-        <AppTabsList>
-          <AppTabsTrigger value="content">
-            <LinkIcon className="ml-1 h-3.5 w-3.5" /> المحتوى والروابط
-          </AppTabsTrigger>
-          <AppTabsTrigger value="contact">بيانات التواصل</AppTabsTrigger>
-          <AppTabsTrigger value="socials">السوشيال ميديا</AppTabsTrigger>
-        </AppTabsList>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.9fr)]">
+        <AppTabs defaultValue="content">
+          <AppTabsList>
+            <AppTabsTrigger value="content">
+              <LinkIcon className="ml-1 h-3.5 w-3.5" /> المحتوى والروابط
+            </AppTabsTrigger>
+            <AppTabsTrigger value="contact">بيانات التواصل</AppTabsTrigger>
+            <AppTabsTrigger value="socials">السوشيال ميديا</AppTabsTrigger>
+          </AppTabsList>
 
-        <AppTabsContent value="content">
-          <ContentTab draft={draft} setDraft={setDraft} />
-        </AppTabsContent>
+          <AppTabsContent value="content">
+            <ContentTab draft={draft} setDraft={setDraft} />
+          </AppTabsContent>
 
-        <AppTabsContent value="contact">
-          <ContactTab draft={draft} setDraft={setDraft} />
-        </AppTabsContent>
+          <AppTabsContent value="contact">
+            <ContactTab draft={draft} setDraft={setDraft} />
+          </AppTabsContent>
 
-        <AppTabsContent value="socials">
-          <SocialsTab draft={draft} setDraft={setDraft} />
-        </AppTabsContent>
-      </AppTabs>
+          <AppTabsContent value="socials">
+            <SocialsTab draft={draft} setDraft={setDraft} />
+          </AppTabsContent>
+        </AppTabs>
 
-      <div className="mt-6 flex justify-end border-t border-border pt-6">
-        <AppButton onClick={onSave} loading={saving}>
-          حفظ محتوى الفوتر
-        </AppButton>
+        <FooterPreview draft={draft} />
       </div>
     </AppPage>
   );
