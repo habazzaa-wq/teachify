@@ -42,4 +42,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-certificates
+# Only generated certificate PDFs at the web-app root are ignored.
+# Anchored with a leading slash so src/features/certificates is tracked.
+/certificates/

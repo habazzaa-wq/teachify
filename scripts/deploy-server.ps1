@@ -57,6 +57,10 @@ if ($localBranch -ne $Branch) {
 # possibly-stale local $Branch checkout. This avoids false mismatches when
 # finish-task has pushed but the local branch ref wasn't advanced.
 & git -C $repo fetch --quiet origin $Branch | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Could not fetch origin/$Branch - aborting (a stale ref can silently ship old code)."
+    exit 1
+}
 $localSha = (& git -C $repo rev-parse "origin/$Branch").Trim()
 
 # Local uncommitted work is never deployed: the server pulls origin/$Branch.
@@ -112,11 +116,26 @@ Write-Host " Target   : $SshUser@$SshHost : $RemoteDir"
 Write-Host " Branch   : $Branch"
 Write-Host " Local SHA: $localSha"
 $serverSha = ((& ssh @SshArgs "git -C $RemoteDir rev-parse HEAD" 2>$null) | Select-Object -Last 1).Trim()
-if ($serverSha -and $serverSha -eq $localSha) {
-    Write-Warn2 "Server already at $localSha - deploy will be a no-op."
-    Write-Warn2 "If you expected new code, verify it landed on GitHub: git log -1 origin/$Branch"
-} elseif ($serverSha) {
+if (-not $serverSha -or $serverSha -notmatch '^[0-9a-f]{40}$') {
+    Write-Fail "Could not read a valid HEAD from $SshUser@${SshHost}:${RemoteDir} - refusing to deploy blind."
+    exit 1
+}
+if ($serverSha -eq $localSha) {
+    Write-Warn2 "Server already at $localSha - deploy will be a no-op if GitHub has not moved since this check."
+} else {
     Write-Host " Server   : $serverSha -> $localSha"
+    # If the server already has a NEWER commit, our local origin/$Branch ref is
+    # stale (the fetch above failed). Deploying then reports success but ships
+    # nothing - the exact "deployment finished but page didn't change" trap.
+    & git -C $repo cat-file -e "$serverSha" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        & git -C $repo merge-base --is-ancestor $localSha $serverSha 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Fail "Server ($serverSha) is AHEAD of local origin/$Branch ($localSha): local ref is stale."
+            Write-Warn2 "Run: git -C '$repo' fetch origin $Branch    then retry the deploy."
+            exit 1
+        }
+    }
 }
 Write-Host " Steps    : git ff ->"
 if ($doBuild -eq 1) {
@@ -140,6 +159,10 @@ if (-not $Yes) {
 $payload = @'
 #!/bin/bash
 set -euo pipefail
+# Every failure path must emit a marker so the PowerShell wrapper never has to
+# guess whether the remote job succeeded (that produced the confusing
+# "exited without a result marker" message).
+trap 'echo "DEPLOY_FAILED: unexpected error at line $LINENO (see output above)"' ERR
 REMOTE_DIR="__REMOTE_DIR__"
 BRANCH="__BRANCH__"
 EXPECTED="__EXPECTED__"
@@ -148,6 +171,14 @@ DO_MIGRATE=__DO_MIGRATE__
 DO_RESTART=__DO_RESTART__
 
 export PATH="$HOME/.config/composer/vendor/bin:/usr/local/bin:/usr/local/node/bin:/usr/local/bin:/usr/bin:$PATH"
+
+# Serialize deployments. Re-running while a deploy is still building would
+# truncate the shared log and start a second build against the same .next dir.
+exec 9>/tmp/deploy_teachify.lock
+if ! flock -n 9; then
+  echo "DEPLOY_FAILED: another deployment is already running on this server. Wait for it to finish, then retry."
+  exit 1
+fi
 
 cd "$REMOTE_DIR"
 echo "==> Server: $(hostname) | dir $REMOTE_DIR"
@@ -165,11 +196,28 @@ OLD_SHA=$(git rev-parse HEAD)
 echo "==> Fast-forward to origin/$BRANCH"
 git merge --ff-only "origin/$BRANCH"
 
+# CRITICAL: $GOT is the fetched GitHub ref, not the checked-out HEAD. Without
+# this check a failed/no-op merge still printed DEPLOY_OK and lied to the user.
+FINAL_SHA=$(git rev-parse HEAD)
+if [ "$FINAL_SHA" != "$GOT" ]; then
+  echo "DEPLOY_FAILED: server HEAD ($FINAL_SHA) != origin/$BRANCH ($GOT) after fast-forward"
+  exit 1
+fi
+
+WEB_FILES=$(git diff --name-only "$OLD_SHA" "$FINAL_SHA" -- apps/web)
+API_FILES=$(git diff --name-only "$OLD_SHA" "$FINAL_SHA" -- apps/api composer.json composer.lock)
+WEB_CHANGED=$(printf '%s\n' "$WEB_FILES" | head -n1)
+API_CHANGED=$(printf '%s\n' "$API_FILES" | head -n1)
+WEB_COUNT=$(printf '%s\n' "$WEB_FILES" | grep -c . || true)
+API_COUNT=$(printf '%s\n' "$API_FILES" | grep -c . || true)
+echo "==> Deployed files: web=$WEB_COUNT api=$API_COUNT ($OLD_SHA -> $FINAL_SHA)"
+if [ "$OLD_SHA" = "$FINAL_SHA" ]; then
+  echo "==> NOTE: server was already at this SHA - no code changes shipped (check GitHub/push if you expected changes)."
+fi
+
 # ZERO DOWNTIME: never put the app in maintenance mode. The platform stays live
 # the whole deploy; the running frontend keeps serving the old build until we
 # restart it after the new build is ready.
-WEB_CHANGED=$(git diff --name-only "$OLD_SHA" "$GOT" -- apps/web                                    | head -n1)
-API_CHANGED=$(git diff --name-only "$OLD_SHA" "$GOT" -- apps/api composer.json composer.lock        | head -n1)
 
 if [ "$DO_BUILD" = "1" ]; then
   if [ -n "$API_CHANGED" ]; then
@@ -201,11 +249,21 @@ if [ "$DO_BUILD" = "1" ]; then
     # Park the currently-serving build aside so the live instance keeps serving
     # it during the build, and the new build writes to a fresh .next (no corruption).
     if [ -d .next ]; then mv .next .next-live; fi
-    npm install
-    npm run build
-    # Activate the new build and discard the old one.
-    pm2 restart teachify-frontend >/dev/null 2>&1 || true
-    rm -rf .next-live
+    # A failed build must NOT leave the server on a newer commit with a broken
+    # (or stale) build - that is what makes a later deploy look like a no-op.
+    if npm install && npm run build; then
+      # Activate the new build and discard the old one.
+      pm2 restart teachify-frontend >/dev/null 2>&1 || true
+      rm -rf .next-live
+    else
+      echo "==> Frontend build FAILED - restoring previous build and reverting code"
+      rm -rf .next
+      if [ -d .next-live ]; then mv .next-live .next; fi
+      cd "$REMOTE_DIR"
+      git reset --hard "$OLD_SHA"
+      echo "DEPLOY_FAILED: frontend build failed (see build output above); server reverted to $OLD_SHA"
+      exit 1
+    fi
   else
     echo "==> Frontend unchanged -> skipping npm install/build"
   fi
@@ -231,7 +289,12 @@ for h in $(seq 1 15); do
   sleep 3
 done
 echo "HEALTH=$HEALTH"
-echo "DEPLOY_OK sha=$GOT"
+if [ "$HEALTH" != "200" ]; then
+  echo "DEPLOY_FAILED: health check returned $HEALTH after deploying $FINAL_SHA"
+  exit 1
+fi
+echo "DEPLOY_SUMMARY sha=$FINAL_SHA web_files=$WEB_COUNT api_files=$API_COUNT"
+echo "DEPLOY_OK sha=$FINAL_SHA"
 '@
 
 # Substitute PowerShell values into the bash template, then strip CRLF
@@ -274,8 +337,13 @@ for ($i = 0; $i -lt 120; $i++) {
     if ($marker -match 'DEPLOY_OK')      { $result = 'OK';     break }
     if ($marker -match 'DEPLOY_FAILED')  { $result = 'FAILED'; break }
     # Remote process exited without a result marker -> fail loudly so the user can recover.
-    $alive = (& ssh @SshArgs "pgrep -f '$remoteScript' >/dev/null && echo yes || echo no" 2>$null)
+    # Bracket the first letter so pgrep does not match its OWN ssh/bash command
+    # line (which contains the script path) and wait forever after a silent exit.
+    $alivePattern = $remoteScript -replace '/([^/])([^/]*)$', '/[$1]$2'
+    $alive = (& ssh @SshArgs "pgrep -f '$alivePattern' >/dev/null && echo yes || echo no" 2>$null)
     if ($alive -eq 'no' -and $i -gt 2) {
+        $tail = @(& ssh @SshArgs "tail -n 30 $remoteLog" 2>$null)
+        if ($tail.Count -gt 0) { $tail | ForEach-Object { Write-Host "   $_" -ForegroundColor DarkGray } }
         Write-Fail "Remote deployment process exited without a result marker (see $remoteLog)."
         $result = 'FAILED'
         break
@@ -284,9 +352,20 @@ for ($i = 0; $i -lt 120; $i++) {
 
 if ($result -eq 'OK') {
     Write-Host ''
+    $summary = ((& ssh @SshArgs "grep 'DEPLOY_SUMMARY' $remoteLog | tail -1" 2>$null) | Select-Object -Last 1).Trim()
+    if ($summary) { Write-Host " $summary" -ForegroundColor DarkGray }
+    # Last line of defence: re-read the actual server HEAD after the build.
+    $finalServerSha = ((& ssh @SshArgs "git -C $RemoteDir rev-parse HEAD" 2>$null) | Select-Object -Last 1).Trim()
+    if ($finalServerSha -ne $localSha) {
+        Write-Fail "Server HEAD ($finalServerSha) != expected ($localSha) after deployment - do NOT trust the success marker."
+        Write-Warn2 "Inspect: ssh $SshUser@$SshHost 'tail -n 60 $remoteLog'"
+        exit 1
+    }
     Write-Step "Deployment finished successfully."
     exit 0
 } else {
-    Write-Fail "Deployment failed on the server (see log above). Inspect: ssh deplo@187.127.92.237 'tail -n 50 /tmp/deploy_teachify.log'. If a PM2 process is down, run: pm2 restart teachify-frontend (or the relevant worker)."
+    $tail = @(& ssh @SshArgs "tail -n 30 $remoteLog" 2>$null)
+    if ($tail.Count -gt 0) { $tail | ForEach-Object { Write-Host "   $_" -ForegroundColor DarkGray } }
+    Write-Fail "Deployment failed on the server. Inspect: ssh deplo@187.127.92.237 'tail -n 80 /tmp/deploy_teachify.log'. If a PM2 process is down, run: pm2 restart teachify-frontend (or the relevant worker)."
     exit 1
 }

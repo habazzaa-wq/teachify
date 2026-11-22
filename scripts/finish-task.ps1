@@ -101,6 +101,20 @@ if ($dirtyFiles.Count -gt 0) {
     Write-Ok "Committed pending changes ($(& git -C $taskPath rev-parse --short HEAD))"
 }
 
+# Silently skipped source files are the #1 cause of "deploy succeeded but the
+# build is broken": a broad .gitignore rule hides files from `git add -A`, they
+# never reach origin/deploy, and the server build fails on a missing import.
+# Refuse to finish a task while any source file is untracked *and* ignored.
+$ignoredSources = @(& git -C $taskPath ls-files --others --ignored --exclude-standard -- 'apps/*/src/*' 2>$null) |
+    Where-Object { $_ -notmatch '(^|/)(vendor|node_modules|\.next)/' } |
+    Where-Object { $_ -match '\.(ts|tsx|js|jsx|php|css|scss|json)$' }
+if ($ignoredSources.Count -gt 0) {
+    Write-Fail "$($ignoredSources.Count) source file(s) are ignored by .gitignore and were NOT committed:"
+    $ignoredSources | Select-Object -First 20 | ForEach-Object { Write-Host "    $_" }
+    Write-Warn2 "Fix the .gitignore rule (or use: git -C '$taskPath' add -f <path>), commit, then re-run finish-task."
+    exit 1
+}
+
 $mainWt = $worktrees | Where-Object { $_.Path -eq $repo } | Select-Object -First 1
 if ($null -eq $mainWt -or $mainWt.Branch -ne 'deploy') {
     Write-Fail "Main copy is not on branch 'deploy' (it is on: '$($mainWt.Branch)')."
@@ -111,6 +125,10 @@ if ($null -eq $mainWt -or $mainWt.Branch -ne 'deploy') {
 # This keeps the main copy's working tree (and any unrelated local changes) fully
 # untouched. We merge the task branch and push from a fresh copy of origin/deploy.
 & git -C $repo fetch --quiet origin deploy | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "Could not fetch origin/deploy - aborting (a stale ref can silently ship old code)."
+    exit 1
+}
 $oldDeploySha = (& git -C $repo rev-parse origin/deploy).Trim()
 $taskTip      = (& git -C $repo rev-parse $Branch).Trim()
 if ($taskTip -eq $oldDeploySha) {
@@ -166,6 +184,10 @@ try {
             exit 1
         }
         & git -C $repo fetch --quiet origin deploy | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Fail "Push may have succeeded but the verification fetch failed - aborting."
+            exit 1
+        }
         $newDeploySha = (& git -C $repo rev-parse origin/deploy).Trim()
         if ($newDeploySha -eq $oldDeploySha) {
             Write-Fail "Push reported success but origin/deploy did not move ($oldDeploySha)."
@@ -177,16 +199,35 @@ try {
             exit 1
         }
         Write-Ok "Pushed task to origin/deploy: $oldDeploySha -> $newDeploySha"
-        Write-Warn2 "Local 'deploy' ref is left alone (it is checked out in the main worktree with your WIP)."
-        Write-Warn2 "deploy-server.ps1 always deploys origin/deploy, so this is expected and safe."
+
+        # Keep the local 'deploy' checkout in sync when the main worktree is clean.
+        # A stale local deploy branch makes `git log` look unchanged and is a common
+        # source of confusion even though deploy-server uses origin/deploy.
+        $mainDirty = @(& git -C $repo status --porcelain)
+        if ($mainDirty.Count -eq 0) {
+            # NB: in finish-task $Branch is the TASK branch, so the deploy ref must
+            # be named explicitly here (unlike in deploy-server.ps1).
+            & git -C $repo merge --ff-only origin/deploy 2>$null | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Ok "Synced local 'deploy' to $newDeploySha"
+            } else {
+                Write-Warn2 "Could not fast-forward local 'deploy' - check it manually."
+            }
+        } else {
+            Write-Warn2 "Local '$Branch' left behind: main worktree has $($mainDirty.Count) uncommitted change(s)."
+            Write-Warn2 "deploy-server.ps1 always deploys origin/deploy, so this is safe."
+        }
     } else {
-        Write-Warn2 "-NoPush given: changes were merged but NOT pushed."
+        Write-Warn2 "-NoPush given: changes were merged LOCALLY but NOT pushed."
+        Write-Warn2 "deploy-server will NOT include this work until you push: git -C '$tmp' push origin HEAD:deploy"
     }
 } finally {
     # On success the merge worktree is removed. On a merge CONFLICT we keep it so
     # the user can resolve the conflict there instead of losing the work.
-    if ($mergeSucceeded) {
+    if ($mergeSucceeded -and -not $NoPush) {
         & git -C $repo worktree remove "$tmp" --force | Out-Null
+    } elseif ($NoPush) {
+        Write-Warn2 "-NoPush: merge worktree kept at '$tmp' so you can push it later."
     } else {
         Write-Warn2 "Merge worktree left at '$tmp' for you to resolve."
     }
