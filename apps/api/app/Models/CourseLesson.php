@@ -110,10 +110,15 @@ class CourseLesson extends Model
         return $this->hasOne(Assignment::class);
     }
 
-        'exam_id',
-        'course_session_id',
-        'published_at',
-    ];
+    public function exam(): BelongsTo
+    {
+        return $this->belongsTo(Exam::class);
+    }
+
+    public function courseSession(): BelongsTo
+    {
+        return $this->belongsTo(CourseSession::class, 'course_session_id');
+    }
 
     public function discussionThreads(): HasMany
     {
