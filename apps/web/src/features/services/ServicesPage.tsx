@@ -26,6 +26,7 @@ import {
 import { api } from "@/services/api/axios";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { formatNumber } from "@/lib/format";
+import { ServicesShowcase3D } from "./ServicesShowcase3D";
 
 type Service = {
   id: number;
@@ -189,118 +190,7 @@ function Hero({
             </motion.div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[430px]" style={{ perspective: "1200px" }}>
-            {/* stacked sheets — pure CSS transforms, no filters or canvas */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-7 top-8 h-full rounded-[1.6rem] border border-border/60 bg-muted/25"
-              style={{ transform: "translateY(18px) scale(0.965)" }}
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-3 top-4 h-full rounded-[1.6rem] border border-border/70 bg-card/60"
-              style={{ transform: "translateY(9px) scale(0.982)" }}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, y: 26, rotateX: 9, rotateY: -10 }}
-              animate={{ opacity: 1, y: 0, rotateX: 4, rotateY: -6 }}
-              whileHover={{ rotateX: 1, rotateY: -2, y: -6 }}
-              transition={{ type: "spring", stiffness: 120, damping: 18, delay: 0.12 }}
-              className="group relative overflow-hidden rounded-[1.6rem] border border-border bg-card"
-              style={{
-                transformStyle: "preserve-3d",
-                boxShadow: `0 26px 55px -30px rgba(0,0,0,0.65), inset 0 1px 0 ${tint("#ffffff", 14)}`,
-              }}
-            >
-              <div
-                className="absolute inset-x-0 top-0 h-[3px]"
-                style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
-              />
-
-              <div className="relative p-5 sm:p-6">
-                <header className="flex items-start justify-between gap-3 border-b border-border pb-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="relative flex h-10 w-10 items-center justify-center rounded-xl border"
-                      style={{
-                        borderColor: tint(PRIMARY, 35),
-                        background: tint(PRIMARY, 12),
-                        color: PRIMARY,
-                        transform: "translateZ(16px)",
-                      }}
-                    >
-                      <GraduationCap className="h-[18px] w-[18px]" />
-                      <span
-                        className="absolute -end-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-card"
-                        style={{ background: SECONDARY }}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold tracking-[0.12em] text-muted-foreground">حزمة متكاملة</p>
-                      <h3 className="mt-0.5 text-sm font-extrabold text-foreground">باقة الخدمات</h3>
-                    </div>
-                  </div>
-                  <span className="rounded-lg border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-bold tabular-nums text-muted-foreground">
-                    03 خدمات
-                  </span>
-                </header>
-
-                <ul className="mt-2">
-                  {[
-                    { no: "01", icon: Target, label: "استشارات مخصصة", meta: "تخطيط", color: PRIMARY },
-                    { no: "02", icon: Lightbulb, label: "جلسات تطويرية", meta: "تنفيذ", color: SECONDARY },
-                    { no: "03", icon: MessageCircle, label: "متابعة مباشرة", meta: "دعم", color: "#22C55E" },
-                  ].map(({ no, icon: Icon, label, meta, color }, index) => (
-                    <motion.li
-                      key={label}
-                      initial={{ opacity: 0, x: 14 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.35, delay: 0.25 + index * 0.07 }}
-                      className="flex items-center gap-3 border-b border-border/70 py-3 last:border-0"
-                    >
-                      <span className="w-5 text-[10px] font-extrabold tabular-nums text-muted-foreground">{no}</span>
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
-                        style={{ borderColor: tint(color, 25), background: tint(color, 10), color }}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="flex-1 text-xs font-bold text-foreground">{label}</span>
-                      <span className="text-[10px] font-medium text-muted-foreground">{meta}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                  <span className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    جاهزة للانطلاق
-                  </span>
-                  <span className="text-[10px] font-bold text-foreground">ابدأ من أول خطوة ←</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.5 }}
-              className="absolute -bottom-4 -start-4 flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-2.5 shadow-xl"
-              style={{ transform: "translateZ(38px)" }}
-            >
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-lg"
-                style={{ background: PRIMARY, color: "var(--brand-primary-contrast)" }}
-              >
-                <BadgeCheck className="h-4 w-4" />
-              </span>
-              <span className="leading-tight">
-                <span className="block text-[11px] font-extrabold text-foreground">تواصل مباشر</span>
-                <span className="block text-[10px] text-muted-foreground">بدون خطوات معقدة</span>
-              </span>
-            </motion.div>
-          </div>
+          <ServicesShowcase3D />
         </div>
       </div>
 
