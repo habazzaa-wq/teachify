@@ -131,6 +131,19 @@ if ($LASTEXITCODE -ne 0) {
 }
 $oldDeploySha = (& git -C $repo rev-parse origin/deploy).Trim()
 $taskTip      = (& git -C $repo rev-parse $Branch).Trim()
+
+# A task can already be merged (e.g. finish-task was run from another shell, or
+# the branch was re-run by mistake). Without this guard the script would push
+# origin/deploy to itself and then report a misleading "push did not move" error.
+& git -C $repo merge-base --is-ancestor $Branch origin/deploy 2>$null
+if ($LASTEXITCODE -eq 0) {
+    $mergedBy = (& git -C $repo log -1 --format='%h %s' --merges "$Branch..origin/deploy" 2>$null).Trim()
+    Write-Ok "Task '$Branch' ($(& git -C $repo rev-parse --short $Branch)) is already contained in origin/deploy."
+    if ($mergedBy) { Write-Host " Merged by : $mergedBy" }
+    Write-Warn2 "No new commits to finish - the worktree and branch were left untouched."
+    Write-Host " Next step : .\scripts\deploy-server.ps1 -Yes (only needed if the server is behind origin/deploy)"
+    exit 0
+}
 if ($taskTip -eq $oldDeploySha) {
     Write-Fail "Task branch '$Branch' has no new commits over origin/deploy - nothing to finish."
     Write-Warn2 "Make your changes in $taskPath, then run finish-task again."
