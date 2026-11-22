@@ -113,14 +113,14 @@ function StageFormDialog({
 
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent className="max-w-lg">
-        <AppDialogHeader>
+      <AppDialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-lg flex-col overflow-hidden sm:max-h-[calc(100dvh-3rem)]">
+        <AppDialogHeader className="shrink-0">
           <AppDialogTitle>
             {initial ? "تعديل مرحلة دراسية" : "إضافة مرحلة دراسية"}
           </AppDialogTitle>
         </AppDialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pe-1">
           <div>
             <label className="mb-2 block text-sm font-medium">
               اسم المرحلة <span className="text-destructive">*</span>
@@ -226,7 +226,7 @@ function StageFormDialog({
           </div>
         </div>
 
-        <AppDialogFooter>
+        <AppDialogFooter className="shrink-0 border-t pt-4">
           <AppButton variant="outline" onClick={() => onOpenChange(false)}>
             إلغاء
           </AppButton>
