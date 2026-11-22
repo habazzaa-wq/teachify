@@ -66,6 +66,7 @@ interface CourseStudioProps {
   onQuickStart?: () => void;
   onPublish?: () => void;
   onQuickAction?: (action: string) => void;
+  instructorMode?: boolean;
 }
 
 function useIsMobile() {
@@ -97,6 +98,7 @@ function CourseStudio({
   onQuickStart,
   onPublish,
   onQuickAction,
+  instructorMode = false,
 }: CourseStudioProps) {
   const isMobile = useIsMobile();
   const store = useCourseStudioStore();
@@ -847,7 +849,7 @@ function CourseStudio({
               onDuplicateContent={handleDuplicateContent}
               onDeleteContent={handleDeleteContent}
               onRestoreContent={handleRestoreContent}
-              onToggleFreePreview={handleToggleFreePreview}
+              onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
               onReorderContent={handleReorderContent}
             />
 
@@ -976,7 +978,7 @@ function CourseStudio({
               onDuplicateContent={handleDuplicateContent}
               onDeleteContent={handleDeleteContent}
               onRestoreContent={handleRestoreContent}
-              onToggleFreePreview={handleToggleFreePreview}
+              onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
               onReorderContent={handleReorderContent}
             />
 

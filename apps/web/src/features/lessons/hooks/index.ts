@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { lessonsService } from "../services";
 import { LESSONS_QUERY_KEY } from "../constants";
+import { courseContentQueryScope } from "@/features/instructors/workspace";
 import type { LessonFilterParams, CreateLessonPayload, UpdateLessonPayload } from "../types";
 
 const SECTIONS_QUERY_KEY = "course-sections";
@@ -10,7 +11,7 @@ const COURSES_QUERY_KEY = "courses";
 
 export function useLessons(courseId: string | null, sectionId: string | null, params?: LessonFilterParams) {
   return useQuery({
-    queryKey: [LESSONS_QUERY_KEY, "list", courseId, sectionId, params],
+    queryKey: [LESSONS_QUERY_KEY, courseContentQueryScope(), "list", courseId, sectionId, params],
     queryFn: () => lessonsService.list(courseId!, sectionId!, params),
     enabled: !!courseId && !!sectionId,
   });
@@ -18,7 +19,7 @@ export function useLessons(courseId: string | null, sectionId: string | null, pa
 
 export function useLesson(courseId: string | null, sectionId: string | null, id: string | null) {
   return useQuery({
-    queryKey: [LESSONS_QUERY_KEY, "detail", id],
+    queryKey: [LESSONS_QUERY_KEY, courseContentQueryScope(), "detail", id],
     queryFn: () => lessonsService.getById(courseId!, sectionId!, id!),
     enabled: !!courseId && !!sectionId && !!id,
   });
@@ -26,7 +27,7 @@ export function useLesson(courseId: string | null, sectionId: string | null, id:
 
 export function useLessonsMetrics(courseId?: string, sectionId?: string) {
   return useQuery({
-    queryKey: [LESSONS_QUERY_KEY, "metrics", courseId, sectionId],
+    queryKey: [LESSONS_QUERY_KEY, courseContentQueryScope(), "metrics", courseId, sectionId],
     queryFn: () => lessonsService.getMetrics(courseId, sectionId),
   });
 }

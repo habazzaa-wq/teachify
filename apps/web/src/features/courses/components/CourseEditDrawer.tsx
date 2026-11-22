@@ -10,7 +10,7 @@ interface CourseEditDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   courseId: string | null;
-  onSave?: (id: string, data: CreateCoursePayload) => void;
+  onSave?: (id: string, data: CreateCoursePayload) => void | Promise<void>;
   saving?: boolean;
   instructorToken?: string | null;
 }

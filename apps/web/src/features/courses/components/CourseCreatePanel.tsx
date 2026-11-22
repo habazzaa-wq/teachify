@@ -6,7 +6,7 @@ import type { CreateCoursePayload } from "../types";
 interface CourseCreatePanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave?: (data: CreateCoursePayload) => void;
+  onSave?: (data: CreateCoursePayload) => void | Promise<void>;
   saving?: boolean;
   instructorToken?: string | null;
 }

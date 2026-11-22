@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { X, Save, Plus, Trash2 } from "lucide-react";
 import {
   AppButton,
@@ -20,6 +20,8 @@ import { useCourseTags } from "../hooks/useCourseTags";
 import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
 import { useSubjectsList } from "@/features/subjects/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { instructorApi, instructorApiErrorMessage } from "@/features/instructors/api";
+import { mediaLibraryService } from "@/features/media-library/services";
 
 const nonLangOptions = LANGUAGE_OPTIONS.filter((l) => l.value !== "all");
 const REGIONAL_COUNTRIES = [
@@ -124,7 +126,7 @@ interface CourseFormPanelProps {
   title: string;
   formKey: string;
   initialValues?: CreateCoursePayload | null;
-  onSave?: (data: CreateCoursePayload) => void;
+  onSave?: (data: CreateCoursePayload) => void | Promise<void>;
   saving?: boolean;
   footerNote?: string;
   instructorToken?: string | null;
@@ -149,10 +151,17 @@ function CourseFormPanel({
   const stages = stagesData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
   const [formData, setFormData] = useState<CreateCoursePayload>(EMPTY_FORM);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- reset the local form when the drawer switches course */
   useEffect(() => {
+    setPendingImageFile(null);
+    setImageError(null);
     setFormData(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
   }, [formKey, initialValues]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const updateField = useCallback(<K extends keyof CreateCoursePayload>(key: K, value: CreateCoursePayload[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -172,15 +181,47 @@ function CourseFormPanel({
 
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
 
-  const handleSave = useCallback(() => {
-    if (!onSave) return;
-    onSave({
+  const handleSave = useCallback(async () => {
+    if (!onSave || uploadingImage) return;
+    setImageError(null);
+
+    let thumbnailPath = formData.thumbnailPath;
+    if (pendingImageFile) {
+      setUploadingImage(true);
+      try {
+        if (instructorToken) {
+          thumbnailPath = await instructorApi.uploadCourseImage(instructorToken, pendingImageFile);
+        } else {
+          const result = await mediaLibraryService.uploadFileDirect(pendingImageFile, "public");
+          thumbnailPath = result.cdnUrl ?? result.asset?.cdnUrl ?? result.asset?.thumbnailUrl ?? null;
+        }
+        if (!thumbnailPath) {
+          throw new Error("لم يتم الحصول على رابط الصورة بعد الرفع");
+        }
+        updateField("thumbnailPath", thumbnailPath);
+        setPendingImageFile(null);
+      } catch (cause) {
+        setImageError(
+          instructorToken
+            ? instructorApiErrorMessage(cause)
+            : cause instanceof Error
+              ? cause.message
+              : "فشل رفع صورة الكورس",
+        );
+        return;
+      } finally {
+        setUploadingImage(false);
+      }
+    }
+
+    await onSave({
       ...formData,
+      thumbnailPath,
       regionalPrices: regionalPricingEnabled ? formData.regionalPrices ?? {} : undefined,
     });
-  }, [onSave, formData, regionalPricingEnabled]);
+  }, [onSave, formData, pendingImageFile, instructorToken, uploadingImage, updateField, regionalPricingEnabled]);
 
-  const isValid = formData.title.length > 0;
+  const isValid = formData.title.length > 0 && !uploadingImage;
 
   if (!open) return null;
 
@@ -218,7 +259,11 @@ function CourseFormPanel({
             <CourseImageUploader
               value={formData.thumbnailPath}
               onChange={(url) => updateField("thumbnailPath", url)}
-              instructorToken={instructorToken}
+              onPendingFileChange={setPendingImageFile}
+              resetKey={formKey}
+              pending={Boolean(pendingImageFile)}
+              uploading={uploadingImage}
+              error={imageError}
             />
           </div>
 
@@ -531,8 +576,8 @@ function CourseFormPanel({
           {onSave && (
             <AppButton
               size="default"
-              onClick={handleSave}
-              loading={saving}
+              onClick={() => void handleSave()}
+              loading={saving || uploadingImage}
               disabled={!isValid}
               className="text-sm min-w-[100px]"
             >

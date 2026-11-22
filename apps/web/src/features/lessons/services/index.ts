@@ -1,4 +1,4 @@
-import { api } from "@/services/api";
+import { courseContentApi as api } from "@/features/instructors/course-content-api";
 import type { Lesson, LessonFilterParams, LessonMetricData, CreateLessonPayload, UpdateLessonPayload } from "../types";
 
 function formatLesson(raw: any): Lesson {

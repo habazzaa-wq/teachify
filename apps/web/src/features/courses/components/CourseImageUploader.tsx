@@ -1,56 +1,67 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useEffect, useRef, useCallback, type ChangeEvent } from "react";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui";
-import { mediaLibraryService } from "@/features/media-library/services";
-import { instructorApi } from "@/features/instructors/api";
 
 interface CourseImageUploaderProps {
   value?: string | null;
   onChange: (url: string | null) => void;
-  instructorToken?: string | null;
+  onPendingFileChange?: (file: File | null) => void;
+  resetKey?: string;
+  pending?: boolean;
+  uploading?: boolean;
+  error?: string | null;
 }
 
-function CourseImageUploader({ value, onChange, instructorToken }: CourseImageUploaderProps) {
+function CourseImageUploader({
+  value,
+  onChange,
+  onPendingFileChange,
+  resetKey,
+  pending = false,
+  uploading = false,
+  error,
+}: CourseImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  const releasePreview = useCallback(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return releasePreview;
+  }, [resetKey, releasePreview]);
 
   const handleFile = useCallback(
-    async (file: File) => {
-      setError(null);
-      setUploading(true);
-      try {
-        if (instructorToken) {
-          onChange(await instructorApi.uploadCourseImage(instructorToken, file));
-        } else {
-          const result = await mediaLibraryService.uploadFileDirect(file, "public");
-          onChange(result.cdnUrl ?? result.asset?.cdnUrl ?? result.asset?.thumbnailUrl ?? null);
-        }
-      } catch (err: any) {
-        console.error(
-          "Course image upload failed:",
-          err?.response?.status,
-          err?.response?.data,
-        );
-        const serverMsg = err?.response?.data?.message;
-        setError(serverMsg ?? err?.message ?? "فشل رفع الصورة");
-      } finally {
-        setUploading(false);
-      }
+    (file: File) => {
+      releasePreview();
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlRef.current = previewUrl;
+      onPendingFileChange?.(file);
+      onChange(previewUrl);
     },
-    [instructorToken, onChange],
+    [onChange, onPendingFileChange, releasePreview],
   );
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
       if (file) handleFile(file);
-      e.target.value = "";
+      event.target.value = "";
     },
     [handleFile],
   );
+
+  const handleRemove = useCallback(() => {
+    releasePreview();
+    onPendingFileChange?.(null);
+    onChange(null);
+  }, [onChange, onPendingFileChange, releasePreview]);
 
   return (
     <div className="space-y-2">
@@ -81,7 +92,7 @@ function CourseImageUploader({ value, onChange, instructorToken }: CourseImageUp
               variant="destructive"
               size="sm"
               className="text-xs"
-              onClick={() => onChange(null)}
+              onClick={handleRemove}
               disabled={uploading}
             >
               <X className="h-3.5 w-3.5" />
@@ -99,7 +110,7 @@ function CourseImageUploader({ value, onChange, instructorToken }: CourseImageUp
           {uploading ? (
             <>
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-xs text-muted-foreground">جاري الرفع...</span>
+              <span className="text-xs text-muted-foreground">جاري رفع الصورة...</span>
             </>
           ) : (
             <>
@@ -113,6 +124,11 @@ function CourseImageUploader({ value, onChange, instructorToken }: CourseImageUp
         </button>
       )}
 
+      {pending && !uploading && (
+        <p className="text-[11px] text-muted-foreground">
+          سيتم رفع الصورة إلى السيرفر عند الضغط على حفظ.
+        </p>
+      )}
       {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
   );
