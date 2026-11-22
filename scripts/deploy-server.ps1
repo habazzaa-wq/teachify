@@ -15,6 +15,7 @@
     .\scripts\deploy-server.ps1 -NoBuild        # skip composer/migrate/frontend build
     .\scripts\deploy-server.ps1 -NoMigrate      # build but do not run DB migrations
     .\scripts\deploy-server.ps1 -NoRestart      # deploy code but do not restart PM2
+    .\scripts\deploy-server.ps1 -ForceBuild     # rebuild frontend even if no web files changed
     .\scripts\deploy-server.ps1 -LocalDirty      # skip the local dirty/ahead checks entirely
 #>
 
@@ -23,6 +24,7 @@ param(
     [switch]$NoBuild,
     [switch]$NoMigrate,
     [switch]$NoRestart,
+    [switch]$ForceBuild,
     [switch]$LocalDirty
 )
 
@@ -105,7 +107,9 @@ if (-not $LocalDirty) {
 } else {
     Write-Warn2 "LocalDirty: skipping local clean/pushed checks. Deploying whatever origin/$Branch currently is."
 }
-$doBuild    = if ($NoBuild)    { 0 } else { 1 }
+# 2 means "build even when no apps/web files changed" - needed after a deploy
+# that uploaded frontend code but failed before the build step ran.
+$doBuild    = if ($NoBuild) { 0 } elseif ($ForceBuild) { 2 } else { 1 }
 $doMigrate  = if ($NoMigrate)  { 0 } else { 1 }
 $doRestart  = if ($NoRestart)  { 0 } else { 1 }
 
@@ -138,7 +142,7 @@ if ($serverSha -eq $localSha) {
     }
 }
 Write-Host " Steps    : git ff ->"
-if ($doBuild -eq 1) {
+if ($doBuild -ge 1) {
     Write-Host "            ZERO DOWNTIME (no maintenance mode) ->"
     if ($doMigrate -eq 1) { Write-Host "            conditional: composer/migrate/caches only if backend changed ->" }
     else                  { Write-Host "            conditional: composer/caches only if backend changed (migrations SKIPPED) ->" }
@@ -219,7 +223,7 @@ fi
 # the whole deploy; the running frontend keeps serving the old build until we
 # restart it after the new build is ready.
 
-if [ "$DO_BUILD" = "1" ]; then
+if [ "$DO_BUILD" = "1" ] || [ "$DO_BUILD" = "2" ]; then
   if [ -n "$API_CHANGED" ]; then
     echo "==> Backend changed -> composer + migrate + caches"
     cd "$REMOTE_DIR/apps/api"
@@ -237,8 +241,8 @@ if [ "$DO_BUILD" = "1" ]; then
     echo "==> Backend unchanged -> skipping composer/migrate/caches"
   fi
 
-  if [ -n "$WEB_CHANGED" ]; then
-    echo "==> Frontend changed -> install + build (zero-downtime atomic swap)"
+  if [ -n "$WEB_CHANGED" ] || [ "$DO_BUILD" = "2" ]; then
+    echo "==> Frontend build requested -> install + build (zero-downtime atomic swap)"
     cd "$REMOTE_DIR/apps/web"
     # Recover from any previously interrupted build first.
     if [ -e .next-live ]; then

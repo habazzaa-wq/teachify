@@ -15,22 +15,28 @@ return new class extends Migration
             return;
         }
 
+        // MySQL cannot SET NULL on these composite FKs: tenant_id is NOT NULL.
+        // Drop the single-column SET NULL FKs and use RESTRICT on the composite
+        // ones (tenant_users uses soft deletes, so normal deletes never hit this).
         Schema::table('course_sessions', function (Blueprint $table) {
+            $table->dropForeign('course_sessions_created_by_tenant_user_id_foreign');
+            $table->dropForeign('course_sessions_instructor_tenant_user_id_foreign');
             $table->foreign(['created_by_tenant_user_id', 'tenant_id'], 'course_sessions_creator_tenant_fk')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
-                ->nullOnDelete();
+                ->restrictOnDelete();
             $table->foreign(['instructor_tenant_user_id', 'tenant_id'], 'course_sessions_instructor_tenant_fk')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
-                ->nullOnDelete();
+                ->restrictOnDelete();
         });
 
         Schema::table('session_attendance', function (Blueprint $table) {
+            $table->dropForeign('session_attendance_marked_by_tenant_user_id_foreign');
             $table->foreign(['marked_by_tenant_user_id', 'tenant_id'], 'session_attendance_marker_tenant_fk')
                 ->references(['id', 'tenant_id'])
                 ->on('tenant_users')
-                ->nullOnDelete();
+                ->restrictOnDelete();
         });
     }
 
@@ -42,11 +48,17 @@ return new class extends Migration
 
         Schema::table('session_attendance', function (Blueprint $table) {
             $table->dropForeign('session_attendance_marker_tenant_fk');
+            $table->foreign('marked_by_tenant_user_id', 'session_attendance_marked_by_tenant_user_id_foreign')
+                ->references('id')->on('tenant_users')->nullOnDelete();
         });
 
         Schema::table('course_sessions', function (Blueprint $table) {
             $table->dropForeign('course_sessions_instructor_tenant_fk');
             $table->dropForeign('course_sessions_creator_tenant_fk');
+            $table->foreign('created_by_tenant_user_id', 'course_sessions_created_by_tenant_user_id_foreign')
+                ->references('id')->on('tenant_users')->nullOnDelete();
+            $table->foreign('instructor_tenant_user_id', 'course_sessions_instructor_tenant_user_id_foreign')
+                ->references('id')->on('tenant_users')->nullOnDelete();
         });
     }
 
