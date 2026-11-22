@@ -13,12 +13,11 @@ import {
   CircleHelp,
   GraduationCap,
   Lightbulb,
+  ListChecks,
   MessageCircle,
   RefreshCw,
   Search,
   Send,
-  Sparkles,
-  Star,
   Target,
   Users,
   X,
@@ -45,23 +44,13 @@ function SectionLabel({ children }: { children: ReactNode }) {
         border: `1px solid ${tint(PRIMARY, 30)}`,
       }}
     >
-      <Sparkles className="h-3.5 w-3.5" />
+      <BriefcaseBusiness className="h-3.5 w-3.5" />
       {children}
     </span>
   );
 }
 
 /* ───────────────────────── Hero ───────────────────────── */
-
-const HERO_SYMBOLS = [
-  { char: "π", x: "8%", y: "18%", size: 30, rotate: -12 },
-  { char: "∑", x: "91%", y: "24%", size: 28, rotate: 14 },
-  { char: "√", x: "16%", y: "82%", size: 24, rotate: -18 },
-  { char: "∞", x: "86%", y: "76%", size: 26, rotate: 10 },
-  { char: "Δ", x: "70%", y: "12%", size: 20, rotate: -8 },
-  { char: "∫", x: "5%", y: "56%", size: 24, rotate: -14 },
-  { char: "θ", x: "94%", y: "52%", size: 20, rotate: 12 },
-];
 
 function Hero({
   tenantName,
@@ -74,30 +63,13 @@ function Hero({
 }) {
   const statItems = [
     { icon: BriefcaseBusiness, value: stats.services, label: "خدمة متاحة", color: PRIMARY },
-    { icon: Star, value: stats.features, label: "ميزة واضحة", color: SECONDARY },
+    { icon: ListChecks, value: stats.features, label: "ميزة واضحة", color: SECONDARY },
     { icon: Users, value: stats.experts, label: "خبير ومسؤول", color: "#22C55E" },
   ];
 
   return (
     <section dir="rtl" className="relative w-full overflow-hidden border-b border-border/70 bg-background">
       <div className="hero-backdrop pointer-events-none absolute inset-0" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        {HERO_SYMBOLS.map((s, i) => (
-          <span
-            key={`${s.char}-${i}`}
-            className="hero-symbol absolute select-none font-bold"
-            style={{
-              right: s.x,
-              top: s.y,
-              fontSize: s.size,
-              transform: `rotate(${s.rotate}deg)`,
-              fontFamily: "var(--font-sans)",
-            }}
-          >
-            {s.char}
-          </span>
-        ))}
-      </div>
       <div
         className="pointer-events-none absolute -start-40 -top-24 h-[420px] w-[420px] rounded-full blur-[120px]"
         style={{ background: tint(PRIMARY, 20) }}
@@ -505,7 +477,7 @@ function EmptyState({
             className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border"
             style={{ background: tint(PRIMARY, 12), borderColor: tint(PRIMARY, 40), color: PRIMARY }}
           >
-            {filtered ? <Search className="h-9 w-9" /> : <Sparkles className="h-9 w-9" />}
+            {filtered ? <Search className="h-9 w-9" /> : <BriefcaseBusiness className="h-9 w-9" />}
           </motion.span>
 
           <h2 className="font-sans mt-6 text-2xl font-bold text-foreground sm:text-3xl">
@@ -770,7 +742,7 @@ export function ServicesPage() {
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
                   style={{ background: tint(SECONDARY, 16), color: PRIMARY }}
                 >
-                  <Sparkles className="h-5 w-5" />
+                  <BriefcaseBusiness className="h-5 w-5" />
                 </span>
                 <div>
                   <h2 className="font-sans text-xl font-bold text-foreground">كيف تعمل الخدمات؟</h2>
