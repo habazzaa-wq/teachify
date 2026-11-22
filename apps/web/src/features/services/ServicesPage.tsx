@@ -168,124 +168,124 @@ function ServiceCard({
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.35 }}
       whileHover={{ y: -5 }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-xl"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:border-[color:var(--brand-primary)] hover:shadow-xl"
     >
-      <div
-        className="absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity group-hover:opacity-100"
-        style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
+      <Link
+        href={`/services/${service.id}`}
+        aria-label={`فتح صفحة ${service.title}`}
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]"
       />
 
-      <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        {hasImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={service.image_url!}
-            alt={service.title}
-            loading="lazy"
-            onError={() => setImageFailed(true)}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-        ) : (
-          <div
-            className="flex h-full items-center justify-center"
-            style={{
-              background: `radial-gradient(circle at 28% 18%, ${tint(PRIMARY, 18)}, transparent 60%), radial-gradient(circle at 82% 82%, ${tint(SECONDARY, 16)}, transparent 55%)`,
-            }}
-          >
-            <span
-              className="flex h-20 w-20 items-center justify-center rounded-3xl border bg-card/70 backdrop-blur-md"
-              style={{ borderColor: tint(PRIMARY, 30), color: PRIMARY }}
-            >
-              <BriefcaseBusiness className="h-9 w-9" />
-            </span>
-          </div>
-        )}
+      <div className="pointer-events-none relative z-10 flex h-full flex-col">
+        <div
+          className="absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity group-hover:opacity-100"
+          style={{ background: `linear-gradient(90deg, ${PRIMARY}, ${SECONDARY})` }}
+        />
 
-        <span
-          className="absolute right-4 top-4 rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-extrabold tabular-nums text-foreground backdrop-blur-md"
-        >
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
-      </div>
-
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <h2 className="font-sans text-lg font-bold leading-snug text-foreground">{service.title}</h2>
-
-        {service.summary && (
-          <p className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">{service.summary}</p>
-        )}
-
-        {highlights.length > 0 && (
-          <ul className="mt-4 space-y-2">
-            {highlights.slice(0, 3).map((highlight, i) => (
-              <li key={`${service.id}-${i}`} className="flex items-start gap-2 text-xs leading-6 text-foreground">
-                <span
-                  className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: tint(PRIMARY, 14), color: PRIMARY }}
-                >
-                  <Check className="h-3 w-3" />
-                </span>
-                <span className="line-clamp-1">{highlight}</span>
-              </li>
-            ))}
-            {highlights.length > 3 && (
-              <li className="pe-6 text-[11px] font-semibold" style={{ color: PRIMARY }}>
-                و {formatNumber(highlights.length - 3)} ميزة أخرى
-              </li>
-            )}
-          </ul>
-        )}
-
-        <div className="mt-auto pt-5">
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-foreground"
-              style={{ background: tint(SECONDARY, 22) }}
-            >
-              {initials(service.contact_name ?? "فريق الخدمات")}
-            </span>
-            <span className="min-w-0 leading-tight">
-              <span className="block text-xs font-bold text-foreground">
-                {service.contact_name || "فريق الخدمات"}
-              </span>
-              <span className="block truncate text-[10px] text-muted-foreground" dir="ltr">
-                {service.contact_phone}
-              </span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onOpen(service)}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-extrabold transition-transform hover:scale-[1.02]"
+        <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+          {hasImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={service.image_url!}
+              alt={service.title}
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <div
+              className="flex h-full items-center justify-center"
               style={{
-                background: PRIMARY,
-                color: "var(--brand-primary-contrast)",
-                boxShadow: `0 10px 24px -14px ${PRIMARY}`,
+                background: `radial-gradient(circle at 28% 18%, ${tint(PRIMARY, 18)}, transparent 60%), radial-gradient(circle at 82% 82%, ${tint(SECONDARY, 16)}, transparent 55%)`,
               }}
             >
-              عرض التفاصيل
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </button>
-            <Link
-              href={`/services/${service.id}`}
-              aria-label={`فتح صفحة ${service.title}`}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 text-[11px] font-extrabold text-foreground transition-colors hover:border-[color:var(--brand-primary)]"
-            >
-              الصفحة
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
-            <a
-              href={whatsappLink(service.contact_phone)}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`تواصل واتساب بخصوص ${service.title}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white transition-transform hover:scale-105"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </a>
+              <span
+                className="flex h-20 w-20 items-center justify-center rounded-3xl border bg-card/70 backdrop-blur-md"
+                style={{ borderColor: tint(PRIMARY, 30), color: PRIMARY }}
+              >
+                <BriefcaseBusiness className="h-9 w-9" />
+              </span>
+            </div>
+          )}
+
+          <span
+            className="absolute right-4 top-4 rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-extrabold tabular-nums text-foreground backdrop-blur-md"
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
+        </div>
+
+        <div className="flex flex-1 flex-col p-5 sm:p-6">
+          <h2 className="font-sans text-lg font-bold leading-snug text-foreground">{service.title}</h2>
+
+          {service.summary && (
+            <p className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">{service.summary}</p>
+          )}
+
+          {highlights.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {highlights.slice(0, 3).map((highlight, i) => (
+                <li key={`${service.id}-${i}`} className="flex items-start gap-2 text-xs leading-6 text-foreground">
+                  <span
+                    className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: tint(PRIMARY, 14), color: PRIMARY }}
+                  >
+                    <Check className="h-3 w-3" />
+                  </span>
+                  <span className="line-clamp-1">{highlight}</span>
+                </li>
+              ))}
+              {highlights.length > 3 && (
+                <li className="pe-6 text-[11px] font-semibold" style={{ color: PRIMARY }}>
+                  و {formatNumber(highlights.length - 3)} ميزة أخرى
+                </li>
+              )}
+            </ul>
+          )}
+
+          <div className="mt-auto pt-5">
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2.5">
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-foreground"
+                style={{ background: tint(SECONDARY, 22) }}
+              >
+                {initials(service.contact_name ?? "فريق الخدمات")}
+              </span>
+              <span className="min-w-0 leading-tight">
+                <span className="block text-xs font-bold text-foreground">
+                  {service.contact_name || "فريق الخدمات"}
+                </span>
+                <span className="block truncate text-[10px] text-muted-foreground" dir="ltr">
+                  {service.contact_phone}
+                </span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onOpen(service)}
+                className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-extrabold transition-transform hover:scale-[1.02]"
+                style={{
+                  background: PRIMARY,
+                  color: "var(--brand-primary-contrast)",
+                  boxShadow: `0 10px 24px -14px ${PRIMARY}`,
+                }}
+              >
+                عرض التفاصيل
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+              <a
+                href={whatsappLink(service.contact_phone)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`تواصل واتساب بخصوص ${service.title}`}
+                className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white transition-transform hover:scale-105"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
