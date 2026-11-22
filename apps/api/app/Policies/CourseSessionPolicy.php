@@ -49,12 +49,11 @@ class CourseSessionPolicy
         return $this->isEnrolledStudent($user, $session);
     }
 
-    public function create(User $user): bool
+    public function create(User $user, ?Course $course = null): bool
     {
         $tenant = currentTenant();
 
-        return $this->isTenantOperator($user, $tenant)
-            && $this->auth()->hasPermission($user, $tenant, 'courses.update');
+        return $this->auth()->hasPermission($user, $tenant, 'courses.update');
     }
 
     public function update(User $user, CourseSession $session): bool

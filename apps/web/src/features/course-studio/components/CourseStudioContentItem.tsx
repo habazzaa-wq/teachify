@@ -26,6 +26,7 @@ import {
   Puzzle,
   Link,
   Award,
+  CalendarDays,
 } from "lucide-react";
 import { StudioStatusBadge } from "@/components/studio/badges";
 import {
@@ -49,6 +50,7 @@ const TYPE_ICONS: Record<ContentItemType, React.ComponentType<{ className?: stri
   scorm: Puzzle,
   external_link: Link,
   certificate: Award,
+  session: CalendarDays,
 };
 
 const TYPE_COLORS: Record<ContentItemType, string> = {
@@ -62,6 +64,7 @@ const TYPE_COLORS: Record<ContentItemType, string> = {
   scorm: "text-indigo-500 bg-indigo-500/10",
   external_link: "text-blue-500 bg-blue-500/10",
   certificate: "text-yellow-500 bg-yellow-500/10",
+  session: "text-teal-500 bg-teal-500/10",
 };
 
 interface CourseStudioContentItemProps {

@@ -35,6 +35,7 @@ const TYPE_META: Record<ContentItemType, { label: string; icon: React.ComponentT
   scorm: { label: "SCORM", icon: Puzzle, color: "text-indigo-500", bg: "bg-indigo-500/10" },
   external_link: { label: "رابط خارجي", icon: Link, color: "text-blue-500", bg: "bg-blue-500/10" },
   certificate: { label: "شهادة", icon: Award, color: "text-yellow-500", bg: "bg-yellow-500/10" },
+  session: { label: "جلسة", icon: Calendar, color: "text-teal-500", bg: "bg-teal-500/10" },
 };
 
 const containerVariants = {

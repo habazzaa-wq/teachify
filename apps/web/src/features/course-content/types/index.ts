@@ -8,7 +8,8 @@ export type ContentItemType =
   | "live"
   | "scorm"
   | "external_link"
-  | "certificate";
+  | "certificate"
+  | "session";
 
 export type ContentItemStatus = "draft" | "published" | "archived";
 
@@ -26,6 +27,18 @@ export interface ContentItem {
   order: number;
   mediaId?: string | null;
   examId?: string | null;
+  courseSessionId?: string | null;
+  courseSession?: {
+    id: string;
+    title: string;
+    sessionType: string;
+    status: string;
+    startsAtUtc: string | null;
+    endsAtUtc: string | null;
+    timezone: string | null;
+    meetingUrl: string | null;
+    locationName: string | null;
+  } | null;
   assignmentId?: string | null;
   resourceId?: string | null;
   certificateId?: string | null;

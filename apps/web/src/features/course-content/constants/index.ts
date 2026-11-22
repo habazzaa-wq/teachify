@@ -9,6 +9,7 @@ import {
   Puzzle,
   Link,
   Award,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 import type { ContentItemType, ContentPickerOption } from "../types";
@@ -76,6 +77,12 @@ export const CONTENT_TYPE_CONFIG: Record<
     label: "شهادة",
     color: "text-yellow-500",
     bg: "bg-yellow-500/10",
+  },
+  session: {
+    icon: CalendarDays,
+    label: "جلسة",
+    color: "text-teal-500",
+    bg: "bg-teal-500/10",
   },
 };
 

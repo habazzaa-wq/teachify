@@ -20,6 +20,7 @@ import { CourseStudioEditSectionDialog } from "./CourseStudioEditSectionDialog";
 import { CourseStudioContentPicker } from "./CourseStudioContentPicker";
 import { CourseStudioEditContentDialog } from "./CourseStudioEditContentDialog";
 import { CourseStudioContentDetailsDialog } from "./CourseStudioContentDetailsDialog";
+import { CourseStudioSessionPickerDialog } from "./CourseStudioSessionPickerDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
 import { useSectionsList, useCreateSectionAction, useUpdateSectionAction, useDeleteSectionAction, usePublishSectionAction, useArchiveSectionAction, useDuplicateSectionAction, useRestoreSectionAction, useReorderSectionsAction, useMoveSectionAction, useSelectAndScrollSection } from "../hooks/useSections";
@@ -109,6 +110,7 @@ function CourseStudio({
     contentType?: ContentItemType;
     defaultTitle: string;
   } | null>(null);
+  const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
 
   const { data: lecturesData, isLoading: lecturesLoading } = useLectures(courseId ?? null);
   const lectures: CourseModule[] = (lecturesData?.data ?? []).sort(
@@ -163,6 +165,8 @@ function CourseStudio({
         thumbnail: null,
         description: lesson.shortDescription ?? lesson.description,
         examId: lesson.examId ?? null,
+        courseSessionId: lesson.courseSessionId ?? null,
+        courseSession: lesson.courseSession ?? null,
         createdAt: lesson.createdAt,
         updatedAt: lesson.updatedAt,
       } satisfies ContentItem));
@@ -520,6 +524,11 @@ function CourseStudio({
         return;
       }
 
+      if (type === "session") {
+        setSessionPickerOpen(true);
+        return;
+      }
+
       if (MEDIA_PICKER_TYPES[type]) {
         store.openMediaPicker(type);
         return;
@@ -574,6 +583,32 @@ function CourseStudio({
       });
     },
     [courseId, store.selectedSectionId, store.mediaPickerContentType, store.closeMediaPicker],
+  );
+
+  const handleSessionSelected = useCallback(
+    async (session: any) => {
+      if (!courseId || !store.selectedSectionId) return;
+      const sectionId = store.selectedSectionId;
+      const nextOrder = contentItems.length + 1;
+      try {
+        await createLesson.mutateAsync({
+          courseId,
+          sectionId,
+          data: {
+            title: session.title,
+            lesson_type: "session" as any,
+            course_session_id: Number(session.id),
+            sort_order: nextOrder,
+          },
+        });
+        toast.success(`تم إضافة الجلسة "${session.title}" إلى المحتوى`);
+        setSessionPickerOpen(false);
+      } catch (e: any) {
+        const msg = e?.response?.data?.message || "فشل إضافة الجلسة للمحتوى";
+        toast.error(String(msg));
+      }
+    },
+    [courseId, store.selectedSectionId, contentItems.length, createLesson],
   );
 
   const handleCreateContent = useCallback(
@@ -1069,6 +1104,15 @@ function CourseStudio({
         allowedTypes={MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"]}
         library={libraryForAllowedTypes(MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"])}
       />
+
+      {courseId && (
+        <CourseStudioSessionPickerDialog
+          open={sessionPickerOpen}
+          courseId={courseId}
+          onClose={() => setSessionPickerOpen(false)}
+          onSelect={handleSessionSelected}
+        />
+      )}
 
       <CourseStudioEditContentDialog
         open={!!editContentItem}

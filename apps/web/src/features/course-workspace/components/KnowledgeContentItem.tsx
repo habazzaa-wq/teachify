@@ -16,6 +16,7 @@ import {
   CircleIcon,
   Clock,
   Award,
+  CalendarDays,
 } from "lucide-react";
 import type { ContentItem, ContentItemType } from "@/features/course-content/types";
 import { cn } from "@/lib/cn";
@@ -37,6 +38,7 @@ const typeIcons: Record<ContentItemType, React.ComponentType<{ className?: strin
   scorm: Box,
   external_link: ExternalLink,
   certificate: Award,
+  session: CalendarDays,
 };
 
 const typeColors: Record<ContentItemType, string> = {
@@ -50,6 +52,7 @@ const typeColors: Record<ContentItemType, string> = {
   scorm: "text-indigo-500 bg-indigo-500/10 ring-indigo-500/20",
   external_link: "text-sky-500 bg-sky-500/10 ring-sky-500/20",
   certificate: "text-yellow-500 bg-yellow-500/10 ring-yellow-500/20",
+  session: "text-teal-500 bg-teal-500/10 ring-teal-500/20",
 };
 
 function KnowledgeContentItem({ item, isSelected, onSelect }: KnowledgeContentItemProps) {

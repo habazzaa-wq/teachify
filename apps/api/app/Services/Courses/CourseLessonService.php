@@ -55,6 +55,7 @@ class CourseLessonService
                 'color' => $data['color'] ?? null,
                 'icon' => $data['icon'] ?? null,
                 'exam_id' => $data['exam_id'] ?? null,
+                'course_session_id' => $data['course_session_id'] ?? null,
                 'published_at' => ($data['status'] ?? 'published') === 'published' ? now() : null,
             ]);
         });
@@ -69,7 +70,7 @@ class CourseLessonService
                 'title', 'short_description', 'description', 'status', 'visibility',
                 'sort_order', 'duration_seconds', 'estimated_duration',
                 'free_preview', 'downloadable', 'featured', 'comments_enabled',
-                'notes', 'color', 'icon', 'exam_id',
+                'notes', 'color', 'icon', 'exam_id', 'course_session_id',
             ])->all();
 
             if (array_key_exists('slug', $data)) {
@@ -132,6 +133,8 @@ class CourseLessonService
                 'notes' => $lesson->notes,
                 'color' => $lesson->color,
                 'icon' => $lesson->icon,
+                'exam_id' => $lesson->exam_id,
+                'course_session_id' => $lesson->course_session_id,
             ]);
         });
     }

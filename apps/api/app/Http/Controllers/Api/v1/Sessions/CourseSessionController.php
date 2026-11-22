@@ -88,7 +88,7 @@ class CourseSessionController extends Controller
     {
         $tenant = currentTenant();
         abort_if($course->tenant_id !== $tenant->id, 404);
-        Gate::authorize('create', CourseSession::class);
+        Gate::authorize('create', [CourseSession::class, $course]);
 
         $session = $this->service->create($tenant, $course, currentTenantUser(), $request->validated());
 
