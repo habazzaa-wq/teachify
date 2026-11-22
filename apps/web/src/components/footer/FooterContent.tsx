@@ -19,27 +19,28 @@ import { toWhatsAppUrl, type FooterLink, type FooterLinkGroup, type FooterSettin
 
 /**
  * Presentational footer shared by the public storefront and the dashboard
- * editor preview. It reads the live brand variables from the theme, so both
- * surfaces re-skin together when the tenant changes its branding.
+ * editor preview.
  *
- * Muted/hairline values are exposed as local CSS variables instead of inline
- * colors so hover utilities can still override them.
+ * The surface is a deep shade of the tenant's primary color, with the
+ * secondary color used for every accent (top bar, headings, buttons, hovers).
+ * Nothing is hardcoded per tenant — both colors come from the live brand
+ * variables, so changing branding updates this footer immediately.
  */
 
 const footerStyle = {
-  borderTop: "3px solid var(--brand-primary)",
-  backgroundColor: "color-mix(in srgb, var(--brand-primary) 5%, var(--paper))",
-  color: "var(--ink)",
-  "--footer-muted": "color-mix(in srgb, var(--ink) 64%, transparent)",
-  "--footer-subtle": "color-mix(in srgb, var(--ink) 48%, transparent)",
-  "--footer-hairline": "color-mix(in srgb, var(--ink) 12%, transparent)",
-  "--footer-accent-soft": "color-mix(in srgb, var(--brand-primary) 10%, transparent)",
-  "--footer-accent-border": "color-mix(in srgb, var(--brand-primary) 28%, transparent)",
+  backgroundColor: "color-mix(in srgb, var(--brand-primary) 72%, #07111f)",
+  color: "var(--footer-text)",
+  "--footer-text": "#f8fafc",
+  "--footer-muted": "rgba(255, 255, 255, 0.74)",
+  "--footer-subtle": "rgba(255, 255, 255, 0.52)",
+  "--footer-line": "rgba(255, 255, 255, 0.16)",
+  "--footer-deep": "color-mix(in srgb, var(--brand-primary) 56%, #07111f)",
+  "--footer-accent-soft": "color-mix(in srgb, var(--brand-secondary) 18%, transparent)",
 } as CSSProperties;
 
-const accentSurfaceStyle: CSSProperties = {
+const accentTileStyle: CSSProperties = {
   backgroundColor: "var(--footer-accent-soft)",
-  color: "var(--brand-primary-deep)",
+  color: "var(--brand-secondary)",
 };
 
 export interface FooterContentProps {
@@ -58,8 +59,8 @@ function BrandMark({ logo, tenantName }: { logo: string | null; tenantName: stri
   if (!logo || failed) {
     return (
       <span
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--footer-accent-border)]"
-        style={accentSurfaceStyle}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-secondary)]"
+        style={accentTileStyle}
       >
         <GraduationCap className="h-6 w-6" aria-hidden="true" />
       </span>
@@ -67,7 +68,7 @@ function BrandMark({ logo, tenantName }: { logo: string | null; tenantName: stri
   }
 
   return (
-    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-black/5 bg-white p-2">
+    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white p-2 shadow-sm">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={logo}
@@ -82,8 +83,8 @@ function BrandMark({ logo, tenantName }: { logo: string | null; tenantName: stri
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span aria-hidden="true" className="h-px w-5 shrink-0 bg-[var(--brand-primary)]" />
-      <h3 className="text-[13px] font-bold leading-none">{children}</h3>
+      <span aria-hidden="true" className="h-0.5 w-6 shrink-0 rounded-full bg-[var(--brand-secondary)]" />
+      <h3 className="text-[13px] font-bold leading-none text-[color:var(--brand-secondary)]">{children}</h3>
     </div>
   );
 }
@@ -105,7 +106,7 @@ function LinkList({
           const key = `${group.heading}-${link.label}-${link.href}`;
           const resolved = link.href.trim() !== "" ? link.href : whatsappUrl || routes.community;
           const className =
-            "inline-block text-sm leading-6 text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-primary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]";
+            "inline-block text-sm leading-6 text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]";
 
           if (resolved.startsWith("http")) {
             return (
@@ -164,9 +165,9 @@ function SocialLinks({
               onClick={guard}
               aria-label={entry.label}
               title={entry.label}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--footer-hairline)] text-[color:var(--footer-muted)] transition-colors duration-200 hover:border-[var(--brand-primary)] hover:bg-[var(--brand-primary)] hover:text-[color:var(--brand-primary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--footer-line)] text-[color:var(--footer-muted)] transition-colors duration-200 hover:border-[var(--brand-secondary)] hover:bg-[var(--brand-secondary)] hover:text-[color:var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
+              <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
             </a>
           </li>
         );
@@ -227,7 +228,7 @@ function ContactStrip({
   if (rows.length === 0) return null;
 
   return (
-    <div className="mt-12 border-t border-[color:var(--footer-hairline)] pt-7">
+    <div className="mt-12 border-t border-[color:var(--footer-line)] pt-8">
       <ul className={preview ? "grid grid-cols-1 gap-y-5 sm:grid-cols-2" : "grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4"}>
         {rows.map((row) => {
           const Icon = row.Icon;
@@ -236,7 +237,9 @@ function ContactStrip({
               <span className="block text-[11px] font-semibold text-[color:var(--footer-subtle)]">
                 {row.label}
               </span>
-              <span className="mt-1 block truncate text-sm font-medium leading-6">{row.value}</span>
+              <span className="mt-1 block truncate text-sm font-medium leading-6 text-[color:var(--footer-text)]">
+                {row.value}
+              </span>
             </div>
           );
 
@@ -244,17 +247,17 @@ function ContactStrip({
             <li key={row.label} className="flex min-w-0 items-center gap-3">
               <span
                 aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                style={accentSurfaceStyle}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                style={accentTileStyle}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-[18px] w-[18px]" />
               </span>
               {row.href ? (
                 <a
                   href={row.href}
                   {...(row.isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   onClick={guard}
-                  className="min-w-0 rounded-md transition-colors duration-150 hover:text-[color:var(--brand-primary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+                  className="min-w-0 rounded-md transition-colors duration-150 hover:text-[color:var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
                 >
                   {content}
                 </a>
@@ -283,7 +286,7 @@ function BackToTop({ preview }: { preview?: boolean }) {
       onClick={preview ? undefined : scrollToTop}
       title="العودة للأعلى"
       aria-label="العودة للأعلى"
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-primary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-[color:var(--brand-secondary)] transition-colors duration-150 hover:text-[color:var(--footer-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
     >
       <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
       <span>أعلى الصفحة</span>
@@ -309,11 +312,17 @@ export function FooterContent({
 
   return (
     <footer dir="rtl" className={className} style={footerStyle}>
+      {/* Two-tone brand bar — solid colors, no gradient or glow. */}
+      <div aria-hidden="true" className="flex h-1 w-full">
+        <span className="h-full" style={{ width: "62%", backgroundColor: "var(--brand-primary)" }} />
+        <span className="h-full flex-1" style={{ backgroundColor: "var(--brand-secondary)" }} />
+      </div>
+
       <div
         className={
           preview
-            ? "mx-auto w-full max-w-[1200px] px-5 py-8 sm:px-6"
-            : "mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 lg:px-10 lg:py-14"
+            ? "mx-auto w-full max-w-[1200px] px-5 pb-8 pt-8 sm:px-6"
+            : "mx-auto w-full max-w-[1200px] px-5 pb-10 pt-12 sm:px-8 lg:px-10 lg:pb-12 lg:pt-14"
         }
       >
         <div className={preview ? "grid gap-8" : "grid gap-11 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.6fr)] lg:gap-14"}>
@@ -321,8 +330,10 @@ export function FooterContent({
             <div className="flex items-center gap-3">
               <BrandMark key={logo ?? "fallback"} logo={logo} tenantName={tenantName} />
               <div className="min-w-0">
-                <p className="truncate text-lg font-bold leading-tight">{tenantName}</p>
-                <p className="mt-1 text-xs text-[color:var(--footer-muted)]">{settings.tagline}</p>
+                <p className="truncate font-display text-xl font-bold tracking-tight">{tenantName}</p>
+                <p className="mt-1 text-xs font-medium text-[color:var(--brand-secondary)]">
+                  {settings.tagline}
+                </p>
               </div>
             </div>
 
@@ -331,23 +342,22 @@ export function FooterContent({
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link
-                href={routes.studentDashboard}
-                onClick={guard}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
-                style={{ backgroundColor: "var(--brand-primary)", color: "var(--brand-primary-contrast)" }}
-              >
-                <GraduationCap className="h-4 w-4" aria-hidden="true" />
-                سجّل الآن
-              </Link>
               <a
                 href={secondaryHref}
                 {...(whatsappUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 onClick={guard}
-                className="inline-flex h-10 items-center justify-center rounded-lg border border-[color:var(--footer-hairline)] px-5 text-sm font-semibold text-[color:var(--ink)] transition-colors duration-150 hover:border-[var(--brand-secondary)] hover:text-[color:var(--brand-secondary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-[var(--brand-secondary)] px-5 text-sm font-bold text-[color:var(--brand-secondary-contrast)] transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
               >
                 تواصل معنا
               </a>
+              <Link
+                href={routes.studentDashboard}
+                onClick={guard}
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-[color:var(--brand-secondary)] px-5 text-sm font-bold text-[color:var(--brand-secondary)] transition-colors duration-150 hover:bg-[var(--brand-secondary)] hover:text-[color:var(--brand-secondary-contrast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
+              >
+                <GraduationCap className="ml-2 h-4 w-4" aria-hidden="true" />
+                سجّل الآن
+              </Link>
             </div>
 
             <div className="mt-7">
@@ -365,12 +375,14 @@ export function FooterContent({
         </div>
 
         <ContactStrip contact={settings.contact} guard={guard} preview={preview} />
+      </div>
 
+      <div className="border-t border-[color:var(--footer-line)] bg-[color:var(--footer-deep)]">
         <div
           className={
             preview
-              ? "mt-8 flex flex-col gap-4 border-t border-[color:var(--footer-hairline)] pt-6"
-              : "mt-8 flex flex-col gap-4 border-t border-[color:var(--footer-hairline)] pt-6 sm:flex-row sm:items-center sm:justify-between"
+              ? "mx-auto flex w-full max-w-[1200px] flex-col gap-3 px-5 py-5 sm:px-6"
+              : "mx-auto flex w-full max-w-[1200px] flex-col gap-3 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10"
           }
         >
           <p className="text-xs leading-relaxed text-[color:var(--footer-subtle)]">
@@ -380,7 +392,7 @@ export function FooterContent({
             <Link
               href={routes.publicPrivacy}
               onClick={guard}
-              className="inline-flex px-2 py-1 text-xs text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-primary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+              className="inline-flex px-2 py-1 text-xs text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
             >
               سياسة الخصوصية
             </Link>
@@ -390,11 +402,11 @@ export function FooterContent({
             <Link
               href={routes.publicTerms}
               onClick={guard}
-              className="inline-flex px-2 py-1 text-xs text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-primary-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+              className="inline-flex px-2 py-1 text-xs text-[color:var(--footer-muted)] transition-colors duration-150 hover:text-[color:var(--brand-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-secondary)]"
             >
               شروط الاستخدام
             </Link>
-            <span aria-hidden="true" className="mx-2 h-4 w-px bg-[color:var(--footer-hairline)]" />
+            <span aria-hidden="true" className="mx-2 h-4 w-px bg-[color:var(--footer-line)]" />
             <BackToTop preview={preview} />
           </div>
         </div>
