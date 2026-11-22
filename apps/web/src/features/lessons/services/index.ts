@@ -25,6 +25,18 @@ function formatLesson(raw: any): Lesson {
     color: raw.color ?? null,
     icon: raw.icon ?? null,
     examId: raw.examId != null ? String(raw.examId) : null,
+    courseSessionId: raw.courseSessionId != null ? String(raw.courseSessionId) : null,
+    courseSession: raw.courseSession ? {
+      id: String(raw.courseSession.id),
+      title: raw.courseSession.title,
+      sessionType: raw.courseSession.sessionType,
+      status: raw.courseSession.status,
+      startsAtUtc: raw.courseSession.startsAtUtc ?? null,
+      endsAtUtc: raw.courseSession.endsAtUtc ?? null,
+      timezone: raw.courseSession.timezone ?? null,
+      meetingUrl: raw.courseSession.meetingUrl ?? null,
+      locationName: raw.courseSession.locationName ?? null,
+    } : null,
     publishedAt: raw.publishedAt ?? null,
     course: raw.course ? { id: String(raw.course.id), title: raw.course.title, slug: raw.course.slug } : null,
     section: raw.section ? { id: String(raw.section.id), title: raw.section.title, slug: raw.section.slug } : null,
@@ -94,6 +106,7 @@ export const lessonsService = {
       color: payload.color,
       icon: payload.icon,
       exam_id: payload.exam_id,
+      course_session_id: payload.course_session_id,
     });
     return formatLesson(data.data);
   },
@@ -118,6 +131,7 @@ export const lessonsService = {
     if (payload.color !== undefined) body.color = payload.color;
     if (payload.icon !== undefined) body.icon = payload.icon;
     if (payload.exam_id !== undefined) body.exam_id = payload.exam_id;
+    if (payload.course_session_id !== undefined) body.course_session_id = payload.course_session_id;
 
     const { data } = await api.put(`/courses/${courseId}/sections/${sectionId}/lessons/${id}`, body);
     return data.data ? formatLesson(data.data) : null;

@@ -28,6 +28,18 @@ class CourseLessonResource extends JsonResource
             'downloadable' => $this->downloadable,
             'featured' => $this->featured,
             'examId' => $this->exam_id ? (string) $this->exam_id : null,
+            'courseSessionId' => $this->course_session_id ? (string) $this->course_session_id : null,
+            'courseSession' => $this->when($this->relationLoaded('courseSession') && $this->courseSession, fn () => [
+                'id' => (string) $this->courseSession->id,
+                'title' => $this->courseSession->title,
+                'sessionType' => $this->courseSession->session_type,
+                'status' => $this->courseSession->status,
+                'startsAtUtc' => $this->courseSession->starts_at_utc?->toIso8601String(),
+                'endsAtUtc' => $this->courseSession->ends_at_utc?->toIso8601String(),
+                'timezone' => $this->courseSession->timezone,
+                'meetingUrl' => $this->courseSession->meeting_url,
+                'locationName' => $this->courseSession->location_name,
+            ]),
             'filesCount' => $this->files_count
                 ?? ($this->relationLoaded('files') ? $this->files->count() : $this->files()->count()),
             'commentsEnabled' => $this->comments_enabled,

@@ -24,6 +24,7 @@ export const LESSON_TYPE_CONFIG: Record<LessonType, { label: string; color: stri
   live: { label: "مباشر", color: "success" },
   exam: { label: "اختبار", color: "success" },
   audio: { label: "صوت", color: "info" },
+  session: { label: "جلسة", color: "success" },
 };
 
 export const STATUS_OPTIONS = [
@@ -51,6 +52,7 @@ export const LESSON_TYPE_OPTIONS = [
   { value: "live", label: "مباشر" },
   { value: "exam", label: "اختبار" },
   { value: "audio", label: "صوت" },
+  { value: "session", label: "جلسة" },
 ];
 
 export const FEATURED_OPTIONS = [

@@ -36,6 +36,7 @@ class CourseLesson extends Model
         'color',
         'icon',
         'exam_id',
+        'course_session_id',
         'published_at',
     ];
 
@@ -109,10 +110,10 @@ class CourseLesson extends Model
         return $this->hasOne(Assignment::class);
     }
 
-    public function exam(): BelongsTo
-    {
-        return $this->belongsTo(Exam::class);
-    }
+        'exam_id',
+        'course_session_id',
+        'published_at',
+    ];
 
     public function discussionThreads(): HasMany
     {

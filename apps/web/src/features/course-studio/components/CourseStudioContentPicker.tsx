@@ -31,12 +31,13 @@ const DESCRIPTIONS: Record<ContentItemType, string> = {
   external_link: "إضافة رابط خارجي",
   scorm: "رفع حزمة SCORM",
   certificate: "ربط شهادة إتمام",
+  session: "جلسة مباشرة أو ميدانية أو حضورية",
 };
 
 const GROUPS: Array<{ label: string; types: ContentItemType[] }> = [
   { label: "المحتوى الأساسي", types: ["video", "pdf", "audio", "resource"] },
   { label: "التقييم", types: ["exam", "assignment"] },
-  { label: "متقدم", types: ["live", "external_link", "scorm", "certificate"] },
+  { label: "متقدم", types: ["live", "session", "external_link", "scorm", "certificate"] },
 ];
 
 function CourseStudioContentPicker({

@@ -59,7 +59,7 @@ class CourseLessonController extends Controller
         Gate::authorize('view', $lesson);
 
         return response()->json([
-            'data' => new CourseLessonResource($lesson->loadMissing(['course:id,title,slug', 'section:id,title,slug'])),
+            'data' => new CourseLessonResource($lesson->loadMissing(['course:id,title,slug', 'section:id,title,slug', 'courseSession:id,title,session_type,status,starts_at_utc,ends_at_utc,timezone,meeting_url,location_name'])),
         ]);
     }
 
@@ -279,7 +279,15 @@ class CourseLessonController extends Controller
                 $required,
                 Rule::notIn(app(InstructorCourseAuthorization::class)
                     ->isInstructorAccount($request->user(), currentTenant()) ? ['exam'] : []),
-                Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio']),
+                Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio', 'session']),
+            ],
+                        'course_session_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('course_sessions', 'id')->where(function ($q) use ($request) {
+                    $course = $request->route('course');
+                    $q->where('course_id', $course?->id)->where('tenant_id', currentTenant()->id);
+                }),
             ],
             'status' => ['sometimes', Rule::in(['draft', 'review', 'published', 'scheduled', 'archived'])],
             'visibility' => ['sometimes', Rule::in(['private', 'preview', 'public'])],

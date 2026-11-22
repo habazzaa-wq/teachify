@@ -40,6 +40,7 @@ class CourseLessonRepository
         return [
             'course:id,title,slug,tenant_id',
             'section:id,title,slug,tenant_id',
+            'courseSession:id,tenant_id,course_id,title,session_type,status,starts_at_utc,ends_at_utc,timezone,meeting_url,location_name',
         ];
     }
 

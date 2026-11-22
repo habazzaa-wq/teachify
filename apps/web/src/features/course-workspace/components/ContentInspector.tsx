@@ -26,6 +26,7 @@ import {
   User,
   Tag,
   Award,
+  CalendarDays,
 } from "lucide-react";
 import { AppBadge } from "@/components/ui";
 import type { ContentItem, ContentItemType } from "@/features/course-content/types";
@@ -48,6 +49,7 @@ const typeMeta: Record<ContentItemType, { label: string; icon: React.ComponentTy
   scorm: { label: "SCORM", icon: Puzzle, color: "text-indigo-500 bg-indigo-500/10", description: "محتوى SCORM تفاعلي متقدم" },
   external_link: { label: "رابط خارجي", icon: Link, color: "text-sky-500 bg-sky-500/10", description: "رابط لمحتوى خارجي" },
   certificate: { label: "شهادة", icon: Award, color: "text-yellow-500 bg-yellow-500/10", description: "شهادة إتمام الدورة" },
+  session: { label: "جلسة", icon: CalendarDays, color: "text-teal-500 bg-teal-500/10", description: "جلسة مباشرة أو ميدانية أو حضورية ضمن الكورس" },
 };
 
 function VideoPreview({ item, compact }: { item: ContentItem; compact?: boolean }) {
@@ -166,6 +168,7 @@ function ContentInspector({ item, compact = false }: ContentInspectorProps) {
     scorm: GenericPreview,
     external_link: GenericPreview,
     certificate: GenericPreview,
+    session: GenericPreview,
   };
 
   const PreviewComponent = previewMap[item.type] ?? GenericPreview;
