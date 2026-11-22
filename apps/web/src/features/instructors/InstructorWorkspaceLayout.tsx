@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ClipboardCheck,
-  FileImage,
   GraduationCap,
+  Images,
   LayoutDashboard,
   LogOut,
   Users,
   Newspaper,
+  Video,
 } from "lucide-react";
 import { useInstructorAuth } from "./InstructorAuthProvider";
 import { useTenantContext } from "@/providers/TenantProvider";
@@ -19,7 +20,8 @@ import { getTeacherAvatar } from "@/lib/teacher-avatar";
 const navigation = [
   { href: "/instructor", label: "نظرة عامة", icon: LayoutDashboard },
   { href: "/instructor/courses", label: "الدورات", icon: BookOpen },
-  { href: "/instructor/media", label: "مكتبة الوسائط", icon: FileImage },
+  { href: "/instructor/video-library", label: "مكتبة الفيديوهات", icon: Video },
+  { href: "/instructor/media-library", label: "مكتبة الوسائط", icon: Images },
   { href: "/instructor/students", label: "الطلاب", icon: Users },
   { href: "/instructor/exams", label: "مكتبة الاختبارات", icon: GraduationCap },
   { href: "/instructor/grading", label: "تصحيح الإجابات", icon: ClipboardCheck },

@@ -461,7 +461,7 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard label="الدورات" value={metrics?.courses} icon={BookOpen} href="/instructor/courses" />
             <MetricCard label="الطلاب" value={metrics?.students} icon={Users} href="/instructor/students" />
-            <MetricCard label="ملفات الوسائط" value={metrics?.media} icon={FileImage} href="/instructor/media" />
+            <MetricCard label="ملفات الوسائط" value={metrics?.media} icon={FileImage} href="/instructor/media-library" />
             <MetricCard label="الاختبارات" value={metrics?.exams} icon={GraduationCap} href="/instructor/exams" />
             <MetricCard label="اختبارات الدورات" value={metrics?.quizzes} icon={ClipboardCheck} href="/instructor/courses" />
             <MetricCard label="تسليمات تنتظر التصحيح" value={metrics?.pending_grading} icon={ClipboardCheck} href="/instructor/grading" />
