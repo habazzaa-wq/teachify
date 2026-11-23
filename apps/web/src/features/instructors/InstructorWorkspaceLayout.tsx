@@ -11,6 +11,7 @@ import {
   LogOut,
   Users,
   Newspaper,
+  Award,
   Video,
 } from "lucide-react";
 import { useInstructorAuth } from "./InstructorAuthProvider";
@@ -23,6 +24,7 @@ const navigation = [
   { href: "/instructor/video-library", label: "مكتبة الفيديوهات", icon: Video },
   { href: "/instructor/media-library", label: "مكتبة الوسائط", icon: Images },
   { href: "/instructor/students", label: "الطلاب", icon: Users },
+  { href: "/instructor/certificates", label: "الشهادات", icon: Award },
   { href: "/instructor/exams", label: "مكتبة الاختبارات", icon: GraduationCap },
   { href: "/instructor/grading", label: "تصحيح الإجابات", icon: ClipboardCheck },
 ];

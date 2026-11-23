@@ -293,6 +293,13 @@ export function WorkspaceLeftSidebar() {
                 onClick={() => handleNavigate(routes.dashboardStudents)}
               />
               <StudioSidebarItem
+                icon={<Award className="h-4 w-4" />}
+                label="الشهادات"
+                active={pathname.startsWith(routes.dashboardCertificates)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardCertificates)}
+              />
+              <StudioSidebarItem
                 icon={<TicketCheck className="h-4 w-4" />}
                 label="أكواد الشحن"
                 active={pathname.startsWith("/teacher/recharge-codes")}
