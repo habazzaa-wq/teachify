@@ -1,3 +1,4 @@
+import { resolveApiUrl } from "@/config/env";
 import { api } from "@/services/api";
 import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
 import { instructorApi } from "@/features/instructors/api";
@@ -61,6 +62,37 @@ export const certificatesService = {
 
   async deleteTemplate(id: number | string): Promise<void> {
     await api.delete(`/certificates/templates/${id}`);
+  },
+
+  /**
+   * Uploads a certificate asset (logo / seal / signature) into the tenant media
+   * library and returns a public URL. `public` visibility is required because
+   * issued certificates are viewable by students and by anyone with the QR link.
+   */
+  async uploadAsset(file: File): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("library", "media");
+    form.append("visibility", "public");
+
+    const { data } = await api.post<{
+      data?: {
+        cdn_url?: string;
+        asset?: { cdn_url?: string; cdnUrl?: string };
+      };
+    }>("/media-library/upload/file", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120_000,
+    });
+
+    const uploaded = data?.data?.cdn_url ?? data?.data?.asset?.cdn_url ?? data?.data?.asset?.cdnUrl;
+    if (!uploaded) throw new Error("لم يرجع الخادم رابط الصورة بعد الرفع.");
+
+    try {
+      return new URL(uploaded, resolveApiUrl()).toString();
+    } catch {
+      return uploaded;
+    }
   },
 
   async getCourseRule(courseId: number | string): Promise<CourseCertificateRule | null> {

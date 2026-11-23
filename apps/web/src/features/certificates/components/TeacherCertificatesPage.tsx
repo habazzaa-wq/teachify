@@ -42,6 +42,7 @@ import {
   type IssuedCertificate,
 } from "../types";
 import { CertificateViewDialog } from "./CertificateViewDialog";
+import { ImageUploadField } from "./ImageUploadField";
 import { resolveCertificateDesign } from "./CertificatePreview";
 
 type Tab = "templates" | "applications" | "rules";
@@ -398,11 +399,39 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
             <label className="text-sm font-medium">اسم الموقّع<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.signatureName} onChange={(e) => setDesign("signatureName", e.target.value)} /></label>
             <label className="text-sm font-medium">صفة الموقّع<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.signatureTitle} onChange={(e) => setDesign("signatureTitle", e.target.value)} /></label>
           </div>
-          <div className="grid gap-3 md:grid-cols-4">
-            <label className="text-sm font-medium">رابط الشعار (Logo URL)<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.logoUrl ?? ""} onChange={(e) => setDesign("logoUrl", e.target.value || null)} /></label>
-            <label className="text-sm font-medium">رابط الختم (Seal URL)<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.sealUrl ?? ""} onChange={(e) => setDesign("sealUrl", e.target.value || null)} /></label>
-            <label className="text-sm font-medium">صورة توقيع المدير<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.signatureImageUrl ?? ""} onChange={(e) => setDesign("signatureImageUrl", e.target.value || null)} /></label>
-            <label className="text-sm font-medium">صورة توقيع المدرب<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.design.instructorSignatureUrl ?? ""} onChange={(e) => setDesign("instructorSignatureUrl", e.target.value || null)} /></label>
+          <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+            <div>
+              <div className="text-sm font-bold">الصور والشعارات</div>
+              <p className="text-xs text-muted-foreground mt-1">ارفع الصور من جهازك مباشرة (لوجو، ختم، توقيعات). بتتخزن في مكتبة وسائط المنصة وتُحفظ داخل القالب تلقائيًا.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <ImageUploadField
+                label="شعار المنصة"
+                value={form.design.logoUrl}
+                onChange={(url) => setDesign("logoUrl", url)}
+                hint="يفضّل PNG بخلفية شفافة، مربع أو أفقي."
+              />
+              <ImageUploadField
+                label="ختم الشهادة"
+                value={form.design.sealUrl}
+                onChange={(url) => setDesign("sealUrl", url)}
+                hint="صورة دائرية شفافة تظهر أعلى الشهادة."
+              />
+              <ImageUploadField
+                label="توقيع المدير"
+                value={form.design.signatureImageUrl}
+                onChange={(url) => setDesign("signatureImageUrl", url)}
+                shape="wide"
+                hint="PNG شفاف لتوقيع المدير الموقّع."
+              />
+              <ImageUploadField
+                label="توقيع المدرب"
+                value={form.design.instructorSignatureUrl}
+                onChange={(url) => setDesign("instructorSignatureUrl", url)}
+                shape="wide"
+                hint="بيظهر فقط لو مفعّل في شروط الدورة."
+              />
+            </div>
           </div>
           <div className="grid gap-3 md:grid-cols-4">
             <label className="text-sm font-medium">لون الخلفية<input type="color" className="mt-1 h-10 w-full rounded-lg border px-1 py-1" value={form.design.backgroundColor} onChange={(e) => setDesign("backgroundColor", e.target.value)} /></label>
@@ -832,12 +861,20 @@ function RuleFormPanel({
           <label className="text-xs font-medium">صفة المدير الموقّع
             <input className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={form.manager_signature_title} onChange={(e) => setForm({ ...form, manager_signature_title: e.target.value })} />
           </label>
-          <label className="text-xs font-medium">رابط توقيع المدير
-            <input className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" dir="ltr" value={form.manager_signature_url} onChange={(e) => setForm({ ...form, manager_signature_url: e.target.value })} />
-          </label>
-          <label className="text-xs font-medium">رابط توقيع المدرب
-            <input className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" dir="ltr" value={form.instructor_signature_url} onChange={(e) => setForm({ ...form, instructor_signature_url: e.target.value })} />
-          </label>
+          <ImageUploadField
+            label="صورة توقيع المدير"
+            value={form.manager_signature_url || null}
+            onChange={(url) => setForm({ ...form, manager_signature_url: url ?? "" })}
+            shape="wide"
+            hint="بتُستخدم في كل شهادات الدورة."
+          />
+          <ImageUploadField
+            label="صورة توقيع المدرب"
+            value={form.instructor_signature_url || null}
+            onChange={(url) => setForm({ ...form, instructor_signature_url: url ?? "" })}
+            shape="wide"
+            hint="بتظهر فقط لو «إظهار توقيع المدرب» مفعّل."
+          />
         </div>
       </div>
 

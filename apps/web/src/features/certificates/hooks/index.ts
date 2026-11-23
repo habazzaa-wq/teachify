@@ -79,6 +79,12 @@ export function useDeleteCertificateTemplate() {
   });
 }
 
+export function useUploadCertificateAsset() {
+  return useMutation({
+    mutationFn: (file: File) => certificatesService.uploadAsset(file),
+  });
+}
+
 export function useUpdateCourseCertificateRule() {
   const qc = useQueryClient();
   return useMutation({
