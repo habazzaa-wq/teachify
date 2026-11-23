@@ -158,6 +158,7 @@ function formatLesson(raw: Raw): PublicCourseLesson {
     examId: raw.examId ?? raw.exam_id ?? null,
     filesCount: raw.filesCount ?? raw.files_count ?? 0,
     courseSessionId: raw.courseSessionId != null ? String(raw.courseSessionId) : raw.course_session_id != null ? String(raw.course_session_id) : null,
+    externalUrl: raw.externalUrl ?? raw.external_url ?? raw.url ?? null,
     courseSession: raw.courseSession
       ? {
           id: String(raw.courseSession.id),
