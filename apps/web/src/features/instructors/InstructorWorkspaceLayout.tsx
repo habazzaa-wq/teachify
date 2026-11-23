@@ -11,6 +11,7 @@ import {
   LogOut,
   Users,
   Newspaper,
+  Award,
 } from "lucide-react";
 import { useInstructorAuth } from "./InstructorAuthProvider";
 import { useTenantContext } from "@/providers/TenantProvider";
@@ -21,6 +22,7 @@ const navigation = [
   { href: "/instructor/courses", label: "الدورات", icon: BookOpen },
   { href: "/instructor/media", label: "مكتبة الوسائط", icon: FileImage },
   { href: "/instructor/students", label: "الطلاب", icon: Users },
+  { href: "/instructor/certificates", label: "الشهادات", icon: Award },
   { href: "/instructor/exams", label: "مكتبة الاختبارات", icon: GraduationCap },
   { href: "/instructor/grading", label: "تصحيح الإجابات", icon: ClipboardCheck },
 ];
