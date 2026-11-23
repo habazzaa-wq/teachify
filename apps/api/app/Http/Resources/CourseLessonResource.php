@@ -28,6 +28,7 @@ class CourseLessonResource extends JsonResource
             'downloadable' => $this->downloadable,
             'featured' => $this->featured,
             'examId' => $this->exam_id ? (string) $this->exam_id : null,
+            'externalUrl' => $this->external_url,
             'courseSessionId' => $this->course_session_id ? (string) $this->course_session_id : null,
             'courseSession' => $this->when($this->relationLoaded('courseSession') && $this->courseSession, fn () => [
                 'id' => (string) $this->courseSession->id,

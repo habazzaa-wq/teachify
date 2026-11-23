@@ -22,6 +22,8 @@ import { CourseStudioEditContentDialog } from "./CourseStudioEditContentDialog";
 import { CourseStudioContentDetailsDialog } from "./CourseStudioContentDetailsDialog";
 import { CourseStudioSessionPickerDialog } from "./CourseStudioSessionPickerDialog";
 import { CourseStudioAddItemChoiceDialog } from "./CourseStudioAddItemChoiceDialog";
+import { CourseStudioSessionEditDialog } from "./CourseStudioSessionEditDialog";
+import { CourseStudioExternalLinkDialog } from "./CourseStudioExternalLinkDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
 import { useSectionsList, useCreateSectionAction, useUpdateSectionAction, useDeleteSectionAction, usePublishSectionAction, useArchiveSectionAction, useDuplicateSectionAction, useRestoreSectionAction, useReorderSectionsAction, useMoveSectionAction, useSelectAndScrollSection } from "../hooks/useSections";
@@ -114,6 +116,8 @@ function CourseStudio({
   const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
   const [addChoiceOpen, setAddChoiceOpen] = useState(false);
   const [sessionModulePickerOpen, setSessionModulePickerOpen] = useState(false);
+  const [sessionEditId, setSessionEditId] = useState<string | null>(null);
+  const [externalEditItem, setExternalEditItem] = useState<ContentItem | null>(null);
 
   const { data: lecturesData, isLoading: lecturesLoading } = useLectures(courseId ?? null);
   const lectures: CourseModule[] = (lecturesData?.data ?? []).sort(
@@ -168,6 +172,7 @@ function CourseStudio({
         thumbnail: null,
         description: lesson.shortDescription ?? lesson.description,
         examId: lesson.examId ?? null,
+        externalUrl: lesson.externalUrl ?? lesson.external_url ?? null,
         courseSessionId: lesson.courseSessionId ?? null,
         courseSession: lesson.courseSession ?? null,
         createdAt: lesson.createdAt,
@@ -529,8 +534,19 @@ function CourseStudio({
     (id: string) => {
       store.selectContent(id);
       store.setInspectorOpen(true);
+      const item = contentItems.find((c) => c.id === id);
+      if (item) {
+        const isSession = item.type === "session" || item.type === "live" || !!item.courseSessionId;
+        if (isSession && item.courseSessionId) {
+          setSessionEditId(item.courseSessionId);
+          return;
+        }
+        if (item.type === "external_link") {
+          setExternalEditItem(item);
+        }
+      }
     },
-    [store.selectContent, store.setInspectorOpen],
+    [store.selectContent, store.setInspectorOpen, contentItems],
   );
 
   const handleAddContent = useCallback(
@@ -570,9 +586,27 @@ function CourseStudio({
           lesson_type: type === "external_link" ? "external" as any : type === "resource" ? "text" as any : type as any,
           sort_order: nextOrder + 1,
         },
-      }).then(() => {
-        toast.success(`تم إنشاء ${CONTENT_TYPE_CONFIG[type].label} بنجاح`);
+      }).then((created: any) => {
+        toast.success(`تم إضافة ${CONTENT_TYPE_CONFIG[type].label} بنجاح`);
         store.clearExtension();
+        if (type === "external_link" && created) {
+          const c = created?.data ?? created;
+          setExternalEditItem({
+            id: String(c.id ?? ""),
+            title: c.title ?? "رابط خارجي",
+            type: "external_link",
+            status: "draft",
+            visibility: "private",
+            duration: null,
+            freePreview: false,
+            locked: false,
+            order: c.order ?? c.sort_order ?? 0,
+            externalUrl: c.externalUrl ?? c.external_url ?? null,
+            description: c.shortDescription ?? c.description ?? null,
+            createdAt: c.createdAt ?? c.created_at ?? new Date().toISOString(),
+            updatedAt: c.updatedAt ?? c.updated_at ?? new Date().toISOString(),
+          } as any);
+        }
       }).catch(() => {
         toast.error(`فشل إنشاء ${CONTENT_TYPE_CONFIG[type].label}`);
         store.clearExtension();
@@ -755,6 +789,15 @@ function CourseStudio({
 
   const handleEditContent = useCallback(
     (item: ContentItem) => {
+      const isSession = item.type === "session" || item.type === "live" || !!item.courseSessionId;
+      if (isSession && item.courseSessionId) {
+        setSessionEditId(item.courseSessionId);
+        return;
+      }
+      if (item.type === "external_link") {
+        setExternalEditItem(item);
+        return;
+      }
       setEditContentItem(item);
     },
     [],
@@ -771,6 +814,30 @@ function CourseStudio({
       }
     },
     [courseId, store.selectedSectionId, editContentItem, updateLesson],
+  );
+
+  const handleSaveExternalLink = useCallback(
+    async (value: { title: string; external_url: string; short_description: string }) => {
+      if (!courseId || !store.selectedSectionId || !externalEditItem) return;
+      try {
+        await updateLesson.mutateAsync({
+          courseId,
+          sectionId: store.selectedSectionId,
+          id: externalEditItem.id,
+          data: {
+            title: value.title,
+            external_url: value.external_url,
+            short_description: value.short_description,
+          } as any,
+        });
+        toast.success("تم حفظ الرابط الخارجي");
+        setExternalEditItem(null);
+      } catch (e: any) {
+        const msg = e?.response?.data?.message || "فشل حفظ الرابط الخارجي";
+        toast.error(String(msg));
+      }
+    },
+    [courseId, store.selectedSectionId, externalEditItem, updateLesson],
   );
 
   const handleReorderContent = useCallback(
@@ -1161,6 +1228,33 @@ function CourseStudio({
         onClose={() => setEditContentItem(null)}
         onSave={handleSaveContentTitle}
         saving={updateLesson.isPending}
+      />
+
+      {courseId && (
+        <CourseStudioSessionEditDialog
+          open={!!sessionEditId}
+          courseId={courseId}
+          sessionId={sessionEditId}
+          onClose={() => setSessionEditId(null)}
+          onSaved={async (session) => {
+            setSessionEditId(null);
+            // sync linked lesson title if exists
+            const linked = contentItems.find((c) => c.courseSessionId === session.id);
+            if (linked && store.selectedSectionId) {
+              try {
+                await updateLesson.mutateAsync({ courseId, sectionId: store.selectedSectionId, id: linked.id, data: { title: session.title } as any });
+              } catch {}
+            }
+          }}
+        />
+      )}
+
+      <CourseStudioExternalLinkDialog
+        open={!!externalEditItem}
+        initial={externalEditItem ? { title: externalEditItem.title, external_url: externalEditItem.externalUrl ?? "", short_description: externalEditItem.description ?? "" } : null}
+        saving={updateLesson.isPending}
+        onClose={() => setExternalEditItem(null)}
+        onSave={handleSaveExternalLink}
       />
 
       <CourseStudioContentDetailsDialog

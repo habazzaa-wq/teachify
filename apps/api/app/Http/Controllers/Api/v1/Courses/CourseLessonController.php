@@ -59,7 +59,7 @@ class CourseLessonController extends Controller
         Gate::authorize('view', $lesson);
 
         return response()->json([
-            'data' => new CourseLessonResource($lesson->loadMissing(['course:id,title,slug', 'section:id,title,slug', 'courseSession:id,title,session_type,status,starts_at_utc,ends_at_utc,timezone,meeting_url,location_name'])),
+            'data' => new CourseLessonResource($lesson->loadMissing(['course:id,title,slug', 'section:id,title,slug', 'courseSession:id,title,description,session_type,status,starts_at_utc,ends_at_utc,timezone,meeting_url,location_name,location_address'])),
         ]);
     }
 
@@ -281,7 +281,8 @@ class CourseLessonController extends Controller
                     ->isInstructorAccount($request->user(), currentTenant()) ? ['exam'] : []),
                 Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio', 'session']),
             ],
-                        'course_session_id' => [
+                        'external_url' => ['nullable','url','max:2048'],
+            'course_session_id' => [
                 'nullable',
                 'integer',
                 Rule::exists('course_sessions', 'id')->where(function ($q) use ($request) {

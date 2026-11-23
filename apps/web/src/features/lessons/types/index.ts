@@ -30,6 +30,7 @@ export interface Lesson {
   courseSession: {
     id: string;
     title: string;
+    description?: string | null;
     sessionType: string;
     status: string;
     startsAtUtc: string | null;
@@ -37,7 +38,9 @@ export interface Lesson {
     timezone: string | null;
     meetingUrl: string | null;
     locationName: string | null;
+    locationAddress?: string | null;
   } | null;
+  externalUrl: string | null;
   publishedAt: string | null;
   course: {
     id: string;
@@ -74,6 +77,7 @@ export interface CreateLessonPayload {
   icon?: string | null;
   exam_id?: number | null;
   course_session_id?: number | null;
+  external_url?: string | null;
 }
 
 export interface UpdateLessonPayload {
@@ -96,6 +100,7 @@ export interface UpdateLessonPayload {
   icon?: string | null;
   exam_id?: number | null;
   course_session_id?: number | null;
+  external_url?: string | null;
 }
 
 export interface LessonFilterParams {

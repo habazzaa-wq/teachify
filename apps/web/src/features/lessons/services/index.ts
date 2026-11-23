@@ -29,6 +29,7 @@ function formatLesson(raw: any): Lesson {
     courseSession: raw.courseSession ? {
       id: String(raw.courseSession.id),
       title: raw.courseSession.title,
+      description: raw.courseSession.description ?? null,
       sessionType: raw.courseSession.sessionType,
       status: raw.courseSession.status,
       startsAtUtc: raw.courseSession.startsAtUtc ?? null,
@@ -36,7 +37,9 @@ function formatLesson(raw: any): Lesson {
       timezone: raw.courseSession.timezone ?? null,
       meetingUrl: raw.courseSession.meetingUrl ?? null,
       locationName: raw.courseSession.locationName ?? null,
+      locationAddress: raw.courseSession.locationAddress ?? null,
     } : null,
+    externalUrl: raw.externalUrl ?? raw.external_url ?? null,
     publishedAt: raw.publishedAt ?? null,
     course: raw.course ? { id: String(raw.course.id), title: raw.course.title, slug: raw.course.slug } : null,
     section: raw.section ? { id: String(raw.section.id), title: raw.section.title, slug: raw.section.slug } : null,
@@ -107,6 +110,7 @@ export const lessonsService = {
       icon: payload.icon,
       exam_id: payload.exam_id,
       course_session_id: payload.course_session_id,
+      external_url: payload.external_url,
     });
     return formatLesson(data.data);
   },
@@ -132,6 +136,7 @@ export const lessonsService = {
     if (payload.icon !== undefined) body.icon = payload.icon;
     if (payload.exam_id !== undefined) body.exam_id = payload.exam_id;
     if (payload.course_session_id !== undefined) body.course_session_id = payload.course_session_id;
+    if (payload.external_url !== undefined) body.external_url = payload.external_url;
 
     const { data } = await api.put(`/courses/${courseId}/sections/${sectionId}/lessons/${id}`, body);
     return data.data ? formatLesson(data.data) : null;
