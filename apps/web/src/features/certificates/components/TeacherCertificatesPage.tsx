@@ -46,6 +46,18 @@ import { resolveCertificateDesign } from "./CertificatePreview";
 
 type Tab = "templates" | "applications" | "rules";
 
+type TemplateEditorState =
+  | { mode: "create" }
+  | { mode: "edit"; template: CertificateTemplate }
+  | null;
+
+function apiErrorMessage(error: unknown, fallback: string): string {
+  const response = (error as { response?: { data?: { message?: unknown } } })?.response;
+  const message = response?.data?.message;
+  if (typeof message === "string" && message.trim()) return message;
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 interface CourseOption {
   id: number | string;
   title: string;
@@ -163,24 +175,29 @@ export function TeacherCertificatesPage() {
 }
 
 function TemplatesSection({ platformName, platformLogo }: { platformName: string; platformLogo: string | null }) {
-  const { data: templates = [], isLoading } = useCertificateTemplates();
+  const { data: templates = [], isLoading, isError, error, refetch } = useCertificateTemplates();
   const create = useCreateCertificateTemplate();
   const update = useUpdateCertificateTemplate();
   const updateStatus = useUpdateCertificateTemplateStatus();
   const remove = useDeleteCertificateTemplate();
-  const [editing, setEditing] = useState<CertificateTemplate | null>(null);
+  // `null` means "no editor open". A new template is { mode: "create" }, so it
+  // can no longer be confused with "nothing selected" (the old bug).
+  const [editor, setEditor] = useState<TemplateEditorState>(null);
   const [form, setForm] = useState<{ name: string; slug: string; status: CertificateTemplateStatus; design: CertificateTemplateDesign }>({
     name: "", slug: "", status: "draft", design: { ...emptyDesign },
   });
   const [previewCert, setPreviewCert] = useState<IssuedCertificate | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const openNew = () => {
-    setEditing(null);
+    setSaveError(null);
+    setEditor({ mode: "create" });
     setForm({ name: "قالب شهادة جديد", slug: "", status: "draft", design: { ...emptyDesign, signatureName: platformName } });
   };
 
   const openEdit = (template: CertificateTemplate) => {
-    setEditing(template);
+    setSaveError(null);
+    setEditor({ mode: "edit", template });
     setForm({
       name: template.name,
       slug: template.slug,
@@ -189,12 +206,25 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
     });
   };
 
+  const closeEditor = () => {
+    setEditor(null);
+    setSaveError(null);
+  };
+
   const save = async () => {
+    setSaveError(null);
     const payload = { name: form.name, slug: form.slug || undefined, template_data: form.design };
-    if (editing) await update.mutateAsync({ id: editing.id, payload });
-    else await create.mutateAsync(payload);
-    setEditing(null);
-    setForm({ name: "", slug: "", status: "draft", design: { ...emptyDesign } });
+    try {
+      if (editor?.mode === "edit") {
+        await update.mutateAsync({ id: editor.template.id, payload });
+      } else {
+        await create.mutateAsync(payload);
+      }
+      closeEditor();
+      setForm({ name: "", slug: "", status: "draft", design: { ...emptyDesign } });
+    } catch (saveFailure: unknown) {
+      setSaveError(apiErrorMessage(saveFailure, "تعذّر حفظ القالب، حاول مرة أخرى."));
+    }
   };
 
   const preview = () => {
@@ -204,7 +234,7 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
       course_id: 0,
       course_completion_id: 0,
       tenant_user_id: 0,
-      certificate_template_id: typeof editing?.id === "number" ? editing.id : null,
+      certificate_template_id: editor?.mode === "edit" ? Number(editor.template.id) : null,
       certificate_number: "CERT-PREVIEW",
       reference_number: "REF-PREVIEW",
       issued_at: new Date().toISOString(),
@@ -212,7 +242,7 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
       course: { id: 0, title: "اسم الدورة التدريبية" },
       student: { id: 0, user: { id: 0, name: "اسم الطالب", email: "" } },
       template: {
-        id: editing?.id ?? 0,
+        id: editor?.mode === "edit" ? Number(editor.template.id) : 0,
         tenant_id: 0,
         name: form.name,
         slug: form.slug,
@@ -251,7 +281,21 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
         <button onClick={openNew} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"><Plus className="h-4 w-4" /> قالب جديد</button>
       </div>
 
-      {isLoading ? <div className="text-sm text-muted-foreground">جارٍ التحميل...</div> : (
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">جارٍ تحميل القوالب...</div>
+      ) : isError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-3 text-sm">
+          <div className="font-bold text-amber-900">تعذّر تحميل قوالب الشهادات.</div>
+          <div className="text-amber-800">
+            تأكد من تسجيل الدخول بحساب مالك/أدمن التينانت، ومن مزامنة الصلاحيات
+            (<code className="font-mono">php artisan db:seed --class=IdentityAccessSeeder</code>).
+          </div>
+          {error instanceof Error && <div className="text-xs text-amber-700">{error.message}</div>}
+          <button onClick={() => void refetch()} className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100">
+            إعادة المحاولة
+          </button>
+        </div>
+      ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {templates.map((template) => (
             <div key={template.id} className="rounded-2xl border bg-card p-4 space-y-3">
@@ -303,19 +347,42 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
               </div>
             </div>
           ))}
-          {!templates.length && <div className="text-sm text-muted-foreground">لا توجد قوالب بعد. أنشئ قالبًا لتفعيل الشهادات.</div>}
+          {!templates.length && (
+            <div className="rounded-2xl border border-dashed p-6 text-center space-y-3 md:col-span-2 xl:col-span-3">
+              <div className="text-sm font-bold">لا توجد قوالب شهادات بعد.</div>
+              <div className="text-xs text-muted-foreground">أنشئ أول قالب ثم فعّله، بعدها تقدر تربطه بدوراتك من تب «شروط الشهادات».</div>
+              <button onClick={openNew} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">
+                <Plus className="h-4 w-4" /> قالب جديد
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {editing !== null && (
+      {editor !== null && (
         <div className="rounded-2xl border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold">{editing ? "تعديل القالب" : "قالب جديد"}</h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="font-bold">{editor.mode === "edit" ? "تعديل القالب" : "قالب جديد"}</h3>
+              {editor.mode === "create" && (
+                <p className="text-xs text-muted-foreground mt-1">القالب الجديد هيبقى «مسودة» لحد ما تضغط «تفعيل» بعد الحفظ.</p>
+              )}
+            </div>
             <div className="flex gap-2">
               <button onClick={preview} className="rounded-lg border px-3 py-2 text-sm font-bold"><Eye className="inline h-4 w-4 ml-1" />معاينة</button>
-              <button onClick={save} className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-bold"><Save className="inline h-4 w-4 ml-1" />حفظ</button>
+              <button onClick={closeEditor} className="rounded-lg border px-3 py-2 text-sm font-bold">إلغاء</button>
+              <button
+                onClick={() => void save()}
+                disabled={create.isPending || update.isPending}
+                className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-bold disabled:opacity-60"
+              >
+                <Save className="inline h-4 w-4 ml-1" />{create.isPending || update.isPending ? "جارٍ الحفظ..." : "حفظ"}
+              </button>
             </div>
           </div>
+          {saveError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">{saveError}</div>
+          )}
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-sm font-medium">اسم القالب<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
             <label className="text-sm font-medium">Slug<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
