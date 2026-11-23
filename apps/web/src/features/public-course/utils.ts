@@ -66,6 +66,8 @@ export const LESSON_TYPE_CONFIG: Record<string, LessonTypeConfig> = {
   assignment: { icon: ClipboardList, label: "واجب", color: "#8b5cf6" },
   audio: { icon: Headphones, label: "صوتي", color: "#a855f7" },
   live: { icon: Radio, label: "بث مباشر", color: "#f43f5e" },
+  session: { icon: Radio, label: "جلسة", color: "#14b8a6" },
+  live_session: { icon: Radio, label: "جلسة مباشرة", color: "#f43f5e" },
   external: { icon: ExternalLink, label: "رابط خارجي", color: "#06b6d4" },
   link: { icon: ExternalLink, label: "رابط خارجي", color: "#06b6d4" },
   interactive: { icon: Puzzle, label: "تفاعلي", color: "#8b5cf6" },
@@ -102,6 +104,7 @@ export function isFileLesson(
 ): boolean {
   const type = lesson.lessonType;
   if (type === "video" || type === "audio") return false;
+  if (type === "session" || type === "live_session") return false;
   return FILE_LESSON_TYPES.has(type) || (lesson.filesCount ?? 0) > 0;
 }
 

@@ -32,6 +32,7 @@ class CourseLessonResource extends JsonResource
             'courseSession' => $this->when($this->relationLoaded('courseSession') && $this->courseSession, fn () => [
                 'id' => (string) $this->courseSession->id,
                 'title' => $this->courseSession->title,
+                'description' => $this->courseSession->description,
                 'sessionType' => $this->courseSession->session_type,
                 'status' => $this->courseSession->status,
                 'startsAtUtc' => $this->courseSession->starts_at_utc?->toIso8601String(),
@@ -39,6 +40,7 @@ class CourseLessonResource extends JsonResource
                 'timezone' => $this->courseSession->timezone,
                 'meetingUrl' => $this->courseSession->meeting_url,
                 'locationName' => $this->courseSession->location_name,
+                'locationAddress' => $this->courseSession->location_address,
             ]),
             'filesCount' => $this->files_count
                 ?? ($this->relationLoaded('files') ? $this->files->count() : $this->files()->count()),

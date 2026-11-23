@@ -157,6 +157,22 @@ function formatLesson(raw: Raw): PublicCourseLesson {
     featured: raw.featured ?? false,
     examId: raw.examId ?? raw.exam_id ?? null,
     filesCount: raw.filesCount ?? raw.files_count ?? 0,
+    courseSessionId: raw.courseSessionId != null ? String(raw.courseSessionId) : raw.course_session_id != null ? String(raw.course_session_id) : null,
+    courseSession: raw.courseSession
+      ? {
+          id: String(raw.courseSession.id),
+          title: raw.courseSession.title ?? raw.title,
+          sessionType: raw.courseSession.sessionType ?? "live",
+          status: raw.courseSession.status ?? "scheduled",
+          startsAtUtc: raw.courseSession.startsAtUtc ?? null,
+          endsAtUtc: raw.courseSession.endsAtUtc ?? null,
+          timezone: raw.courseSession.timezone ?? null,
+          meetingUrl: raw.courseSession.meetingUrl ?? null,
+          locationName: raw.courseSession.locationName ?? null,
+          locationAddress: raw.courseSession.locationAddress ?? null,
+          description: raw.courseSession.description ?? null,
+        }
+      : null,
     publishedAt: raw.publishedAt ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,

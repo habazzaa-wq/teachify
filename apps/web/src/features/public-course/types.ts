@@ -85,6 +85,8 @@ export interface PublicCourseLesson {
   featured: boolean;
   examId: string | null;
   filesCount: number;
+  courseSessionId: string | null;
+  courseSession: PublicCourseSession | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
