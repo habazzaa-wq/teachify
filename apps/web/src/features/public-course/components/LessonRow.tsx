@@ -31,9 +31,26 @@ interface LessonRowProps {
 function isSessionLesson(lesson: PublicCourseLesson) {
   return (
     lesson.lessonType === "session" ||
+    lesson.lessonType === "live" ||
     lesson.lessonType === "live_session" ||
     !!lesson.courseSessionId
   );
+}
+
+function isExternalLesson(lesson: PublicCourseLesson) {
+  return lesson.lessonType === "external_link" || lesson.lessonType === "external" || lesson.lessonType === "link";
+}
+
+function getExternalUrl(lesson: PublicCourseLesson): string | null {
+  const raw = (lesson as any).externalUrl ?? (lesson as any).external_url ?? (lesson as any).url;
+  const candidate = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  if (candidate && /^https?:\/\//i.test(candidate)) return candidate;
+  const desc = lesson.shortDescription || (lesson as any).description;
+  if (typeof desc === "string") {
+    const m = desc.match(/https?:\/\/[^\s]+/i);
+    if (m) return m[0];
+  }
+  return null;
 }
 
 function formatDateTime(iso: string | null | undefined, timezone?: string | null) {
@@ -184,6 +201,45 @@ function LessonRowInner({
 
   if (isSessionLesson(lesson)) {
     return <SessionLessonCard lesson={lesson} isEnrolled={isEnrolled} onLockedClick={onLockedClick} />;
+  }
+
+  if (isExternalLesson(lesson)) {
+    const externalUrl = getExternalUrl(lesson);
+    return (
+      <div
+        className={cn(
+          "rounded-xl border border-blue-500/20 bg-blue-500/[0.03] p-3 sm:p-4",
+          !isEnrolled && "cursor-pointer hover:bg-blue-500/[0.06]"
+        )}
+        onClick={() => { if (!isEnrolled) onLockedClick(); }}
+        role={!isEnrolled ? "button" : undefined}
+        tabIndex={!isEnrolled ? 0 : undefined}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <ExternalLink className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">رابط خارجي</span>
+              {!isEnrolled && <Lock className="h-3.5 w-3.5 text-amber-500" />}
+            </div>
+            <h4 className="mt-1 text-sm font-bold text-foreground">{lesson.title}</h4>
+            {lesson.shortDescription && !/^https?:\/\//i.test(lesson.shortDescription.trim()) && (
+              <p className="mt-1 text-xs text-muted-foreground">{lesson.shortDescription}</p>
+            )}
+            {isEnrolled && externalUrl ? (
+              <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">
+                <span className="truncate max-w-[260px] sm:max-w-md">{externalUrl}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            ) : isEnrolled ? (
+              <p className="mt-2 text-xs text-muted-foreground">لم يتم إضافة رابط بعد.</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const duration = useMemo(

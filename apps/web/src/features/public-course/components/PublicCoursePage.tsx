@@ -123,8 +123,17 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
   }, [isEnrolled]);
 
   const handlePlayLesson = useCallback((lesson: PublicCourseLesson) => {
-    const isSession = lesson.lessonType === "session" || lesson.lessonType === "live_session" || !!lesson.courseSessionId;
+    const type = lesson.lessonType;
+    const isSession = type === "session" || type === "live" || type === "live_session" || !!lesson.courseSessionId;
     if (isSession) return;
+    const isExternal = type === "external_link" || type === "external" || type === "link";
+    if (isExternal) {
+      const url = (lesson as any).externalUrl || lesson.shortDescription || (lesson as any).description;
+      if (typeof url === "string" && /^https?:\/\//i.test(url.trim())) {
+        window.open(url.trim(), "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
     setActiveLesson(lesson);
   }, []);
 
@@ -165,19 +174,25 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
       {activeLesson && (
         <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
           <div ref={playerRef} className="scroll-mt-24 pt-12 sm:pt-14">
-            {isFileLesson(activeLesson) ? (
-              <CourseFilePanel
-                slug={slug}
-                lesson={activeLesson}
-                onClose={handleClosePlayer}
-              />
-            ) : (
-              <CourseVideoPlayer
-                slug={slug}
-                lesson={activeLesson}
-                onClose={handleClosePlayer}
-              />
-            )}
+            {(() => {
+              const t = activeLesson.lessonType;
+              const isSession = t === "session" || t === "live" || t === "live_session" || !!activeLesson.courseSessionId;
+              const isExternal = t === "external_link" || t === "external" || t === "link";
+              if (isSession || isExternal) return null;
+              return isFileLesson(activeLesson) ? (
+                <CourseFilePanel
+                  slug={slug}
+                  lesson={activeLesson}
+                  onClose={handleClosePlayer}
+                />
+              ) : (
+                <CourseVideoPlayer
+                  slug={slug}
+                  lesson={activeLesson}
+                  onClose={handleClosePlayer}
+                />
+              );
+            })()}
           </div>
         </div>
       )}

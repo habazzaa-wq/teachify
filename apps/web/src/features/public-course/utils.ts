@@ -104,7 +104,8 @@ export function isFileLesson(
 ): boolean {
   const type = lesson.lessonType;
   if (type === "video" || type === "audio") return false;
-  if (type === "session" || type === "live_session") return false;
+  if (type === "session" || type === "live" || type === "live_session") return false;
+  if (type === "external_link" || type === "external" || type === "link") return false;
   return FILE_LESSON_TYPES.has(type) || (lesson.filesCount ?? 0) > 0;
 }
 

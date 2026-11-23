@@ -87,6 +87,7 @@ export interface PublicCourseLesson {
   filesCount: number;
   courseSessionId: string | null;
   courseSession: PublicCourseSession | null;
+  externalUrl?: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
