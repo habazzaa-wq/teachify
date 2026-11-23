@@ -123,6 +123,8 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
   }, [isEnrolled]);
 
   const handlePlayLesson = useCallback((lesson: PublicCourseLesson) => {
+    const isSession = lesson.lessonType === "session" || lesson.lessonType === "live_session" || !!lesson.courseSessionId;
+    if (isSession) return;
     setActiveLesson(lesson);
   }, []);
 
