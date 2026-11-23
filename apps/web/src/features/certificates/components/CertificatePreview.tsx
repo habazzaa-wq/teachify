@@ -14,6 +14,55 @@ interface Props {
   platformLogoUrl?: string | null;
 }
 
+function OrnamentDivider({ accent }: { accent: string }) {
+  return (
+    <div className="flex items-center gap-4 py-2">
+      <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}aa)` }} />
+      <div className="h-2.5 w-2.5 rotate-45 border-2" style={{ borderColor: accent }} />
+      <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accent}aa, transparent)` }} />
+    </div>
+  );
+}
+
+function SignatureBlock({
+  imageUrl,
+  name,
+  title,
+  accent,
+  secondary,
+  align = "center",
+}: {
+  imageUrl: string | null;
+  name: string;
+  title: string;
+  accent: string;
+  secondary: string;
+  align?: "center" | "right";
+}) {
+  return (
+    <div className={align === "right" ? "text-right" : "text-center"}>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={name}
+          className={`mb-1 h-14 max-w-[190px] object-contain ${align === "right" ? "object-right" : "mx-auto"}`}
+        />
+      ) : (
+        <div className="h-14" />
+      )}
+      <div
+        className="mb-2 h-px w-44"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+      />
+      <div className="text-sm font-black">{name}</div>
+      <div className="mt-0.5 text-[11px] font-bold" style={{ color: `${secondary}99` }}>
+        {title}
+      </div>
+    </div>
+  );
+}
+
 export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function CertificatePreview(
   { certificate, platformName, platformLogoUrl },
   ref,
@@ -46,16 +95,15 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
   const secondary = design.secondaryColor || "#1F2937";
   const bg = design.backgroundColor || "#FFFDF8";
 
+  const shouldRenderQr = Boolean(verificationUrl && design.showQr);
+
   useEffect(() => {
     let cancelled = false;
-    if (!verificationUrl || !design.showQr) {
-      setQrDataUrl(null);
-      return;
-    }
+    if (!shouldRenderQr || !verificationUrl) return;
     void QRCode.toDataURL(verificationUrl, {
       errorCorrectionLevel: "M",
       margin: 1,
-      width: 220,
+      width: 240,
       color: { dark: secondary, light: "#FFFFFF" },
     })
       .then((url) => {
@@ -67,111 +115,240 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
     return () => {
       cancelled = true;
     };
-  }, [verificationUrl, design.showQr, secondary]);
+  }, [verificationUrl, shouldRenderQr, secondary]);
 
   return (
-    <div ref={ref} className="w-full overflow-auto bg-neutral-100 p-4 print:bg-white print:p-0">
+    <div ref={ref} className="w-full overflow-auto bg-neutral-200 p-4 print:bg-white print:p-0">
       <div
         id={`certificate-print-${certificate.id}`}
-        className="mx-auto relative shadow-2xl print:shadow-none"
+        dir="rtl"
+        className="relative mx-auto shadow-[0_24px_70px_rgba(15,23,42,0.28)] print:shadow-none"
         style={{
           width: "1123px",
           maxWidth: "100%",
           aspectRatio: "1.414/1",
           background: bg,
           color: secondary,
-          fontFamily: design.fontFamily === "tajawal" ? "Tajawal, Cairo, sans-serif" : design.fontFamily === "noto" ? "'Noto Naskh Arabic', Cairo, serif" : "Cairo, sans-serif",
+          fontFamily:
+            design.fontFamily === "tajawal"
+              ? "Tajawal, Cairo, sans-serif"
+              : design.fontFamily === "noto"
+                ? "'Noto Naskh Arabic', Cairo, serif"
+                : "Cairo, sans-serif",
           overflow: "hidden",
         }}
       >
-        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at top right, ${accent}14, transparent 35%), radial-gradient(circle at bottom left, ${accent}10, transparent 30%)` }} />
-        <div className="absolute inset-3 border-2" style={{ borderColor: `${accent}55` }} />
-        <div className="absolute inset-6 border" style={{ borderColor: `${accent}33` }} />
-        {borderStyle === "classic" && (
+        {/* Paper texture and soft corner glows */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(circle at 12% 12%, ${accent}18, transparent 32%),
+              radial-gradient(circle at 88% 88%, ${accent}14, transparent 34%),
+              repeating-linear-gradient(45deg, ${accent}06 0 1px, transparent 1px 14px)
+            `,
+          }}
+        />
+
+        {/* Faint watermark */}
+        <div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden">
+          <div
+            className="whitespace-nowrap font-black"
+            style={{
+              fontSize: "190px",
+              color: accent,
+              opacity: 0.045,
+              transform: "rotate(-14deg)",
+              letterSpacing: "-8px",
+            }}
+          >
+            {platformName || "CERTIFIED"}
+          </div>
+        </div>
+
+        {/* Frame */}
+        {borderStyle !== "minimal" && (
           <>
-            <div className="absolute top-6 left-6 right-6 h-2" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
-            <div className="absolute bottom-6 left-6 right-6 h-2" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+            <div className="absolute inset-[14px] border-2" style={{ borderColor: `${accent}70` }} />
+            <div className="absolute inset-[23px] border" style={{ borderColor: `${accent}38` }} />
+            {borderStyle === "classic" && (
+              <>
+                <div
+                  className="absolute inset-x-[23px] top-[23px] h-[6px]"
+                  style={{ background: `linear-gradient(90deg, transparent, ${accent}aa, transparent)` }}
+                />
+                <div
+                  className="absolute inset-x-[23px] bottom-[23px] h-[6px]"
+                  style={{ background: `linear-gradient(90deg, transparent, ${accent}aa, transparent)` }}
+                />
+                {[
+                  "top-[8px] right-[8px]",
+                  "top-[8px] left-[8px]",
+                  "bottom-[8px] right-[8px]",
+                  "bottom-[8px] left-[8px]",
+                ].map((position) => (
+                  <div
+                    key={position}
+                    className={`absolute h-3.5 w-3.5 rotate-45 border-2 ${position}`}
+                    style={{ borderColor: accent, background: bg }}
+                  />
+                ))}
+              </>
+            )}
+            {borderStyle === "modern" && (
+              <div className="absolute right-[14px] top-[14px] h-28 w-2" style={{ background: accent }} />
+            )}
           </>
         )}
-        {borderStyle === "modern" && (
-          <div className="absolute top-0 left-0 right-0 h-24" style={{ background: `linear-gradient(135deg, ${accent}22, transparent)` }} />
+        {borderStyle === "minimal" && (
+          <div className="absolute inset-[18px] border" style={{ borderColor: `${accent}55` }} />
         )}
 
-        <div className="relative h-full flex flex-col justify-between px-16 py-14 text-center">
-          <div className="flex items-start justify-between gap-4">
-            <div className="w-28 h-28 flex items-center justify-center">
-              {logo ? <img src={logo} alt="logo" className="max-h-28 max-w-28 object-contain" /> : <div className="h-20 w-20 rounded-full border-2 flex items-center justify-center text-xs font-bold" style={{ borderColor: accent, color: accent }}>{platformName?.slice(0, 2) || "شعار"}</div>}
+        {/* Content */}
+        <div className="relative z-10 flex h-full flex-col px-[68px] py-[48px]">
+          {/* Header */}
+          <header className="flex items-start justify-between gap-4">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center">
+              {logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt="logo" className="max-h-24 max-w-24 object-contain" />
+              ) : (
+                <div
+                  className="flex h-20 w-20 items-center justify-center rounded-full border-2 text-xs font-black"
+                  style={{ borderColor: accent, color: accent }}
+                >
+                  {platformName?.slice(0, 2) || "شعار"}
+                </div>
+              )}
             </div>
-            <div className="flex-1 pt-2">
-              <div className="text-sm tracking-[0.3em] font-bold" style={{ color: accent }}>{platformName || "المنصة التعليمية"}</div>
-              <h1 className="mt-4 text-5xl font-black" style={{ color: secondary }}>{design.titleText || "شهادة إتمام الدورة"}</h1>
-              <p className="mt-3 text-lg" style={{ color: `${secondary}cc` }}>{design.subtitleText || "تشهد هذه المنصة بأن"}</p>
+
+            <div className="flex-1 pt-1 text-center">
+              <div className="text-[11px] font-black tracking-[0.42em]" style={{ color: accent }}>
+                {platformName || "المنصة التعليمية"}
+              </div>
+              <h1 className="mt-3 text-[46px] font-black leading-tight" style={{ color: secondary }}>
+                {design.titleText || "شهادة إتمام الدورة"}
+              </h1>
+              <div className="mt-2 text-[13px] font-bold" style={{ color: `${secondary}88` }}>
+                {certificate.certificate_number}
+              </div>
             </div>
-            <div className="w-28 h-28 flex items-center justify-center">
-              {seal ? <img src={seal} alt="seal" className="max-h-28 max-w-28 object-contain" /> : (
-                <div className="h-24 w-24 rounded-full border-4 flex items-center justify-center" style={{ borderColor: accent, color: accent }}>
-                  <div className="h-18 w-18 rounded-full border-2 flex flex-col items-center justify-center text-[10px] font-black leading-tight px-2" style={{ borderColor: `${accent}88` }}>
-                    <span>SEAL</span><span>ختم</span>
+
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center">
+              {seal ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={seal} alt="seal" className="max-h-24 max-w-24 object-contain" />
+              ) : (
+                <div
+                  className="flex h-20 w-20 flex-col items-center justify-center rounded-full border-[3px] text-center"
+                  style={{ borderColor: accent, color: accent }}
+                >
+                  <div className="flex h-14 w-14 flex-col items-center justify-center rounded-full border text-[10px] font-black leading-tight" style={{ borderColor: `${accent}88` }}>
+                    <span>ختم</span>
+                    <span>المنصة</span>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </header>
 
-          <div className="flex-1 flex flex-col justify-center py-8">
-            <div className="text-4xl font-black mb-4" style={{ color: accent }}>{studentName}</div>
-            <div className="mx-auto w-64 h-px mb-6" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
-            <p className="text-xl mb-3" style={{ color: `${secondary}dd` }}>{design.bodyText || "قد أتم بنجاح متطلبات الدورة التدريبية"}</p>
-            <p className="text-3xl font-extrabold" style={{ color: secondary }}>&ldquo;{courseTitle}&rdquo;</p>
-            <p className="mt-4 text-base font-bold" style={{ color: `${secondary}aa` }}>المدرب: {instructorName}</p>
-          </div>
+          <OrnamentDivider accent={accent} />
 
-          <div className="flex items-end justify-between gap-8">
-            <div className="text-right min-w-[180px]">
-              {managerSignatureUrl ? (
-                <img src={managerSignatureUrl} alt="manager signature" className="h-16 max-w-[180px] object-contain object-right mb-1" />
-              ) : null}
-              <div className="h-px w-44 mb-2" style={{ backgroundColor: `${secondary}44` }} />
-              <div className="font-bold">{managerSignatureName}</div>
-              <div className="text-sm" style={{ color: `${secondary}99` }}>{managerSignatureTitle}</div>
+          {/* Main body */}
+          <main className="flex flex-1 flex-col items-center justify-center py-3 text-center">
+            <p className="text-lg font-bold" style={{ color: `${secondary}cc` }}>
+              {design.subtitleText || "تشهد هذه المنصة بأن"}
+            </p>
+
+            <div className="relative mt-3">
+              <div className="px-10 text-[44px] font-black leading-tight" style={{ color: accent }}>
+                {studentName}
+              </div>
+              <div className="mx-auto mt-2 h-px w-[420px]" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
             </div>
 
-            <div className="text-center text-sm" style={{ color: `${secondary}aa` }}>
-              <div>{design.footerText || "نتمنى له دوام التوفيق والنجاح"}</div>
-              <div className="mt-2 font-bold">تاريخ الإصدار: {issuedDate}</div>
-              <div className="mt-1">الرقم المرجعي: {referenceNumber}</div>
-              {verificationCode && <div className="mt-1 text-[11px]">رمز التحقق: {verificationCode}</div>}
+            <p className="mt-5 text-base font-bold" style={{ color: `${secondary}bb` }}>
+              {design.bodyText || "قد أتم بنجاح متطلبات الدورة التدريبية"}
+            </p>
+
+            <div
+              className="relative mt-4 max-w-[780px] px-14 py-4"
+              style={{
+                borderTop: `1px solid ${accent}77`,
+                borderBottom: `1px solid ${accent}77`,
+              }}
+            >
+              <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45" style={{ background: accent }} />
+              <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45" style={{ background: accent }} />
+              <div className="text-[30px] font-black leading-snug" style={{ color: secondary }}>
+                &ldquo;{courseTitle}&rdquo;
+              </div>
             </div>
 
-            <div className="flex items-end gap-4">
+            <p className="mt-5 text-sm font-bold" style={{ color: `${secondary}99` }}>
+              المدرب: <span style={{ color: secondary }}>{instructorName}</span>
+            </p>
+          </main>
+
+          <OrnamentDivider accent={accent} />
+
+          {/* Footer */}
+          <footer className="grid grid-cols-3 items-end gap-6 pt-2">
+            <SignatureBlock
+              imageUrl={managerSignatureUrl ?? null}
+              name={managerSignatureName}
+              title={managerSignatureTitle}
+              accent={accent}
+              secondary={secondary}
+              align="right"
+            />
+
+            <div className="text-center text-[11px] font-bold leading-relaxed" style={{ color: `${secondary}99` }}>
+              <div className="text-xs font-black" style={{ color: secondary }}>
+                {design.footerText || "نتمنى له دوام التوفيق والنجاح"}
+              </div>
+              <div className="mt-2">تاريخ الإصدار: {issuedDate}</div>
+              <div>الرقم المرجعي: {referenceNumber}</div>
+              {verificationCode && <div className="mt-0.5 text-[10px]">رمز التحقق: {verificationCode}</div>}
+            </div>
+
+            <div className="flex items-end justify-end gap-4">
               {showInstructorSignature && (
-                <div className="text-center min-w-[150px]">
-                  {instructorSignatureUrl ? (
-                    <img src={instructorSignatureUrl} alt="instructor signature" className="h-14 max-w-[150px] object-contain mx-auto mb-1" />
-                  ) : <div className="h-14" />}
-                  <div className="h-px w-36 mb-2 mx-auto" style={{ backgroundColor: `${secondary}44` }} />
-                  <div className="font-bold text-sm">{instructorName}</div>
-                  <div className="text-[11px]" style={{ color: `${secondary}99` }}>مدرب الدورة</div>
-                </div>
+                <SignatureBlock
+                  imageUrl={instructorSignatureUrl ?? null}
+                  name={instructorName}
+                  title="مدرب الدورة"
+                  accent={accent}
+                  secondary={secondary}
+                />
               )}
-              <div className="text-left flex flex-col items-end">
-                {design.showQr && verificationUrl ? (
-                  <div className="border p-2 bg-white" style={{ borderColor: `${accent}44` }}>
+
+              <div className="flex flex-col items-center">
+                {shouldRenderQr && verificationUrl ? (
+                  <div className="border bg-white p-2" style={{ borderColor: `${accent}55` }}>
                     {qrDataUrl ? (
-                      <img src={qrDataUrl} alt="QR" className="h-[90px] w-[90px]" />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={qrDataUrl} alt="QR" className="h-[96px] w-[96px]" />
                     ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(verificationUrl)}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(verificationUrl)}`}
                         alt="QR"
-                        className="h-[90px] w-[90px]"
+                        className="h-[96px] w-[96px]"
                       />
                     )}
                   </div>
-                ) : <div className="h-[90px] w-[90px]" />}
-                {verificationUrl && <div className="text-[10px] mt-1 max-w-[140px] break-all text-left" style={{ color: `${secondary}88` }}>امسح للتحقق من الشهادة</div>}
+                ) : (
+                  <div className="h-[112px] w-[112px]" />
+                )}
+                {verificationUrl && (
+                  <div className="mt-1 max-w-[130px] text-[10px] font-bold" style={{ color: `${secondary}88` }}>
+                    امسح للتحقق من الشهادة
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </footer>
         </div>
       </div>
     </div>
