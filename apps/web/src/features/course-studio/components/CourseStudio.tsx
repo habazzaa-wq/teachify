@@ -23,6 +23,7 @@ import { CourseStudioContentDetailsDialog } from "./CourseStudioContentDetailsDi
 import { CourseStudioSessionPickerDialog } from "./CourseStudioSessionPickerDialog";
 import { CourseStudioAddItemChoiceDialog } from "./CourseStudioAddItemChoiceDialog";
 import { CourseStudioSessionEditDialog } from "./CourseStudioSessionEditDialog";
+import { courseSessionsApi } from "@/features/course-sessions/api";
 import { CourseStudioExternalLinkDialog } from "./CourseStudioExternalLinkDialog";
 import { CourseStudioContentOnboarding } from "./CourseStudioContentOnboarding";
 import { useLectures, useCreateLecture, useUpdateLecture, usePublishLecture, useArchiveLecture, useDuplicateLecture, useDeleteLecture, useRestoreLecture, useReorderLectures, useSelectAndScroll } from "../hooks/useLectures";
@@ -533,22 +534,49 @@ function CourseStudio({
   );
 
   const handleSelectContent = useCallback(
-    (id: string) => {
+    async (id: string) => {
       store.selectContent(id);
       store.setInspectorOpen(true);
       const item = contentItems.find((c) => c.id === id);
-      if (item) {
-        const isSession = item.type === "session" || item.type === "live" || !!item.courseSessionId;
-        if (isSession && item.courseSessionId) {
+      if (!item) return;
+      const isSession = item.type === "session" || item.type === "live" || !!item.courseSessionId;
+      if (isSession) {
+        if (item.courseSessionId) {
           setSessionEditId(item.courseSessionId);
           return;
         }
-        if (item.type === "external_link") {
-          setExternalEditItem(item);
+        if (courseId && store.selectedSectionId) {
+          try {
+            const now = new Date();
+            const end = new Date(now.getTime() + 60 * 60 * 1000);
+            const session = await courseSessionsApi.create(courseId, {
+              title: item.title || "جلسة مباشرة",
+              description: (item as any).shortDescription || (item as any).description || null,
+              session_type: "live",
+              status: "draft",
+              starts_at_utc: now.toISOString(),
+              ends_at_utc: end.toISOString(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+              meeting_url: null,
+            });
+            await updateLesson.mutateAsync({
+              courseId,
+              sectionId: store.selectedSectionId,
+              id: item.id,
+              data: { lesson_type: "session" as any, course_session_id: Number(session.id) },
+            });
+            setSessionEditId(session.id);
+          } catch (e: any) {
+            toast.error(e?.response?.data?.message || "تعذر فتح الجلسة للتعديل");
+          }
         }
+        return;
+      }
+      if (item.type === "external_link") {
+        setExternalEditItem(item);
       }
     },
-    [store.selectContent, store.setInspectorOpen, contentItems],
+    [store.selectContent, store.setInspectorOpen, contentItems, courseId, store.selectedSectionId, updateLesson],
   );
 
   const handleAddContent = useCallback(
@@ -790,11 +818,41 @@ function CourseStudio({
   );
 
   const handleEditContent = useCallback(
-    (item: ContentItem) => {
+    async (item: ContentItem) => {
       const isSession = item.type === "session" || item.type === "live" || !!item.courseSessionId;
-      if (isSession && item.courseSessionId) {
-        setSessionEditId(item.courseSessionId);
-        return;
+      if (isSession) {
+        if (item.courseSessionId) {
+          setSessionEditId(item.courseSessionId);
+          return;
+        }
+        // Legacy session/live content without linked CourseSession: create and link one.
+        if (courseId && store.selectedSectionId) {
+          try {
+            const now = new Date();
+            const end = new Date(now.getTime() + 60 * 60 * 1000);
+            const session = await courseSessionsApi.create(courseId, {
+              title: item.title || "جلسة مباشرة",
+              description: (item as any).shortDescription || (item as any).description || null,
+              session_type: "live",
+              status: "draft",
+              starts_at_utc: now.toISOString(),
+              ends_at_utc: end.toISOString(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+              meeting_url: null,
+            });
+            await updateLesson.mutateAsync({
+              courseId,
+              sectionId: store.selectedSectionId,
+              id: item.id,
+              data: { lesson_type: "session" as any, course_session_id: Number(session.id) },
+            });
+            setSessionEditId(session.id);
+            return;
+          } catch (e: any) {
+            toast.error(e?.response?.data?.message || "تعذر فتح الجلسة للتعديل");
+            return;
+          }
+        }
       }
       if (item.type === "external_link") {
         setExternalEditItem(item);
@@ -802,7 +860,7 @@ function CourseStudio({
       }
       setEditContentItem(item);
     },
-    [],
+    [courseId, store.selectedSectionId, updateLesson],
   );
 
   const handleSaveContentTitle = useCallback(
