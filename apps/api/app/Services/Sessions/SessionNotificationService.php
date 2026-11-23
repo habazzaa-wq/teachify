@@ -24,20 +24,20 @@ class SessionNotificationService
     {
         $this->cancelPendingDispatches($session, 'rescheduled_or_recreated');
         $this->scheduleReminders($tenant, $session);
-        $this->notifyEnrolled($tenant, $session, 'session.scheduled', 'Session scheduled');
+        $this->notifyEnrolled($tenant, $session, 'session.scheduled', 'تمت إضافة جلسة جديدة');
     }
 
     public function onSessionRescheduled(Tenant $tenant, CourseSession $session): void
     {
         $this->cancelPendingDispatches($session, 'rescheduled');
         $this->scheduleReminders($tenant, $session);
-        $this->notifyEnrolled($tenant, $session, 'session.rescheduled', 'Session rescheduled');
+        $this->notifyEnrolled($tenant, $session, 'session.rescheduled', 'تم إعادة جدولة جلسة');
     }
 
     public function onSessionCancelled(Tenant $tenant, CourseSession $session): void
     {
         $this->cancelPendingDispatches($session, 'session_cancelled');
-        $this->notifyEnrolled($tenant, $session, 'session.cancelled', 'Session cancelled');
+        $this->notifyEnrolled($tenant, $session, 'session.cancelled', 'تم إلغاء جلسة');
     }
 
     public function onSessionCompleted(Tenant $tenant, CourseSession $session): void
@@ -116,7 +116,7 @@ class SessionNotificationService
                 'starts_at_utc' => $session->starts_at_utc?->toIso8601String(),
                 'timezone' => $session->timezone,
                 'title' => $title,
-                'body' => $session->title,
+                'body' => trim(($session->course?->title ? $session->course->title.' - ' : '').$session->title),
             ]);
         }
     }

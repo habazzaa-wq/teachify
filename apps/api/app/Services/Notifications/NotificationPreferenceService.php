@@ -70,7 +70,7 @@ class NotificationPreferenceService
             ->first();
 
         if (! $preference) {
-            return $channel === 'in_app';
+            return in_array($channel, ['in_app', 'email'], true);
         }
 
         return match ($channel) {

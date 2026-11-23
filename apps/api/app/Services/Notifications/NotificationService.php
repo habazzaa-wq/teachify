@@ -122,16 +122,24 @@ class NotificationService
         }
 
         if ($emailEnabled) {
-            NotificationDelivery::create([
-                'tenant_id' => $tenant->id,
-                'notification_id' => $notification->id,
-                'channel' => 'email',
-                'status' => 'pending',
-                'attempts' => 0,
-                'last_attempt_at' => null,
-                'delivered_at' => null,
-                'last_error' => null,
-            ]);
+            $emailDedupe = 'email:notification:'.$notification->id.':recipient:'.$recipient->id;
+            $emailDelivery = NotificationDelivery::query()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'dedupe_key' => $emailDedupe],
+                [
+                    'notification_id' => $notification->id,
+                    'channel' => 'email',
+                    'provider' => 'tenant_mail',
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'last_attempt_at' => null,
+                    'delivered_at' => null,
+                    'last_error' => null,
+                ]
+            );
+
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($emailDelivery, $tenant) {
+                \App\Jobs\Notifications\SendEmailNotificationJob::dispatch($emailDelivery->id, $tenant->id)->onQueue('notifications');
+            });
         }
 
         if ($whatsappEnabled) {

@@ -29,6 +29,7 @@ interface AppNotificationMenuProps {
   unreadCount: number;
   onMarkAllRead?: () => void;
   onViewAll?: () => void;
+  onItemClick?: (id: string) => void;
 }
 
 function AppNotificationMenu({
@@ -36,6 +37,7 @@ function AppNotificationMenu({
   unreadCount,
   onMarkAllRead,
   onViewAll,
+  onItemClick,
 }: AppNotificationMenuProps) {
   return (
     <AppDropdownMenu>
@@ -87,6 +89,7 @@ function AppNotificationMenu({
             {notifications.slice(0, 8).map((notification) => (
               <button
                 key={notification.id}
+                onClick={() => onItemClick?.(notification.id)}
                 className={cn(
                   "flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/50",
                   !notification.read && "bg-primary/[0.02]",

@@ -2,6 +2,8 @@ import api from "@/services/api/axios";
 
 export interface PublicRegisterPayload {
   name: string;
+  email?: string;
+  email_notifications_enabled?: boolean;
   phone?: string;
   parent_phone?: string;
   password: string;

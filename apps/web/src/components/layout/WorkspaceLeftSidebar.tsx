@@ -34,6 +34,7 @@ import {
   Newspaper,
   BriefcaseBusiness,
   Info,
+  Mail,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -361,6 +362,13 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith("/teacher/settings/whatsapp")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/settings/whatsapp")}
+              />
+              <StudioSidebarItem
+                icon={<Mail className="h-4 w-4" />}
+                label="إعدادات البريد الإلكتروني"
+                active={pathname.startsWith("/teacher/settings/mail")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/mail")}
               />
 </StudioSidebarSection>
 

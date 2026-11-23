@@ -16,9 +16,9 @@ import {
   AppDropdownMenuSeparator,
   AppDropdownMenuTrigger,
   AppBadge,
-  AppNotificationMenu,
   AppCommandPalette,
 } from "@/components/ui";
+import { AppNotificationBellLive } from "@/components/ui/AppNotificationBellLive";
 import { initialsOf } from "@/lib/format";
 
 interface PlatformHeaderProps {
@@ -84,12 +84,7 @@ function PlatformHeader({ title }: PlatformHeaderProps) {
           </AppButton>
 
           {/* Notification bell */}
-          <AppNotificationMenu
-            notifications={[]}
-            unreadCount={0}
-            onMarkAllRead={() => {}}
-            onViewAll={() => {}}
-          />
+          <AppNotificationBellLive viewAllHref="/superadmin/notifications" />
 
           {/* Theme toggle */}
           <AppButton
