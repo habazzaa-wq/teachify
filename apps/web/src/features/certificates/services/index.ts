@@ -10,7 +10,20 @@ import type {
   IssuedCertificate,
 } from "../types";
 
+/**
+ * Certificates can be consumed from both the tenant workspace (/teacher/...) and
+ * the instructor workspace (/instructor/...). Decide which API to call from the
+ * current route, not from whether an instructor token happens to be stored:
+ * an admin who previously logged in as an instructor keeps that token in
+ * localStorage, and must still use the tenant routes.
+ */
+export function isInstructorCertificatesPath(pathname?: string | null): boolean {
+  const path = pathname ?? (typeof window !== "undefined" ? window.location.pathname : "");
+  return path.startsWith("/instructor/");
+}
+
 function instructorToken(): string | null {
+  if (!isInstructorCertificatesPath()) return null;
   if (typeof window === "undefined") return null;
   return useInstructorAuthStore.getState().accessToken;
 }

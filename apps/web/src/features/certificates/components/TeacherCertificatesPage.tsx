@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Award, Plus, Save, Trash2, CheckCircle2, XCircle, Send, Eye, Palette, FileCheck2,
@@ -28,6 +29,7 @@ import {
   useCourseCertificateRule,
   useUpdateCourseCertificateRule,
 } from "../hooks";
+import { isInstructorCertificatesPath } from "../services";
 import {
   DEFAULT_CERTIFICATE_DESIGN,
   type CertificateApplication,
@@ -119,7 +121,11 @@ function useAdminCourses() {
 export function TeacherCertificatesPage() {
   const [tab, setTab] = useState<Tab>("applications");
   const { tenant } = useActiveTenant();
-  const instructorToken = useInstructorAuthStore((state) => state.accessToken);
+  const pathname = usePathname();
+  const storedInstructorToken = useInstructorAuthStore((state) => state.accessToken);
+  // Only treat an instructor token as active inside the instructor workspace.
+  // A stale token in localStorage must not hide the admin-only templates tab.
+  const instructorToken = isInstructorCertificatesPath(pathname) ? storedInstructorToken : null;
   const platformName = tenant?.name ?? "المنصة";
   const platformLogo = tenant?.branding?.logo ?? tenant?.branding?.logo_image ?? null;
 
