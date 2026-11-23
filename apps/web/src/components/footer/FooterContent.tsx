@@ -104,7 +104,20 @@ export function FooterContent({
               <div className="art-face art-bottom" />
               <div className="art-face art-back" />
               <div className="art-face art-top">
-                <span className="art-symbol">M</span>
+                {/* Generic education mark — never tied to a platform initial. */}
+                <svg viewBox="0 0 64 64" className="art-symbol" fill="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="footer-mark-grad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" style={{ stopColor: "var(--brand-primary, #D87B63)" }} />
+                      <stop offset="100%" style={{ stopColor: "var(--brand-secondary, #FFB50E)" }} />
+                    </linearGradient>
+                  </defs>
+                  <path d="M32 13 52 24 32 35 12 24Z" fill="url(#footer-mark-grad)" />
+                  <path d="M12 24h40v5H12z" style={{ fill: "var(--brand-secondary, #FFB50E)" }} fillOpacity=".72" />
+                  <path d="M24 35h16l3 12H21z" fill="#fff" fillOpacity=".92" />
+                  <path d="M32 24c8 1 13 5 13 11" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+                  <circle cx="45" cy="37" r="2.6" fill="#fff" />
+                </svg>
               </div>
             </div>
 
@@ -235,18 +248,31 @@ export function FooterContent({
 
       <style jsx>{`
         .mechanist-footer {
-          --blue: #2869a5;
-          --deep: #123453;
-          --coral: #f66b70;
+          /* Live platform pair from BrandThemeProvider; fallbacks match globals.css. */
+          --brand-a: var(--brand-primary, #D87B63);
+          --brand-b: var(--brand-secondary, #FFB50E);
           --white: #fff;
-          --muted: #b9cde0;
+          --muted: rgba(255,255,255,.7);
+          --hairline: rgba(255,255,255,.14);
 
           position: relative;
           isolation: isolate;
           overflow: hidden;
           background: #143b60;
+          background: color-mix(in srgb, var(--brand-a) 44%, #0d2135);
           color: var(--white);
           font-family: inherit;
+        }
+
+        .mechanist-footer::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto;
+          height: 2px;
+          background: linear-gradient(90deg, var(--brand-a), var(--brand-b), var(--brand-a));
+          opacity: .9;
+          z-index: 2;
+          pointer-events: none;
         }
 
         .footer-glow {
@@ -255,11 +281,14 @@ export function FooterContent({
           height: 260px;
           top: -140px;
           right: 12%;
-          background: rgba(40, 105, 165, .22);
-          filter: blur(70px);
+          background: var(--brand-b);
+          opacity: .26;
+          filter: blur(80px);
           border-radius: 50%;
           pointer-events: none;
           z-index: -1;
+          animation: glow-breathe 9s ease-in-out infinite;
+          will-change: transform, opacity;
         }
 
         .footer-container {
@@ -277,7 +306,7 @@ export function FooterContent({
           align-items: center;
           gap: 35px;
           padding: 30px 0;
-          border-bottom: 1px solid rgba(255,255,255,.13);
+          border-bottom: 1px solid var(--hairline);
         }
 
         .footer-brand {
@@ -288,7 +317,7 @@ export function FooterContent({
           display: flex;
           align-items: center;
           gap: 9px;
-          color: #b9cde0;
+          color: var(--muted);
           font-size: 9px;
           letter-spacing: 2px;
           font-weight: 800;
@@ -298,12 +327,13 @@ export function FooterContent({
         .brand-indicator {
           width: 7px;
           height: 7px;
-          background: var(--coral);
+          background: var(--brand-a);
           border-radius: 50%;
-          box-shadow: 0 0 12px rgba(246,107,112,.6);
+          box-shadow: 0 0 12px color-mix(in srgb, var(--brand-a) 60%, transparent);
+          animation: status-pulse 3.2s ease-in-out infinite;
         }
 
-        .brand-logo {
+        .footer-brand :global(.brand-logo) {
           display: inline-flex;
           align-items: center;
           gap: 10px;
@@ -322,6 +352,7 @@ export function FooterContent({
           width: auto;
           max-width: 150px;
           object-fit: contain;
+          transition: transform .25s;
         }
 
         .brand-logo-text {
@@ -329,7 +360,16 @@ export function FooterContent({
         }
 
         .brand-logo-dot {
-          color: var(--coral);
+          color: var(--brand-b);
+          transition: transform .25s;
+        }
+
+        .footer-brand :global(.brand-logo:hover) .brand-logo-image {
+          transform: translateY(-2px);
+        }
+
+        .footer-brand :global(.brand-logo:hover) .brand-logo-dot {
+          transform: translateX(2px);
         }
 
         .brand-description {
@@ -340,31 +380,50 @@ export function FooterContent({
           margin: 9px 0 17px;
         }
 
-        .brand-cta {
+        .footer-brand :global(.brand-cta) {
+          position: relative;
           display: inline-flex;
           align-items: center;
           gap: 22px;
           padding: 10px 15px;
-          background: var(--coral);
-          color: white;
+          overflow: hidden;
+          background: var(--brand-a);
+          color: var(--brand-primary-contrast, #fff);
           font-size: 12px;
           font-weight: 700;
           text-decoration: none;
           border-radius: 3px;
-          transition: background .25s, transform .25s;
+          transition: background .25s, transform .25s, box-shadow .25s;
         }
 
-        .brand-cta:hover {
-          background: #e75c64;
+        .footer-brand :global(.brand-cta)::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%);
+          transform: translateX(120%);
+          transition: transform .65s ease;
+          pointer-events: none;
+        }
+
+        .footer-brand :global(.brand-cta:hover) {
+          background: color-mix(in srgb, var(--brand-a) 86%, #fff);
           transform: translateY(-3px);
+          box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--brand-a) 80%, transparent);
+        }
+
+        .footer-brand :global(.brand-cta:hover)::after {
+          transform: translateX(-120%);
         }
 
         .cta-arrow {
+          position: relative;
+          color: var(--brand-b);
           font-size: 17px;
           transition: transform .25s;
         }
 
-        .brand-cta:hover .cta-arrow {
+        .footer-brand :global(.brand-cta:hover) .cta-arrow {
           transform: translate(-3px, 3px);
         }
 
@@ -385,6 +444,7 @@ export function FooterContent({
           transform: rotateX(-32deg) rotateY(-35deg);
           animation: object-float 5s ease-in-out infinite;
           transition: transform .6s;
+          will-change: transform, translate;
         }
 
         .footer-art:hover .art-object {
@@ -401,30 +461,42 @@ export function FooterContent({
 
         .art-bottom {
           background: #17436b;
+          background: color-mix(in srgb, var(--brand-a) 46%, #0d2135);
           transform: translateZ(-17px) translate(8px, 8px);
           box-shadow: 0 14px 30px rgba(0,0,0,.3);
         }
 
         .art-back {
-          background: #f66b70;
+          background: var(--brand-b);
           transform: translateZ(0);
+          transition: background .4s;
         }
 
         .art-top {
           display: grid;
           place-items: center;
           background: linear-gradient(140deg, #4789bd, #205581);
+          background: linear-gradient(140deg,
+            color-mix(in srgb, var(--brand-a) 72%, #10263e),
+            color-mix(in srgb, var(--brand-b) 42%, #10263e));
           transform: translateZ(18px) translate(-7px, -7px);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,.3),
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.32),
                       0 12px 24px rgba(0,0,0,.2);
         }
 
         .art-symbol {
-          font-family: Georgia, serif;
-          font-size: 37px;
-          font-weight: bold;
-          color: white;
+          display: block;
+          width: 46px;
+          height: 46px;
           transform: translateZ(8px);
+          filter: drop-shadow(0 5px 8px rgba(0,0,0,.28));
+          transition: transform .6s, filter .4s;
+          animation: mark-glow 5s ease-in-out infinite;
+        }
+
+        .footer-art:hover .art-symbol {
+          transform: translateZ(12px) rotate(-4deg);
+          filter: drop-shadow(0 8px 12px rgba(0,0,0,.34));
         }
 
         .art-orbit {
@@ -432,23 +504,26 @@ export function FooterContent({
           width: 135px;
           height: 55px;
           border: 1px solid rgba(160,198,230,.35);
+          border-color: color-mix(in srgb, var(--brand-a) 45%, transparent);
           border-radius: 50%;
           transform: rotate(-25deg);
           pointer-events: none;
+          animation: orbit-drift-a 8s ease-in-out infinite;
         }
 
         .orbit-b {
           width: 110px;
           height: 85px;
-          border-color: rgba(246,107,112,.38);
+          border-color: color-mix(in srgb, var(--brand-b) 50%, transparent);
           transform: rotate(55deg);
+          animation: orbit-drift-b 9s ease-in-out infinite;
         }
 
         .art-spark {
           position: absolute;
           right: 48px;
           top: 24px;
-          color: var(--coral);
+          color: var(--brand-b);
           font-size: 17px;
           animation: sparkle 3s ease-in-out infinite;
         }
@@ -456,7 +531,7 @@ export function FooterContent({
         .art-caption {
           position: absolute;
           bottom: 1px;
-          color: #91adc7;
+          color: color-mix(in srgb, var(--brand-b) 42%, #b9cde0);
           font-size: 8px;
           letter-spacing: 1.5px;
           font-weight: 700;
@@ -469,7 +544,7 @@ export function FooterContent({
           grid-template-columns: repeat(3, 1fr);
           gap: 45px;
           padding: 26px 0;
-          border-bottom: 1px solid rgba(255,255,255,.13);
+          border-bottom: 1px solid var(--hairline);
         }
 
         .group-heading {
@@ -480,7 +555,7 @@ export function FooterContent({
         }
 
         .group-number {
-          color: var(--coral);
+          color: var(--brand-b);
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 1px;
@@ -501,42 +576,55 @@ export function FooterContent({
           gap: 11px;
         }
 
-        .footer-group li a {
+        .footer-group li :global(a) {
           display: inline-flex;
           align-items: center;
           gap: 9px;
-          color: #b9cde0;
+          color: var(--muted);
           text-decoration: none;
           font-size: 12px;
           transition: color .2s, transform .2s;
+        }
+
+        .footer-group li :global(a) > span:nth-child(2) {
+          background-image: linear-gradient(var(--brand-b), var(--brand-b));
+          background-position: 0 100%;
+          background-repeat: no-repeat;
+          background-size: 0 1px;
+          transition: background-size .25s;
         }
 
         .nav-dot {
           width: 4px;
           height: 4px;
           border-radius: 50%;
-          background: var(--coral);
+          background: var(--brand-a);
           opacity: .7;
-          transition: transform .2s;
+          transition: transform .2s, background .2s;
         }
 
         .nav-arrow {
-          color: var(--coral);
+          color: var(--brand-b);
           opacity: 0;
           transform: translate(-3px, 3px);
           transition: all .2s;
         }
 
-        .footer-group li a:hover {
+        .footer-group li :global(a):hover {
           color: white;
           transform: translateX(-4px);
         }
 
-        .footer-group li a:hover .nav-dot {
+        .footer-group li :global(a):hover > span:nth-child(2) {
+          background-size: 100% 1px;
+        }
+
+        .footer-group li :global(a):hover .nav-dot {
+          background: var(--brand-b);
           transform: scale(1.8);
         }
 
-        .footer-group li a:hover .nav-arrow {
+        .footer-group li :global(a):hover .nav-arrow {
           opacity: 1;
           transform: translate(0, 0);
         }
@@ -549,7 +637,7 @@ export function FooterContent({
           justify-content: space-between;
           gap: 20px;
           padding: 16px 0;
-          border-bottom: 1px solid rgba(255,255,255,.13);
+          border-bottom: 1px solid var(--hairline);
         }
 
         .contact-heading {
@@ -564,9 +652,10 @@ export function FooterContent({
         .contact-status {
           width: 7px;
           height: 7px;
-          background: #5cd59a;
+          background: var(--brand-a);
           border-radius: 50%;
-          box-shadow: 0 0 10px rgba(92,213,154,.4);
+          box-shadow: 0 0 10px color-mix(in srgb, var(--brand-a) 50%, transparent);
+          animation: status-pulse 3.2s ease-in-out infinite;
         }
 
         .contact-hours,
@@ -586,33 +675,50 @@ export function FooterContent({
           gap: 24px;
         }
 
-        .contact-details a {
+        .contact-details :global(a) {
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #c5d6e6;
+          color: var(--muted);
           text-decoration: none;
           font-size: 11px;
           transition: color .2s;
         }
 
-        .contact-details a:hover {
+        .contact-details :global(a):hover {
           color: white;
         }
 
         .contact-icon {
-          color: var(--coral);
+          color: var(--brand-b);
           font-size: 14px;
+          transition: transform .25s;
         }
 
-        .contact-more {
-          color: var(--coral);
+        .contact-details :global(a):hover .contact-icon {
+          transform: rotate(8deg) scale(1.15);
+        }
+
+        .footer-contact :global(.contact-more) {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          color: var(--brand-b);
           font-size: 11px;
           text-decoration: none;
+          transition: gap .2s;
         }
 
-        .contact-more span {
-          margin-right: 6px;
+        .footer-contact :global(.contact-more):hover {
+          gap: 8px;
+        }
+
+        .footer-contact :global(.contact-more) span {
+          transition: transform .25s;
+        }
+
+        .footer-contact :global(.contact-more):hover span {
+          transform: translateX(-3px);
         }
 
         /* Bottom */
@@ -623,7 +729,7 @@ export function FooterContent({
           align-items: center;
           justify-content: space-between;
           gap: 15px;
-          color: #a9bfd4;
+          color: var(--muted);
           font-size: 10px;
         }
 
@@ -632,16 +738,20 @@ export function FooterContent({
           gap: 20px;
         }
 
-        .footer-legal a,
+        .footer-legal :global(a),
         .back-to-top {
-          color: #a9bfd4;
+          color: var(--muted);
           text-decoration: none;
           transition: color .2s;
         }
 
-        .footer-legal a:hover,
+        .footer-legal :global(a):hover,
         .back-to-top:hover {
           color: white;
+        }
+
+        .footer-legal :global(a):hover {
+          text-decoration-color: var(--brand-b);
         }
 
         .back-to-top {
@@ -656,7 +766,7 @@ export function FooterContent({
         }
 
         .top-arrow {
-          color: var(--coral);
+          color: var(--brand-b);
           font-size: 16px;
           transition: transform .2s;
         }
@@ -665,11 +775,48 @@ export function FooterContent({
           transform: translateY(-4px);
         }
 
+        .footer-brand :global(.brand-logo:focus-visible),
+        .footer-brand :global(.brand-cta:focus-visible),
+        .footer-group li :global(a:focus-visible),
+        .contact-details :global(a:focus-visible),
+        .footer-contact :global(.contact-more:focus-visible),
+        .footer-legal :global(a:focus-visible),
+        .back-to-top:focus-visible {
+          outline: 2px solid var(--brand-b);
+          outline-offset: 3px;
+          border-radius: 3px;
+        }
+
         /* Animation */
 
         @keyframes object-float {
           0%, 100% { translate: 0 0; }
           50% { translate: 0 -7px; }
+        }
+
+        @keyframes glow-breathe {
+          0%, 100% { opacity: .22; transform: scale(1); }
+          50% { opacity: .34; transform: scale(1.08); }
+        }
+
+        @keyframes status-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-a) 45%, transparent); }
+          50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand-a) 0%, transparent); }
+        }
+
+        @keyframes mark-glow {
+          0%, 100% { opacity: .94; }
+          50% { opacity: 1; }
+        }
+
+        @keyframes orbit-drift-a {
+          0%, 100% { transform: rotate(-25deg) translateY(0); }
+          50% { transform: rotate(-19deg) translateY(-3px); }
+        }
+
+        @keyframes orbit-drift-b {
+          0%, 100% { transform: rotate(55deg) translateY(0); }
+          50% { transform: rotate(61deg) translateY(3px); }
         }
 
         @keyframes sparkle {
