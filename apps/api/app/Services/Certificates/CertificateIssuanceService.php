@@ -6,21 +6,19 @@ use App\Models\Assignment;
 use App\Models\AssignmentResult;
 use App\Models\CertificateApplication;
 use App\Models\CertificateVerification;
+use App\Models\CourseCertificateRule;
 use App\Models\CourseCompletion;
 use App\Models\IssuedCertificate;
 use App\Models\Quiz;
 use App\Models\QuizResult;
 use App\Models\TenantUser;
+use App\Services\Notifications\NotificationEventService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
-use App\Services\Notifications\NotificationEventService;
 
 class CertificateIssuanceService
 {
-    public function __construct(private readonly NotificationEventService $notificationEvents)
-    {
-    }
+    public function __construct(private readonly NotificationEventService $notificationEvents) {}
 
     public function evaluateAndIssue(CourseCompletion $completion): ?IssuedCertificate
     {
@@ -144,6 +142,7 @@ class CertificateIssuanceService
                 'tenant_user_id' => $application->tenant_user_id,
                 'certificate_template_id' => $templateId,
                 'certificate_number' => $this->certificateNumber(),
+                'reference_number' => $this->referenceNumber(),
                 'issued_at' => now(),
                 'status' => 'issued',
                 'metadata' => [
@@ -153,12 +152,19 @@ class CertificateIssuanceService
                 ],
             ]);
 
-            CertificateVerification::create([
+            $verification = CertificateVerification::create([
                 'tenant_id' => $certificate->tenant_id,
                 'issued_certificate_id' => $certificate->id,
                 'verification_code' => $this->verificationCode(),
                 'verified_at' => null,
             ]);
+
+            $rule = $completion->course?->certificateRule;
+            $certificate->forceFill([
+                'course_enrollment_id' => $application->course_enrollment_id,
+                'show_instructor_signature' => (bool) ($rule?->show_instructor_signature ?? false),
+                'snapshot_data' => $this->snapshot($application, $completion, $rule, $verification->verification_code, $certificate),
+            ])->save();
 
             return $certificate->refresh()->load(['course', 'student.user', 'template', 'verification']);
         });
@@ -202,6 +208,47 @@ class CertificateIssuanceService
             ->count();
 
         return $passedCount === $assignmentIds->count();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function snapshot(
+        CertificateApplication $application,
+        CourseCompletion $completion,
+        ?CourseCertificateRule $rule,
+        string $verificationCode,
+        IssuedCertificate $certificate,
+    ): array {
+        $course = $completion->course;
+        $instructor = $course?->primaryInstructor ?: $course?->creator;
+        $template = $application->template ?: $course?->certificateRule?->template;
+
+        return [
+            'course_title' => $course?->title,
+            'instructor_name' => $instructor?->user?->name,
+            'student_name' => $application->student?->user?->name,
+            'certificate_number' => $certificate->certificate_number,
+            'reference_number' => $certificate->reference_number,
+            'verification_code' => $verificationCode,
+            'issued_at' => now()->toIso8601String(),
+            'design' => $template?->template_data ?? [],
+            'manager_signature_name' => $rule?->manager_signature_name,
+            'manager_signature_title' => $rule?->manager_signature_title,
+            'manager_signature_url' => $rule?->manager_signature_url,
+            'instructor_signature_url' => $rule?->instructor_signature_url,
+            'show_instructor_signature' => (bool) ($rule?->show_instructor_signature ?? false),
+            'requirements' => $application->metadata['requirement_snapshot'] ?? [],
+        ];
+    }
+
+    private function referenceNumber(): string
+    {
+        do {
+            $number = 'REF-'.now()->format('Y').'-'.Str::upper(substr((string) Str::uuid(), 0, 10));
+        } while (IssuedCertificate::withoutGlobalScopes()->where('reference_number', $number)->exists());
+
+        return $number;
     }
 
     private function certificateNumber(): string

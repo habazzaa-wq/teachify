@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { X, Printer } from "lucide-react";
+import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { FileImage, FileText, Loader2, Printer, X } from "lucide-react";
 import type { IssuedCertificate } from "../types";
 import { CertificatePreview } from "./CertificatePreview";
 
@@ -14,10 +16,67 @@ interface Props {
 
 export function CertificateViewDialog({ certificate, platformName, platformLogoUrl, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState<"png" | "pdf" | null>(null);
+
   if (!certificate) return null;
 
+  const certificateNode = () => ref.current?.querySelector(`#certificate-print-${certificate.id}`) as HTMLElement | null;
+
+  const renderCertificate = async () => {
+    const node = certificateNode();
+    if (!node) throw new Error("Certificate preview is not ready.");
+    return html2canvas(node, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      imageTimeout: 8000,
+      onclone: (documentClone) => {
+        const cloned = documentClone.getElementById(`certificate-print-${certificate.id}`);
+        if (cloned) {
+          cloned.style.boxShadow = "none";
+          cloned.style.maxWidth = "none";
+          cloned.style.width = "1123px";
+        }
+      },
+    });
+  };
+
+  const fileName = () => {
+    const reference = certificate.reference_number ?? certificate.certificate_number ?? "certificate";
+    return `certificate-${reference}`.replace(/[^a-zA-Z0-9-_]/g, "-");
+  };
+
+  const handleDownloadPng = async () => {
+    setDownloading("png");
+    try {
+      const canvas = await renderCertificate();
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `${fileName()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloading("pdf");
+    try {
+      const canvas = await renderCertificate();
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
+      pdf.save(`${fileName()}.pdf`);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   const handlePrint = () => {
-    const node = ref.current?.querySelector(`#certificate-print-${certificate.id}`) as HTMLElement | null;
+    const node = certificateNode();
     if (!node) return window.print();
     const win = window.open("", "_blank", "width=1200,height=900");
     if (!win) return;
@@ -31,13 +90,35 @@ export function CertificateViewDialog({ certificate, platformName, platformLogoU
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-auto p-4" onClick={onClose}>
       <div className="mx-auto max-w-6xl my-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-white">
           <h3 className="text-lg font-bold">معاينة الشهادة</h3>
-          <div className="flex items-center gap-2">
-            <button onClick={handlePrint} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleDownloadPng}
+              disabled={downloading !== null}
+              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+            >
+              {downloading === "png" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileImage className="h-4 w-4" />}
+              صورة PNG
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloading !== null}
+              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+            >
+              {downloading === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              ملف PDF
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={downloading !== null}
+              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+            >
               <Printer className="h-4 w-4" /> طباعة
             </button>
-            <button onClick={onClose} className="rounded-lg bg-white/15 p-2 hover:bg-white/25"><X className="h-5 w-5" /></button>
+            <button onClick={onClose} className="rounded-lg bg-white/15 p-2 hover:bg-white/25" aria-label="إغلاق">
+              <X className="h-5 w-5" />
+            </button>
           </div>
         </div>
         <CertificatePreview ref={ref} certificate={certificate} platformName={platformName} platformLogoUrl={platformLogoUrl} />

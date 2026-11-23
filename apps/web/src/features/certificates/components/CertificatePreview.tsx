@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { DEFAULT_CERTIFICATE_DESIGN, type CertificateTemplateDesign, type IssuedCertificate } from "../types";
 
 export function resolveCertificateDesign(design?: Partial<CertificateTemplateDesign> | Record<string, unknown> | null): CertificateTemplateDesign {
@@ -17,18 +18,56 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
   { certificate, platformName, platformLogoUrl },
   ref,
 ) {
-  const design = resolveCertificateDesign(certificate.template?.template_data);
+  const snapshot = certificate.snapshot_data ?? {};
+  const design = resolveCertificateDesign(snapshot.design ?? certificate.template?.template_data);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
   const logo = design.logoUrl || platformLogoUrl || null;
   const seal = design.sealUrl || null;
-  const studentName = certificate.student?.user?.name ?? "طالب";
-  const courseTitle = certificate.course?.title ?? "الدورة";
-  const issuedDate = certificate.issued_at ? new Date(certificate.issued_at).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }) : "";
-  const verificationCode = certificate.verification?.verification_code;
-  const verificationUrl = verificationCode ? `${typeof window !== "undefined" ? window.location.origin : ""}/verify-certificate/${verificationCode}` : null;
+  const studentName = snapshot.student_name ?? certificate.student?.user?.name ?? "طالب";
+  const courseTitle = snapshot.course_title ?? certificate.course?.title ?? "الدورة";
+  const instructorName = snapshot.instructor_name ?? "اسم المدرب";
+  const referenceNumber = snapshot.reference_number ?? certificate.reference_number ?? certificate.certificate_number;
+  const issuedDateValue = snapshot.issued_at ?? certificate.issued_at;
+  const issuedDate = issuedDateValue
+    ? new Date(issuedDateValue).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" })
+    : "";
+  const verificationCode = snapshot.verification_code ?? certificate.verification?.verification_code;
+  const verificationUrl = verificationCode
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/verify-certificate/${verificationCode}`
+    : null;
+  const showInstructorSignature = Boolean(snapshot.show_instructor_signature ?? certificate.show_instructor_signature ?? false);
+  const managerSignatureUrl = snapshot.manager_signature_url ?? design.signatureImageUrl;
+  const managerSignatureName = snapshot.manager_signature_name ?? design.signatureName ?? platformName ?? "إدارة المنصة";
+  const managerSignatureTitle = snapshot.manager_signature_title ?? design.signatureTitle ?? "مدير المنصة";
+  const instructorSignatureUrl = snapshot.instructor_signature_url ?? design.instructorSignatureUrl;
   const borderStyle = design.borderStyle;
   const accent = design.accentColor || "#B8860B";
   const secondary = design.secondaryColor || "#1F2937";
   const bg = design.backgroundColor || "#FFFDF8";
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!verificationUrl || !design.showQr) {
+      setQrDataUrl(null);
+      return;
+    }
+    void QRCode.toDataURL(verificationUrl, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 220,
+      color: { dark: secondary, light: "#FFFFFF" },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [verificationUrl, design.showQr, secondary]);
 
   return (
     <div ref={ref} className="w-full overflow-auto bg-neutral-100 p-4 print:bg-white print:p-0">
@@ -65,7 +104,7 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
             </div>
             <div className="flex-1 pt-2">
               <div className="text-sm tracking-[0.3em] font-bold" style={{ color: accent }}>{platformName || "المنصة التعليمية"}</div>
-              <h1 className="mt-4 text-5xl font-black" style={{ color: secondary }}>{design.titleText || "شهادة إتمام"}</h1>
+              <h1 className="mt-4 text-5xl font-black" style={{ color: secondary }}>{design.titleText || "شهادة إتمام الدورة"}</h1>
               <p className="mt-3 text-lg" style={{ color: `${secondary}cc` }}>{design.subtitleText || "تشهد هذه المنصة بأن"}</p>
             </div>
             <div className="w-28 h-28 flex items-center justify-center">
@@ -84,36 +123,53 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
             <div className="mx-auto w-64 h-px mb-6" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
             <p className="text-xl mb-3" style={{ color: `${secondary}dd` }}>{design.bodyText || "قد أتم بنجاح متطلبات الدورة التدريبية"}</p>
             <p className="text-3xl font-extrabold" style={{ color: secondary }}>&ldquo;{courseTitle}&rdquo;</p>
-            {certificate.completion?.completion_percent != null && (
-              <p className="mt-4 text-sm font-bold" style={{ color: `${secondary}99` }}>نسبة الإنجاز: {certificate.completion.completion_percent}%</p>
-            )}
+            <p className="mt-4 text-base font-bold" style={{ color: `${secondary}aa` }}>المدرب: {instructorName}</p>
           </div>
 
           <div className="flex items-end justify-between gap-8">
             <div className="text-right min-w-[180px]">
+              {managerSignatureUrl ? (
+                <img src={managerSignatureUrl} alt="manager signature" className="h-16 max-w-[180px] object-contain object-right mb-1" />
+              ) : null}
               <div className="h-px w-44 mb-2" style={{ backgroundColor: `${secondary}44` }} />
-              <div className="font-bold">{design.signatureName || platformName || "إدارة المنصة"}</div>
-              <div className="text-sm" style={{ color: `${secondary}99` }}>{design.signatureTitle || "مدير المنصة"}</div>
+              <div className="font-bold">{managerSignatureName}</div>
+              <div className="text-sm" style={{ color: `${secondary}99` }}>{managerSignatureTitle}</div>
             </div>
 
             <div className="text-center text-sm" style={{ color: `${secondary}aa` }}>
               <div>{design.footerText || "نتمنى له دوام التوفيق والنجاح"}</div>
               <div className="mt-2 font-bold">تاريخ الإصدار: {issuedDate}</div>
-              <div className="mt-1">رقم الشهادة: {certificate.certificate_number}</div>
-              {verificationCode && <div className="mt-1">رمز التحقق: {verificationCode}</div>}
+              <div className="mt-1">الرقم المرجعي: {referenceNumber}</div>
+              {verificationCode && <div className="mt-1 text-[11px]">رمز التحقق: {verificationCode}</div>}
             </div>
 
-            <div className="text-left min-w-[140px] flex flex-col items-end">
-              {design.showQr && verificationUrl ? (
-                <div className="border p-2 bg-white" style={{ borderColor: `${accent}44` }}>
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(verificationUrl)}`}
-                    alt="QR"
-                    className="h-[90px] w-[90px]"
-                  />
+            <div className="flex items-end gap-4">
+              {showInstructorSignature && (
+                <div className="text-center min-w-[150px]">
+                  {instructorSignatureUrl ? (
+                    <img src={instructorSignatureUrl} alt="instructor signature" className="h-14 max-w-[150px] object-contain mx-auto mb-1" />
+                  ) : <div className="h-14" />}
+                  <div className="h-px w-36 mb-2 mx-auto" style={{ backgroundColor: `${secondary}44` }} />
+                  <div className="font-bold text-sm">{instructorName}</div>
+                  <div className="text-[11px]" style={{ color: `${secondary}99` }}>مدرب الدورة</div>
                 </div>
-              ) : <div className="h-[90px] w-[90px]" />}
-              {verificationUrl && <div className="text-[10px] mt-1 max-w-[140px] break-all text-left" style={{ color: `${secondary}88` }}>تحقق من الشهادة</div>}
+              )}
+              <div className="text-left flex flex-col items-end">
+                {design.showQr && verificationUrl ? (
+                  <div className="border p-2 bg-white" style={{ borderColor: `${accent}44` }}>
+                    {qrDataUrl ? (
+                      <img src={qrDataUrl} alt="QR" className="h-[90px] w-[90px]" />
+                    ) : (
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(verificationUrl)}`}
+                        alt="QR"
+                        className="h-[90px] w-[90px]"
+                      />
+                    )}
+                  </div>
+                ) : <div className="h-[90px] w-[90px]" />}
+                {verificationUrl && <div className="text-[10px] mt-1 max-w-[140px] break-all text-left" style={{ color: `${secondary}88` }}>امسح للتحقق من الشهادة</div>}
+              </div>
             </div>
           </div>
         </div>

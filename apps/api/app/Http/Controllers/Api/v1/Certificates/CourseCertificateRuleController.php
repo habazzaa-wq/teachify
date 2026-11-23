@@ -17,8 +17,10 @@ class CourseCertificateRuleController extends Controller
         abort_if($course->tenant_id !== currentTenant()->id, 404);
         abort_unless($this->canManage(request()->user()), 403);
 
+        $rule = $course->certificateRule()->with('template', 'requirements.exam')->first();
+
         return response()->json([
-            'rule' => $course->certificateRule()->with('template')->first(),
+            'rule' => $rule ? app(CertificateRuleService::class)->serialize($rule) : null,
         ]);
     }
 
@@ -34,6 +36,20 @@ class CourseCertificateRuleController extends Controller
             'require_quiz_pass' => ['sometimes', 'boolean'],
             'require_assignment_pass' => ['sometimes', 'boolean'],
             'minimum_completion_percentage' => ['sometimes', 'integer', 'min:0', 'max:100'],
+            'show_instructor_signature' => ['sometimes', 'boolean'],
+            'manager_signature_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'manager_signature_title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'manager_signature_url' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'instructor_signature_url' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'requirements' => ['sometimes', 'array'],
+            'requirements.*.id' => ['sometimes', 'integer'],
+            'requirements.*.type' => ['required_with:requirements', 'string', 'in:exam_bank,exam_link,project'],
+            'requirements.*.title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'requirements.*.description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'requirements.*.exam_id' => ['sometimes', 'nullable', 'integer'],
+            'requirements.*.exam_link' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'requirements.*.required_score' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
+            'requirements.*.sort_order' => ['sometimes', 'integer', 'min:0'],
         ]);
 
         $rule = $rules->update($course, $validated);

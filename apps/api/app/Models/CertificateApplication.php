@@ -11,9 +11,13 @@ class CertificateApplication extends Model
     use BelongsToTenant;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_ISSUED = 'issued';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -31,6 +35,8 @@ class CertificateApplication extends Model
         'reviewed_at',
         'sent_at',
         'student_note',
+        'submissions',
+        'requirement_reviews',
         'admin_note',
         'metadata',
     ];
@@ -43,7 +49,14 @@ class CertificateApplication extends Model
             'reviewed_at' => 'datetime',
             'sent_at' => 'datetime',
             'metadata' => 'array',
+            'submissions' => 'array',
+            'requirement_reviews' => 'array',
         ];
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     public function course(): BelongsTo

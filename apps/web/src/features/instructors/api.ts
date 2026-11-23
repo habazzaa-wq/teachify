@@ -3,7 +3,6 @@ import { resolveApiBaseUrl } from "@/config/env";
 import { useTenantStore } from "@/stores/tenant.store";
 import { useInstructorAuthStore } from "./store";
 import type {
-  InstructorCoursesResponse,
   InstructorCourseResponse,
   InstructorMembership,
   InstructorSessionResponse,
@@ -340,6 +339,33 @@ export const instructorApi = {
 
   listExams(token: string) {
     return request<InstructorListResponse<InstructorExam>>("instructor/exams", "GET", { token });
+  },
+
+  certificateTemplates(token: string) {
+    return request<{ templates: unknown[] }>("instructor/certificates/templates", "GET", { token });
+  },
+
+  certificateApplications(token: string, params?: Record<string, string | number | undefined>) {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params ?? {}).filter(([, value]) => value !== undefined),
+    ) as Record<string, string | number>;
+    return request<{ applications: unknown }>("instructor/certificates/applications", "GET", { token, params: cleanParams });
+  },
+
+  certificateApprove(token: string, id: string | number, payload: Record<string, unknown>) {
+    return request<{ application: unknown }>(`instructor/certificates/applications/${id}/approve`, "POST", { token, data: payload });
+  },
+
+  certificateReject(token: string, id: string | number, payload: Record<string, unknown>) {
+    return request<{ application: unknown }>(`instructor/certificates/applications/${id}/reject`, "POST", { token, data: payload });
+  },
+
+  certificateRule(token: string, courseId: string | number) {
+    return request<{ rule: unknown | null }>(`instructor/courses/${courseId}/certificate-rule`, "GET", { token });
+  },
+
+  updateCertificateRule(token: string, courseId: string | number, payload: Record<string, unknown>) {
+    return request<{ rule: unknown }>(`instructor/courses/${courseId}/certificate-rule`, "PUT", { token, data: payload });
   },
 
   gradingQueue(token: string) {
