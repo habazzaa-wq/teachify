@@ -97,7 +97,7 @@ function CourseStudioCanvas({
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             >
-              <CourseStudioContentOverview item={selectedContent} />
+              <CourseStudioContentOverview item={selectedContent} onEdit={onEditContent ? () => onEditContent(selectedContent) : undefined} />
             </motion.div>
           ) : canvasView === "section" && selectedLecture && selectedSection ? (
             <motion.div

@@ -37,6 +37,7 @@ class CourseLesson extends Model
         'icon',
         'exam_id',
         'course_session_id',
+        'external_url',
         'published_at',
     ];
 

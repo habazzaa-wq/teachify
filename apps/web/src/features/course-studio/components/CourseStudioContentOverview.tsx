@@ -7,6 +7,7 @@ import {
   Lock,
   Calendar,
   Globe,
+  Pencil,
   Video,
   FileType,
   ClipboardList,
@@ -19,6 +20,7 @@ import {
   Award,
 } from "lucide-react";
 import { StudioStatusBadge } from "@/components/studio/badges";
+import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSurfaceCard } from "@/components/studio/surfaces/StudioSurfaceCard";
 import { StudioPropertyRow } from "@/components/studio/lists/StudioPropertyRow";
 import { cn } from "@/lib/cn";
@@ -125,6 +127,11 @@ function CourseStudioContentOverview({
                 {item.title}
               </h1>
               <StudioStatusBadge status={item.status} />
+              {onEdit && (
+                <StudioButton variant="ghost" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} className="ms-auto shrink-0">
+                  تعديل
+                </StudioButton>
+              )}
             </div>
             <div className="mt-1 flex items-center gap-3 text-xs text-studio-fg-muted">
               <span>{meta.label}</span>

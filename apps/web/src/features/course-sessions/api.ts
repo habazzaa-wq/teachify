@@ -28,6 +28,10 @@ export const courseSessionsApi = {
     const { data } = await api.post(base(courseId), payload);
     return data.data as CourseSession;
   },
+  async get(courseId: string, sessionId: string) {
+    const { data } = await api.get(`${base(courseId)}/${sessionId}`);
+    return data.data as CourseSession;
+  },
   async update(courseId: string, sessionId: string, payload: Partial<SessionPayload>) {
     const { data } = await api.put(`${base(courseId)}/${sessionId}`, payload);
     return data.data as CourseSession;
