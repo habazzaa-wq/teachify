@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ListTree, Search, Layers, GraduationCap, Clock, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CurriculumModule } from "./CurriculumModule";
+import { CurriculumSessionCard } from "./CurriculumSessionCard";
 import { SectionHeader } from "./primitives";
 import { getCourseStats, formatDuration } from "../utils";
 import type { PublicCourseLesson, PublicCourseModule } from "../types";
@@ -25,6 +26,11 @@ function filterModules(
 
   return modules
     .map((mod) => {
+      if (mod.courseSessionId) {
+        const haystack = `${mod.title} ${mod.description ?? ""} ${mod.courseSession?.title ?? ""} ${mod.courseSession?.description ?? ""} ${mod.courseSession?.locationName ?? ""}`.toLowerCase();
+        return haystack.includes(lower) ? mod : null;
+      }
+
       const sections = (mod.sections ?? [])
         .map((section) => {
           const lessons = (section.lessons ?? []).filter((lesson) =>
@@ -58,10 +64,15 @@ function CurriculumSectionInner({
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  const stats = useMemo(() => getCourseStats(modules), [modules]);
+  const visibleModules = useMemo(() => {
+    if (isEnrolled) return modules;
+    return modules.filter((m) => !m.courseSessionId);
+  }, [modules, isEnrolled]);
+
+  const stats = useMemo(() => getCourseStats(visibleModules), [visibleModules]);
   const filteredModules = useMemo(
-    () => filterModules(modules, searchQuery),
-    [modules, searchQuery],
+    () => filterModules(visibleModules, searchQuery),
+    [visibleModules, searchQuery],
   );
   const searchActive = searchQuery.trim().length > 0;
 
@@ -205,19 +216,23 @@ function CurriculumSectionInner({
       {/* Modules list */}
       <motion.div className="space-y-3">
         {filteredModules.length > 0 ? (
-          filteredModules.map((mod) => (
-            <CurriculumModule
-              key={mod.id}
-              module={mod}
-              isEnrolled={isEnrolled}
-              onLockedClick={onLockedClick}
-              onPlay={onPlay}
-              isExpanded={searchActive || expandedModules.has(mod.id)}
-              onToggle={() => toggleModule(mod.id)}
-              expandedSections={expandedSections}
-              onToggleSection={toggleSection}
-            />
-          ))
+          filteredModules.map((mod) =>
+            mod.courseSessionId ? (
+              <CurriculumSessionCard key={mod.id} module={mod} />
+            ) : (
+              <CurriculumModule
+                key={mod.id}
+                module={mod}
+                isEnrolled={isEnrolled}
+                onLockedClick={onLockedClick}
+                onPlay={onPlay}
+                isExpanded={searchActive || expandedModules.has(mod.id)}
+                onToggle={() => toggleModule(mod.id)}
+                expandedSections={expandedSections}
+                onToggleSection={toggleSection}
+              />
+            ),
+          )
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/50 bg-card/50 py-12">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">

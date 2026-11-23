@@ -19,7 +19,6 @@ import { PurchaseSidebar } from "./PurchaseSidebar";
 import { MobilePurchaseBar } from "./MobilePurchaseBar";
 import { LockedModal } from "./LockedModal";
 import { PurchaseCourseModal } from "./PurchaseCourseModal";
-import { StudentCourseSessions } from "@/features/course-sessions/components/StudentCourseSessions";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCurrentUser } from "@/hooks/useAuthStatus";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -186,7 +185,6 @@ export function PublicCoursePage({ slug, initialCourse }: Props) {
           {/* Main content */}
           <div className="min-w-0 space-y-14">
             {isEnrolled && curriculumSection}
-            {isEnrolled && <StudentCourseSessions courseId={course.id} isEnrolled={isEnrolled} />}
 
             <CourseInformation
               description={course.description}

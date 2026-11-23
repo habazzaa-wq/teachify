@@ -25,6 +25,20 @@ export interface PublicInstructor {
   socialLinks?: { platform: string; url: string }[];
 }
 
+export interface PublicCourseSession {
+  id: string;
+  title: string;
+  sessionType: "live" | "field" | "offline";
+  status: "draft" | "scheduled" | "cancelled" | "completed";
+  startsAtUtc: string | null;
+  endsAtUtc: string | null;
+  timezone: string | null;
+  meetingUrl?: string | null;
+  locationName?: string | null;
+  locationAddress?: string | null;
+  description?: string | null;
+}
+
 export interface PublicCourseModule {
   id: string;
   title: string;
@@ -34,6 +48,8 @@ export interface PublicCourseModule {
   estimatedDuration: number | null;
   sectionsCount: number;
   sections: PublicCourseSection[];
+  courseSessionId: string | null;
+  courseSession: PublicCourseSession | null;
   createdAt: string;
   updatedAt: string;
 }

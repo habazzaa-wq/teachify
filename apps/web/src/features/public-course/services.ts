@@ -102,6 +102,22 @@ function formatModule(raw: Raw): PublicCourseModule {
     estimatedDuration: raw.estimatedDuration ?? null,
     sectionsCount: raw.sectionsCount ?? 0,
     sections: (raw.sections ?? []).map(formatSection),
+    courseSessionId: raw.courseSessionId != null ? String(raw.courseSessionId) : null,
+    courseSession: raw.courseSession
+      ? {
+          id: String(raw.courseSession.id),
+          title: raw.courseSession.title ?? raw.title,
+          sessionType: raw.courseSession.sessionType ?? "live",
+          status: raw.courseSession.status ?? "scheduled",
+          startsAtUtc: raw.courseSession.startsAtUtc ?? null,
+          endsAtUtc: raw.courseSession.endsAtUtc ?? null,
+          timezone: raw.courseSession.timezone ?? null,
+          meetingUrl: raw.courseSession.meetingUrl ?? null,
+          locationName: raw.courseSession.locationName ?? null,
+          locationAddress: raw.courseSession.locationAddress ?? null,
+          description: raw.courseSession.description ?? null,
+        }
+      : null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
