@@ -6,14 +6,17 @@ import type {
 
 /** Notification inbox API (named-key envelopes). */
 export const notificationService = {
-  async list(): Promise<NotificationListResponse> {
-    const { data } = await api.get<NotificationListResponse>("/notifications");
+  async list(typePrefix?: string): Promise<NotificationListResponse> {
+    const { data } = await api.get<NotificationListResponse>("/notifications", {
+      params: typePrefix ? { type_prefix: typePrefix } : undefined,
+    });
     return data;
   },
 
-  async listUnread(): Promise<NotificationListResponse> {
+  async listUnread(typePrefix?: string): Promise<NotificationListResponse> {
     const { data } = await api.get<NotificationListResponse>(
       "/notifications/unread",
+      { params: typePrefix ? { type_prefix: typePrefix } : undefined },
     );
     return data;
   },

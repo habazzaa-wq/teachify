@@ -546,7 +546,7 @@ export function PublicNavbar() {
                   <div className="relative" ref={dropdownRef}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       {walletEnabled && <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />}
-                      <AppNotificationBellLive enabled={isLoggedIn} viewAllHref="/student/notifications" />
+                      <AppNotificationBellLive enabled={isLoggedIn} viewAllHref="/student/notifications" sessionOnly />
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

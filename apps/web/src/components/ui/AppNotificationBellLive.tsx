@@ -2,8 +2,20 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { AppNotificationMenu, type NotificationItem } from "./AppNotificationMenu";
+import { useEnrolledCourses } from "@/features/course-catalog/hooks";
 import { useNotifications } from "@/hooks/useNotifications";
+import type { NotificationItem } from "@/types/notification.types";
+import { AppNotificationMenu, type NotificationItem as MenuItem } from "./AppNotificationMenu";
+
+/** Only newly published sessions are surfaced in the student navbar. */
+const SESSION_PUBLISHED_TYPE = "session.scheduled";
+
+interface AppNotificationBellLiveProps {
+  enabled?: boolean;
+  viewAllHref?: string;
+  /** Student navbar only: show session notices for enrolled courses. */
+  sessionOnly?: boolean;
+}
 
 function formatTs(ts?: string | null) {
   if (!ts) return "";
@@ -14,17 +26,21 @@ function formatTs(ts?: string | null) {
   }
 }
 
-export function AppNotificationBellLive({
+function sessionCourseId(notification: NotificationItem): string | null {
+  const data = notification.data as { course_id?: unknown } | null;
+  if (data?.course_id === null || data?.course_id === undefined) return null;
+  return String(data.course_id);
+}
+
+/** Original shared bell: admin, teacher and platform headers. */
+function GeneralNotificationBell({
   enabled = true,
   viewAllHref = "/dashboard/notifications",
-}: {
-  enabled?: boolean;
-  viewAllHref?: string;
-}) {
+}: AppNotificationBellLiveProps) {
   const router = useRouter();
   const { unread, all, unreadCount, markRead } = useNotifications(enabled);
 
-  const items: NotificationItem[] = useMemo(() => {
+  const items: MenuItem[] = useMemo(() => {
     const source = all.length ? all : unread;
     return source.slice(0, 8).map((n) => ({
       id: String(n.id),
@@ -49,5 +65,73 @@ export function AppNotificationBellLive({
         if (!Number.isNaN(num)) markRead(num);
       }}
     />
+  );
+}
+
+/** q3 student bell: published sessions for courses the student is enrolled in. */
+function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProps) {
+  const { unread, all, markRead } = useNotifications("session.", enabled);
+  const { data: enrolledCourses } = useEnrolledCourses();
+
+  const enrolledCourseIds = useMemo(
+    () => new Set((enrolledCourses ?? []).map((course) => String(course.id))),
+    [enrolledCourses],
+  );
+
+  const isRelevant = useMemo(() => {
+    return (notification: NotificationItem): boolean => {
+      if (notification.type !== SESSION_PUBLISHED_TYPE) return false;
+      if (notification.status === "archived") return false;
+      const courseId = sessionCourseId(notification);
+      return courseId !== null && enrolledCourseIds.has(courseId);
+    };
+  }, [enrolledCourseIds]);
+
+  const visible = useMemo(() => all.filter(isRelevant), [all, isRelevant]);
+  const unreadVisibleIds = useMemo(
+    () => new Set(unread.filter(isRelevant).map((notification) => notification.id)),
+    [unread, isRelevant],
+  );
+
+  const items: MenuItem[] = visible.slice(0, 8).map((notification) => {
+    const data = notification.data as {
+      course_title?: unknown;
+      session_title?: unknown;
+    } | null;
+    const courseTitle = typeof data?.course_title === "string" ? data.course_title : "";
+    const sessionTitle = typeof data?.session_title === "string" ? data.session_title : "";
+    const fallbackBody = [courseTitle, sessionTitle].filter(Boolean).join(" — ");
+
+    return {
+      id: String(notification.id),
+      title: "جلسة جديدة في دورتك",
+      description: notification.body?.trim() || fallbackBody || undefined,
+      timestamp: formatTs(notification.created_at),
+      read: !unreadVisibleIds.has(notification.id),
+      initials: "ج",
+    };
+  });
+
+  return (
+    <AppNotificationMenu
+      notifications={items}
+      unreadCount={unreadVisibleIds.size}
+      onMarkAllRead={() => {
+        unread.filter(isRelevant).forEach((notification) => markRead(notification.id));
+      }}
+      onItemClick={(id) => {
+        const notificationId = Number(id);
+        if (!Number.isNaN(notificationId)) markRead(notificationId);
+      }}
+      emptyHint="ستظهر جلسات دوراتك المسجّلة هنا"
+    />
+  );
+}
+
+export function AppNotificationBellLive(props: AppNotificationBellLiveProps) {
+  return props.sessionOnly ? (
+    <SessionNotificationBell {...props} />
+  ) : (
+    <GeneralNotificationBell {...props} />
   );
 }
