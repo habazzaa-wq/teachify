@@ -28,8 +28,9 @@ return new class extends Migration
                 ->references(['id', 'tenant_id'])
                 ->on('course_sessions')
                 ->cascadeOnDelete();
-            $table->foreign(['course_session_enrollment_id', 'tenant_id'], 'session_attendance_enrollment_fk')
-                ->references(['id', 'tenant_id'])
+            // Use simple FK: composite SET NULL is incompatible with NOT NULL tenant_id on MySQL.
+            $table->foreign('course_session_enrollment_id', 'session_attendance_enrollment_fk')
+                ->references('id')
                 ->on('course_session_enrollments')
                 ->nullOnDelete();
             $table->foreign(['tenant_user_id', 'tenant_id'], 'session_attendance_student_fk')

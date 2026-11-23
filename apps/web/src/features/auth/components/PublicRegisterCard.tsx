@@ -21,6 +21,8 @@ interface FormErrors {
 
 interface FormData {
   name: string;
+  email: string;
+  email_notifications_enabled: boolean;
   phone: string;
   parent_phone: string;
   password: string;
@@ -79,6 +81,10 @@ function validateField(name: string, value: string, allData: FormData): string {
       if (parts.length < 4) return "الأسم يجب ان يكون رباعي, أو اكثر";
       return "";
     }
+    case "email":
+      if (!value.trim()) return "";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "البريد الإلكتروني غير صحيح";
+      return "";
     case "phone":
       if (!value.trim()) return "";
       if (!/^[\d+\s()-]{7,20}$/.test(value.trim())) return "رقم الهاتف غير صحيح";
@@ -109,6 +115,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
 
   const [form, setForm] = useState<FormData>({
     name: "",
+    email: "",
+    email_notifications_enabled: true,
     phone: "",
     parent_phone: "",
     password: "",
@@ -164,7 +172,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const handleBlur = useCallback(
     (fieldName: string) => {
       setTouched((prev) => ({ ...prev, [fieldName]: true }));
-      validateAndUpdate(fieldName, form[fieldName as keyof FormData]);
+      const v = form[fieldName as keyof FormData];
+      validateAndUpdate(fieldName, typeof v === "string" ? v : "");
     },
     [form, validateAndUpdate],
   );
@@ -179,7 +188,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
       const allErrors: FormErrors = {};
       for (const [key, value] of Object.entries(form)) {
         allTouched[key] = true;
-        const error = validateField(key, value, form);
+        const error = validateField(key, typeof value === "string" ? value : "", form);
         if (error) allErrors[key] = error;
       }
       setTouched(allTouched);
@@ -192,6 +201,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
         password: form.password,
         password_confirmation: form.password_confirmation,
       };
+      if (form.email.trim()) payload.email = form.email.trim();
+      payload.email_notifications_enabled = !!form.email_notifications_enabled;
       if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.parent_phone.trim()) payload.parent_phone = form.parent_phone.trim();
       if (form.gender) payload.gender = form.gender;
@@ -226,6 +237,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const resetForm = useCallback(() => {
     setForm({
       name: "",
+      email: "",
+      email_notifications_enabled: true,
       phone: "",
       parent_phone: "",
       password: "",
@@ -309,6 +322,31 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                       <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500">{errors.name}</motion.p>
                     )}
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground/80">البريد الإلكتروني</label>
+                    <input
+                      type="email"
+                      dir="ltr"
+                      value={form.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      onBlur={() => handleBlur("email")}
+                      placeholder="name@gmail.com"
+                      className={cn(inputClasses("email"), "text-left")}
+                    />
+                    {touched.email && errors.email && (
+                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500">{errors.email}</motion.p>
+                    )}
+                    <label className="mt-1 flex items-center gap-2 text-xs text-foreground/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.email_notifications_enabled}
+                        onChange={(e) => setForm((prev) => ({ ...prev, email_notifications_enabled: e.target.checked }))}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      تفعيل البريد الإلكتروني لاستقبال الإشعارات
+                    </label>
+                  </div>
+
 
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/80">نوع الدراسة</label>

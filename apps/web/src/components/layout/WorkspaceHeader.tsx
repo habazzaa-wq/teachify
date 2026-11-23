@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
+import { AppNotificationBellLive } from "@/components/ui/AppNotificationBellLive";
 import { useUiStore } from "@/stores/ui.store";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
@@ -101,13 +102,7 @@ export function WorkspaceHeader() {
         </StudioButton>
 
         {/* Notifications */}
-        <StudioButton
-          variant="ghost"
-          size="icon"
-          aria-label="الإشعارات"
-        >
-          <Bell className="h-4 w-4" />
-        </StudioButton>
+        <AppNotificationBellLive viewAllHref="/dashboard/notifications" />
 
         {/* Theme toggle */}
         <StudioButton

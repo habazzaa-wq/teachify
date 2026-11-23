@@ -27,6 +27,8 @@ class PublicStudentRegisterController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'email_notifications_enabled' => ['nullable', 'boolean'],
             'phone' => ['nullable', 'string', 'max:50'],
             'parent_phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:8'],
@@ -54,7 +56,19 @@ class PublicStudentRegisterController extends Controller
             }
         }
 
-        $email = 'student_' . Str::random(16) . '@' . $tenant->slug . '.local';
+        $providedEmail = isset($validated['email']) ? trim((string) $validated['email']) : null;
+        $email = $providedEmail !== '' && $providedEmail !== null
+            ? strtolower($providedEmail)
+            : 'student_' . Str::random(16) . '@' . $tenant->slug . '.local';
+
+        if ($providedEmail) {
+            $emailExists = User::query()->whereRaw('LOWER(email) = ?', [$email])->exists();
+            if ($emailExists) {
+                throw ValidationException::withMessages([
+                    'email' => ['هذا البريد الإلكتروني مستخدم بالفعل.'],
+                ]);
+            }
+        }
 
         $user = User::create([
             'name' => $validated['name'],
@@ -82,6 +96,18 @@ class PublicStudentRegisterController extends Controller
         $studentRole = Role::where('tenant_id', $tenantId)->where('slug', 'student')->first();
         if ($studentRole) {
             $membership->roles()->attach($studentRole->id, ['tenant_id' => $tenantId]);
+        }
+
+        $emailEnabled = array_key_exists('email_notifications_enabled', $validated)
+            ? (bool) $validated['email_notifications_enabled']
+            : ($providedEmail ? true : false);
+        if ($providedEmail) {
+            foreach (['session.scheduled', 'session.rescheduled', 'session.cancelled'] as $type) {
+                \App\Models\NotificationPreference::updateOrCreate(
+                    ['tenant_id' => $tenantId, 'tenant_user_id' => $membership->id, 'notification_type' => $type],
+                    ['in_app_enabled' => true, 'email_enabled' => $emailEnabled, 'whatsapp_enabled' => false]
+                );
+            }
         }
 
         $membership->load('roles.permissions');

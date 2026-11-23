@@ -15,20 +15,51 @@ class AuthController extends Controller
     public function login(Request $request, AuthenticationService $auth): JsonResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['nullable', 'email'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'identifier' => ['nullable', 'string', 'max:255'],
+            'email_notifications_enabled' => ['nullable', 'boolean'],
             'password' => ['required', 'string'],
         ]);
+
+        $identifier = $validated['identifier'] ?? $validated['email'] ?? $validated['phone'] ?? null;
+        if (! is_string($identifier) || trim($identifier) === '') {
+            throw ValidationException::withMessages([
+                'identifier' => ['Email or phone is required.'],
+            ]);
+        }
 
         $tenant = currentTenant();
 
         // Tenant pre-validation
         $this->validateTenantAccess($tenant);
 
-        $result = $auth->login($tenant, $validated['email'], $validated['password']);
+        $result = $auth->login($tenant, trim($identifier), $validated['password']);
 
         $user = $result['user'];
         $membership = $result['membership'];
         $membership->load('roles.permissions');
+
+        // Optional: allow student to enable email notifications during login.
+        if (array_key_exists('email_notifications_enabled', $validated)) {
+            $enabled = (bool) $validated['email_notifications_enabled'];
+            $email = $user->email;
+            if (filled($email) && ! str_ends_with((string) $email, '.local')) {
+                foreach (['session.scheduled', 'session.rescheduled', 'session.cancelled'] as $type) {
+                    $pref = \App\Models\NotificationPreference::query()->firstOrNew([
+                        'tenant_id' => $tenant->id,
+                        'tenant_user_id' => $membership->id,
+                        'notification_type' => $type,
+                    ]);
+                    if (! $pref->exists) {
+                        $pref->in_app_enabled = true;
+                        $pref->whatsapp_enabled = false;
+                    }
+                    $pref->email_enabled = $enabled;
+                    $pref->save();
+                }
+            }
+        }
 
         $roles = $membership->roles;
         $permissions = $roles

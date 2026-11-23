@@ -15,6 +15,7 @@ import { useUiStore } from "@/stores/ui.store";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { useAuthStore } from "@/stores/auth.store";
+import { AppNotificationBellLive } from "@/components/ui/AppNotificationBellLive";
 import { useTenantStore } from "@/stores/tenant.store";
 import { AuthContext } from "@/providers/AuthProvider";
 import type { PublicRegisterResponse } from "@/features/auth/services/public-register.service";
@@ -545,6 +546,7 @@ export function PublicNavbar() {
                   <div className="relative" ref={dropdownRef}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       {walletEnabled && <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />}
+                      <AppNotificationBellLive enabled={isLoggedIn} viewAllHref="/student/notifications" />
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
