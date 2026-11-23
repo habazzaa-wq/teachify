@@ -100,5 +100,6 @@ export { AppOfflineBanner } from "./AppOfflineBanner";
 export { AppDrawer, type AppDrawerProps } from "./AppDrawer";
 export { AppCommandPalette, type AppCommandPaletteProps, type CommandItem } from "./AppCommandPalette";
 export { AppNotificationMenu, type AppNotificationMenuProps, type NotificationItem } from "./AppNotificationMenu";
+export { AppNotificationBellLive } from "./AppNotificationBellLive";
 export { AppSidebarItem, type AppSidebarItemProps } from "./AppSidebarItem";
 export { AppSidebarSection, type AppSidebarSectionProps } from "./AppSidebarSection";

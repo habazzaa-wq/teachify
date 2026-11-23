@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CheckCheck, Settings, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { AppButton } from "./AppButton";
 import { AppBadge } from "./AppBadge";
@@ -29,6 +29,8 @@ interface AppNotificationMenuProps {
   unreadCount: number;
   onMarkAllRead?: () => void;
   onViewAll?: () => void;
+  onItemClick?: (id: string) => void;
+  emptyHint?: string;
 }
 
 function AppNotificationMenu({
@@ -36,6 +38,8 @@ function AppNotificationMenu({
   unreadCount,
   onMarkAllRead,
   onViewAll,
+  onItemClick,
+  emptyHint,
 }: AppNotificationMenuProps) {
   return (
     <AppDropdownMenu>
@@ -79,7 +83,7 @@ function AppNotificationMenu({
               لا توجد إشعارات
             </p>
             <p className="text-xs text-muted-foreground/60">
-              ستظهر الإشعارات الجديدة هنا
+              {emptyHint ?? "ستظهر الإشعارات الجديدة هنا"}
             </p>
           </div>
         ) : (
@@ -87,6 +91,7 @@ function AppNotificationMenu({
             {notifications.slice(0, 8).map((notification) => (
               <button
                 key={notification.id}
+                onClick={() => onItemClick?.(notification.id)}
                 className={cn(
                   "flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/50",
                   !notification.read && "bg-primary/[0.02]",
@@ -122,7 +127,7 @@ function AppNotificationMenu({
           </div>
         )}
 
-        {notifications.length > 0 && (
+        {notifications.length > 0 && onViewAll && (
           <>
             <AppDropdownMenuSeparator />
             <AppDropdownMenuItem onClick={onViewAll} className="justify-center gap-2 text-xs font-medium">

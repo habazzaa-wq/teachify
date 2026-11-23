@@ -21,6 +21,7 @@ import type { PublicRegisterResponse } from "@/features/auth/services/public-reg
 import { CourseSearchDialog } from "@/features/course-catalog/components/CourseSearchDialog";
 import { cn } from "@/lib/cn";
 import { NavbarLogo } from "@/components/home/NavbarLogo";
+import { AppNotificationBellLive } from "@/components/ui/AppNotificationBellLive";
 import { usePublicNavLinks, type PublicNavLink } from "@/components/home/usePublicNavLinks";
 import { resolveNavbarLogo } from "@/features/settings/utils/navbar-logo";
 
@@ -545,6 +546,7 @@ export function PublicNavbar() {
                   <div className="relative" ref={dropdownRef}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       {walletEnabled && <WalletBalanceBadge onClick={() => setRechargeWalletOpen(true)} />}
+                      <AppNotificationBellLive />
                       <button
                         type="button"
                         onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}

@@ -17,6 +17,7 @@ class NotificationController extends Controller
         $page = $notifications->list(
             currentTenant(),
             app(TenantUser::class),
+            typePrefix: $this->typePrefix(),
             perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
@@ -35,6 +36,7 @@ class NotificationController extends Controller
             currentTenant(),
             app(TenantUser::class),
             unreadOnly: true,
+            typePrefix: $this->typePrefix(),
             perPage: Pagination::perPage(request()->input('per_page'), 25),
         );
 
@@ -67,5 +69,12 @@ class NotificationController extends Controller
             'message' => 'Notification archived.',
             'notification' => $notifications->archive(currentTenant(), $notification),
         ]);
+    }
+
+    private function typePrefix(): ?string
+    {
+        $prefix = request()->input('type_prefix');
+
+        return is_string($prefix) && $prefix !== '' ? $prefix : null;
     }
 }

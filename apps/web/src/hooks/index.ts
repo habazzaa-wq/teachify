@@ -11,3 +11,4 @@ export { useIsMounted } from "./useIsMounted";
 export { useFeatureFlag, useFeatureFlags } from "./useFeatureFlag";
 export { useSubscription } from "./useSubscription";
 export { useTenantStatus } from "./useTenantStatus";
+export { useNotifications, NOTIFICATIONS_QUERY_KEY } from "./useNotifications";
