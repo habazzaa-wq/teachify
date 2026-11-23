@@ -204,7 +204,12 @@ class PublicCourseController extends Controller
 
         $modules = $course->modules()
             ->where('is_published', true)
+            ->where(function ($q) {
+                $q->whereNull('course_session_id')
+                  ->orWhereHas('courseSession', fn ($sq) => $sq->where('status', '!=', 'draft'));
+            })
             ->with([
+                'courseSession',
                 'sections' => fn ($q) => $q
                     ->where('is_published', true)
                     ->orderBy('sort_order')
@@ -212,7 +217,7 @@ class PublicCourseController extends Controller
                         'lessons' => fn ($lq) => $lq
                             ->where('status', 'published')
                             ->orderBy('sort_order')
-                            ->with('files'),
+                            ->with('files', 'courseSession'),
                     ]),
             ])
             ->orderBy('order')
