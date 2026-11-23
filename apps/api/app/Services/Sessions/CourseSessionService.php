@@ -83,6 +83,16 @@ class CourseSessionService
         }
 
         $session->save();
+
+        // Keep linked studio lesson items in sync with session title/description.
+        \App\Models\CourseLesson::withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('course_session_id', $session->id)
+            ->update([
+                'title' => $session->title,
+                'short_description' => $session->description,
+            ]);
+
         $fresh = $session->refresh()->load(['instructor.user', 'course']);
 
         DB::afterCommit(function () use ($tenant, $fresh, $oldStatus, $timeChanged) {
