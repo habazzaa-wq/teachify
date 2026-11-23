@@ -55,8 +55,9 @@ interface CourseStudioInspectorProps {
   open: boolean;
   width: number;
   selectedSection: CourseSection | null;
-  selectedContent: ContentItem | null;
+  selectedContent?: ContentItem | null;
   lectures?: CourseModule[];
+  variant?: "sidebar" | "drawer";
   onEditSection?: (section: CourseSection) => void;
   onDuplicateSection?: (section: CourseSection) => void;
   onArchiveSection?: (section: CourseSection) => void;
@@ -172,6 +173,7 @@ function CourseStudioInspector({
   selectedSection,
   selectedContent,
   lectures,
+  variant = "sidebar",
   onEditSection,
   onDuplicateSection,
   onArchiveSection,
@@ -181,22 +183,8 @@ function CourseStudioInspector({
   onClose,
   className,
 }: CourseStudioInspectorProps) {
-  return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.aside
-          initial={{ width: 0, opacity: 0, minWidth: 0 }}
-          animate={{ width, opacity: 1, minWidth: width }}
-          exit={{ width: 0, opacity: 0, minWidth: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={cn(
-            "shrink-0 overflow-hidden border-s border-studio-border bg-studio-surface",
-            className,
-          )}
-          role="complementary"
-          aria-label="لوحة الخصائص"
-        >
-          <div style={{ width }} className="flex h-full flex-col">
+  const inner = (
+    <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
             <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-studio-fg-muted" aria-hidden="true" />
@@ -427,7 +415,26 @@ function CourseStudioInspector({
                 </div>
               )}
             </div>
-          </div>
+    </div>
+  );
+
+  if (variant === "drawer") {
+    return open ? <div className={cn("flex h-full flex-col bg-studio-surface", className)}>{inner}</div> : null;
+  }
+
+  return (
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.aside
+          initial={{ width: 0, opacity: 0, minWidth: 0 }}
+          animate={{ width, opacity: 1, minWidth: width }}
+          exit={{ width: 0, opacity: 0, minWidth: 0 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className={cn("shrink-0 overflow-hidden border-s border-studio-border bg-studio-surface", className)}
+          role="complementary"
+          aria-label="لوحة الخصائص"
+        >
+          {inner}
         </motion.aside>
       )}
     </AnimatePresence>

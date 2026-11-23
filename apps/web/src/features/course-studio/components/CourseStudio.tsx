@@ -1053,37 +1053,93 @@ function CourseStudio({
                     animate={{ x: 0 }}
                     exit={{ x: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-y-0 end-0 z-50 w-[280px]"
+                    className="absolute inset-y-0 end-0 z-50 w-[min(320px,85vw)]"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="مستكشف المحتوى"
+                    aria-label="متصفح المحتوى"
                   >
                     <div className="flex h-full flex-col bg-studio-surface border-s border-studio-border">
-                      <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted">
-                          المحتوى التعليمي
-                        </h3>
-                        <StudioButton
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleCloseMobileNav}
-                          aria-label="إغلاق المستكشف"
-                        >
+                      <div className="flex shrink-0 items-center justify-end border-b border-studio-border px-2 py-2">
+                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة">
                           <X className="h-4 w-4" />
                         </StudioButton>
                       </div>
-                      <div className="flex-1 overflow-y-auto studio-scrollbar">
-                        <CourseStudioOnboarding
-                          variant="navigator"
-                          title="ابدأ ببناء منهجك التعليمي"
-                          description="نظم محاضراتك وأقسامك والمحتوى التعليمي من هنا"
-                          primaryAction={
-                            store.createDialogOpen
-                              ? { label: "إنشاء أول محاضرة", onClick: store.openCreateDialog }
-                              : undefined
-                          }
+                      <div className="flex-1 min-h-0 overflow-hidden">
+                        <CourseStudioNavigator
+                          variant="drawer"
+                          open={mobileNavOpen}
+                          width={320}
+                          lectures={lectures ?? []}
+                          sections={sectionsByLecture}
+                          courseId={courseId ?? undefined}
+                          selectedLectureId={store.selectedLectureId}
+                          selectedSectionId={store.selectedSectionId}
+                          expandedLectures={store.expandedLectures}
+                          isLoading={lecturesLoading}
+                          onSelectLecture={(id) => { handleSelectLecture(id); }}
+                          onToggleLecture={handleToggleLecture}
+                          onSelectSection={(id) => { handleSelectSection(id); setMobileNavOpen(false); }}
+                          onCreateLecture={() => { openAddChoice(); }}
+                          onEditLecture={(l) => { store.openEditDialog(l); setMobileNavOpen(false); }}
+                          onPublishLecture={handlePublishLecture}
+                          onArchiveLecture={handleArchiveLecture}
+                          onDuplicateLecture={handleDuplicateLecture}
+                          onDeleteLecture={handleDeleteLecture}
+                          onRestoreLecture={handleRestoreLecture}
+                          onReorder={handleReorder}
+                          onEditSection={(s) => { store.openEditSectionDialog(s); setMobileNavOpen(false); }}
+                          onPublishSection={handlePublishSection}
+                          onArchiveSection={handleArchiveSection}
+                          onDuplicateSection={handleDuplicateSection}
+                          onDeleteSection={handleDeleteSection}
+                          onRestoreSection={handleRestoreSection}
+                          onAddSection={handleAddSection}
+                          onReorderSections={handleReorderSections}
                         />
                       </div>
+                    </div>
+                  </motion.aside>
+                </>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {store.inspectorOpen && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-40 bg-studio-overlay"
+                    onClick={handleCloseInspector}
+                    aria-hidden="true"
+                  />
+                  <motion.aside
+                    initial={{ x: "-100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "-100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="absolute inset-y-0 start-0 z-50 w-[min(360px,92vw)]"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="خصائص العنصر"
+                  >
+                    <div className="h-full bg-studio-surface border-e border-studio-border overflow-hidden">
+                      <CourseStudioInspector
+                        variant="drawer"
+                        open={store.inspectorOpen}
+                        width={360}
+                        selectedSection={selectedSection}
+                        selectedContent={selectedContent}
+                        lectures={lectures}
+                        onEditSection={(s) => { store.openEditSectionDialog(s); }}
+                        onDuplicateSection={handleDuplicateSection}
+                        onArchiveSection={handleArchiveSection}
+                        onDeleteSection={handleDeleteSection}
+                        onRestoreSection={handleRestoreSection}
+                        onMoveSection={handleMoveSection}
+                        onClose={handleCloseInspector}
+                      />
                     </div>
                   </motion.aside>
                 </>

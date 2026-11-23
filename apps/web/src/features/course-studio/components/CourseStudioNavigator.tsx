@@ -20,6 +20,7 @@ interface CourseStudioNavigatorProps {
   selectedSectionId?: string | null;
   expandedLectures?: string[];
   isLoading?: boolean;
+  variant?: "sidebar" | "drawer";
   onSelectLecture: (id: string) => void;
   onToggleLecture?: (id: string) => void;
   onSelectSection?: (id: string) => void;
@@ -52,6 +53,7 @@ function CourseStudioNavigator({
   selectedSectionId,
   expandedLectures,
   isLoading,
+  variant = "sidebar",
   onSelectLecture,
   onToggleLecture,
   onSelectSection,
@@ -288,6 +290,77 @@ function CourseStudioNavigator({
 
   const hasLectures = lectures.length > 0;
 
+  const content = (
+    <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
+      <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted">
+          المحتوى التعليمي
+        </h3>
+        {onCreateLecture && (
+          <StudioButton variant="ghost" size="icon" onClick={onCreateLecture} aria-label="إضافة محاضرة" className="h-7 w-7">
+            <Plus className="h-3.5 w-3.5" />
+          </StudioButton>
+        )}
+      </div>
+
+      <div ref={listRef} className="flex-1 overflow-y-auto studio-scrollbar p-2" role="tree" aria-label="قائمة المحاضرات">
+        {isLoading ? (
+          <div className="space-y-2 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-14 animate-pulse rounded-lg bg-studio-skeleton" />
+            ))}
+          </div>
+        ) : hasLectures ? (
+          <div className="space-y-0.5">
+            {lectures.map((lecture) => (
+              <CourseStudioLectureItem
+                key={lecture.id}
+                lecture={lecture}
+                sections={sections?.[lecture.id]}
+                isSelected={selectedLectureId === lecture.id}
+                isExpanded={expandedLectures?.includes(lecture.id) ?? false}
+                selectedSectionId={selectedSectionId}
+                onSelect={onSelectLecture}
+                onToggle={() => onToggleLecture?.(lecture.id)}
+                onEdit={onEditLecture ?? (() => {})}
+                onPublish={onPublishLecture ?? (() => {})}
+                onArchive={onArchiveLecture ?? (() => {})}
+                onDuplicate={onDuplicateLecture ?? (() => {})}
+                onDelete={onDeleteLecture ?? (() => {})}
+                onRestore={onRestoreLecture ?? (() => {})}
+                onSelectSection={onSelectSection}
+                onEditSection={onEditSection}
+                onPublishSection={onPublishSection}
+                onArchiveSection={onArchiveSection}
+                onDuplicateSection={onDuplicateSection}
+                onDeleteSection={onDeleteSection}
+                onRestoreSection={onRestoreSection}
+                onAddSection={onAddSection ? () => onAddSection(lecture.id) : undefined}
+                onDragSectionStart={handleSectionDragStart}
+                onDragSectionOver={handleSectionDragOver}
+                onDropSection={handleSectionDrop}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              />
+            ))}
+          </div>
+        ) : (
+          <CourseStudioOnboarding
+            variant="navigator"
+            title="لا توجد محاضرات بعد"
+            description="ابدأ بإضافة محاضرات لبناء منهج الكورس."
+            primaryAction={onCreateLecture ? { label: "إنشاء أول محاضرة", onClick: onCreateLecture } : undefined}
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  if (variant === "drawer") {
+    return open ? <div className={cn("flex h-full flex-col bg-studio-surface", className)}>{content}</div> : null;
+  }
+
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -296,102 +369,14 @@ function CourseStudioNavigator({
           animate={{ width, opacity: 1, minWidth: width }}
           exit={{ width: 0, opacity: 0, minWidth: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={cn(
-            "shrink-0 overflow-hidden border-e border-studio-border bg-studio-surface",
-            className,
-          )}
+          className={cn("shrink-0 overflow-hidden border-e border-studio-border bg-studio-surface", className)}
           role="navigation"
-          aria-label="مستكشف المحتوى"
+          aria-label="متصفح المحتوى"
         >
-          <div style={{ width }} className="flex h-full flex-col">
-            <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted">
-                المحتوى التعليمي
-              </h3>
-              {onCreateLecture && (
-                <StudioButton
-                  variant="ghost"
-                  size="icon"
-                  onClick={onCreateLecture}
-                  aria-label="إضافة محاضرة"
-                  className="h-7 w-7"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </StudioButton>
-              )}
-            </div>
-
-            <div
-              ref={listRef}
-              className="flex-1 overflow-y-auto studio-scrollbar p-2"
-              role="tree"
-              aria-label="قائمة المحاضرات"
-            >
-              {isLoading ? (
-                <div className="space-y-2 p-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-14 animate-pulse rounded-lg bg-studio-skeleton"
-                    />
-                  ))}
-                </div>
-              ) : hasLectures ? (
-                <div className="space-y-0.5">
-                  {lectures.map((lecture) => (
-                    <CourseStudioLectureItem
-                      key={lecture.id}
-                      lecture={lecture}
-                      sections={sections?.[lecture.id]}
-                      isSelected={selectedLectureId === lecture.id}
-                      isExpanded={expandedLectures?.includes(lecture.id) ?? false}
-                      selectedSectionId={selectedSectionId}
-                      onSelect={onSelectLecture}
-                      onToggle={() => onToggleLecture?.(lecture.id)}
-                      onEdit={onEditLecture ?? (() => {})}
-                      onPublish={onPublishLecture ?? (() => {})}
-                      onArchive={onArchiveLecture ?? (() => {})}
-                      onDuplicate={onDuplicateLecture ?? (() => {})}
-                      onDelete={onDeleteLecture ?? (() => {})}
-                      onRestore={onRestoreLecture ?? (() => {})}
-                      onSelectSection={onSelectSection}
-                      onEditSection={onEditSection}
-                      onPublishSection={onPublishSection}
-                      onArchiveSection={onArchiveSection}
-                      onDuplicateSection={onDuplicateSection}
-                      onDeleteSection={onDeleteSection}
-                      onRestoreSection={onRestoreSection}
-                      onAddSection={onAddSection ? () => onAddSection(lecture.id) : undefined}
-                      onDragSectionStart={handleSectionDragStart}
-                      onDragSectionOver={handleSectionDragOver}
-                      onDropSection={handleSectionDrop}
-                      onDragStart={handleDragStart}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <CourseStudioOnboarding
-                  variant="navigator"
-                  title="لا توجد محاضرات بعد"
-                  description="ابدأ بإضافة محاضرات لبناء منهج الكورس."
-                  primaryAction={
-                    onCreateLecture
-                      ? {
-                          label: "إنشاء أول محاضرة",
-                          onClick: onCreateLecture,
-                        }
-                      : undefined
-                  }
-                />
-              )}
-            </div>
-          </div>
+          {content}
         </motion.aside>
       )}
     </AnimatePresence>
   );
 }
-
 export { CourseStudioNavigator };
