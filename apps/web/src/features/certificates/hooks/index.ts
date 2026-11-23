@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { certificatesService } from "../services";
+import type { CertificateTemplate } from "../types";
 
 export const certificateKeys = {
   all: ["certificates"] as const,
@@ -57,7 +58,7 @@ export function useCreateCertificateTemplate() {
 export function useUpdateCertificateTemplate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number | string; payload: any }) => certificatesService.updateTemplate(id, payload),
+    mutationFn: ({ id, payload }: { id: number | string; payload: Partial<CertificateTemplate> }) => certificatesService.updateTemplate(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: certificateKeys.templates() }),
   });
 }
@@ -81,7 +82,7 @@ export function useDeleteCertificateTemplate() {
 export function useUpdateCourseCertificateRule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, payload }: { courseId: number | string; payload: any }) => certificatesService.updateCourseRule(courseId, payload),
+    mutationFn: ({ courseId, payload }: { courseId: number | string; payload: Record<string, unknown> }) => certificatesService.updateCourseRule(courseId, payload),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: certificateKeys.courseRule(vars.courseId) });
       qc.invalidateQueries({ queryKey: certificateKeys.applications() });
@@ -92,8 +93,10 @@ export function useUpdateCourseCertificateRule() {
 export function useApproveCertificateApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number | string; payload: { admin_note?: string; issue_and_send?: boolean } }) =>
-      certificatesService.approveApplication(id, payload),
+    mutationFn: ({ id, payload }: {
+      id: number | string;
+      payload: { admin_note?: string; issue_and_send?: boolean; requirement_reviews?: Record<string, { status: string; note?: string }> };
+    }) => certificatesService.approveApplication(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: certificateKeys.all });
     },
@@ -120,8 +123,8 @@ export function useIssueCertificateApplication() {
 export function useApplyForCertificate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ enrollmentId, note }: { enrollmentId: number | string; note?: string }) =>
-      certificatesService.applyForCertificate(enrollmentId, note),
+    mutationFn: ({ enrollmentId, note, submissions }: { enrollmentId: number | string; note?: string; submissions?: Record<string, string> }) =>
+      certificatesService.applyForCertificate(enrollmentId, note, submissions),
     onSuccess: () => qc.invalidateQueries({ queryKey: certificateKeys.all }),
   });
 }

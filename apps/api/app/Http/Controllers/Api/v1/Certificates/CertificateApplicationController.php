@@ -56,6 +56,8 @@ class CertificateApplicationController extends Controller
         $validated = $request->validate([
             'enrollment_id' => ['required', 'integer'],
             'note' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'submissions' => ['sometimes', 'array'],
+            'submissions.*' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ]);
 
         $enrollment = CourseEnrollment::query()
@@ -63,7 +65,12 @@ class CertificateApplicationController extends Controller
             ->where('tenant_user_id', $membership->id)
             ->findOrFail($validated['enrollment_id']);
 
-        $application = $applications->apply($enrollment, $membership, $validated['note'] ?? null);
+        $application = $applications->apply(
+            $enrollment,
+            $membership,
+            $validated['note'] ?? null,
+            array_filter($validated['submissions'] ?? [], fn ($value) => is_string($value) && trim($value) !== ''),
+        );
 
         return response()->json([
             'message' => 'تم تقديم طلب الشهادة بنجاح.',
@@ -79,6 +86,9 @@ class CertificateApplicationController extends Controller
         $validated = $request->validate([
             'admin_note' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'issue_and_send' => ['sometimes', 'boolean'],
+            'requirement_reviews' => ['sometimes', 'array'],
+            'requirement_reviews.*.status' => ['required_with:requirement_reviews', 'string', 'in:approved,rejected'],
+            'requirement_reviews.*.note' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         $reviewer = $this->currentMembership();
@@ -89,10 +99,13 @@ class CertificateApplicationController extends Controller
             $reviewer,
             $validated['admin_note'] ?? null,
             (bool) ($validated['issue_and_send'] ?? true),
+            $validated['requirement_reviews'] ?? [],
         );
 
         return response()->json([
-            'message' => 'تمت الموافقة على طلب الشهادة.',
+            'message' => $application->status === CertificateApplication::STATUS_REJECTED
+                ? 'تم رفض طلب الشهادة.'
+                : 'تمت الموافقة على طلب الشهادة.',
             'application' => $application,
         ]);
     }

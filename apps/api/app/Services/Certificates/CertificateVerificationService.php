@@ -31,9 +31,13 @@ class CertificateVerificationService
         return [
             'valid' => $certificate->status === 'issued',
             'issued_at' => $certificate->issued_at,
-            'course_title' => $certificate->course?->title,
-            'learner_display_name' => $certificate->student?->user?->name,
+            'course_title' => $certificate->snapshot_data['course_title'] ?? $certificate->course?->title,
+            'learner_display_name' => $certificate->snapshot_data['student_name'] ?? $certificate->student?->user?->name,
+            'instructor_name' => $certificate->snapshot_data['instructor_name'] ?? null,
+            'certificate_number' => $certificate->certificate_number,
+            'reference_number' => $certificate->reference_number,
             'certificate_status' => $certificate->status,
+            'snapshot' => $certificate->snapshot_data,
         ];
     }
 }

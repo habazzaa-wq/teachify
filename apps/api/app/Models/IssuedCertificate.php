@@ -15,12 +15,16 @@ class IssuedCertificate extends Model
         'tenant_id',
         'course_id',
         'course_completion_id',
+        'course_enrollment_id',
         'tenant_user_id',
         'certificate_template_id',
         'certificate_number',
+        'reference_number',
         'issued_at',
         'status',
         'metadata',
+        'snapshot_data',
+        'show_instructor_signature',
     ];
 
     protected function casts(): array
@@ -28,6 +32,8 @@ class IssuedCertificate extends Model
         return [
             'issued_at' => 'datetime',
             'metadata' => 'array',
+            'snapshot_data' => 'array',
+            'show_instructor_signature' => 'boolean',
         ];
     }
 
@@ -39,6 +45,11 @@ class IssuedCertificate extends Model
     public function completion(): BelongsTo
     {
         return $this->belongsTo(CourseCompletion::class, 'course_completion_id');
+    }
+
+    public function enrollment(): BelongsTo
+    {
+        return $this->belongsTo(CourseEnrollment::class, 'course_enrollment_id');
     }
 
     public function student(): BelongsTo
