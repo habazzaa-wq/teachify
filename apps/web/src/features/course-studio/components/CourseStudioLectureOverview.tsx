@@ -147,7 +147,7 @@ function CourseStudioLectureOverview({
             )}
           </div>
         ) : (
-          <div className="nova-timeline">
+          <div className="nova-timeline cw-section-timeline">
             {sectionList.map((section, index) => (
               <motion.div
                 key={section.id}

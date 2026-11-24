@@ -308,7 +308,7 @@ function CourseStudioNavigator({
       <div className="nova-nav-head shrink-0 px-4 py-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="nova-eyebrow">Course Outline</p>
+            <p className="nova-eyebrow">مساحة التحرير</p>
             <h3 className="mt-0.5 text-sm font-semibold text-studio-fg">منهج الدورة</h3>
           </div>
           <span className="nova-count-pill" aria-label={`${lectures.length} محاضرة`}>

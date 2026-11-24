@@ -106,7 +106,7 @@ function CourseStudioContentList({
           )}
         </motion.div>
       ) : (
-        <div className="nova-timeline" role="list" aria-label="قائمة المحتوى">
+        <div className="nova-timeline cw-content-timeline" role="list" aria-label="قائمة المحتوى">
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
               <CourseStudioContentItem

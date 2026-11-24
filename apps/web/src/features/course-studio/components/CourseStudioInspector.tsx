@@ -192,7 +192,7 @@ function CourseStudioInspector({
                   <Settings className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="nova-eyebrow">Inspector</p>
+                  <p className="nova-eyebrow">لوحة التحرير</p>
                   <h3 className="truncate text-sm font-semibold text-studio-fg">
                     {selectedContent
                       ? "خصائص المحتوى"
