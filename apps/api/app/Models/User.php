@@ -16,7 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Services\Authorization\AuthorizationService;
 
 #[Fillable(['name', 'email', 'password', 'avatar', 'phone', 'locale', 'timezone', 'google_id', 'birth_date'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'email_verification_code_hash', 'email_verification_token_hash'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -78,6 +78,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'birth_date' => 'date',
+            'email_verification_expires_at' => 'datetime',
+            'email_verification_sent_at' => 'datetime',
+            'email_verification_tenant_id' => 'integer',
         ];
     }
 

@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, CheckCircle, Loader2, Sparkles, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, Loader2, Mail, ShieldCheck, ChevronDown } from "lucide-react";
 import { usePublicRegister, type PublicRegisterPayload, type PublicRegisterResponse } from "../hooks/use-public-register";
-import { publicRegisterService, type GoogleAuthResponse } from "../services/public-register.service";
+import { publicRegisterService, isVerificationRequired, type GoogleAuthResponse } from "../services/public-register.service";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
 import { useTenantStore } from "@/stores/tenant.store";
 import { GoogleAuthButton } from "./GoogleAuthButton";
@@ -120,6 +120,12 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const [googleEmailNotifications, setGoogleEmailNotifications] = useState(true);
   const [googleBusy, setGoogleBusy] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resentMessage, setResentMessage] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -253,6 +259,46 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
     }
   }, [googleCompletion, googlePhone, googleEmailNotifications, onSuccess]);
 
+  const handleVerifyEmail = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationEmail) return;
+    const code = verificationCode.trim();
+    if (!code) {
+      setVerificationError("يرجى إدخال رمز التفعيل.");
+      return;
+    }
+    setVerifying(true);
+    setVerificationError(null);
+    setResentMessage(null);
+    try {
+      const data = await publicRegisterService.verifyEmail({ email: verificationEmail, code });
+      onSuccess(data);
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.code?.[0] || apiErr?.fieldErrors?.token?.[0] || apiErr?.fieldErrors?.email?.[0];
+      setVerificationError(fieldMsg || apiErr?.message || "تعذر تفعيل البريد الإلكتروني.");
+    } finally {
+      setVerifying(false);
+    }
+  }, [verificationEmail, verificationCode, onSuccess]);
+
+  const handleResendVerification = useCallback(async () => {
+    if (!verificationEmail || resending) return;
+    setResending(true);
+    setVerificationError(null);
+    setResentMessage(null);
+    try {
+      const res = await publicRegisterService.resendVerification({ email: verificationEmail });
+      setResentMessage(res.message || "تم إرسال رمز تفعيل جديد.");
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.email?.[0];
+      setVerificationError(fieldMsg || apiErr?.message || "تعذر إعادة إرسال رمز التفعيل.");
+    } finally {
+      setResending(false);
+    }
+  }, [verificationEmail, resending]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -286,7 +332,14 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
 
       registerMutation.mutate(payload, {
         onSuccess: (data) => {
-          onSuccess(data);
+          if (isVerificationRequired(data)) {
+            setVerificationEmail(data.email);
+            setVerificationCode("");
+            setVerificationError(null);
+            setResentMessage(data.message || "تم إرسال رمز التفعيل إلى بريدك الإلكتروني.");
+            return;
+          }
+          onSuccess(data as PublicRegisterResponse);
         },
         onError: (err: unknown) => {
           const apiErr = err as { fieldErrors?: Record<string, string[]>; message?: string };
@@ -330,6 +383,12 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
     setGoogleEmailNotifications(true);
     setGoogleBusy(false);
     setGoogleError(null);
+    setVerificationEmail(null);
+    setVerificationCode("");
+    setVerificationError(null);
+    setVerifying(false);
+    setResending(false);
+    setResentMessage(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -383,25 +442,96 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                   </p>
                 </div>
 
-                <div className="space-y-3 mb-3">
-                  <GoogleAuthButton
-                    onToken={handleGoogleToken}
-                    onError={setGoogleError}
-                    disabled={googleBusy || registerMutation.isPending}
-                    label="التسجيل / الدخول عبر Google"
-                    clientId={googleClientId}
-                  />
-                  {googleError && (
-                    <p className="text-xs text-red-500 text-center">{googleError}</p>
-                  )}
-                  <div className="relative flex items-center gap-3 py-1">
-                    <div className="h-px flex-1 bg-border/50" />
-                    <span className="text-[11px] text-muted-foreground/50">أو</span>
-                    <div className="h-px flex-1 bg-border/50" />
+                {!verificationEmail && (
+                  <div className="space-y-3 mb-3">
+                    <GoogleAuthButton
+                      onToken={handleGoogleToken}
+                      onError={setGoogleError}
+                      disabled={googleBusy || registerMutation.isPending}
+                      label="التسجيل / الدخول عبر Google"
+                      clientId={googleClientId}
+                    />
+                    {googleError && (
+                      <p className="text-xs text-red-500 text-center">{googleError}</p>
+                    )}
+                    <div className="relative flex items-center gap-3 py-1">
+                      <div className="h-px flex-1 bg-border/50" />
+                      <span className="text-[11px] text-muted-foreground/50">أو</span>
+                      <div className="h-px flex-1 bg-border/50" />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {googleCompletion ? (
+                {verificationEmail ? (
+                  <form onSubmit={handleVerifyEmail} className="space-y-4">
+                    <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-center">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Mail className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-sm font-bold text-foreground">تحقق من بريدك الإلكتروني</h3>
+                      <p className="mt-1 text-xs text-muted-foreground leading-6">
+                        أرسلنا رسالة تفعيل إلى
+                        <span dir="ltr" className="mx-1 font-medium text-foreground">{verificationEmail}</span>
+                        تحتوي على رمز تفعيل ورابط مباشر.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">رمز التفعيل</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        dir="ltr"
+                        value={verificationCode}
+                        onChange={(e) => { setVerificationCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6)); setVerificationError(null); }}
+                        placeholder="أدخل الرمز المكون من 6 أرقام"
+                        className={cn(inputClasses("code"), "text-center tracking-[0.35em] font-semibold text-base")}
+                        disabled={verifying}
+                      />
+                    </div>
+
+                    {verificationError && (
+                      <p className="text-xs text-red-500 text-center">{verificationError}</p>
+                    )}
+                    {resentMessage && !verificationError && (
+                      <p className="text-xs text-emerald-600 text-center">{resentMessage}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={verifying || verificationCode.trim().length < 4}
+                      className="relative w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60"
+                      style={{ background: `var(--brand-primary)`, boxShadow: `0 4px 16px rgba(0,0,0,0.251)` }}
+                    >
+                      {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                      <span>{verifying ? "جارٍ التفعيل..." : "تفعيل الحساب"}</span>
+                    </button>
+
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resending || verifying}
+                        className="text-primary hover:underline disabled:opacity-50"
+                      >
+                        {resending ? "جارٍ الإرسال..." : "إعادة إرسال الرمز"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setVerificationEmail(null); setVerificationCode(""); setVerificationError(null); setResentMessage(null); }}
+                        disabled={verifying}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        تعديل البيانات
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground/60 text-center leading-6">
+                      يمكنك التفعيل بالضغط على الرابط الموجود في الرسالة، أو بإدخال الرمز هنا.
+                    </p>
+                  </form>
+                ) : googleCompletion ? (
                   <form onSubmit={handleGoogleComplete} className="space-y-3">
                     <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                       <div className="font-medium text-foreground/80">{googleCompletion.profile.name || "حساب Google"}</div>

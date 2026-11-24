@@ -79,9 +79,21 @@ export interface PublicRegisterResponse {
   feature_flags: unknown;
 }
 
+export interface PublicVerificationRequiredResponse {
+  message: string;
+  verification_required: true;
+  email: string;
+}
+
+export type PublicRegisterResult = PublicRegisterResponse | PublicVerificationRequiredResponse;
+
+export function isVerificationRequired(data: unknown): data is PublicVerificationRequiredResponse {
+  return !!data && typeof data === "object" && (data as any).verification_required === true && !(data as any).access_token;
+}
+
 export const publicRegisterService = {
-  async register(payload: PublicRegisterPayload): Promise<PublicRegisterResponse> {
-    const { data } = await api.post<PublicRegisterResponse>("/public/register", payload);
+  async register(payload: PublicRegisterPayload): Promise<PublicRegisterResult> {
+    const { data } = await api.post<PublicRegisterResult>("/public/register", payload);
     return data;
   },
   async googleAuthenticate(payload: { access_token: string; phone?: string }): Promise<GoogleAuthResponse> {
@@ -90,6 +102,14 @@ export const publicRegisterService = {
   },
   async googleComplete(payload: { completion_token: string; phone: string; email_notifications_enabled?: boolean }): Promise<PublicRegisterResponse> {
     const { data } = await api.post<PublicRegisterResponse>("/public/auth/google/complete", payload);
+    return data;
+  },
+  async verifyEmail(payload: { email?: string; code?: string; token?: string }): Promise<PublicRegisterResponse> {
+    const { data } = await api.post<PublicRegisterResponse>("/public/email-verification/verify", payload);
+    return data;
+  },
+  async resendVerification(payload: { email: string }): Promise<PublicVerificationRequiredResponse> {
+    const { data } = await api.post<PublicVerificationRequiredResponse>("/public/email-verification/resend", payload);
     return data;
   },
 };

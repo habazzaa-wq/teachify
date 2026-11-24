@@ -53,6 +53,14 @@ class AuthenticationService
             ]);
         }
 
+        if (! $user->email_verified_at && $user->email_verification_tenant_id) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(response()->json([
+                'message' => 'يجب تفعيل البريد الإلكتروني قبل تسجيل الدخول.',
+                'verification_required' => true,
+                'email' => $user->email,
+            ], 403));
+        }
+
         if ($membership->is_instructor
             || (app(InstructorFeature::class)->isEnabled($tenant)
                 && $membership->roles()->where('roles.slug', 'instructor')->exists())) {

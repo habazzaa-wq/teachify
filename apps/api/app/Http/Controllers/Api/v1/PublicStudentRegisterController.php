@@ -6,16 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Services\Auth\PublicEmailVerificationService;
 use App\Services\AvatarGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PublicStudentRegisterController extends Controller
 {
-    public function register(Request $request): JsonResponse
+    public function register(Request $request, PublicEmailVerificationService $verification): JsonResponse
     {
         $tenant = currentTenant();
 
@@ -55,11 +55,55 @@ class PublicStudentRegisterController extends Controller
             ]);
         }
 
-        $emailExists = User::query()->whereRaw('LOWER(email) = ?', [$email])->exists();
-        if ($emailExists) {
-            throw ValidationException::withMessages([
-                'email' => ['هذا البريد الإلكتروني مستخدم بالفعل.'],
-            ]);
+        $existingUser = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+        if ($existingUser) {
+            if ($existingUser->email_verified_at) {
+                throw ValidationException::withMessages([
+                    'email' => ['هذا البريد الإلكتروني مستخدم بالفعل.'],
+                ]);
+            }
+
+            $membership = TenantUser::query()
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $existingUser->id)
+                ->first();
+
+            if (! $membership) {
+                $avatar = AvatarGenerator::generate($validated['gender'] ?? null, $existingUser->id);
+                $membership = TenantUser::create([
+                    'tenant_id' => $tenantId,
+                    'user_id' => $existingUser->id,
+                    'status' => 'active',
+                    'phone' => $phone,
+                    'parent_phone' => $validated['parent_phone'] ?? null,
+                    'gender' => $validated['gender'] ?? null,
+                    'study_type' => $validated['study_type'] ?? null,
+                    'study_level' => $validated['study_level'] ?? null,
+                    'governorate' => $validated['governorate'] ?? null,
+                    'city' => $validated['city'] ?? null,
+                    'avatar' => $avatar,
+                    'joined_at' => now(),
+                ]);
+                $studentRole = Role::where('tenant_id', $tenantId)->where('slug', 'student')->first();
+                if ($studentRole) {
+                    $membership->roles()->attach($studentRole->id, ['tenant_id' => $tenantId]);
+                }
+            }
+
+            try {
+                $verification->resend($existingUser, $tenant);
+                $msg = 'هذا البريد الإلكتروني مسجل بالفعل لكنه غير مفعّل. أعدنا إرسال رمز التفعيل.';
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $msg = 'هذا البريد الإلكتروني مسجل بالفعل لكنه غير مفعّل. تحقق من بريدك الإلكتروني أو انتظر قليلًا قبل إعادة الإرسال.';
+            } catch (\Throwable $e) {
+                $msg = 'هذا البريد الإلكتروني مسجل بالفعل لكنه غير مفعّل. يرجى استخدام رمز التفعيل الذي تم إرساله سابقًا.';
+            }
+
+            return response()->json([
+                'message' => $msg,
+                'verification_required' => true,
+                'email' => $email,
+            ], 200);
         }
 
         $user = User::create([
@@ -100,63 +144,12 @@ class PublicStudentRegisterController extends Controller
             );
         }
 
-        $membership->load('roles.permissions');
-
-        $accessToken = $user->createToken('access_token', ['access:api'], now()->addHours(24));
-        $refreshToken = $user->createToken('refresh_token', ['refresh:token'], now()->addDays(30));
-
-        $roles = $membership->roles;
-        $permissions = $roles
-            ->flatMap(fn ($role) => $role->permissions)
-            ->unique('id')
-            ->values();
+        $verification->issue($user, $tenant);
 
         return response()->json([
-            'message' => 'تم إنشاء حسابك بنجاح.',
-            'access_token' => $accessToken->plainTextToken,
-            'refresh_token' => $refreshToken->plainTextToken,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'is_platform_super_admin' => false,
-                'avatar' => $avatar,
-            ],
-            'tenant' => [
-                'id' => $tenant->id,
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-                'status' => $tenant->status,
-                'domain' => $tenant->getDefaultDomain(),
-            ],
-            'membership' => [
-                'id' => $membership->id,
-                'tenant_id' => $membership->tenant_id,
-                'status' => $membership->status,
-                'joined_at' => $membership->joined_at,
-                'last_accessed_at' => $membership->last_accessed_at,
-            ],
-            'roles' => $roles->map(fn ($role) => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'slug' => $role->slug,
-            ])->values(),
-            'permissions' => $permissions->map(fn ($permission) => [
-                'id' => $permission->id,
-                'name' => $permission->name,
-                'slug' => $permission->slug,
-            ])->values(),
-            'abilities' => [
-                'can_access_dashboard' => false,
-                'can_manage_courses' => false,
-                'can_manage_users' => false,
-                'can_manage_settings' => false,
-            ],
-            'navigation' => [],
-            'subscription' => $tenant->subscription,
-            'plan' => $tenant->plan,
-            'feature_flags' => $tenant->feature_flags,
+            'message' => 'تم إنشاء الحساب. يرجى تفعيل بريدك الإلكتروني لإكمال التسجيل.',
+            'verification_required' => true,
+            'email' => $email,
         ], 201);
     }
 }

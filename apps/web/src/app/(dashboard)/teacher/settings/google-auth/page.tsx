@@ -48,7 +48,11 @@ export default function GoogleAuthSettingsPage() {
       qc.invalidateQueries({ queryKey: ["tenant-google-auth-settings"] });
       setForm((f) => ({ ...f, client_secret: "" }));
     },
-    onError: (e: any) => toast.error(e?.response?.data?.message || "فشل حفظ الإعدادات"),
+    onError: (e: any) => {
+      const msg = e?.response?.data?.message || e?.message || "فشل حفظ الإعدادات";
+      const status = e?.response?.status;
+      toast.error(status ? `${msg} (${status})` : msg);
+    },
   });
 
   if (isLoading) return <AppLoadingState />;
