@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1\Integrations;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\TenantRepository;
 use App\Services\Authorization\TenantAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Crypt;
 
 class TenantGoogleAuthSettingsController extends Controller
 {
+    public function __construct(private readonly TenantRepository $tenants) {}
+
     public function show(Request $request): JsonResponse
     {
         $tenant = currentTenant();
@@ -52,9 +55,16 @@ class TenantGoogleAuthSettingsController extends Controller
         $settings['google_auth'] = $cfg;
         $tenant->forceFill(['settings_json' => $settings])->save();
 
+        // The public by-domain bootstrap resolves a cached Tenant instance.
+        // Invalidate it here so the new client id appears on the student auth
+        // forms immediately instead of after the repository's 1h cache TTL.
+        $this->tenants->forget($tenant->id);
+
+        $fresh = $tenant->fresh() ?? $tenant;
+
         return response()->json([
             'message' => 'Google auth settings updated.',
-            'data' => $this->publicShape($tenant->fresh(), (array) data_get($tenant->fresh()->settings_json, 'google_auth', [])),
+            'data' => $this->publicShape($fresh, (array) data_get($fresh->settings_json, 'google_auth', [])),
         ]);
     }
 

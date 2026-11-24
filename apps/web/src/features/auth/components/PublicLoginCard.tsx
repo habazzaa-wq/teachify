@@ -62,6 +62,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
   const setAuthUser = useAuthStore((s) => s.setUser);
   const setTenantContext = useTenantStore((s) => s.setTenantContext);
   const googleClientId = useTenantStore((s) => s.googleClientId);
+  const googleEnabled = Boolean(googleClientId?.trim());
 
   const resetForm = useCallback(() => {
     setIdentifier("");
@@ -282,21 +283,29 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
                     <p className="mt-1 text-xs text-muted-foreground/60">سجّل الدخول بالبريد الإلكتروني أو رقم الهاتف</p>
                   </div>
 
-                  <div className="space-y-3 mb-3">
-                    <GoogleAuthButton
-                      onToken={handleGoogleToken}
-                      onError={setGoogleError}
-                      disabled={googleBusy || isPending}
-                      label="المتابعة عبر Google"
-                      clientId={googleClientId}
-                    />
-                    {googleError && <p className="text-xs text-red-500 text-center">{googleError}</p>}
-                    <div className="relative flex items-center gap-3 py-1">
-                      <div className="h-px flex-1 bg-border/50" />
-                      <span className="text-[11px] text-muted-foreground/50">أو</span>
-                      <div className="h-px flex-1 bg-border/50" />
+                  {googleEnabled && (
+                    <div className="space-y-2 mb-4">
+                      <GoogleAuthButton
+                        onToken={handleGoogleToken}
+                        onError={setGoogleError}
+                        disabled={googleBusy || isPending}
+                        label="المتابعة عبر Google"
+                        clientId={googleClientId}
+                      />
+                      {googleError && (
+                        <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-600 dark:bg-red-950/20 dark:text-red-400">
+                          {googleError}
+                        </p>
+                      )}
+                      <div className="relative flex items-center gap-3 py-1">
+                        <div className="h-px flex-1 bg-border/50" />
+                        <span className="text-[11px] text-muted-foreground/50">
+                          أو سجّل الدخول بالبريد ورقم الهاتف
+                        </span>
+                        <div className="h-px flex-1 bg-border/50" />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {googleCompletion ? (
                     <form onSubmit={handleGoogleComplete} className="space-y-4">

@@ -152,6 +152,7 @@ export function TenantBootstrapProvider({
 
           if (outcome.kind === "tenant") {
             const data = outcome.tenant;
+            const publicGoogleClientId = data.auth?.google_client_id?.trim() || null;
             setTenantBootstrap({
               id: data.id,
               name: data.name,
@@ -161,7 +162,7 @@ export function TenantBootstrapProvider({
               feature_flags: data.feature_flags,
               branding: data.branding,
               platformBranding: data.platform_branding ?? data.platformBranding ?? null,
-              googleClientId: data.auth?.google_client_id ?? null,
+              googleClientId: publicGoogleClientId,
               subdomain: getTenantSubdomain(hostname),
             });
             return;

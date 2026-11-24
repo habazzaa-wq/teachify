@@ -146,6 +146,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const { data: stagesData } = usePublicStages();
   const stages = stagesData?.items ?? [];
   const googleClientId = useTenantStore((s) => s.googleClientId);
+  const googleEnabled = Boolean(googleClientId?.trim());
 
   const availableCities = useMemo(() => {
     if (!form.governorate) return [];
@@ -442,8 +443,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                   </p>
                 </div>
 
-                {!verificationEmail && (
-                  <div className="space-y-3 mb-3">
+                {!verificationEmail && googleEnabled && (
+                  <div className="space-y-2 mb-4">
                     <GoogleAuthButton
                       onToken={handleGoogleToken}
                       onError={setGoogleError}
@@ -452,11 +453,15 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                       clientId={googleClientId}
                     />
                     {googleError && (
-                      <p className="text-xs text-red-500 text-center">{googleError}</p>
+                      <p className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-600 dark:bg-red-950/20 dark:text-red-400">
+                        {googleError}
+                      </p>
                     )}
                     <div className="relative flex items-center gap-3 py-1">
                       <div className="h-px flex-1 bg-border/50" />
-                      <span className="text-[11px] text-muted-foreground/50">أو</span>
+                      <span className="text-[11px] text-muted-foreground/50">
+                        أو أكمل بيانات التسجيل يدويًا
+                      </span>
                       <div className="h-px flex-1 bg-border/50" />
                     </div>
                   </div>
