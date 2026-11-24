@@ -1,5 +1,6 @@
 import { api } from "@/services/api";
-import type { Course, CourseFilterParams, CourseMetricData, CreateCoursePayload, UpdateCoursePayload, CourseActivity } from "../types";
+import { defaultCurrencyForCountry } from "@/constants/countries";
+import type { Course, CourseFilterParams, CourseMetricData, CreateCoursePayload, UpdateCoursePayload, CourseActivity, RegionalPrice } from "../types";
 
 export interface CourseListResponse {
   data: Course[];
@@ -13,6 +14,33 @@ export interface BulkActionResult {
   message: string;
   count: number;
   requested: number;
+}
+
+function normalizeRegionalPrice(raw: unknown, countryCode = "EG"): RegionalPrice | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const entry = raw as Record<string, unknown>;
+  const amount = typeof entry.amount === "number"
+    ? entry.amount
+    : typeof entry.price === "number"
+      ? entry.price
+      : null;
+  const currency = typeof entry.currency === "string" && entry.currency.length >= 2 && entry.currency.length <= 3
+    ? entry.currency.toUpperCase()
+    : defaultCurrencyForCountry(countryCode);
+  return { amount, currency };
+}
+
+/** Accepts both the current `{ amount, currency }` shape and legacy numeric prices. */
+function normalizeRegionalPrices(raw: unknown): Record<string, RegionalPrice> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>).map(([code, value]) => {
+      if (typeof value === "number") {
+        return [code, { amount: value, currency: defaultCurrencyForCountry(code) }];
+      }
+      return [code, normalizeRegionalPrice(value, code) ?? { amount: null, currency: defaultCurrencyForCountry(code) }];
+    }),
+  );
 }
 
 export function formatCourse(raw: any): Course {
@@ -37,7 +65,8 @@ export function formatCourse(raw: any): Course {
     price: raw.price ?? null,
     currency: raw.currency ?? null,
     discountPrice: raw.discountPrice ?? null,
-    regionalPrices: raw.regionalPrices ?? {},
+    regionalPrices: normalizeRegionalPrices(raw.regionalPrices),
+    defaultRegionalPrice: normalizeRegionalPrice(raw.defaultRegionalPrice),
     enrollmentLimit: raw.enrollmentLimit ?? null,
     startDate: raw.startDate ?? null,
     endDate: raw.endDate ?? null,
@@ -149,6 +178,7 @@ export const coursesService = {
       price_currency: payload.currency,
       discount_price: payload.discountPrice,
       regional_prices: payload.regionalPrices,
+      default_regional_price: payload.defaultRegionalPrice,
       enrollment_limit: payload.enrollmentLimit,
       start_date: payload.startDate,
       end_date: payload.endDate,
@@ -186,6 +216,7 @@ export const coursesService = {
     if (payload.currency !== undefined) body.price_currency = payload.currency;
     if (payload.discountPrice !== undefined) body.discount_price = payload.discountPrice;
     if (payload.regionalPrices !== undefined) body.regional_prices = payload.regionalPrices;
+    if (payload.defaultRegionalPrice !== undefined) body.default_regional_price = payload.defaultRegionalPrice;
     if (payload.enrollmentLimit !== undefined) body.enrollment_limit = payload.enrollmentLimit;
     if (payload.startDate !== undefined) body.start_date = payload.startDate;
     if (payload.endDate !== undefined) body.end_date = payload.endDate;

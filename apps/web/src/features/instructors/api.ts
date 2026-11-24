@@ -85,6 +85,7 @@ function serializeCoursePayload(
     currency: "price_currency",
     discountPrice: "discount_price",
     regionalPrices: "regional_prices",
+    defaultRegionalPrice: "default_regional_price",
     enrollmentLimit: "enrollment_limit",
     startDate: "start_date",
     endDate: "end_date",

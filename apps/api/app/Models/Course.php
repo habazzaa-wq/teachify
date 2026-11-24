@@ -52,6 +52,7 @@ class Course extends Model
         'price_currency',
         'discount_price',
         'regional_prices',
+        'default_regional_price',
         'enrollment_limit',
         'start_date',
         'end_date',
@@ -73,6 +74,7 @@ class Course extends Model
     {
         return [
             'regional_prices' => 'array',
+            'default_regional_price' => 'array',
             'price_amount' => 'integer',
             'discount_price' => 'integer',
             'duration' => 'integer',

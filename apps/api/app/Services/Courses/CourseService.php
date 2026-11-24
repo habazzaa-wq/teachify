@@ -57,6 +57,7 @@ class CourseService
                 'price_currency' => $data['price_currency'] ?? 'EGP',
                 'discount_price' => $data['discount_price'] ?? null,
                 'regional_prices' => app(CourseRegionalPricing::class)->normalize($tenant, $data['regional_prices'] ?? []),
+                'default_regional_price' => app(CourseRegionalPricing::class)->normalizeDefault($tenant, $data['default_regional_price'] ?? null),
                 'educational_stage_id' => $data['educational_stage_id'] ?? null,
                 'subject_id' => $data['subject_id'] ?? null,
                 'enrollment_limit' => $data['enrollment_limit'] ?? null,
@@ -140,6 +141,7 @@ class CourseService
                 'price_currency',
                 'discount_price',
                 'regional_prices',
+                'default_regional_price',
                 'educational_stage_id',
                 'subject_id',
                 'enrollment_limit',
@@ -156,6 +158,11 @@ class CourseService
             ])->all())->save();
             if (array_key_exists('regional_prices', $data)) {
                 $course->regional_prices = app(CourseRegionalPricing::class)->normalize($tenant, $data['regional_prices']);
+                $course->save();
+            }
+
+            if (array_key_exists('default_regional_price', $data)) {
+                $course->default_regional_price = app(CourseRegionalPricing::class)->normalizeDefault($tenant, $data['default_regional_price']);
                 $course->save();
             }
 

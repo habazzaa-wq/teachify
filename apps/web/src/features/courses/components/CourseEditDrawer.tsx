@@ -41,6 +41,7 @@ function CourseEditDrawer({
       price: course.price,
       currency: course.currency,
       regionalPrices: course.regionalPrices ?? {},
+      defaultRegionalPrice: course.defaultRegionalPrice ?? null,
       tagIds: course.tags.map((t) => Number(t.id)),
       educationalStageId: course.educationalStage ? Number(course.educationalStage.id) : null,
       subjectId: course.subject ? Number(course.subject.id) : null,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { X, Save, Plus, Trash2 } from "lucide-react";
 import {
   AppButton,
@@ -14,7 +14,8 @@ import {
   AppTextarea,
 } from "@/components/ui";
 import { COURSE_NON_FILTER_VISIBILITY_OPTIONS, COURSE_NON_FILTER_DIFFICULTY_OPTIONS, COURSE_NON_FILTER_PRICING_OPTIONS, LANGUAGE_OPTIONS } from "../constants";
-import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType, CourseDeliveryMode } from "../types";
+import { COUNTRY_OPTIONS, CURRENCY_CODES, countryNameForCode, defaultCurrencyForCountry } from "@/constants/countries";
+import type { CreateCoursePayload, CourseVisibility, CourseDifficulty, PricingType, CourseDeliveryMode, RegionalPrice } from "../types";
 import { CourseImageUploader } from "./CourseImageUploader";
 import { useCourseTags } from "../hooks/useCourseTags";
 import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
@@ -24,14 +25,18 @@ import { instructorApi, instructorApiErrorMessage } from "@/features/instructors
 import { mediaLibraryService } from "@/features/media-library/services";
 
 const nonLangOptions = LANGUAGE_OPTIONS.filter((l) => l.value !== "all");
-const REGIONAL_COUNTRIES = [
-  { code: "SA", name: "السعودية", currency: "SR" },
-  { code: "AE", name: "الإمارات", currency: "AED" },
-  { code: "KW", name: "الكويت", currency: "KWD" },
-  { code: "QA", name: "قطر", currency: "QAR" },
-  { code: "BH", name: "البحرين", currency: "BHD" },
-  { code: "US", name: "الولايات المتحدة", currency: "USD" },
-];
+const countryByCode = new Map(COUNTRY_OPTIONS.map((country) => [country.code, country]));
+
+function cleanRegionalPrices(prices: Record<string, RegionalPrice> | undefined): Record<string, RegionalPrice> {
+  return Object.fromEntries(
+    Object.entries(prices ?? {})
+      .filter(([, entry]) => entry.amount != null && entry.amount > 0)
+      .map(([code, entry]) => [
+        code,
+        { amount: entry.amount, currency: entry.currency || defaultCurrencyForCountry(code) },
+      ]),
+  );
+}
 
 const DELIVERY_MODE_OPTIONS: Array<{ value: CourseDeliveryMode; label: string }> = [
   { value: "recorded_only", label: "محتوى مسجل فقط" },
@@ -157,6 +162,7 @@ function CourseFormPanel({
   const stages = stagesData?.data ?? [];
   const subjects = subjectsData?.data ?? [];
   const [formData, setFormData] = useState<CreateCoursePayload>(EMPTY_FORM);
+  const [countryToAdd, setCountryToAdd] = useState("");
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -165,6 +171,7 @@ function CourseFormPanel({
   useEffect(() => {
     setPendingImageFile(null);
     setImageError(null);
+    setCountryToAdd("");
     setFormData(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
   }, [formKey, initialValues]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -173,16 +180,65 @@ function CourseFormPanel({
     setFormData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const availableCountries = useMemo(
+    () => COUNTRY_OPTIONS.filter((country) => !formData.regionalPrices?.[country.code]),
+    [formData.regionalPrices],
+  );
+
+  const addRegionalCountry = useCallback((code: string) => {
+    const country = countryByCode.get(code);
+    if (!country) return;
+    setFormData((previous) => ({
+      ...previous,
+      regionalPrices: {
+        ...(previous.regionalPrices ?? {}),
+        [code]: { amount: null, currency: code === "EG" ? "EGP" : country.currency },
+      },
+    }));
+    setCountryToAdd("");
+  }, []);
+
   const updateRegionalPrice = useCallback((countryCode: string, value: number | null) => {
     setFormData((previous) => {
       const regionalPrices = { ...(previous.regionalPrices ?? {}) };
+      const current = regionalPrices[countryCode] ?? {
+        amount: null,
+        currency: defaultCurrencyForCountry(countryCode),
+      };
       if (value === null || value <= 0) {
         delete regionalPrices[countryCode];
       } else {
-        regionalPrices[countryCode] = value;
+        regionalPrices[countryCode] = { ...current, amount: value };
       }
       return { ...previous, regionalPrices };
     });
+  }, []);
+
+  const updateRegionalCurrency = useCallback((countryCode: string, currency: string) => {
+    setFormData((previous) => {
+      const regionalPrices = { ...(previous.regionalPrices ?? {}) };
+      const current = regionalPrices[countryCode] ?? {
+        amount: null,
+        currency: defaultCurrencyForCountry(countryCode),
+      };
+      regionalPrices[countryCode] = { ...current, currency: currency.toUpperCase().slice(0, 3) };
+      return { ...previous, regionalPrices };
+    });
+  }, []);
+
+  const removeRegionalCountry = useCallback((countryCode: string) => {
+    setFormData((previous) => {
+      const regionalPrices = { ...(previous.regionalPrices ?? {}) };
+      delete regionalPrices[countryCode];
+      return { ...previous, regionalPrices };
+    });
+  }, []);
+
+  const updateDefaultRegionalPrice = useCallback((patch: Partial<RegionalPrice>) => {
+    setFormData((previous) => ({
+      ...previous,
+      defaultRegionalPrice: { amount: null, currency: "EGP", ...previous.defaultRegionalPrice, ...patch },
+    }));
   }, []);
 
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -220,10 +276,16 @@ function CourseFormPanel({
       }
     }
 
+    const fallback = formData.defaultRegionalPrice;
     await onSave({
       ...formData,
       thumbnailPath,
-      regionalPrices: regionalPricingEnabled ? formData.regionalPrices ?? {} : undefined,
+      regionalPrices: regionalPricingEnabled ? cleanRegionalPrices(formData.regionalPrices) : undefined,
+      defaultRegionalPrice: regionalPricingEnabled
+        ? fallback && fallback.amount != null && fallback.amount > 0
+          ? { amount: fallback.amount, currency: fallback.currency?.toUpperCase() || "EGP" }
+          : null
+        : undefined,
     });
   }, [onSave, formData, pendingImageFile, instructorToken, uploadingImage, updateField, regionalPricingEnabled]);
 
@@ -532,33 +594,122 @@ function CourseFormPanel({
               )}
             </div>
             {regionalPricingEnabled && formData.pricingType !== "free" && (
-              <div className="space-y-3 rounded-xl border border-border/60 p-4">
+              <div className="space-y-4 rounded-xl border border-border/60 p-4">
                 <div>
                   <h4 className="text-sm font-semibold">أسعار حسب الدولة</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    العملة محددة حسب الدولة. اترك السعر فارغاً لاستخدام السعر الأساسي بالجنيه المصري.
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    اختر دولة من القائمة لإضافة سعر لها. العملة المقترحة تظهر تلقائياً ويمكنك تغييرها.
+                    السعر الأساسي لمصر بالجنيه المصري (EGP) ما لم تضف لها سعراً خاصاً.
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {REGIONAL_COUNTRIES.map((country) => (
-                    <div className="space-y-1.5" key={country.code}>
-                      <Label htmlFor={`regional-price-${country.code}`}>
-                        {country.name} ({country.currency})
-                      </Label>
-                      <AppInput
-                        id={`regional-price-${country.code}`}
-                        type="number"
-                        min="1"
-                        step="0.01"
-                        value={formData.regionalPrices?.[country.code] ?? ""}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          updateRegionalPrice(country.code, value ? Number(value) : null);
-                        }}
-                        placeholder="استخدم السعر الأساسي"
-                      />
-                    </div>
-                  ))}
+
+                <div className="space-y-2">
+                  <Label htmlFor="regional-country-to-add">إضافة دولة</Label>
+                  <AppSelect value={countryToAdd} onValueChange={addRegionalCountry}>
+                    <AppSelectTrigger id="regional-country-to-add" className="h-9">
+                      <AppSelectValue placeholder="اختر دولة من كل دول العالم" />
+                    </AppSelectTrigger>
+                    <AppSelectContent className="max-h-[300px]">
+                      {availableCountries.map((country) => (
+                        <AppSelectItem key={country.code} value={country.code}>
+                          {country.nameAr} ({country.code}) — {country.currency}
+                        </AppSelectItem>
+                      ))}
+                    </AppSelectContent>
+                  </AppSelect>
+                  {availableCountries.length === 0 && (
+                    <p className="text-xs text-muted-foreground">تمت إضافة كل الدول المتاحة.</p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {Object.entries(formData.regionalPrices ?? {}).length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-border/60 p-3 text-center text-xs text-muted-foreground">
+                      لم تضف أي دولة بعد.
+                    </p>
+                  ) : (
+                    Object.entries(formData.regionalPrices ?? {}).map(([code, entry]) => (
+                      <div key={code} className="space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label htmlFor={`regional-price-${code}`} className="truncate">
+                            {countryByCode.get(code)?.nameAr ?? countryNameForCode(code)} ({code})
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => removeRegionalCountry(code)}
+                            className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
+                            aria-label="حذف الدولة"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-[110px_1fr]">
+                          <AppSelect
+                            value={entry.currency}
+                            onValueChange={(currency) => updateRegionalCurrency(code, currency)}
+                          >
+                            <AppSelectTrigger className="h-9" aria-label="عملة الدولة">
+                              <AppSelectValue />
+                            </AppSelectTrigger>
+                            <AppSelectContent className="max-h-[260px]">
+                              {CURRENCY_CODES.map((currency) => (
+                                <AppSelectItem key={currency} value={currency}>
+                                  {currency}
+                                </AppSelectItem>
+                              ))}
+                            </AppSelectContent>
+                          </AppSelect>
+                          <AppInput
+                            id={`regional-price-${code}`}
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            value={entry.amount ?? ""}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              updateRegionalPrice(code, value ? Number(value) : null);
+                            }}
+                            placeholder="السعر (اتركه فارغاً للحذف)"
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <Label>الدول غير المضافة</Label>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    أي طالب من دولة خارج القائمة (عدا مصر) سيشاهد هذا السعر والعملة. اتركه فارغاً لاستخدام السعر الأساسي بالجنيه.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-[110px_1fr]">
+                    <AppSelect
+                      value={formData.defaultRegionalPrice?.currency ?? "EGP"}
+                      onValueChange={(currency) => updateDefaultRegionalPrice({ currency })}
+                    >
+                      <AppSelectTrigger className="h-9" aria-label="عملة الدول غير المضافة">
+                        <AppSelectValue />
+                      </AppSelectTrigger>
+                      <AppSelectContent className="max-h-[260px]">
+                        {CURRENCY_CODES.map((currency) => (
+                          <AppSelectItem key={currency} value={currency}>
+                            {currency}
+                          </AppSelectItem>
+                        ))}
+                      </AppSelectContent>
+                    </AppSelect>
+                    <AppInput
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={formData.defaultRegionalPrice?.amount ?? ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        updateDefaultRegionalPrice({ amount: value ? Number(value) : null });
+                      }}
+                      placeholder="استخدم السعر الأساسي"
+                    />
+                  </div>
                 </div>
               </div>
             )}
