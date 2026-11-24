@@ -2,12 +2,17 @@
 
 Generated from the local working tree. Every file below is included in full.
 The Studio Nova design block in `globals.css` starts at the `Studio Nova` comment.
+Dashboard colors now come from `مظهر لوحة التحكم` via `BrandThemeProvider`/`BrandThemeSSR`.
 
 ## Files
 
 - `apps/web/src/app/(dashboard)/teacher/courses/[courseId]/page.tsx`
 - `apps/web/src/app/globals.css`
 - `apps/web/src/components/layout/TenantDashboardLayout.tsx`
+- `apps/web/src/lib/brand-theme.ts`
+- `apps/web/src/components/layout/BrandThemeProvider.tsx`
+- `apps/web/src/components/layout/BrandThemeSSR.tsx`
+- `apps/web/src/components/layout/WorkspaceLeftSidebar.tsx`
 - `apps/web/src/features/instructors/InstructorWorkspaceLayout.tsx`
 - `apps/web/src/features/course-studio/components/CourseStudio.tsx`
 - `apps/web/src/features/course-studio/components/CourseStudioCanvas.tsx`
@@ -1468,35 +1473,23 @@ body.page-is-scrolling .nav-touch-solid {
 
 html:has(.studio-nova),
 .tenant-theme.studio-nova,
-.studio-nova.tenant-theme {
-  --studio-bg: 38 42% 96%;
-  --studio-surface: 0 0% 100%;
-  --studio-soft: 38 30% 92%;
-  --studio-border: 30 18% 85%;
-  --studio-muted: 36 24% 89%;
-  --studio-fg: 224 36% 14%;
-  --studio-fg-muted: 222 16% 38%;
-  --studio-fg-subtle: 220 12% 52%;
-  --studio-accent: 248 62% 56%;
-  --studio-accent-fg: 0 0% 100%;
-  --studio-accent-soft: 248 100% 96%;
-  --studio-accent-border: 248 58% 80%;
-  --studio-success: 158 62% 32%;
-  --studio-warning: 30 88% 44%;
-  --studio-danger: 356 72% 50%;
-  --studio-ring: 248 62% 56%;
-  --nova-mint: 166 62% 42%;
-  --nova-amber: 35 92% 56%;
-  --nova-ink: 224 36% 14%;
-  --nova-line: 30 20% 84%;
+.studio-nova.tenant-theme,
+.studio-nova {
+  /* Nova only owns its decorative tokens. The interactive palette
+     (--studio-* / --tenant-* / --primary) must come from the teacher's
+     "مظهر لوحة التحكم" colors injected by BrandThemeProvider/SSR. */
+  --nova-mint: var(--studio-secondary);
+  --nova-amber: var(--studio-accent);
+  --nova-ink: var(--studio-fg);
+  --nova-line: var(--studio-border);
 }
 
 .studio-nova .nova-shell {
   position: relative;
   background:
-    radial-gradient(circle at 8% 4%, hsl(38 92% 82% / 0.5), transparent 28%),
-    radial-gradient(circle at 92% 10%, hsl(248 90% 88% / 0.55), transparent 32%),
-    radial-gradient(circle at 55% 100%, hsl(166 70% 86% / 0.45), transparent 34%),
+    radial-gradient(circle at 8% 4%, hsl(var(--studio-accent) / 0.1), transparent 28%),
+    radial-gradient(circle at 92% 10%, hsl(var(--studio-secondary) / 0.28), transparent 32%),
+    radial-gradient(circle at 55% 100%, hsl(var(--studio-accent) / 0.08), transparent 34%),
     hsl(var(--studio-bg));
 }
 
@@ -1829,7 +1822,7 @@ html:has(.studio-nova),
 }
 
 .studio-nova .nova-primary-btn {
-  background: linear-gradient(135deg, hsl(var(--studio-accent)), hsl(252 65% 48%));
+  background: linear-gradient(135deg, hsl(var(--studio-accent)), hsl(var(--studio-secondary)));
   color: white;
   border: 1px solid transparent;
   box-shadow: 0 12px 24px -14px hsl(var(--studio-accent));
@@ -2260,8 +2253,8 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
-  // لوحة تحكم المدرس بتستخدم ألوان المنصة العالمية (platformBranding) اللي
-  // بتطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
+  // لوحة تحكم المدرس بتستخدم ألوان "مظهر لوحة التحكم" (activeTenant.branding)
+  // اللي بيطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);
@@ -2337,6 +2330,751 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
 }
 
 export { TenantDashboardLayout };
+```
+
+---
+
+## `apps/web/src/lib/brand-theme.ts`
+
+```ts
+import type { TenantBranding } from "@/features/tenant-bootstrap/types";
+import {
+  brandContrast,
+  BRAND_PRIMARY_DEFAULT,
+  BRAND_SECONDARY_DEFAULT,
+  normalizeHex,
+} from "@/lib/brand";
+
+/**
+ * Single <style> element both sides target so server-pre-rendered branding is
+ * reused (never duplicated) by the client when live branding changes.
+ */
+export const BRAND_THEME_STYLE_ID = "brand-theme-vars";
+import {
+  generateBrandScale,
+  generateCommunityThemeColors,
+  generateThemeColors,
+} from "@/lib/color";
+
+/**
+ * Resolve the two platform brand colors from a tenant's `platform_branding`
+ * payload. Accepts both the camelCase shape returned by the public by-domain
+ * endpoint (`primaryColor`/`secondaryColor`) and the snake_case shape used by
+ * auth responses (`primary_color`/`secondary_color`). Unset values fall back to
+ * the platform defaults (`#D87B63` / `#FFB50E`) and every value is normalized
+ * to `#RRGGBB`, so consumers can rely on a well-formed hex pair.
+ */
+export function resolveBrandThemeColors(
+  branding?: TenantBranding | null,
+): { primary: string; secondary: string } {
+  const b = (branding ?? {}) as Record<string, unknown>;
+  const primary = (b.primaryColor ?? b.primary_color ?? BRAND_PRIMARY_DEFAULT) as string;
+  const secondary = (b.secondaryColor ?? b.secondary_color ?? BRAND_SECONDARY_DEFAULT) as string;
+  return {
+    primary: normalizeHex(primary),
+    secondary: normalizeHex(secondary),
+  };
+}
+
+/**
+ * The teacher dashboard has its own appearance palette (`branding` settings
+ * group, saved from "مظهر لوحة التحكم"), kept separate from the public-site
+ * palette (`platform_branding`). Use it for `.tenant-theme` when configured and
+ * fall back to the platform pair on fresh tenants that never touched it.
+ * Accepts both camelCase (by-domain) and snake_case (auth/bootstrap) shapes.
+ */
+export function resolveDashboardBrandColors(
+  branding: unknown,
+  fallback: { primary: string; secondary: string },
+): { primary: string; secondary: string } {
+  const b = (branding ?? {}) as Record<string, unknown>;
+  const rawPrimary = b.primaryColor ?? b.primary_color;
+  const rawSecondary = b.secondaryColor ?? b.secondary_color;
+  return {
+    primary:
+      typeof rawPrimary === "string" && rawPrimary.trim()
+        ? normalizeHex(rawPrimary)
+        : fallback.primary,
+    secondary:
+      typeof rawSecondary === "string" && rawSecondary.trim()
+        ? normalizeHex(rawSecondary)
+        : fallback.secondary,
+  };
+}
+
+function toVars(obj: Record<string, string>): string {
+  return Object.entries(obj)
+    .map(([k, v]) => `${k}: ${v};`)
+    .join("");
+}
+
+/**
+ * The full brand-theme stylesheet: the `:root` brand pair plus the light/dark
+ * variables for every brand surface (`.community-theme` / `.tenant-theme` /
+ * `.student-theme`). It is generated from the tenant's two base colors so the
+ * entire design system follows the tenant's branding.
+ *
+ * Both sides use this same function:
+ *  · Server (`BrandThemeSSR`) pre-renders the real colors into <head>, so the
+ *    very first paint already uses the tenant's colors and there is never a
+ *    flash of the `globals.css` fallbacks (#D87B63 / #FFB50E).
+ *  · Client (`BrandThemeProvider`) re-applies the same stylesheet whenever the
+ *    live `platformBranding` changes (dashboard save, tenant switch) by
+ *    rewriting the same <style> element in place.
+ */
+export function buildBrandThemeCss(
+  primary: string,
+  secondary: string,
+  dashboard: { primary: string; secondary: string } = { primary, secondary },
+): string {
+  const light = {
+    ...generateCommunityThemeColors(primary, secondary, false),
+    ...generateBrandScale(primary, secondary, false),
+  };
+  const dark = {
+    ...generateCommunityThemeColors(primary, secondary, true),
+    ...generateBrandScale(primary, secondary, true),
+  };
+  // Dashboard (sidebar, header, active/hover states) follows the palette the
+  // teacher picked in "مظهر لوحة التحكم"; the public site keeps the platform
+  // palette above.
+  const dashLight = generateThemeColors(dashboard.primary, dashboard.secondary, false);
+  const dashDark = generateThemeColors(dashboard.primary, dashboard.secondary, true);
+
+  return `
+:root {
+  --brand-primary: ${primary};
+  --brand-secondary: ${secondary};
+  --brand-primary-contrast: ${brandContrast(primary)};
+  --brand-secondary-contrast: ${brandContrast(secondary)};
+}
+.community-theme { ${toVars(light)} }
+.dark .community-theme, .dark.community-theme { ${toVars(dark)} }
+.tenant-theme { ${toVars(dashLight)} }
+.dark .tenant-theme, .dark.tenant-theme { ${toVars(dashDark)} }
+.student-theme { ${toVars(dashLight)} }
+.dark .student-theme, .dark.student-theme { ${toVars(dashDark)} }
+`;
+}
+```
+
+---
+
+## `apps/web/src/components/layout/BrandThemeProvider.tsx`
+
+```tsx
+"use client";
+
+import { useEffect, useMemo, useRef } from "react";
+import { useTenantStore } from "@/stores/tenant.store";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
+import {
+  BRAND_THEME_STYLE_ID,
+  buildBrandThemeCss,
+  resolveBrandThemeColors,
+  resolveDashboardBrandColors,
+} from "@/lib/brand-theme";
+
+/**
+ * المصدر الوحيد والموثوق لألوان المنصة (platformBranding) على طول التطبيق.
+ *
+ * بيطبّق نفس لونين الأساسيين (primary/secondary) على كل الأسطح الملوّنة:
+ *   · .community-theme  → الموقع العام (navbar/hero/cards/wallet/courses…)
+ *   · .tenant-theme     → لوحة تحكم المدرس + صفحة تسجيل الدخول
+ *   · .student-theme    → لوحة الطالب
+ *   · :root --brand-*   → متغيّرات الألوان الخام الجاهزة للاستخدام المباشر
+ *
+ * لوحة تحكم المدرس (.tenant-theme) ليها بalette مستقلة بيتحكم فيها المدرس من
+ * "مظهر لوحة التحكم" (activeTenant.branding) — عشان كده بنستخدمها للـ dashboard،
+ * مع الاحتفاظ بـ platformBranding للموقع العام وصفحة الطالب. لو المدرس ماعملش
+ * إعدادات مظهر، بنرجّع للـ platform pair عشان مفيش لوحة تظهر بلا ألوان.
+ *
+ * ملاحظة حول منع الوميض (FOUC): الألوان الحقيقية بتتطبّع server-side في <head>
+ * عن طريق BrandThemeSSR (نفس id الـ <style>) — فلأول رسمة من اول رسمة بالألوان
+ * الصحيحة. هنا على الـ client بنعيد كتابة نفس العنصر جوه المكان بس لما الألوان
+ * الحية (platformBranding) تبقى معروفة فعلاً، وبنمنع كتابة قيم الـ fallback
+ * (الموجودة في globals.css) مكانها قبل ما توصل الألوان — وده كان سبب الوميض.
+ */
+export function BrandThemeProvider() {
+  const platformBranding = usePlatformBranding();
+  // Teacher appearance palette ("مظهر لوحة التحكم"), separate from the public
+  // site palette. This is what actually drives the dashboard sidebar colors.
+  const appearanceBranding = useTenantStore((s) => s.activeTenant?.branding);
+  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
+  const loadRef = useRef(false);
+
+  // تحميل ذاتي لألوان المنصة (مرّة واحدة، ومستقل عن حالة تسجيل الدخول). لو كانت
+  // الألوان موجودة من الـ SSR/البوتستراب بنكتفي بيها.
+  useEffect(() => {
+    if (platformBranding || loadRef.current) return;
+    loadRef.current = true;
+    const host = window.location.host;
+    fetch(`/api/v1/tenant/by-domain?domain=${encodeURIComponent(host)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.platform_branding) setPlatformBranding(data.platform_branding);
+      })
+      .catch(() => {
+        // لو فشل، نسمح بإعادة المحاولة في المرة الجاية.
+        loadRef.current = false;
+      });
+  }, [platformBranding, setPlatformBranding]);
+
+  const platform = resolveBrandThemeColors(platformBranding);
+  const dashboard = resolveDashboardBrandColors(appearanceBranding, platform);
+
+  const css = useMemo(
+    () => buildBrandThemeCss(platform.primary, platform.secondary, dashboard),
+    [platform.primary, platform.secondary, dashboard.primary, dashboard.secondary],
+  );
+
+  useEffect(() => {
+    // لو مفيش حتى الآن branding حقيقي (middleware/SSR ماجابهاش والـ fetch لسه
+    // شغال)، منكتبش style إطلاقاً عشان منستبدلش الألوان الصحيحة اللي طبّعها الـ
+    // SSR في <head> بألوان الـ fallback — اللي كان سبب الوميض. أول ما توصل
+    // الألوان الحقيقية، بنعيد كتابة نفس العنصر جوه المكان بالقيم نفسها فمفيش تغيير مرئي.
+    if (!platformBranding) return;
+
+    let styleTag = document.getElementById(BRAND_THEME_STYLE_ID) as HTMLStyleElement | null;
+    if (!styleTag) {
+      styleTag = document.createElement("style");
+      styleTag.id = BRAND_THEME_STYLE_ID;
+      document.head.appendChild(styleTag);
+    }
+    styleTag.textContent = css;
+  }, [css, platformBranding]);
+
+  return null;
+}
+```
+
+---
+
+## `apps/web/src/components/layout/BrandThemeSSR.tsx`
+
+```tsx
+import { getTenantSeoContext } from "@/lib/seo/tenant-context";
+import {
+  BRAND_THEME_STYLE_ID,
+  buildBrandThemeCss,
+  resolveBrandThemeColors,
+  resolveDashboardBrandColors,
+} from "@/lib/brand-theme";
+
+/**
+ * Server-rendered brand theme. Renders the tenant's resolved `platform_branding`
+ * as a real <style> block directly into <head>, so the browser's very first
+ * paint already uses the tenant's configured colors — eliminating the
+ * flash-of-unstyled-content where the globals.css fallbacks
+ * (#D87B63 / #FFB50E) flashed for a moment before the client fetched branding.
+ *
+ * For tenant hosts the tenant is resolved server-side (via the
+ * `x-tenant-context` header or an internal by-domain call, both cached per
+ * request by `getTenantSeoContext`). On the bare platform host there is no
+ * tenant, so the platform's design fallbacks render — which is correct and
+ * stable (no color "change" after load).
+ *
+ * The client `BrandThemeProvider` reuses the exact same <style> id to update
+ * the block in place when live branding changes (dashboard save / tenant
+ * switch), so there is never a duplicate stylesheet node.
+ */
+export async function BrandThemeSSR() {
+  const tenant = await getTenantSeoContext();
+  const branding = tenant?.platform_branding ?? tenant?.platformBranding ?? null;
+  const platform = resolveBrandThemeColors(branding);
+  // by-domain already carries the teacher's "مظهر لوحة التحكم" palette in
+  // `branding`, so the very first paint uses the colors they actually picked.
+  const dashboard = resolveDashboardBrandColors(tenant?.branding, platform);
+  const css = buildBrandThemeCss(platform.primary, platform.secondary, dashboard);
+
+  return <style id={BRAND_THEME_STYLE_ID} data-ssr="true">{css}</style>;
+}
+```
+
+---
+
+## `apps/web/src/components/layout/WorkspaceLeftSidebar.tsx`
+
+```tsx
+"use client";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import {
+  Pin,
+  Star,
+  Layout,
+  Palette,
+  Globe,
+  MessagesSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ClipboardList,
+  GripVertical,
+  Images,
+  Video,
+  Megaphone,
+  MessageSquare,
+  Home,
+  User,
+  Award,
+  GraduationCap,
+  BookOpen,
+  TicketCheck,
+  CreditCard,
+  ImageIcon,
+  Search,
+  ClipboardCheck,
+  ShieldCheck,
+  Scale,
+  PanelBottom,
+  Compass,
+  Newspaper,
+  BriefcaseBusiness,
+  Info,
+  Mail,
+} from "lucide-react";
+import { StudioButton } from "@/components/studio/primitives/StudioButton";
+import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
+import { StudioSidebarItem } from "@/components/studio/navigation/StudioSidebarItem";
+import { useWorkspaceStore } from "@/stores/workspace.store";
+import { routes } from "@/constants/routes";
+import { cn } from "@/lib/cn";
+import { useTenantContext } from "@/providers/TenantProvider";
+
+const COLLAPSED_WIDTH = 68;
+const MIN_WIDTH = 220;
+const MAX_WIDTH = 400;
+
+function LegalPageItems({
+  collapsed,
+  pathname,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  pathname: string;
+  onNavigate: (href: string) => void;
+}) {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
+  return (
+    <>
+      <StudioSidebarItem
+        icon={<ShieldCheck className="h-4 w-4" />}
+        label="سياسة الخصوصية"
+        active={pathname.startsWith(routes.teacherLegal) && tab !== "terms"}
+        collapsed={collapsed}
+        onClick={() => onNavigate(`${routes.teacherLegal}?tab=privacy`)}
+      />
+      <StudioSidebarItem
+        icon={<Scale className="h-4 w-4" />}
+        label="شروط الاستخدام"
+        active={pathname.startsWith(routes.teacherLegal) && tab === "terms"}
+        collapsed={collapsed}
+        onClick={() => onNavigate(`${routes.teacherLegal}?tab=terms`)}
+      />
+    </>
+  );
+}
+
+export function WorkspaceLeftSidebar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { activeTenant } = useTenantContext();
+  const instructorsEnabled = activeTenant?.feature_flags?.has_instructors === true;
+  const blogEnabled = activeTenant?.feature_flags?.has_blog === true;
+  const servicesEnabled = activeTenant?.feature_flags?.has_services === true;
+  const {
+    leftSidebarOpen,
+    leftSidebarWidth,
+    leftSidebarCollapsed,
+    mobileMenuOpen,
+    setLeftSidebarWidth,
+    setLeftSidebarCollapsed,
+    setMobileMenuOpen,
+  } = useWorkspaceStore();
+
+  const handleNavigate = useCallback(
+    (href: string) => {
+      router.push(href);
+      if (mobileMenuOpen) setMobileMenuOpen(false);
+    },
+    [router, mobileMenuOpen, setMobileMenuOpen],
+  );
+
+  const [isResizing, setIsResizing] = useState(false);
+  const isRTL = typeof document !== "undefined"
+    ? document.documentElement.dir === "rtl"
+    : true;
+
+  const currentWidth = leftSidebarCollapsed ? COLLAPSED_WIDTH : leftSidebarWidth;
+
+  const handleCollapseToggle = useCallback(() => {
+    setLeftSidebarCollapsed(!leftSidebarCollapsed);
+  }, [leftSidebarCollapsed, setLeftSidebarCollapsed]);
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      const startX = e.clientX;
+      const startWidth = leftSidebarWidth;
+
+      const handleMouseMove = (ev: MouseEvent) => {
+        const delta = ev.clientX - startX;
+        const newWidth = isRTL
+          ? startWidth - delta
+          : startWidth + delta;
+        setLeftSidebarWidth(Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth)));
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [leftSidebarWidth, setLeftSidebarWidth, isRTL],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "[" && e.metaKey) {
+        e.preventDefault();
+        handleCollapseToggle();
+      }
+    },
+    [handleCollapseToggle],
+  );
+
+  useEffect(() => {
+    if (!leftSidebarOpen) {
+      setLeftSidebarCollapsed(true);
+    }
+  }, [leftSidebarOpen, setLeftSidebarCollapsed]);
+
+  return (
+    <aside
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden border-l border-studio-border bg-studio-glass-sidebar backdrop-blur-xl transition-[width] duration-300 ease-in-out",
+        isResizing && "select-none",
+      )}
+      style={{ width: currentWidth }}
+      role="navigation"
+      aria-label="القائمة الجانبية"
+      onKeyDown={handleKeyDown}
+      dir="auto"
+    >
+        {/* Resize handle (only when expanded) */}
+        {!leftSidebarCollapsed && (
+          <div
+            onMouseDown={handleResizeStart}
+            className={cn(
+              "absolute top-0 z-20 flex w-3 cursor-col-resize items-center justify-center transition-colors hover:bg-studio-accent/20",
+              isResizing && "bg-studio-accent/20",
+              isRTL ? "left-0" : "right-0",
+            )}
+            style={{ height: "100%" }}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="تغيير عرض القائمة"
+            tabIndex={0}
+          >
+            <GripVertical className="h-4 w-4 text-studio-fg-subtle" aria-hidden="true" />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Top section */}
+          <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
+            {!leftSidebarCollapsed && (
+              <span className="text-xs font-semibold text-studio-fg-muted px-1">
+                مساحة العمل
+              </span>
+            )}
+            <StudioButton
+              variant="ghost"
+              size="icon"
+              onClick={handleCollapseToggle}
+              aria-label={leftSidebarCollapsed ? "توسيع القائمة" : "طي القائمة"}
+            >
+              {leftSidebarCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </StudioButton>
+          </div>
+
+          {/* Scrollable nav area */}
+          <div className="flex-1 overflow-y-auto studio-scrollbar py-2">
+            {/* Workspace Switcher */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "التبديل"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Layout className="h-4 w-4" />}
+                label="مساحة العمل"
+                collapsed={leftSidebarCollapsed}
+              />
+            </StudioSidebarSection>
+
+            {/* Navigation placeholder */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "التنقل"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Layout className="h-4 w-4" />}
+                label="الرئيسية"
+                collapsed={leftSidebarCollapsed}
+              />
+              <StudioSidebarItem
+                icon={<Layout className="h-4 w-4" />}
+                label="الكورسات"
+                active={pathname.startsWith("/teacher/courses")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/courses")}
+              />
+              {instructorsEnabled && (
+                <StudioSidebarItem
+                  icon={<GraduationCap className="h-4 w-4" />}
+                  label="المدربون"
+                  active={pathname.startsWith(routes.tenantInstructors)}
+                  collapsed={leftSidebarCollapsed}
+                  onClick={() => handleNavigate(routes.tenantInstructors)}
+                />
+              )}
+              <StudioSidebarItem
+                icon={<Video className="h-4 w-4" />}
+                label="مكتبة الفيديوهات"
+                active={pathname.startsWith(routes.dashboardVideoLibrary)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardVideoLibrary)}
+              />
+              <StudioSidebarItem
+                icon={<Images className="h-4 w-4" />}
+                label="مكتبة الوسائط"
+                active={pathname.startsWith(routes.dashboardMediaLibrary)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardMediaLibrary)}
+              />
+              <StudioSidebarItem
+                icon={<ClipboardList className="h-4 w-4" />}
+                label="مكتبة الاختبارات"
+                active={pathname.startsWith("/teacher/exams")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardExams)}
+              />
+              <StudioSidebarItem
+                icon={<ClipboardCheck className="h-4 w-4" />}
+                label="تصحيح إجابات الطلاب"
+                active={
+                  pathname.startsWith(routes.dashboardGrading) ||
+                  pathname.includes("/grading")
+                }
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardGrading)}
+              />
+              <StudioSidebarItem
+                icon={<BookOpen className="h-4 w-4" />}
+                label="المواد"
+                active={pathname.startsWith("/teacher/subjects")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardSubjects)}
+              />
+              <StudioSidebarItem
+                icon={<GraduationCap className="h-4 w-4" />}
+                label="الطلاب"
+                active={pathname.startsWith("/teacher/students")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardStudents)}
+              />
+              <StudioSidebarItem
+                icon={<Award className="h-4 w-4" />}
+                label="الشهادات"
+                active={pathname.startsWith(routes.dashboardCertificates)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardCertificates)}
+              />
+              <StudioSidebarItem
+                icon={<TicketCheck className="h-4 w-4" />}
+                label="أكواد الشحن"
+                active={pathname.startsWith("/teacher/recharge-codes")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardRechargeCodes)}
+              />
+            </StudioSidebarSection>
+
+            {/* Pinned area */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "المثبت"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Pin className="h-4 w-4" />}
+                label="مساحة مثبتة"
+                collapsed={leftSidebarCollapsed}
+              />
+            </StudioSidebarSection>
+
+            {/* Favorites placeholder */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "المفضلة"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Star className="h-4 w-4" />}
+                label="سيتم إضافة المفضلة"
+                collapsed={leftSidebarCollapsed}
+              />
+            </StudioSidebarSection>
+
+            {/* Settings */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "الإعدادات"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Search className="h-4 w-4" />}
+                label="إعدادات SEO"
+                active={pathname.startsWith(routes.seoSettings)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.seoSettings)}
+              />
+              <StudioSidebarItem
+                icon={<Globe className="h-4 w-4" />}
+                label="إعدادات الموقع"
+                active={pathname.startsWith(routes.dashboardSiteSettings)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardSiteSettings)}
+              />
+              <StudioSidebarItem
+                icon={<ImageIcon className="h-4 w-4" />}
+                label="الشعار واسم المنصة"
+                active={pathname.startsWith(routes.dashboardBranding)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardBranding)}
+              />
+              <StudioSidebarItem
+                icon={<Palette className="h-4 w-4" />}
+                label="مظهر لوحة التحكم"
+                active={pathname.startsWith("/teacher/settings/appearance")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/appearance")}
+              />
+              <StudioSidebarItem
+                icon={<CreditCard className="h-4 w-4" />}
+                label="بوابات الدفع"
+                active={pathname.startsWith("/teacher/settings/payment-gateway")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/payment-gateway")}
+              />
+            
+              <StudioSidebarItem
+                icon={<MessageSquare className="h-4 w-4" />}
+                label="إعدادات واتساب"
+                active={pathname.startsWith("/teacher/settings/whatsapp")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/whatsapp")}
+              />
+              <StudioSidebarItem
+                icon={<Mail className="h-4 w-4" />}
+                label="إعدادات البريد الإلكتروني"
+                active={pathname.startsWith("/teacher/settings/mail")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate("/teacher/settings/mail")}
+              />
+</StudioSidebarSection>
+
+            {/* Homepage management */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "إدارة الصفحة الرئيسية"} collapsed={leftSidebarCollapsed}>
+              <StudioSidebarItem
+                icon={<Home className="h-4 w-4" />}
+                label="إدارة الصفحة الرئيسية"
+                active={pathname.startsWith("/teacher/homepage")}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.homepageNews)}
+              />
+              <StudioSidebarItem
+                icon={<Megaphone className="h-4 w-4" />}
+                label="شريط الأخبار"
+                active={pathname === routes.homepageNews}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => handleNavigate(routes.homepageNews)}
+              />
+              <StudioSidebarItem
+                icon={<User className="h-4 w-4" />}
+                label="البطاقة التعريفية"
+                active={pathname === routes.homepageHero}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => handleNavigate(routes.homepageHero)}
+              />
+              <StudioSidebarItem
+                icon={<Award className="h-4 w-4" />}
+                label="لماذا تختارنا؟"
+                active={pathname === routes.homepageWhyChooseUs}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => handleNavigate(routes.homepageWhyChooseUs)}
+              />
+              <StudioSidebarItem
+                icon={<GraduationCap className="h-4 w-4" />}
+                label="المراحل الدراسية"
+                active={pathname === routes.homepageEducationalStages}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => handleNavigate(routes.homepageEducationalStages)}
+              />
+              <StudioSidebarItem
+                icon={<MessagesSquare className="h-4 w-4" />}
+                label="سكشن منتدى الطلاب"
+                active={pathname === routes.homepageCommunity}
+                collapsed={leftSidebarCollapsed}
+                className="ps-7"
+                onClick={() => handleNavigate(routes.homepageCommunity)}
+              />
+            </StudioSidebarSection>
+
+            {/* Site pages (legal + footer) */}
+            <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "صفحات الموقع"} collapsed={leftSidebarCollapsed}>
+              {servicesEnabled && <StudioSidebarItem icon={<BriefcaseBusiness className="h-4 w-4" />} label="إدارة الخدمات" active={pathname.startsWith(routes.dashboardServices)} collapsed={leftSidebarCollapsed} onClick={() => handleNavigate(routes.dashboardServices)} />}
+              {blogEnabled && (
+                <StudioSidebarItem
+                  icon={<Newspaper className="h-4 w-4" />}
+                  label="المدونة"
+                  active={pathname.startsWith(routes.dashboardBlog)}
+                  collapsed={leftSidebarCollapsed}
+                  onClick={() => handleNavigate(routes.dashboardBlog)}
+                />
+              )}
+              <StudioSidebarItem
+                icon={<Info className="h-4 w-4" />}
+                label="صفحة من نحن"
+                active={pathname.startsWith(routes.teacherAbout)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherAbout)}
+              />
+              <Suspense fallback={null}>
+                <LegalPageItems
+                  collapsed={leftSidebarCollapsed}
+                  pathname={pathname}
+                  onNavigate={handleNavigate}
+                />
+              </Suspense>
+              <StudioSidebarItem
+                icon={<PanelBottom className="h-4 w-4" />}
+                label="محتوى الفوتر"
+                active={pathname.startsWith(routes.teacherFooter)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherFooter)}
+              />
+              <StudioSidebarItem
+                icon={<Compass className="h-4 w-4" />}
+                label="صفحة من نحن"
+                active={pathname.startsWith(routes.teacherAbout)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.teacherAbout)}
+              />
+            </StudioSidebarSection>
+          </div>
+        </div>
+    </aside>
+  );
+}
 ```
 
 ---
