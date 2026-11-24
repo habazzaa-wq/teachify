@@ -2,13 +2,14 @@
 
 import { useEffect, useCallback, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListTree, Plus, SlidersHorizontal, X } from "lucide-react";
+import { LayoutDashboard, ListTree, Plus, SlidersHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { useCourseStudioStore } from "../store";
 import { CourseStudioHeader } from "./CourseStudioHeader";
 import { CourseStudioBreadcrumb } from "./CourseStudioBreadcrumb";
 import { CourseStudioNavigator } from "./CourseStudioNavigator";
+import { CourseStudioRail } from "./CourseStudioRail";
 import { CourseStudioCanvas } from "./CourseStudioCanvas";
 import { CourseStudioInspector } from "./CourseStudioInspector";
 import { CourseStudioOnboarding } from "./CourseStudioOnboarding";
@@ -74,19 +75,24 @@ interface CourseStudioProps {
   instructorMode?: boolean;
 }
 
-// الشاشات الصغيرة والمتوسطة بتستخدم وضع اللوحة الواحدة + الأدراج،
-// عشان مساحة العمل ما تتزاحمش في عرض أقل من 1024px.
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+type CourseLayout = "mobile" | "laptop" | "desktop";
+type MobilePane = "board" | "outline" | "details";
+
+// ثلاثة هياكل حقيقية: موبايل بلوحة واحدة، لاب توب بشريط فصول، وسطح مكتب بخريطة كاملة.
+function useCourseLayout() {
+  const [layout, setLayout] = useState<CourseLayout>("desktop");
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
+    const check = () => {
+      const width = window.innerWidth;
+      setLayout(width < 1024 ? "mobile" : width < 1280 ? "laptop" : "desktop");
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  return isMobile;
+  return layout;
 }
 
 function CourseStudio({
@@ -107,7 +113,7 @@ function CourseStudio({
   onQuickAction,
   instructorMode = false,
 }: CourseStudioProps) {
-  const isMobile = useIsMobile();
+  const layout = useCourseLayout();
   const store = useCourseStudioStore();
   const [editContentItem, setEditContentItem] = useState<ContentItem | null>(null);
 
@@ -921,44 +927,96 @@ function CourseStudio({
     [courseId, store.selectedSectionId, reorderLessons],
   );
 
-  const navigatorOpen = isMobile ? false : store.navigatorOpen;
+  const setInspectorOpen = store.setInspectorOpen;
+  const toggleNavigator = store.toggleNavigator;
+  const toggleInspector = store.toggleInspector;
 
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [previousIsMobile, setPreviousIsMobile] = useState(isMobile);
+  const [mobilePane, setMobilePane] = useState<MobilePane>("board");
+  const [laptopMapOpen, setLaptopMapOpen] = useState(false);
+  const [laptopInspectorOpen, setLaptopInspectorOpen] = useState(false);
+  const [previousLayout, setPreviousLayout] = useState(layout);
 
-  // Reset the mobile drawer while rendering when the breakpoint changes, so the
-  // effect below only synchronises the store (no cascading render from setState).
-  if (previousIsMobile !== isMobile) {
-    setPreviousIsMobile(isMobile);
-    setMobileNavOpen(false);
+  // Reset transient panes while rendering when the breakpoint changes.
+  if (previousLayout !== layout) {
+    setPreviousLayout(layout);
+    setMobilePane("board");
+    setLaptopMapOpen(false);
+    setLaptopInspectorOpen(false);
   }
 
-  useEffect(() => {
-    if (isMobile) {
-      store.setNavigatorOpen(false);
-      store.setInspectorOpen(false);
-    }
-  }, [isMobile]);
+  const navigatorOpen = layout === "laptop" ? laptopMapOpen : store.navigatorOpen;
+  const inspectorOpen =
+    layout === "mobile"
+      ? mobilePane === "details"
+      : layout === "laptop"
+        ? laptopInspectorOpen
+        : store.inspectorOpen;
 
   const handleToggleNavigator = useCallback(() => {
-    if (isMobile) {
-      setMobileNavOpen((prev) => !prev);
+    if (layout === "mobile") {
+      setMobilePane((prev) => (prev === "outline" ? "board" : "outline"));
+    } else if (layout === "laptop") {
+      const next = !laptopMapOpen;
+      setLaptopMapOpen(next);
+      if (next) setLaptopInspectorOpen(false);
     } else {
-      store.toggleNavigator();
+      toggleNavigator();
     }
-  }, [isMobile, store.toggleNavigator]);
+  }, [layout, laptopMapOpen, setLaptopInspectorOpen, setLaptopMapOpen, setMobilePane, toggleNavigator]);
 
   const handleToggleInspector = useCallback(() => {
-    store.toggleInspector();
-  }, [store.toggleInspector]);
+    if (layout === "mobile") {
+      setMobilePane((prev) => (prev === "details" ? "board" : "details"));
+    } else if (layout === "laptop") {
+      setLaptopMapOpen(false);
+      setLaptopInspectorOpen((prev) => !prev);
+    } else {
+      toggleInspector();
+    }
+  }, [layout, setLaptopInspectorOpen, setLaptopMapOpen, setMobilePane, toggleInspector]);
 
   const handleCloseInspector = useCallback(() => {
-    store.setInspectorOpen(false);
-  }, [store.setInspectorOpen]);
+    if (layout === "mobile") {
+      setMobilePane("board");
+    } else if (layout === "laptop") {
+      setLaptopInspectorOpen(false);
+    } else {
+      setInspectorOpen(false);
+    }
+  }, [layout, setInspectorOpen, setLaptopInspectorOpen, setMobilePane]);
 
-  const handleCloseMobileNav = useCallback(() => {
-    setMobileNavOpen(false);
-  }, []);
+  const handleCloseNavigator = useCallback(() => {
+    if (layout === "mobile") {
+      setMobilePane("board");
+    } else if (layout === "laptop") {
+      setLaptopMapOpen(false);
+    } else {
+      setInspectorOpen(false);
+    }
+  }, [layout, setInspectorOpen, setLaptopMapOpen, setMobilePane]);
+
+  const handleOpenLaptopMap = useCallback(() => {
+    setLaptopInspectorOpen(false);
+    setLaptopMapOpen(true);
+  }, [setLaptopInspectorOpen, setLaptopMapOpen]);
+
+  const handleNavigatorSelectLecture = useCallback(
+    (id: string) => {
+      handleSelectLecture(id);
+      if (layout === "mobile") setMobilePane("board");
+      if (layout === "laptop") setLaptopMapOpen(false);
+    },
+    [handleSelectLecture, layout, setLaptopMapOpen, setMobilePane],
+  );
+
+  const handleNavigatorSelectSection = useCallback(
+    (id: string) => {
+      handleSelectSection(id);
+      if (layout === "mobile") setMobilePane("board");
+      if (layout === "laptop") setLaptopMapOpen(false);
+    },
+    [handleSelectSection, layout, setLaptopMapOpen, setMobilePane],
+  );
 
   const defaultBreadcrumb: BreadcrumbItem[] = breadcrumbItems ?? [
     { label: "الدورات", href: "/teacher/courses" },
@@ -982,13 +1040,17 @@ function CourseStudio({
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && mobileNavOpen) {
-        setMobileNavOpen(false);
+      if (e.key !== "Escape") return;
+      if (layout === "mobile") {
+        setMobilePane("board");
+      } else if (layout === "laptop") {
+        setLaptopMapOpen(false);
+        setLaptopInspectorOpen(false);
       }
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [mobileNavOpen]);
+  }, [layout, setLaptopInspectorOpen, setLaptopMapOpen, setMobilePane]);
 
   if (mode === "loading") {
     return <CourseStudioLoading />;
@@ -998,12 +1060,69 @@ function CourseStudio({
     ? (sectionsByLecture[store.createSectionLectureId]?.length ?? 0)
     : 0;
 
+  const renderCanvas = () => (
+    <CourseStudioCanvas
+      selectedLecture={selectedLecture}
+      selectedSection={selectedSection}
+      selectedContent={selectedContent}
+      lectureSections={selectedLecture ? sectionsByLecture[selectedLecture.id] : undefined}
+      sectionContents={contentItems}
+      canvasView={canvasView}
+      onCreateLecture={openAddChoice}
+      onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
+      onAddContent={handleAddContent}
+      onEditSection={(s) => store.openEditSectionDialog(s)}
+      onDuplicateSection={handleDuplicateSection}
+      onArchiveSection={handleArchiveSection}
+      onDeleteSection={handleDeleteSection}
+      onRestoreSection={handleRestoreSection}
+      onSelectContent={handleSelectContent}
+      onEditContent={handleEditContent}
+      onPublishContent={handlePublishContent}
+      onArchiveContent={handleArchiveContent}
+      onDuplicateContent={handleDuplicateContent}
+      onDeleteContent={handleDeleteContent}
+      onRestoreContent={handleRestoreContent}
+      onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
+      onReorderContent={handleReorderContent}
+    />
+  );
+
+  const navigatorBaseProps = {
+    lectures: lectures ?? [],
+    sections: sectionsByLecture,
+    courseId: courseId ?? undefined,
+    selectedLectureId: store.selectedLectureId,
+    selectedSectionId: store.selectedSectionId,
+    expandedLectures: store.expandedLectures,
+    isLoading: lecturesLoading,
+    onSelectLecture: handleNavigatorSelectLecture,
+    onToggleLecture: handleToggleLecture,
+    onSelectSection: handleNavigatorSelectSection,
+    onCreateLecture: openAddChoice,
+    onEditLecture: (l: CourseModule) => store.openEditDialog(l),
+    onPublishLecture: handlePublishLecture,
+    onArchiveLecture: handleArchiveLecture,
+    onDuplicateLecture: handleDuplicateLecture,
+    onDeleteLecture: handleDeleteLecture,
+    onRestoreLecture: handleRestoreLecture,
+    onReorder: handleReorder,
+    onEditSection: (s: CourseSection) => store.openEditSectionDialog(s),
+    onPublishSection: handlePublishSection,
+    onArchiveSection: handleArchiveSection,
+    onDuplicateSection: handleDuplicateSection,
+    onDeleteSection: handleDeleteSection,
+    onRestoreSection: handleRestoreSection,
+    onAddSection: handleAddSection,
+    onReorderSections: handleReorderSections,
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="flex h-full min-h-0 flex-col overflow-hidden"
+      className="cw3-shell"
     >
       <CourseStudioHeader
         courseName={courseName}
@@ -1013,109 +1132,135 @@ function CourseStudio({
         lastEdited={lastEdited}
         isSaving={isSaving}
         isSaved={isSaved}
-        navigatorOpen={isMobile ? mobileNavOpen : store.navigatorOpen}
-        inspectorOpen={store.inspectorOpen}
+        navigatorOpen={navigatorOpen}
+        inspectorOpen={inspectorOpen}
+        layout={layout}
         onToggleNavigator={handleToggleNavigator}
         onToggleInspector={handleToggleInspector}
         onPublish={onPublish}
         onQuickAction={onQuickAction}
       />
 
-      <div className="ws2-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
+      <div className="cw3-crumb-bar flex shrink-0 items-center gap-3 border-b px-3 py-2 sm:px-5 lg:px-6">
         <CourseStudioBreadcrumb items={defaultBreadcrumb} />
+        <span className="cw3-section-label ms-auto hidden shrink-0 lg:inline">
+          {layout === "desktop" ? "خريطة الدورة" : layout === "laptop" ? "شريط الفصول" : "لوحة العمل"}
+        </span>
       </div>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {isMobile ? (
+        {layout === "mobile" ? (
+          <div className="cw3-mobile-pane flex min-w-0 flex-1 flex-col">
+            {mobilePane === "board" && renderCanvas()}
+
+            {mobilePane === "outline" && (
+              <div className="flex h-full flex-col">
+                <div className="cw3-panel-head flex shrink-0 items-center justify-between gap-2 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="cw3-eyebrow">Course Outline</p>
+                    <h2 className="text-sm font-semibold text-studio-fg">تصفّح الدورة</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobilePane("board")}
+                    aria-label="العودة إلى اللوحة"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-studio-fg-muted hover:bg-studio-soft hover:text-studio-fg"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <CourseStudioNavigator variant="drawer" open width={320} {...navigatorBaseProps} />
+                </div>
+              </div>
+            )}
+
+            {mobilePane === "details" && (
+              <div className="flex h-full flex-col">
+                <div className="cw3-panel-head flex shrink-0 items-center justify-between gap-2 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="cw3-eyebrow">Inspector</p>
+                    <h2 className="text-sm font-semibold text-studio-fg">خصائص العنصر</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMobilePane("board")}
+                    aria-label="العودة إلى اللوحة"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-studio-fg-muted hover:bg-studio-soft hover:text-studio-fg"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="studio-scrollbar min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+                  <CourseStudioInspector
+                    variant="drawer"
+                    open
+                    width={360}
+                    selectedSection={selectedSection}
+                    selectedContent={selectedContent}
+                    lectures={lectures}
+                    onEditSection={(s) => store.openEditSectionDialog(s)}
+                    onDuplicateSection={handleDuplicateSection}
+                    onArchiveSection={handleArchiveSection}
+                    onDeleteSection={handleDeleteSection}
+                    onRestoreSection={handleRestoreSection}
+                    onMoveSection={handleMoveSection}
+                    onClose={handleCloseInspector}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        ) : layout === "laptop" ? (
           <>
-            <CourseStudioCanvas
-              selectedLecture={selectedLecture}
-              selectedSection={selectedSection}
-              selectedContent={selectedContent}
-              lectureSections={selectedLecture ? sectionsByLecture[selectedLecture.id] : undefined}
-              sectionContents={contentItems}
-              canvasView={canvasView}
+            <CourseStudioRail
+              lectures={lectures}
+              selectedLectureId={store.selectedLectureId}
+              onSelectLecture={handleNavigatorSelectLecture}
+              onOpenMap={handleOpenLaptopMap}
               onCreateLecture={openAddChoice}
-              onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
-              onAddContent={handleAddContent}
-              onEditSection={(s) => store.openEditSectionDialog(s)}
-              onDuplicateSection={handleDuplicateSection}
-              onArchiveSection={handleArchiveSection}
-              onDeleteSection={handleDeleteSection}
-              onRestoreSection={handleRestoreSection}
-              onSelectContent={handleSelectContent}
-              onEditContent={handleEditContent}
-              onPublishContent={handlePublishContent}
-              onArchiveContent={handleArchiveContent}
-              onDuplicateContent={handleDuplicateContent}
-              onDeleteContent={handleDeleteContent}
-              onRestoreContent={handleRestoreContent}
-              onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
-              onReorderContent={handleReorderContent}
             />
 
+            {renderCanvas()}
+
             <AnimatePresence>
-              {mobileNavOpen && (
+              {laptopMapOpen && (
                 <>
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute inset-0 z-40 bg-studio-overlay"
-                    onClick={handleCloseMobileNav}
+                    className="cw3-overlay absolute inset-0 z-40"
+                    onClick={handleCloseNavigator}
                     aria-hidden="true"
                   />
                   <motion.aside
                     initial={{ x: "100%" }}
                     animate={{ x: 0 }}
                     exit={{ x: "100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-y-0 end-0 z-50 w-[min(340px,92vw)] max-w-full pb-[env(safe-area-inset-bottom)]"
+                    transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                    className="cw3-sheet absolute inset-y-0 end-0 z-50 flex w-[min(340px,88vw)] max-w-full flex-col"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="متصفح المحتوى"
+                    aria-label="المنهج الكامل"
                   >
-                    <div className="ws2-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
-                      <div className="ws2-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
-                        <span className="text-sm font-semibold text-studio-fg">تصفّح الدورة</span>
-                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="ws2-icon-btn h-11 w-11">
-                          <X className="h-4 w-4" />
-                        </StudioButton>
+                    <div className="cw3-panel-head flex shrink-0 items-center justify-between gap-2 px-3 py-3">
+                      <div className="min-w-0">
+                        <p className="cw3-eyebrow">Course Outline</p>
+                        <h2 className="text-sm font-semibold text-studio-fg">المنهج الكامل</h2>
                       </div>
-                      <div className="flex-1 min-h-0 overflow-hidden">
-                        <CourseStudioNavigator
-                          variant="drawer"
-                          open={mobileNavOpen}
-                          width={320}
-                          lectures={lectures ?? []}
-                          sections={sectionsByLecture}
-                          courseId={courseId ?? undefined}
-                          selectedLectureId={store.selectedLectureId}
-                          selectedSectionId={store.selectedSectionId}
-                          expandedLectures={store.expandedLectures}
-                          isLoading={lecturesLoading}
-                          onSelectLecture={(id) => { handleSelectLecture(id); setMobileNavOpen(false); }}
-                          onToggleLecture={handleToggleLecture}
-                          onSelectSection={(id) => { handleSelectSection(id); setMobileNavOpen(false); }}
-                          onCreateLecture={() => { openAddChoice(); }}
-                          onEditLecture={(l) => { store.openEditDialog(l); setMobileNavOpen(false); }}
-                          onPublishLecture={handlePublishLecture}
-                          onArchiveLecture={handleArchiveLecture}
-                          onDuplicateLecture={handleDuplicateLecture}
-                          onDeleteLecture={handleDeleteLecture}
-                          onRestoreLecture={handleRestoreLecture}
-                          onReorder={handleReorder}
-                          onEditSection={(s) => { store.openEditSectionDialog(s); setMobileNavOpen(false); }}
-                          onPublishSection={handlePublishSection}
-                          onArchiveSection={handleArchiveSection}
-                          onDuplicateSection={handleDuplicateSection}
-                          onDeleteSection={handleDeleteSection}
-                          onRestoreSection={handleRestoreSection}
-                          onAddSection={handleAddSection}
-                          onReorderSections={handleReorderSections}
-                        />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseNavigator}
+                        aria-label="إغلاق المنهج"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-studio-fg-muted hover:bg-studio-soft hover:text-studio-fg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="min-h-0 flex-1">
+                      <CourseStudioNavigator variant="drawer" open width={320} {...navigatorBaseProps} />
                     </div>
                   </motion.aside>
                 </>
@@ -1123,38 +1268,50 @@ function CourseStudio({
             </AnimatePresence>
 
             <AnimatePresence>
-              {store.inspectorOpen && (
+              {laptopInspectorOpen && (
                 <>
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-40 bg-studio-overlay"
+                    transition={{ duration: 0.15 }}
+                    className="cw3-overlay absolute inset-0 z-40"
                     onClick={handleCloseInspector}
                     aria-hidden="true"
                   />
                   <motion.aside
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                    className="ws2-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                    className="cw3-sheet absolute inset-y-0 end-0 z-50 flex w-[min(360px,92vw)] max-w-full flex-col"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
                   >
-                    <div className="flex shrink-0 justify-center py-2" aria-hidden="true">
-                      <span className="h-1 w-10 rounded-full bg-studio-border" />
+                    <div className="cw3-panel-head flex shrink-0 items-center justify-between gap-2 px-3 py-3">
+                      <div className="min-w-0">
+                        <p className="cw3-eyebrow">Inspector</p>
+                        <h2 className="text-sm font-semibold text-studio-fg">خصائص العنصر</h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseInspector}
+                        aria-label="إغلاق الخصائص"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-studio-fg-muted hover:bg-studio-soft hover:text-studio-fg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-y-auto border-t border-studio-border pb-[env(safe-area-inset-bottom)]">
+                    <div className="studio-scrollbar min-h-0 flex-1 overflow-y-auto">
                       <CourseStudioInspector
                         variant="drawer"
-                        open={store.inspectorOpen}
+                        open
                         width={360}
                         selectedSection={selectedSection}
                         selectedContent={selectedContent}
                         lectures={lectures}
-                        onEditSection={(s) => { store.openEditSectionDialog(s); }}
+                        onEditSection={(s) => store.openEditSectionDialog(s)}
                         onDuplicateSection={handleDuplicateSection}
                         onArchiveSection={handleArchiveSection}
                         onDeleteSection={handleDeleteSection}
@@ -1170,46 +1327,17 @@ function CourseStudio({
           </>
         ) : (
           <>
-            <CourseStudioNavigator
-              open={navigatorOpen}
-              width={navigatorWidth}
-              lectures={lectures ?? []}
-              sections={sectionsByLecture}
-              courseId={courseId ?? undefined}
-              selectedLectureId={store.selectedLectureId}
-              selectedSectionId={store.selectedSectionId}
-              expandedLectures={store.expandedLectures}
-              isLoading={lecturesLoading}
-              onSelectLecture={handleSelectLecture}
-              onToggleLecture={handleToggleLecture}
-              onSelectSection={handleSelectSection}
-              onCreateLecture={openAddChoice}
-              onEditLecture={(l) => store.openEditDialog(l)}
-              onPublishLecture={handlePublishLecture}
-              onArchiveLecture={handleArchiveLecture}
-              onDuplicateLecture={handleDuplicateLecture}
-              onDeleteLecture={handleDeleteLecture}
-              onRestoreLecture={handleRestoreLecture}
-              onReorder={handleReorder}
-              onEditSection={(s) => store.openEditSectionDialog(s)}
-              onPublishSection={handlePublishSection}
-              onArchiveSection={handleArchiveSection}
-              onDuplicateSection={handleDuplicateSection}
-              onDeleteSection={handleDeleteSection}
-              onRestoreSection={handleRestoreSection}
-              onAddSection={handleAddSection}
-              onReorderSections={handleReorderSections}
-            />
+            <CourseStudioNavigator open={store.navigatorOpen} width={navigatorWidth} {...navigatorBaseProps} />
 
             <AnimatePresence>
-              {navigatorOpen && (
+              {store.navigatorOpen && (
                 <motion.div
                   key="navigator-resizer"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="relative w-px shrink-0 cursor-col-resize bg-studio-border transition-colors hover:bg-studio-accent/30"
+                  className="cw3-resizer"
                   role="separator"
                   aria-orientation="vertical"
                   aria-label="تغيير عرض المستكشف"
@@ -1217,31 +1345,7 @@ function CourseStudio({
               )}
             </AnimatePresence>
 
-            <CourseStudioCanvas
-              selectedLecture={selectedLecture}
-              selectedSection={selectedSection}
-              selectedContent={selectedContent}
-              lectureSections={selectedLecture ? sectionsByLecture[selectedLecture.id] : undefined}
-              sectionContents={contentItems}
-              canvasView={canvasView}
-              onCreateLecture={openAddChoice}
-              onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
-              onAddContent={handleAddContent}
-              onEditSection={(s) => store.openEditSectionDialog(s)}
-              onDuplicateSection={handleDuplicateSection}
-              onArchiveSection={handleArchiveSection}
-              onDeleteSection={handleDeleteSection}
-              onRestoreSection={handleRestoreSection}
-              onSelectContent={handleSelectContent}
-              onEditContent={handleEditContent}
-              onPublishContent={handlePublishContent}
-              onArchiveContent={handleArchiveContent}
-              onDuplicateContent={handleDuplicateContent}
-              onDeleteContent={handleDeleteContent}
-              onRestoreContent={handleRestoreContent}
-              onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
-              onReorderContent={handleReorderContent}
-            />
+            {renderCanvas()}
 
             <AnimatePresence>
               {store.inspectorOpen && (
@@ -1251,7 +1355,7 @@ function CourseStudio({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="relative w-px shrink-0 cursor-col-resize bg-studio-border transition-colors hover:bg-studio-accent/30"
+                  className="cw3-resizer"
                   role="separator"
                   aria-orientation="vertical"
                   aria-label="تغيير عرض الخصائص"
@@ -1277,44 +1381,61 @@ function CourseStudio({
         )}
       </div>
 
-      {/* شريط تحكم سفلي للشاشات الصغيرة والمتوسطة: كل الأدوات الأساسية متاحة بلمسة واحدة */}
-      <nav
-        className="ws2-dock flex shrink-0 items-stretch gap-1.5 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-2 lg:hidden"
-        aria-label="أدوات الاستوديو السريعة"
-      >
-        <StudioButton
-          variant={mobileNavOpen ? "soft" : "ghost"}
-          size="md"
-          onClick={handleToggleNavigator}
-          aria-label="فتح مستكشف المحتوى"
-          aria-pressed={mobileNavOpen}
-          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
-          icon={<ListTree className="h-4 w-4" />}
+      {layout === "mobile" && (
+        <nav
+          className="cw3-tabbar flex shrink-0 items-stretch gap-1 px-2 pb-[max(env(safe-area-inset-bottom),0.45rem)] pt-1"
+          aria-label="تنقل مساحة العمل"
         >
-          المستكشف
-        </StudioButton>
-        <StudioButton
-          variant="primary"
-          size="md"
-          onClick={openAddChoice}
-          aria-label="إضافة محاضرة أو جلسة"
-          className="ws2-primary-btn h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
-          icon={<Plus className="h-4 w-4" />}
-        >
-          إضافة
-        </StudioButton>
-        <StudioButton
-          variant={store.inspectorOpen ? "soft" : "ghost"}
-          size="md"
-          onClick={handleToggleInspector}
-          aria-label="فتح خصائص العنصر"
-          aria-pressed={store.inspectorOpen}
-          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
-          icon={<SlidersHorizontal className="h-4 w-4" />}
-        >
-          الخصائص
-        </StudioButton>
-      </nav>
+          <button
+            type="button"
+            className="cw3-tab-item"
+            data-active={mobilePane === "board"}
+            aria-pressed={mobilePane === "board"}
+            onClick={() => setMobilePane("board")}
+          >
+            <span className="cw3-tab-icon">
+              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>اللوحة</span>
+          </button>
+          <button
+            type="button"
+            className="cw3-tab-item"
+            data-active={mobilePane === "outline"}
+            aria-pressed={mobilePane === "outline"}
+            onClick={() => setMobilePane("outline")}
+          >
+            <span className="cw3-tab-icon">
+              <ListTree className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>المنهج</span>
+          </button>
+          <button
+            type="button"
+            className="cw3-tab-item"
+            data-add="true"
+            aria-label="إضافة محاضرة أو جلسة"
+            onClick={openAddChoice}
+          >
+            <span className="cw3-tab-icon">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>إضافة</span>
+          </button>
+          <button
+            type="button"
+            className="cw3-tab-item"
+            data-active={mobilePane === "details"}
+            aria-pressed={mobilePane === "details"}
+            onClick={() => setMobilePane("details")}
+          >
+            <span className="cw3-tab-icon">
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>التفاصيل</span>
+          </button>
+        </nav>
+      )}
 
       <CourseStudioAddItemChoiceDialog
         open={addChoiceOpen}

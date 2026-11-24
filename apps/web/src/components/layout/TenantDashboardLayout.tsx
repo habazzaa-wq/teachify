@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useWorkspaceStore } from "@/stores/workspace.store";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceLeftSidebar } from "./WorkspaceLeftSidebar";
@@ -13,8 +14,10 @@ interface TenantDashboardLayoutProps {
 }
 
 function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
+  const pathname = usePathname();
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
+  const hideGlobalInspector = pathname?.startsWith("/teacher/courses/") ?? false;
 
   // لوحة تحكم المدرس بتستخدم ألوان المنصة العالمية (platformBranding) اللي
   // بتطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
@@ -58,10 +61,12 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
           </div>
         </main>
 
-        {/* Right inspector */}
-        <div className="hidden lg:flex">
-          <WorkspaceRightInspector />
-        </div>
+        {/* Right inspector — the course studio owns its own details surface. */}
+        {!hideGlobalInspector && (
+          <div className="hidden lg:flex">
+            <WorkspaceRightInspector />
+          </div>
+        )}
       </div>
 
       {/* Status bar */}
