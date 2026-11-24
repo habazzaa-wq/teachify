@@ -1333,337 +1333,131 @@ body.page-is-scrolling .nav-touch-solid {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Tenant-admin palette lock: overrides injected platform branding on workspace routes only. */
-  .tenant-theme.workspace-v2,
-  .workspace-v2.tenant-theme {
-    --primary: 180 25% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 12% 88%;
-    --secondary-foreground: 222 24% 18%;
-    --accent: 180 25% 39%;
-    --accent-foreground: 0 0% 100%;
-    --ring: 180 25% 39%;
-    --tenant-bg: 220 20% 97%;
-    --tenant-surface: 0 0% 100%;
-    --tenant-soft: 220 16% 94%;
-    --tenant-border: 220 14% 89%;
-    --tenant-muted: 220 16% 96%;
-    --tenant-fg: 222 24% 18%;
-    --tenant-fg-muted: 220 12% 46%;
-    --tenant-fg-subtle: 220 10% 62%;
-    --tenant-accent: 180 25% 39%;
-    --tenant-accent-fg: 0 0% 100%;
-    --tenant-accent-soft: 180 20% 92%;
-    --tenant-ring: 180 25% 39%;
-    --tenant-secondary: 220 12% 80%;
-    --tenant-secondary-soft: 220 16% 94%;
-    --tenant-sidebar: 0 0% 100%;
-    --tenant-sidebar-soft: 220 16% 96%;
-    --tenant-sidebar-fg: 222 24% 22%;
-    --tenant-sidebar-fg-muted: 220 12% 48%;
-    --tenant-sidebar-border: 220 14% 90%;
-    --tenant-sidebar-hover: 220 16% 94%;
-    --tenant-header: 220 30% 22%;
-
-    --studio-bg: 220 20% 97%;
-    --studio-surface: 0 0% 100%;
-    --studio-soft: 220 16% 94%;
-    --studio-border: 220 14% 89%;
-    --studio-muted: 220 16% 96%;
-    --studio-fg: 222 24% 18%;
-    --studio-fg-muted: 220 12% 46%;
-    --studio-fg-subtle: 220 10% 62%;
-    --studio-accent: 180 25% 39%;
-    --studio-accent-fg: 0 0% 100%;
-    --studio-accent-soft: 180 20% 92%;
-    --studio-accent-border: 180 25% 75%;
-    --studio-ring: 180 25% 39%;
-    --studio-secondary: 220 12% 80%;
-    --studio-secondary-soft: 220 16% 94%;
-    --studio-secondary-border: 220 14% 86%;
-    --studio-sidebar-hover: 220 16% 94%;
-    --studio-glass: 0 0% 100% / 0.7;
-    --studio-glass-border: 220 14% 89% / 0.5;
-    --studio-glass-toolbar: 220 30% 22% / 1;
-    --studio-glass-toolbar-fg: 0 0% 100%;
-    --studio-glass-toolbar-fg-muted: 0 0% 80%;
-    --studio-glass-toolbar-border: 0 0% 100% / 0.25;
-    --studio-glass-toolbar-soft: 0 0% 100% / 0.12;
-    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.2;
-    --studio-navbar: 220 30% 22%;
-    --studio-navbar-contrast: 0 0% 100%;
-    --studio-glass-sidebar: 0 0% 100% / 1;
-    --studio-glass-sidebar-fg: 222 24% 22%;
-    --studio-glass-sidebar-fg-muted: 220 12% 48%;
-    --studio-glass-sidebar-border: 220 14% 90% / 1;
-    --studio-glass-dialog: 0 0% 100% / 0.9;
-    --studio-glass-floating: 0 0% 100% / 0.92;
-    --studio-overlay: 0 0% 0% / 0.12;
-    --studio-skeleton: 220 16% 90%;
-    --studio-skeleton-shine: 220 20% 95%;
-    --studio-info: 210 60% 50%;
-    --studio-success: 160 60% 40%;
-    --studio-warning: 35 85% 50%;
-    --studio-danger: 0 65% 50%;
-  }
-
-  .dark .tenant-theme.workspace-v2,
-  .dark .workspace-v2.tenant-theme {
-    --primary: 180 25% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 12% 24%;
-    --secondary-foreground: 0 0% 92%;
-    --accent: 180 25% 45%;
-    --accent-foreground: 0 0% 100%;
-    --ring: 180 25% 45%;
-    --tenant-bg: 0 0% 10%;
-    --tenant-surface: 0 0% 13%;
-    --tenant-soft: 0 0% 16%;
-    --tenant-border: 0 0% 19%;
-    --tenant-muted: 0 0% 14%;
-    --tenant-fg: 30 8% 88%;
-    --tenant-fg-muted: 30 3% 52%;
-    --tenant-accent: 180 25% 45%;
-    --tenant-accent-fg: 0 0% 10%;
-    --tenant-accent-soft: 180 20% 12%;
-    --tenant-ring: 180 25% 45%;
-    --tenant-sidebar: 0 0% 12%;
-    --tenant-sidebar-soft: 0 0% 15%;
-    --tenant-sidebar-fg: 30 8% 88%;
-    --tenant-sidebar-fg-muted: 30 3% 52%;
-    --tenant-sidebar-border: 0 0% 17%;
-    --tenant-header: 0 0% 11%;
-
-    --studio-bg: 0 0% 10%;
-    --studio-surface: 0 0% 13%;
-    --studio-soft: 0 0% 16%;
-    --studio-border: 0 0% 19%;
-    --studio-muted: 0 0% 14%;
-    --studio-fg: 30 8% 88%;
-    --studio-fg-muted: 30 3% 52%;
-    --studio-fg-subtle: 30 3% 38%;
-    --studio-accent: 180 25% 45%;
-    --studio-accent-fg: 0 0% 10%;
-    --studio-accent-soft: 180 20% 12%;
-    --studio-accent-border: 180 25% 30%;
-    --studio-ring: 180 25% 45%;
-    --studio-secondary: 220 12% 24%;
-    --studio-secondary-soft: 0 0% 18%;
-    --studio-secondary-border: 0 0% 26%;
-    --studio-sidebar-hover: 0 0% 18%;
-    --studio-glass: 0 0% 13% / 0.6;
-    --studio-glass-border: 0 0% 19% / 0.5;
-    --studio-glass-toolbar: 220 25% 18% / 1;
-    --studio-glass-toolbar-fg: 0 0% 100%;
-    --studio-glass-toolbar-fg-muted: 0 0% 80%;
-    --studio-glass-toolbar-border: 0 0% 100% / 0.18;
-    --studio-glass-toolbar-soft: 0 0% 100% / 0.1;
-    --studio-glass-toolbar-soft-hover: 0 0% 100% / 0.18;
-    --studio-navbar: 220 25% 18%;
-    --studio-navbar-contrast: 0 0% 100%;
-    --studio-glass-sidebar: 0 0% 12% / 0.8;
-    --studio-glass-dialog: 0 0% 13% / 0.85;
-    --studio-glass-floating: 0 0% 13% / 0.9;
-    --studio-overlay: 0 0% 0% / 0.5;
-    --studio-skeleton: 0 0% 16%;
-    --studio-skeleton-shine: 0 0% 20%;
-    --studio-info: 210 60% 55%;
-    --studio-success: 160 60% 45%;
-    --studio-warning: 35 85% 55%;
-    --studio-danger: 0 65% 55%;
-  }
-
-  /* ─────────
-
-Course Workspace v3 — Atlas Desk
-
-   Uses the tenant-admin palette unchanged:
-   • teal accent ............ --studio-accent / --studio-accent-soft
-   • cool slate ............. --studio-secondary / --studio-muted
-   • navy chrome ............ --studio-navbar
-
-   No new hues are introduced. Layout differs by breakpoint:
-   • desktop (≥1280px) ...... map rail + stage + contextual details sheet
-   • laptop  (1024–1279px) .. compact numbered rail + full-width stage
-   • mobile  (<1024px) ...... one-pane switcher: board / outline / details
+/* ═════════════════════════════════════════════════════════════════════════
+   Workspace v2 — "Quiet Studio"
+   A calm, editorial palette for course authoring: ink-blue text, warm paper
+   surfaces and a restrained teal accent. Unlayered so it wins over utility
+   classes; applied only when a workspace route is mounted.
    ═════════════════════════════════════════════════════════════════════════ */
 
-.workspace-v2 .cw3-shell {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  background: hsl(var(--studio-bg));
+html:has(.workspace-v2),
+.tenant-theme.workspace-v2,
+.workspace-v2.tenant-theme {
+  --studio-bg: 214 32% 97%;
+  --studio-surface: 0 0% 100%;
+  --studio-soft: 212 32% 96%;
+  --studio-border: 214 24% 89%;
+  --studio-muted: 214 30% 93%;
+  --studio-fg: 222 38% 14%;
+  --studio-fg-muted: 215 16% 42%;
+  --studio-fg-subtle: 215 14% 58%;
+  --studio-accent: 173 68% 29%;
+  --studio-accent-fg: 0 0% 100%;
+  --studio-accent-soft: 169 52% 94%;
+  --studio-accent-border: 168 36% 78%;
+  --studio-ring: 173 68% 32%;
+  --studio-secondary: 216 24% 91%;
+  --studio-secondary-soft: 214 32% 96%;
+  --studio-secondary-border: 214 22% 86%;
+  --studio-sidebar-hover: 212 32% 96%;
+  --studio-glass: 0 0% 100% / 0.72;
+  --studio-glass-border: 214 24% 89% / 0.7;
+  --studio-glass-toolbar: 0 0% 100% / 0.9;
+  --studio-glass-toolbar-fg: 222 38% 14%;
+  --studio-glass-toolbar-fg-muted: 215 16% 42%;
+  --studio-glass-toolbar-border: 214 24% 89%;
+  --studio-glass-toolbar-soft: 214 32% 96%;
+  --studio-glass-toolbar-soft-hover: 212 28% 93%;
+  --studio-navbar: 222 38% 14%;
+  --studio-navbar-contrast: 0 0% 100%;
+  --studio-glass-sidebar: 0 0% 100% / 0.96;
+  --studio-glass-dialog: 0 0% 100% / 0.96;
+  --studio-glass-floating: 0 0% 100% / 0.94;
+  --studio-overlay: 222 38% 14% / 0.32;
+  --studio-skeleton: 214 24% 91%;
+  --studio-skeleton-shine: 214 32% 95%;
+  --studio-info: 214 76% 46%;
+  --studio-success: 160 64% 34%;
+  --studio-warning: 32 88% 42%;
+  --studio-danger: 0 68% 50%;
 }
 
-/* ── Command header: navy bar, teal spine, always-visible controls ───── */
-
-.workspace-v2 .cw3-header {
-  position: relative;
-  z-index: 30;
-  flex-shrink: 0;
-  background: hsl(var(--studio-navbar));
-  color: hsl(var(--studio-glass-toolbar-fg, 0 0% 100%));
-  border-bottom: 1px solid hsl(var(--studio-accent) / 0.55);
-  box-shadow: 0 12px 28px -22px hsl(var(--studio-fg) / 0.9);
+.dark:has(.workspace-v2),
+.dark .tenant-theme.workspace-v2,
+.dark.workspace-v2.tenant-theme {
+  --studio-bg: 222 36% 8%;
+  --studio-surface: 222 30% 12%;
+  --studio-soft: 220 24% 16%;
+  --studio-border: 218 18% 24%;
+  --studio-muted: 220 22% 14%;
+  --studio-fg: 210 32% 95%;
+  --studio-fg-muted: 215 16% 68%;
+  --studio-fg-subtle: 215 12% 54%;
+  --studio-accent: 168 58% 50%;
+  --studio-accent-fg: 222 40% 8%;
+  --studio-accent-soft: 170 35% 18%;
+  --studio-accent-border: 168 30% 34%;
+  --studio-ring: 168 58% 50%;
+  --studio-secondary: 220 20% 22%;
+  --studio-secondary-soft: 220 24% 17%;
+  --studio-secondary-border: 218 18% 28%;
+  --studio-sidebar-hover: 220 24% 17%;
+  --studio-glass: 222 30% 12% / 0.78;
+  --studio-glass-border: 218 18% 24% / 0.8;
+  --studio-glass-toolbar: 222 30% 12% / 0.94;
+  --studio-glass-toolbar-fg: 210 32% 95%;
+  --studio-glass-toolbar-fg-muted: 215 16% 68%;
+  --studio-glass-toolbar-border: 218 18% 24%;
+  --studio-glass-toolbar-soft: 220 24% 17%;
+  --studio-glass-toolbar-soft-hover: 220 22% 20%;
+  --studio-navbar: 222 36% 9%;
+  --studio-navbar-contrast: 210 32% 95%;
+  --studio-glass-sidebar: 222 30% 12% / 0.96;
+  --studio-glass-dialog: 222 30% 12% / 0.97;
+  --studio-glass-floating: 222 30% 13% / 0.95;
+  --studio-overlay: 0 0% 0% / 0.6;
+  --studio-skeleton: 220 20% 18%;
+  --studio-skeleton-shine: 220 22% 22%;
+  --studio-info: 210 80% 62%;
+  --studio-success: 158 60% 48%;
+  --studio-warning: 35 90% 58%;
+  --studio-danger: 0 72% 60%;
 }
 
-.workspace-v2 .cw3-header::before {
+/* Header: two calm tiers, a clear title and always-reachable controls. */
+.workspace-v2 .ws2-header {
+  position: relative;
+  z-index: 20;
+  background:
+    linear-gradient(180deg, hsl(var(--studio-surface) / 0.96), hsl(var(--studio-soft) / 0.92)),
+    hsl(var(--studio-glass-toolbar));
+  border-bottom: 1px solid hsl(var(--studio-border));
+  box-shadow: 0 1px 0 hsl(var(--studio-surface) / 0.9), 0 8px 24px -20px hsl(var(--studio-fg) / 0.55);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.workspace-v2 .ws2-header::before {
   content: "";
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
-  width: 4px;
-  background: hsl(var(--studio-accent));
-}
-
-.workspace-v2 .cw3-header .cw3-eyebrow {
-  color: hsl(var(--studio-glass-toolbar-fg-muted, 0 0% 78%));
-  letter-spacing: 0.16em;
-}
-
-.workspace-v2 .cw3-brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid hsl(0 0% 100% / 0.2);
-  border-bottom-color: hsl(var(--studio-accent));
-  border-radius: 13px;
-  background: hsl(0 0% 100% / 0.08);
-  color: hsl(0 0% 100%);
-}
-
-.workspace-v2 .cw3-title {
-  color: hsl(0 0% 100%);
-  font-weight: 650;
-  letter-spacing: -0.015em;
-}
-
-.workspace-v2 .cw3-meta-strip {
-  color: hsl(var(--studio-glass-toolbar-fg-muted, 0 0% 78%));
-  border-top: 1px solid hsl(0 0% 100% / 0.12);
-  scrollbar-width: none;
-}
-
-.workspace-v2 .cw3-meta-strip::-webkit-scrollbar { display: none; }
-
-.workspace-v2 .cw3-meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-}
-
-.workspace-v2 .cw3-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid hsl(0 0% 100% / 0.18);
-  border-radius: 11px;
-  background: hsl(0 0% 100% / 0.06);
-  color: hsl(0 0% 100%);
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.workspace-v2 .cw3-icon-btn:hover,
-.workspace-v2 .cw3-icon-btn[aria-pressed="true"] {
-  border-color: hsl(var(--studio-accent));
-  background: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent-fg));
-}
-
-.workspace-v2 .cw3-primary-btn {
-  background: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent-fg));
-  border: 1px solid hsl(var(--studio-accent));
-  box-shadow: 0 4px 12px -7px hsl(var(--studio-accent) / 0.9);
-}
-
-.workspace-v2 .cw3-primary-btn:hover { filter: brightness(1.08); }
-
-/* ── Context strip + breakpoint rails ────────────────────────────────── */
-
-.workspace-v2 .cw3-context {
-  background: hsl(var(--studio-secondary-soft));
-  border-bottom: 1px solid hsl(var(--studio-border));
-}
-
-.workspace-v2 .cw3-crumb-bar {
-  background: hsl(var(--studio-secondary-soft));
-  border-bottom: 1px solid hsl(var(--studio-border));
-}
-
-.workspace-v2 .cw3-rail {
-  display: flex;
-  width: 4.5rem;
-  flex-shrink: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  border-inline-end: 1px solid hsl(var(--studio-border));
-  background: hsl(var(--studio-surface));
-  padding: 0.85rem 0.5rem;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.workspace-v2 .cw3-rail::-webkit-scrollbar { display: none; }
-
-.workspace-v2 .cw3-rail-label {
-  color: hsl(var(--studio-fg-subtle));
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workspace-v2 .cw3-rail-item {
-  display: flex;
-  height: 2.75rem;
-  width: 2.75rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid hsl(var(--studio-border));
-  border-radius: 12px;
-  background: hsl(var(--studio-surface));
-  color: hsl(var(--studio-fg-muted));
-  font-size: 12px;
-  font-weight: 700;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-
-.workspace-v2 .cw3-rail-item:hover {
-  border-color: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent));
-}
-
-.workspace-v2 .cw3-rail-item[data-selected="true"] {
-  border-color: hsl(var(--studio-accent));
-  background: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent-fg));
-}
-
-.workspace-v2 .cw3-resizer {
   width: 3px;
-  flex-shrink: 0;
-  cursor: col-resize;
-  background: hsl(var(--studio-border));
-  transition: background-color 140ms ease;
+  background: linear-gradient(to bottom, hsl(var(--studio-accent)), hsl(var(--studio-accent) / 0.25));
 }
 
-.workspace-v2 .cw3-resizer:hover { background: hsl(var(--studio-accent)); }
-
-/* ── Map / navigator: numbered chapter cards ─────────────────────────── */
-
-.workspace-v2 .cw3-nav-head {
-  background: linear-gradient(180deg, hsl(var(--studio-surface)), hsl(var(--studio-soft)));
-  border-bottom: 1px solid hsl(var(--studio-border));
+.workspace-v2 .ws2-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--studio-accent-border));
+  border-radius: 14px;
+  background: linear-gradient(145deg, hsl(var(--studio-accent-soft)), hsl(var(--studio-surface)));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 0 1px 0 hsl(var(--studio-surface) / 0.9), 0 2px 6px -3px hsl(var(--studio-accent) / 0.4);
 }
 
-.workspace-v2 .cw3-eyebrow {
+.workspace-v2 .ws2-eyebrow {
   color: hsl(var(--studio-accent));
   font-size: 10px;
   font-weight: 700;
@@ -1672,7 +1466,79 @@ Course Workspace v3 — Atlas Desk
   text-transform: uppercase;
 }
 
-.workspace-v2 .cw3-count-pill {
+.workspace-v2 .ws2-title {
+  color: hsl(var(--studio-fg));
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.workspace-v2 .ws2-meta-strip {
+  scrollbar-width: none;
+  color: hsl(var(--studio-fg-muted));
+  border-top: 1px solid hsl(var(--studio-border) / 0.75);
+}
+
+.workspace-v2 .ws2-meta-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.workspace-v2 .ws2-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.workspace-v2 .ws2-icon-btn,
+.workspace-v2 .ws2-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--studio-border));
+  border-radius: 11px;
+  background: hsl(var(--studio-surface));
+  color: hsl(var(--studio-fg-muted));
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.workspace-v2 .ws2-icon-btn:hover,
+.workspace-v2 .ws2-add-btn:hover {
+  border-color: hsl(var(--studio-accent-border));
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+}
+
+.workspace-v2 .ws2-icon-btn[aria-pressed="true"] {
+  border-color: hsl(var(--studio-accent-border));
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 0 0 0 1px hsl(var(--studio-accent) / 0.12);
+}
+
+.workspace-v2 .ws2-primary-btn {
+  background: linear-gradient(135deg, hsl(var(--studio-accent)), hsl(var(--studio-accent) / 0.84));
+  color: hsl(var(--studio-accent-fg));
+  border: 1px solid hsl(var(--studio-accent) / 0.7);
+  box-shadow: 0 4px 12px -6px hsl(var(--studio-accent) / 0.7);
+}
+
+.workspace-v2 .ws2-primary-btn:hover {
+  background: linear-gradient(135deg, hsl(var(--studio-accent) / 0.94), hsl(var(--studio-accent)));
+}
+
+/* Breadcrumb strip under the header. */
+.workspace-v2 .ws2-crumb-bar {
+  background: hsl(var(--studio-surface) / 0.62);
+  border-bottom: 1px solid hsl(var(--studio-border) / 0.8);
+}
+
+/* Navigator: deliberate hierarchy, searchable tree, generous touch rows. */
+.workspace-v2 .ws2-nav-head {
+  background: linear-gradient(180deg, hsl(var(--studio-surface)), hsl(var(--studio-soft) / 0.7));
+  border-bottom: 1px solid hsl(var(--studio-border));
+}
+
+.workspace-v2 .ws2-count-pill {
   display: inline-flex;
   min-width: 1.75rem;
   height: 1.5rem;
@@ -1685,19 +1551,19 @@ Course Workspace v3 — Atlas Desk
   font-weight: 700;
 }
 
-.workspace-v2 .cw3-search {
+.workspace-v2 .ws2-search {
   border: 1px solid hsl(var(--studio-border));
   background: hsl(var(--studio-surface));
   color: hsl(var(--studio-fg-subtle));
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.workspace-v2 .cw3-search:focus-within {
-  border-color: hsl(var(--studio-accent));
-  box-shadow: 0 0 0 3px hsl(var(--studio-accent) / 0.12);
+.workspace-v2 .ws2-search:focus-within {
+  border-color: hsl(var(--studio-accent-border));
+  box-shadow: 0 0 0 3px hsl(var(--studio-accent) / 0.1);
 }
 
-.workspace-v2 .cw3-search input {
+.workspace-v2 .ws2-search input {
   min-width: 0;
   flex: 1;
   background: transparent;
@@ -1706,30 +1572,28 @@ Course Workspace v3 — Atlas Desk
   outline: none;
 }
 
-.workspace-v2 .cw3-search input::placeholder { color: hsl(var(--studio-fg-subtle)); }
+.workspace-v2 .ws2-search input::placeholder {
+  color: hsl(var(--studio-fg-subtle));
+}
 
-.workspace-v2 .cw3-add-btn {
-  display: inline-flex;
+.workspace-v2 .ws2-add-btn {
   height: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border: 1px dashed hsl(var(--studio-accent));
-  border-radius: 10px;
-  background: hsl(var(--studio-accent-soft));
+  padding-inline: 0.75rem;
   color: hsl(var(--studio-accent));
   font-size: 12px;
   font-weight: 600;
 }
 
-.workspace-v2 .cw3-add-btn:hover { filter: brightness(0.97); }
+.workspace-v2 .ws2-add-btn:hover {
+  color: hsl(var(--studio-accent));
+}
 
 .workspace-v2 [data-lecture-id] {
   margin-block: 2px;
   border: 1px solid transparent;
-  border-radius: 14px;
-  background: transparent;
-  padding: 0.65rem 0.55rem;
+  border-radius: 13px;
+  background: hsl(var(--studio-surface) / 0.6);
+  padding: 0.65rem 0.6rem;
   color: hsl(var(--studio-fg));
 }
 
@@ -1739,106 +1603,59 @@ Course Workspace v3 — Atlas Desk
 }
 
 .workspace-v2 [data-lecture-id][aria-selected="true"] {
-  border-color: hsl(var(--studio-accent));
+  border-color: hsl(var(--studio-accent-border));
   background: hsl(var(--studio-accent-soft));
   color: hsl(var(--studio-accent));
   box-shadow: inset 3px 0 0 hsl(var(--studio-accent));
 }
 
-.workspace-v2 .cw3-order {
-  display: flex;
-  height: 2rem;
-  width: 2rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid hsl(var(--studio-border));
+.workspace-v2 [data-section-id] {
   border-radius: 10px;
-  background: hsl(var(--studio-secondary));
-  color: hsl(var(--studio-fg));
-  font-size: 11px;
-  font-weight: 700;
 }
 
-.workspace-v2 [data-lecture-id][aria-selected="true"] .cw3-order {
-  border-color: hsl(var(--studio-accent));
-  background: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent-fg));
-}
-
-/* ── Stage: editorial, two-column on wide screens ────────────────────── */
-
-.workspace-v2 .cw3-stage {
+/* Canvas: roomy reading column with quiet depth and clear section headings. */
+.workspace-v2 .ws2-canvas {
   background:
-    radial-gradient(34rem 18rem at 88% -8%, hsl(var(--studio-accent) / 0.08), transparent 70%),
-    linear-gradient(hsl(var(--studio-border) / 0.35) 1px, transparent 1px),
+    radial-gradient(30rem 20rem at 88% -8%, hsl(var(--studio-accent) / 0.09), transparent 65%),
+    radial-gradient(24rem 18rem at -6% 8%, hsl(var(--studio-secondary) / 0.3), transparent 60%),
     hsl(var(--studio-bg));
-  background-size: auto, 100% 32px, auto;
 }
 
-.workspace-v2 .cw3-page {
-  display: grid;
-  align-content: start;
-  gap: 1.15rem;
-  width: 100%;
-  max-width: 72rem;
-  margin-inline: auto;
-  padding: 1.15rem;
+.workspace-v2 .ws2-page {
+  max-width: 68rem;
+  padding: 1.25rem;
 }
 
-@media (min-width: 640px) { .workspace-v2 .cw3-page { padding: 1.6rem; } }
-@media (min-width: 1024px) { .workspace-v2 .cw3-page { padding: 2rem; } }
-@media (min-width: 1440px) { .workspace-v2 .cw3-page { padding: 2.4rem; } }
-
-.workspace-v2 .cw3-page > .cw3-hero,
-.workspace-v2 .cw3-page > .cw3-full { grid-column: 1 / -1; }
-
-@media (min-width: 1440px) {
-  .workspace-v2 .cw3-page { grid-template-columns: minmax(0, 1fr) 280px; }
-  .workspace-v2 .cw3-page > .cw3-primary { grid-column: 1; }
-  .workspace-v2 .cw3-page > .cw3-secondary { grid-column: 2; grid-row: 2 / span 12; align-self: start; }
+@media (min-width: 640px) {
+  .workspace-v2 .ws2-page {
+    padding: 1.75rem;
+  }
 }
 
-.workspace-v2 .cw3-hero {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid hsl(var(--studio-border));
-  border-top: 3px solid hsl(var(--studio-accent));
-  border-radius: 18px;
-  background: hsl(var(--studio-surface));
-  padding: 1.15rem;
-  box-shadow: 0 10px 30px -26px hsl(var(--studio-fg) / 0.8);
+@media (min-width: 1024px) {
+  .workspace-v2 .ws2-page {
+    padding: 2.25rem;
+  }
 }
 
-@media (min-width: 640px) { .workspace-v2 .cw3-hero { padding: 1.5rem; } }
-
-.workspace-v2 .cw3-hero::after {
-  content: "";
-  position: absolute;
-  inset-block-start: -4rem;
-  inset-inline-end: -4rem;
-  height: 12rem;
-  width: 12rem;
-  border-radius: 999px;
-  background: hsl(var(--studio-accent) / 0.05);
-  pointer-events: none;
-}
-
-.workspace-v2 .cw3-hero-mark,
-.workspace-v2 .cw3-hero-icon {
+.workspace-v2 .ws2-page-head {
   display: flex;
-  height: 3.25rem;
-  width: 3.25rem;
-  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.workspace-v2 .ws2-hero-icon {
+  display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid hsl(var(--studio-accent));
-  border-radius: 14px;
-  background: hsl(var(--studio-accent-soft));
+  border: 1px solid hsl(var(--studio-accent-border));
+  border-radius: 18px;
+  background: linear-gradient(145deg, hsl(var(--studio-accent-soft)), hsl(var(--studio-surface)));
   color: hsl(var(--studio-accent));
+  box-shadow: 0 6px 18px -12px hsl(var(--studio-accent) / 0.7);
 }
 
-.workspace-v2 .cw3-section-label {
+.workspace-v2 .ws2-section-label {
   color: hsl(var(--studio-fg-muted));
   font-size: 11px;
   font-weight: 700;
@@ -1846,154 +1663,99 @@ Course Workspace v3 — Atlas Desk
   text-transform: uppercase;
 }
 
-.workspace-v2 .cw3-metric,
-.workspace-v2 .cw3-card,
-.workspace-v2 .cw3-info-card {
+.workspace-v2 .ws2-metric,
+.workspace-v2 .ws2-card,
+.workspace-v2 .ws2-info-card {
   border: 1px solid hsl(var(--studio-border));
   background: hsl(var(--studio-surface));
+  box-shadow: 0 1px 2px hsl(var(--studio-fg) / 0.03), inset 0 1px 0 hsl(var(--studio-surface));
 }
 
-.workspace-v2 .cw3-metric {
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
+.workspace-v2 .ws2-metric {
+  border-radius: 16px;
   padding: 1rem;
 }
 
-.workspace-v2 .cw3-metric::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  height: 2px;
-  width: 2.4rem;
-  background: hsl(var(--studio-accent));
-}
-
-.workspace-v2 .cw3-metric-icon {
+.workspace-v2 .ws2-metric-icon {
   display: flex;
-  height: 2.35rem;
-  width: 2.35rem;
+  height: 2.5rem;
+  width: 2.5rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   background: hsl(var(--studio-accent-soft));
   color: hsl(var(--studio-accent));
 }
 
-.workspace-v2 .cw3-card { border-radius: 16px; }
-
-.workspace-v2 .cw3-info-card {
-  border-radius: 13px;
-  background: hsl(var(--studio-secondary-soft));
-  padding: 0.85rem;
-}
-
-.workspace-v2 .cw3-empty-card {
-  border: 1px dashed hsl(var(--studio-accent));
+.workspace-v2 .ws2-card {
   border-radius: 18px;
-  background: hsl(var(--studio-accent-soft));
 }
 
-/* ── Contextual panels ────────────────────────────────────────────────── */
+.workspace-v2 .ws2-info-card {
+  border-radius: 14px;
+  background: hsl(var(--studio-soft) / 0.7);
+  padding: 0.9rem;
+}
 
-.workspace-v2 .cw3-panel-head {
-  background: hsl(var(--studio-surface));
+.workspace-v2 .ws2-empty-card {
+  border: 1px dashed hsl(var(--studio-accent-border));
+  border-radius: 20px;
+  background: linear-gradient(160deg, hsl(var(--studio-accent-soft) / 0.5), hsl(var(--studio-surface)));
+}
+
+/* Inspector: panel-like grouping instead of a dense list of rows. */
+.workspace-v2 .ws2-panel-head {
+  background: linear-gradient(180deg, hsl(var(--studio-surface)), hsl(var(--studio-soft) / 0.6));
   border-bottom: 1px solid hsl(var(--studio-border));
 }
 
-.workspace-v2 .cw3-overlay {
-  background: hsl(var(--studio-overlay));
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
-.workspace-v2 .cw3-sheet {
-  border-inline-start: 1px solid hsl(var(--studio-border));
-  background: hsl(var(--studio-surface));
-  box-shadow: -24px 0 60px -34px hsl(var(--studio-fg) / 0.75);
-}
-
-.workspace-v2 .cw3-sheet .cw3-drawer,
-.workspace-v2 .cw3-mobile-pane .cw3-drawer {
-  border: 0;
-  box-shadow: none;
-}
-
-.workspace-v2 .cw3-mobile-pane {
-  height: 100%;
-  min-height: 0;
-  background: hsl(var(--studio-surface));
-}
-
-/* ── Tabs + mobile pane switcher ──────────────────────────────────────── */
-
-.workspace-v2 .cw3-tabs {
-  background: hsl(var(--studio-secondary-soft));
+/* Tabs and mobile dock: obvious affordances, safe touch targets. */
+.workspace-v2 .ws2-tabs {
+  background: hsl(var(--studio-surface) / 0.7);
   border-bottom: 1px solid hsl(var(--studio-border));
 }
 
-.workspace-v2 .cw3-tab {
+.workspace-v2 .ws2-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   white-space: nowrap;
-  border: 1px solid transparent;
   border-radius: 10px 10px 0 0;
-  padding: 0.55rem 1rem;
+  padding: 0.6rem 1rem;
   color: hsl(var(--studio-fg-muted));
   font-size: 0.875rem;
   font-weight: 600;
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
-.workspace-v2 .cw3-tab:hover { color: hsl(var(--studio-fg)); background: hsl(var(--studio-surface)); }
+.workspace-v2 .ws2-tab:hover {
+  background: hsl(var(--studio-soft));
+  color: hsl(var(--studio-fg));
+}
 
-.workspace-v2 .cw3-tab[aria-selected="true"] {
-  border-color: hsl(var(--studio-border));
-  border-bottom-color: hsl(var(--studio-surface));
+.workspace-v2 .ws2-tab[aria-selected="true"] {
   background: hsl(var(--studio-surface));
   color: hsl(var(--studio-accent));
+  box-shadow: inset 0 -2px 0 hsl(var(--studio-accent));
 }
 
-.workspace-v2 .cw3-tabbar {
+.workspace-v2 .ws2-dock {
+  background: hsl(var(--studio-glass-toolbar));
   border-top: 1px solid hsl(var(--studio-border));
-  background: hsl(var(--studio-surface));
   box-shadow: 0 -10px 30px -24px hsl(var(--studio-fg) / 0.7);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
 }
 
-.workspace-v2 .cw3-tab-item {
-  display: flex;
-  min-height: 56px;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+.workspace-v2 .ws2-dock button {
+  min-height: 48px;
   border-radius: 12px;
-  color: hsl(var(--studio-fg-muted));
-  font-size: 10px;
-  font-weight: 600;
-  transition: color 140ms ease, background-color 140ms ease;
 }
 
-.workspace-v2 .cw3-tab-item[data-active="true"] {
-  background: hsl(var(--studio-accent-soft));
-  color: hsl(var(--studio-accent));
+.workspace-v2 .ws2-drawer {
+  border: 1px solid hsl(var(--studio-border));
+  background: hsl(var(--studio-surface));
+  box-shadow: 0 24px 60px -28px hsl(var(--studio-fg) / 0.55);
 }
-
-.workspace-v2 .cw3-tab-icon {
-  display: flex;
-  height: 26px;
-  width: 34px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-}
-
-.workspace-v2 .cw3-tab-item[data-add="true"] .cw3-tab-icon {
-  background: hsl(var(--studio-accent));
-  color: hsl(var(--studio-accent-fg));
-}
-

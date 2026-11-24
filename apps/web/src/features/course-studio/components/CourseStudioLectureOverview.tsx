@@ -56,10 +56,10 @@ function MetricCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="cw3-metric"
+      className="ws2-metric"
     >
       <div className="flex items-center gap-3">
-        <div className="cw3-metric-icon">
+        <div className="ws2-metric-icon">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -92,11 +92,11 @@ function CourseStudioLectureOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("cw3-page mx-auto w-full max-w-5xl", className)}
+      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
     >
-      <motion.div variants={itemVariants} className="cw3-hero cw3-full">
-        <div className="flex items-center gap-3">
-          <div className="cw3-hero-icon h-14 w-14">
+      <motion.div variants={itemVariants} className="mb-8">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="ws2-hero-icon h-14 w-14">
             <BookOpen className="h-7 w-7" />
           </div>
           <div className="min-w-0 flex-1">
@@ -117,11 +117,11 @@ function CourseStudioLectureOverview({
         {!hasSections && (
           <motion.div
             variants={itemVariants}
-            className="cw3-empty-card cw3-full relative overflow-hidden p-8 text-center"
+            className="ws2-empty-card relative overflow-hidden p-8 text-center"
           >
             <div className="absolute -inset-4 rounded-full bg-studio-accent/5 blur-3xl" aria-hidden="true" />
             <div className="relative">
-              <div className="cw3-hero-icon mx-auto mb-4 h-20 w-20 rounded-[1.75rem]">
+              <div className="ws2-hero-icon mx-auto mb-4 h-20 w-20 rounded-[1.75rem]">
                 <Sparkles className="h-10 w-10" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-studio-fg">
@@ -145,8 +145,10 @@ function CourseStudioLectureOverview({
         )}
       </motion.div>
 
-      <motion.div variants={itemVariants} className="cw3-primary">
-        <h2 className="cw3-section-label mb-3">نظرة عامة</h2>
+      <motion.div variants={itemVariants} className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-studio-fg-muted">
+          نظرة عامة
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard
             icon={Layers}
@@ -166,8 +168,8 @@ function CourseStudioLectureOverview({
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="cw3-secondary">
-        <StudioSurfaceCard variant="elevated" padding="md" className="cw3-card">
+      <motion.div variants={itemVariants}>
+        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">المعلومات</span>
@@ -207,13 +209,15 @@ function CourseStudioLectureOverview({
       </motion.div>
 
       {hasSections && (
-        <motion.div variants={itemVariants} className="cw3-full">
-          <h2 className="cw3-section-label mb-3">الأقسام</h2>
+        <motion.div variants={itemVariants} className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-studio-fg-muted">
+            الأقسام
+          </h2>
           <div className="space-y-2">
             {sectionList.map((section) => (
               <div
                 key={section.id}
-                className="cw3-card flex items-center gap-3 p-3"
+                className="ws2-card flex items-center gap-3 p-3"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-studio-accent-soft">
                   <Layers className="h-4 w-4 text-studio-accent" />
@@ -234,7 +238,7 @@ function CourseStudioLectureOverview({
       )}
 
       {hasSections && onAddSection && (
-        <motion.div variants={itemVariants} className="cw3-full mt-1">
+        <motion.div variants={itemVariants} className="mt-6">
           <StudioButton
             onClick={onAddSection}
             variant="secondary"

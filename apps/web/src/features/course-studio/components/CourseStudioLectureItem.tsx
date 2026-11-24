@@ -8,6 +8,8 @@ import {
   Layers,
   FileText,
   ChevronDown,
+  BookOpen,
+  CalendarDays,
   MoreHorizontal,
   Pencil,
   Copy,
@@ -38,7 +40,6 @@ interface CourseStudioLectureItemProps {
   sections?: CourseSection[];
   isSelected: boolean;
   isExpanded: boolean;
-  displayOrder?: number;
   selectedSectionId?: string | null;
   onSelect: (id: string) => void;
   onToggle: () => void;
@@ -71,7 +72,6 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
   sections,
   isSelected,
   isExpanded,
-  displayOrder,
   selectedSectionId,
   onSelect,
   onToggle,
@@ -162,9 +162,16 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
           </motion.div>
         </button>
 
-        <span className="cw3-order" aria-hidden="true">
-          {displayOrder ?? lecture.order + 1}
-        </span>
+        <div
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            isSelected
+              ? "bg-studio-accent text-studio-accent-fg"
+              : lecture.courseSessionId ? "bg-teal-500/10 text-teal-600" : "bg-studio-soft text-studio-fg-muted",
+          )}
+        >
+          {lecture.courseSessionId ? <CalendarDays className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate text-sm font-medium leading-tight">
@@ -173,7 +180,7 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
           <div className="flex items-center gap-2">
             <StudioStatusBadge status={lecture.status} />
             {lecture.courseSessionId && (
-              <span className="rounded-full bg-studio-accent-soft px-1.5 py-0.5 text-[10px] text-studio-accent">جلسة</span>
+              <span className="text-[10px] rounded-full bg-teal-500/10 text-teal-600 px-1.5 py-0.5">جلسة</span>
             )}
             {lecture.estimatedDuration && (
               <span className="flex items-center gap-1 text-[10px] text-studio-fg-muted">
