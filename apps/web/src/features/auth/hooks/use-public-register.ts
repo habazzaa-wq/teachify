@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { publicRegisterService, type PublicRegisterPayload, type PublicRegisterResponse } from "../services/public-register.service";
+import { publicRegisterService, type PublicRegisterPayload, type PublicRegisterResponse, type PublicRegisterResult } from "../services/public-register.service";
 
-export { type PublicRegisterPayload, type PublicRegisterResponse };
+export { type PublicRegisterPayload, type PublicRegisterResponse, type PublicRegisterResult };
 
 export function usePublicRegister() {
   return useMutation({

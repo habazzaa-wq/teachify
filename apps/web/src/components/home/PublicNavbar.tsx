@@ -397,12 +397,11 @@ export function PublicNavbar() {
       localStorage.setItem("public-register-state", JSON.stringify(state));
 
       setRegisterOpen(false);
-      setRegisteredName(response.user.name);
-      setRegisterSuccess(true);
       setStudentRegistered(state);
       queryClient.invalidateQueries({ queryKey: STUDENT_PROFILE_QUERY_KEY });
+      router.push("/student/dashboard");
     },
-    [setAuthTokens, setAuthUser, setTenantContext, queryClient],
+    [setAuthTokens, setAuthUser, setTenantContext, queryClient, router],
   );
 
   useEffect(() => {

@@ -127,6 +127,7 @@ use App\Http\Controllers\Api\v1\PublicLegalController;
 use App\Http\Controllers\Api\v1\PublicNewsController;
 use App\Http\Controllers\Api\v1\PublicSeoContentController;
 use App\Http\Controllers\Api\v1\PublicGoogleAuthController;
+use App\Http\Controllers\Api\v1\PublicEmailVerificationController;
 use App\Http\Controllers\Api\v1\PublicStudentRegisterController;
 use App\Http\Controllers\Api\v1\PublicSubjectController;
 use App\Http\Controllers\Api\v1\PublicTenantController;
@@ -427,6 +428,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/health/live', [HealthController::class, 'liveness']);
     Route::get('/health/ready', [HealthController::class, 'readiness']);
     Route::post('/public/register', [PublicStudentRegisterController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('/public/email-verification/verify', [PublicEmailVerificationController::class, 'verify'])->middleware('throttle:20,1');
+    Route::post('/public/email-verification/resend', [PublicEmailVerificationController::class, 'resend'])->middleware('throttle:5,1');
     Route::post('/public/auth/google', [PublicGoogleAuthController::class, 'authenticate'])->middleware('throttle:20,1');
     Route::post('/public/auth/google/complete', [PublicGoogleAuthController::class, 'complete'])->middleware('throttle:20,1');
     Route::get('/tenant/by-domain', [PublicTenantController::class, 'byDomain']);
