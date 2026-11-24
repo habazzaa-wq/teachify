@@ -97,6 +97,10 @@ export function TenantBootstrapProvider({
         feature_flags: tenantContext.feature_flags,
         branding: tenantContext.branding,
         platformBranding: tenantContext.platform_branding ?? tenantContext.platformBranding ?? null,
+        // The SSR payload already contains the public auth config. Forwarding
+        // it here is what makes the Google button render immediately on the
+        // student login/register forms without a second client-side fetch.
+        googleClientId: tenantContext.auth?.google_client_id?.trim() || null,
         subdomain: getTenantSubdomain(hostname),
       });
       return;
