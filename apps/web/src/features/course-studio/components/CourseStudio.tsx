@@ -77,7 +77,6 @@ interface CourseStudioProps {
   inspectorWidth?: number;
   onQuickStart?: () => void;
   onPublish?: () => void;
-  onQuickAction?: (action: string) => void;
   instructorMode?: boolean;
 }
 
@@ -111,7 +110,6 @@ function CourseStudio({
   inspectorWidth = 320,
   onQuickStart,
   onPublish,
-  onQuickAction,
   instructorMode = false,
 }: CourseStudioProps) {
   const isMobile = useIsMobile();
@@ -1010,7 +1008,7 @@ function CourseStudio({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="nova-shell flex h-full min-h-0 flex-col overflow-hidden"
+      className="nova-shell cw-studio flex h-full min-h-0 flex-col overflow-hidden"
       data-navigator-open={String(navigatorOpen || mobileNavOpen)}
       data-inspector-open={String(store.inspectorOpen)}
       style={
@@ -1032,8 +1030,8 @@ function CourseStudio({
         inspectorOpen={store.inspectorOpen}
         onToggleNavigator={handleToggleNavigator}
         onToggleInspector={handleToggleInspector}
+        onAdd={openAddChoice}
         onPublish={onPublish}
-        onQuickAction={onQuickAction}
       />
 
       <div className="nova-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
@@ -1088,7 +1086,7 @@ function CourseStudio({
                     animate={{ x: 0 }}
                     exit={{ x: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-y-0 end-0 z-50 w-[min(340px,92vw)] max-w-full pb-[env(safe-area-inset-bottom)]"
+                    className="cw-mobile-drawer cw-mobile-outline absolute inset-y-0 end-0 z-50 w-[min(340px,92vw)] max-w-full pb-[env(safe-area-inset-bottom)]"
                     role="dialog"
                     aria-modal="true"
                     aria-label="متصفح المحتوى"
@@ -1155,7 +1153,7 @@ function CourseStudio({
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                    className="nova-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
+                    className="nova-drawer cw-mobile-drawer cw-mobile-inspector absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[20px] bg-studio-surface"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
@@ -1267,7 +1265,7 @@ function CourseStudio({
       </div>
 
       {/* Floating command pill — every primary tool stays one tap away on every viewport. */}
-      <nav className="nova-dock-floating" aria-label="أدوات الاستوديو السريعة">
+      <nav className="nova-dock-floating cw-dock" aria-label="أدوات الاستوديو السريعة">
         <StudioButton
           variant={navigatorOpen || mobileNavOpen ? "primary" : "ghost"}
           size="md"
