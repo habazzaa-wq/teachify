@@ -3,6 +3,7 @@
 namespace App\Services\Platform;
 
 use App\Models\PlatformBranding;
+use App\Models\TenantSetting;
 
 /**
  * Single source of truth for a tenant's platform brand colors (the "platform
@@ -45,6 +46,20 @@ class PlatformBrandingService
         $row = PlatformBranding::query()->where('tenant_id', $tenantId)->first();
 
         $values = $row?->only(array_values(self::MAP)) ?? [];
+
+        // Older tenants saved the font only in the `branding` settings row.
+        // Keep resolving it here so the public by-domain / auth payloads carry
+        // the same face until that value is re-saved through the site editor.
+        if (empty($values['font'])) {
+            $legacyValues = TenantSetting::query()
+                ->where('tenant_id', $tenantId)
+                ->where('group', 'branding')
+                ->value('values');
+
+            if (is_array($legacyValues) && ! empty($legacyValues['font'])) {
+                $values['font'] = $legacyValues['font'];
+            }
+        }
 
         return $this->shape($values);
     }

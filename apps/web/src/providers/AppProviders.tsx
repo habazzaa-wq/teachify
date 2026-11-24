@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "./ThemeProvider";
@@ -58,8 +58,14 @@ export function AppProviders({
   serverHostname?: string;
   tenantContext?: TenantByDomainResponse | null;
 }) {
-  const initialTenant = tenantSeedToActiveTenant(tenantContext);
-  const initialPlatformBranding = tenantSeedPlatformBranding(tenantContext);
+  const initialTenant = useMemo(
+    () => tenantSeedToActiveTenant(tenantContext),
+    [tenantContext],
+  );
+  const initialPlatformBranding = useMemo(
+    () => tenantSeedPlatformBranding(tenantContext),
+    [tenantContext],
+  );
 
   return (
     <MotionConfig
