@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { Megaphone, ArrowLeft, ChevronUp, ChevronDown } from "lucide-react";
-import { useActiveTenant } from "@/hooks/useActiveTenant";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { usePublicNews } from "@/features/homepage/news/hooks";
 import { resolveTicker, contrastText, darkenHex } from "@/features/homepage/news/utils";
@@ -53,7 +53,7 @@ export function NewsTicker({
   className?: string;
   collapsible?: boolean;
 }) {
-  const { tenant } = useActiveTenant();
+  const platformBranding = usePlatformBranding();
   const { data, isLoading } = usePublicNews();
   const viewportRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -64,7 +64,15 @@ export function NewsTicker({
   const [shift, setShift] = useState(0);
   const [inView, setInView] = useState(true);
 
-  const branding = tenant?.branding;
+  // This is a public-site surface: use the website palette (ألوان الموقع),
+  // never the dashboard appearance palette.
+  const branding = platformBranding
+    ? {
+        primary_color: platformBranding.primaryColor,
+        secondary_color: platformBranding.secondaryColor,
+        accent_color: platformBranding.accentColor,
+      }
+    : null;
   const resolved = resolveTicker(data?.ticker, branding);
   const { config } = resolved;
   const items = useMemo(() => data?.items ?? [], [data]);

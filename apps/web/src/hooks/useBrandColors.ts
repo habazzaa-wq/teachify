@@ -14,5 +14,5 @@ export function useBrandColors() {
   // ألوان "المنصة" بس (platformBranding) — من غير ألوان مظهر المدرس عشان متسرّبش
   // للمنصة كلها. مظهر المدرس مقتصر على صفحة الدخول ولوحة تحكم المدرس (.tenant-theme).
   const platformBranding = usePlatformBranding();
-  return resolveBrandHexColors(null, platformBranding);
+  return resolveBrandHexColors(platformBranding);
 }

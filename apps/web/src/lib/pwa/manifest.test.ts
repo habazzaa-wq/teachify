@@ -39,6 +39,17 @@ function tenant(
       font: null,
       ...branding,
     },
+    // The public-site palette is separate from the dashboard appearance one.
+    platform_branding: {
+      logo: null,
+      favicon: branding.favicon ?? null,
+      primaryColor: branding.primaryColor ?? null,
+      secondaryColor: branding.secondaryColor ?? null,
+      accentColor: null,
+      font: null,
+      darkLogo: null,
+      lightLogo: null,
+    },
   };
 }
 
@@ -70,9 +81,18 @@ describe("buildManifest — Tenant A (the-mechanist.com)", () => {
     expect(getManifestId(TENANT_A)).toBe("/?tenant=mechanist");
   });
 
-  it("uses tenant branding (theme color)", () => {
+  it("uses the public-site palette for the theme color", () => {
     expect(m.theme_color).toBe("#123456");
     expect(m.background_color).toBe("#123456");
+  });
+
+  it("does not take the theme color from the dashboard appearance palette", () => {
+    const withDashboardColors: TenantByDomainResponse = {
+      ...TENANT_A,
+      branding: { ...TENANT_A.branding, primaryColor: "#FF0000" },
+    };
+    const publicManifest = manifestFor(withDashboardColors, "https://the-mechanist.com");
+    expect(publicManifest.theme_color).toBe("#123456");
   });
 
   it("uses the tenant favicon icon, resolved against the origin", () => {

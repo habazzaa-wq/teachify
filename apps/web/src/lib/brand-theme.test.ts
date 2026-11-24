@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import tailwindConfig from "../../tailwind.config";
-import { buildBrandThemeCss } from "./brand-theme";
+import {
+  buildBrandThemeCss,
+  DASHBOARD_THEME_BODY_CLASS,
+  resolveDashboardBrandColors,
+} from "./brand-theme";
 import { generateThemeColors } from "./color";
 
 const REQUIRED_DASHBOARD_TOKENS = [
@@ -98,18 +102,69 @@ describe("dashboard brand theme", () => {
     }
   });
 
-  it("emits the dashboard palette on :root and .dark so portals are themed", () => {
-    const css = buildBrandThemeCss("#123ABC", "#DEF456");
+  it("keeps the public palette out of dashboard selectors", () => {
+    const css = buildBrandThemeCss("#123ABC", "#DEF456", {
+      primary: "#059669",
+      secondary: "#FEF3C7",
+    });
     const root = css.match(/:root \{([\s\S]*?)\n\}/)?.[1] ?? "";
-    const dark = css.match(/\.dark \{([\s\S]*?)\}/)?.[1] ?? "";
     const tenant = css.match(/\.tenant-theme \{([\s\S]*?)\}/)?.[1] ?? "";
+    const body = css.match(/body\.dashboard-theme[^{]*\{([\s\S]*?)\}/)?.[1] ?? "";
 
+    expect(root).toContain("--brand-primary: #123ABC;");
+    expect(root).not.toContain("--studio-panel:");
     for (const token of REQUIRED_DASHBOARD_TOKENS) {
-      expect(root, `${token} missing on :root`).toContain(`${token}:`);
-      expect(dark, `${token} missing on .dark`).toContain(`${token}:`);
       expect(tenant, `${token} missing on .tenant-theme`).toContain(`${token}:`);
+      expect(body, `${token} missing on body.${DASHBOARD_THEME_BODY_CLASS}`).toContain(`${token}:`);
     }
-
     expect(css).not.toContain("undefined");
+  });
+
+  it("changes only the public tokens when the site colors change", () => {
+    const first = buildBrandThemeCss("#123ABC", "#DEF456", {
+      primary: "#059669",
+      secondary: "#FEF3C7",
+    });
+    const second = buildBrandThemeCss("#ABCDEF", "#112233", {
+      primary: "#059669",
+      secondary: "#FEF3C7",
+    });
+
+    expect(first).toContain("--brand-primary: #123ABC;");
+    expect(second).toContain("--brand-primary: #ABCDEF;");
+    expect(second.match(/\.tenant-theme \{([\s\S]*?)\}/)?.[1]).toBe(
+      first.match(/\.tenant-theme \{([\s\S]*?)\}/)?.[1],
+    );
+  });
+
+  it("changes only dashboard tokens when the appearance colors change", () => {
+    const first = buildBrandThemeCss("#123ABC", "#DEF456", {
+      primary: "#059669",
+      secondary: "#FEF3C7",
+    });
+    const second = buildBrandThemeCss("#123ABC", "#DEF456", {
+      primary: "#DC2626",
+      secondary: "#FEF2F2",
+    });
+
+    expect(second.match(/:root \{([\s\S]*?)\n\}/)?.[1]).toBe(
+      first.match(/:root \{([\s\S]*?)\n\}/)?.[1],
+    );
+    expect(second.match(/\.tenant-theme \{([\s\S]*?)\}/)?.[1]).not.toBe(
+      first.match(/\.tenant-theme \{([\s\S]*?)\}/)?.[1],
+    );
+  });
+
+  it("falls back to dashboard defaults instead of the public site palette", () => {
+    expect(resolveDashboardBrandColors(null)).toEqual({
+      primary: "#D87B63",
+      secondary: "#FFB50E",
+    });
+    expect(
+      resolveDashboardBrandColors(
+        { primary_color: null, secondary_color: "#00FF00" },
+        { primary: "#123ABC", secondary: "#DEF456" },
+      ),
+    ).toEqual({ primary: "#123ABC", secondary: "#00FF00" });
   });
 });

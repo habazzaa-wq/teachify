@@ -13,12 +13,13 @@ use Illuminate\Validation\Rule;
 class TenantSettingController extends Controller
 {
     /**
-     * Platform-level brand colors. These drive every themed surface (public
-     * site, tenant admin dashboard, instructor workspace and student pages)
-     * through `platform_branding`. The teacher appearance editor also writes
-     * the same two colors here so its choices are actually applied; the
-     * `branding` settings group is kept only as a compatible copy for older
-     * consumers (auth/me branding payload).
+     * Public-site brand colors (ألوان الموقع), stored in `platform_branding`.
+     * These drive the public site only (.community-theme / --brand-*).
+     *
+     * The two color palettes are deliberately separate from the `branding`
+     * settings group (ألوان المخصصة), which drives the teacher/admin/instructor
+     * dashboards through `updateSite`. Never mirror one palette into the other.
+     * The font in this row is the one value intentionally shared across shells.
      */
     public function platform(): JsonResponse
     {
@@ -30,9 +31,11 @@ class TenantSettingController extends Controller
     }
 
     /**
-     * Persist the platform-wide branding (colors + font) onto the current
-     * tenant's own `platform_branding` row. `updateSite` writes the same
-     * values so both editors stay in sync.
+     * Persist the public-site palette (ألوان الموقع) and the shared tenant font
+     * onto the current tenant's own `platform_branding` row. Colors stay
+     * public-site-only: `updateSite` owns the dashboard appearance palette and
+     * never writes these columns. Typography is shared, so that editor mirrors
+     * only the font here to keep every shell in sync.
      */
     public function updatePlatformBranding(Request $request): JsonResponse
     {
@@ -52,13 +55,14 @@ class TenantSettingController extends Controller
         $brandingService = new PlatformBrandingService();
         $branding = $brandingService->update($tenant->id, $validated);
 
-        // The font is platform-wide, not dashboard-only. Keep the legacy
-        // `branding` settings row in sync so the auth/bootstrap and by-domain
-        // payloads (which read that row) resolve the same face everywhere.
+        // The font is shared by every shell, not dashboard-only. Keep the
+        // legacy `branding` settings row in sync so auth/bootstrap and
+        // by-domain payloads (which read that row) resolve the same face.
         if (array_key_exists('font', $validated)) {
             $this->mergeBrandingValues($tenant, ['font' => $validated['font']]);
         }
 
+        // Branding is read from the cached tenant payload on every request.
         app(TenantRepository::class)->forget($tenant->id);
 
         return response()->json([
@@ -126,19 +130,20 @@ class TenantSettingController extends Controller
             $brandingValues = $this->mergeBrandingValues($tenant, $brandingValues);
         }
 
-        // The site editor must change the real runtime theme, not just a
-        // settings row that nothing reads. Mirror the font together with the
-        // two colors onto the platform_branding row consumed by every themed
-        // shell (admin, instructor, student, public site). Null resets fall
-        // back to the frontend defaults.
-        $platformValues = array_intersect_key($values, array_flip(['font', 'primary_color', 'secondary_color']));
-        if ($platformValues !== []) {
-            app(PlatformBrandingService::class)->update($tenant->id, $platformValues);
+        // Typography is shared by every shell, so the font saved here also goes
+        // to `platform_branding` (null resets return to the frontend default).
+        // Colors must NOT be mirrored: this editor saves the dashboard
+        // appearance palette (ألوان المخصصة), while the public-site palette
+        // (ألوان الموقع) is owned exclusively by updatePlatformBranding().
+        // Mirroring colors here was the reason editing one page recolored the other.
+        $platformFont = array_intersect_key($values, array_flip(['font']));
+        if ($platformFont !== []) {
+            app(PlatformBrandingService::class)->update($tenant->id, $platformFont);
         }
 
-        // Branding/font/colors are read from the tenant payload on every
-        // request, so drop cached tenant/domain resolution after any edit —
-        // otherwise a public page can keep serving an old font.
+        // Branding/font are read from the tenant payload on every request, so
+        // drop cached tenant/domain resolution after any edit — otherwise a
+        // public page can keep serving an old font.
         if ($brandingValues !== [] || array_key_exists('name', $values)) {
             app(TenantRepository::class)->forget($tenant->id);
         }
@@ -199,7 +204,7 @@ class TenantSettingController extends Controller
      */
     private function resolvePlatformBranding(\App\Models\Tenant $tenant): array
     {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve($tenant->id);
+        return (new PlatformBrandingService())->resolve($tenant->id);
     }
 
     public function index(): JsonResponse

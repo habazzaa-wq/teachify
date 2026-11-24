@@ -7,29 +7,22 @@ import {
 } from "@/lib/brand-theme";
 
 /**
- * Server-rendered brand theme. Renders the tenant's resolved `platform_branding`
- * as a real <style> block directly into <head>, so the browser's very first
- * paint already uses the tenant's configured colors — eliminating the
- * flash-of-unstyled-content where the globals.css fallbacks
- * (#D87B63 / #FFB50E) flashed for a moment before the client fetched branding.
+ * Server-rendered brand theme. Renders BOTH palettes as a real <style> block
+ * in <head> so the first paint already uses the configured colors:
+ *  · tenant.platform_branding  → public site (--brand-*, .community-theme)
+ *  · tenant.branding           → dashboards (.tenant-theme / .student-theme)
  *
- * For tenant hosts the tenant is resolved server-side (via the
- * `x-tenant-context` header or an internal by-domain call, both cached per
- * request by `getTenantSeoContext`). On the bare platform host there is no
- * tenant, so the platform's design fallbacks render — which is correct and
- * stable (no color "change" after load).
- *
- * The client `BrandThemeProvider` reuses the exact same <style> id to update
- * the block in place when live branding changes (dashboard save / tenant
- * switch), so there is never a duplicate stylesheet node.
+ * The two are never mixed: each selector only receives its own palette. The
+ * client `BrandThemeProvider` reuses the same <style> id to update the block in
+ * place when either palette changes live, so there is never a duplicate node.
  */
 export async function BrandThemeSSR() {
   const tenant = await getTenantSeoContext();
   const branding = tenant?.platform_branding ?? tenant?.platformBranding ?? null;
   const platform = resolveBrandThemeColors(branding);
-  // by-domain already carries the teacher's "مظهر لوحة التحكم" palette in
-  // `branding`, so the very first paint uses the colors they actually picked.
-  const dashboard = resolveDashboardBrandColors(tenant?.branding, platform);
+  // by-domain carries the teacher's "مظهر لوحة التحكم" palette in `branding`.
+  // It falls back to dashboard defaults, never to the public-site pair.
+  const dashboard = resolveDashboardBrandColors(tenant?.branding);
   const css = buildBrandThemeCss(platform.primary, platform.secondary, dashboard);
 
   return <style id={BRAND_THEME_STYLE_ID} data-ssr="true">{css}</style>;

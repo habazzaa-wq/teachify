@@ -80,17 +80,23 @@ function ColorPicker({
 function AppearancePage() {
   const { tenant } = useActiveTenant();
   const setTenantSite = useTenantStore((s) => s.setTenantSite);
-  const platformBranding = useTenantStore((s) => s.platformBranding);
-  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
+  const setDashboardColors = useTenantStore((s) => s.setDashboardColors);
 
-  // The runtime theme (BrandThemeProvider) reads platformBranding only. Using
-  // the legacy auth `branding` values here made the pickers show colors that
-  // were not actually applied, so the editor must reflect the same source.
+  // This editor owns the DASHBOARD palette only (tenant `branding` settings).
+  // `platformBranding` is the public website palette and must never be read or
+  // written here — that was the source of the two colour systems mixing.
   const appliedColor = (value: string | null | undefined, fallback: string) =>
     value && isValidHex(value) ? normalizeHex(value) : fallback;
 
-  const storedPrimary = appliedColor(platformBranding?.primaryColor, BRAND_PRIMARY_DEFAULT);
-  const storedSecondary = appliedColor(platformBranding?.secondaryColor, BRAND_SECONDARY_DEFAULT);
+  const appearance = tenant?.branding as unknown as Record<string, unknown> | undefined;
+  const storedPrimary = appliedColor(
+    (appearance?.primary_color ?? appearance?.primaryColor) as string | null | undefined,
+    BRAND_PRIMARY_DEFAULT,
+  );
+  const storedSecondary = appliedColor(
+    (appearance?.secondary_color ?? appearance?.secondaryColor) as string | null | undefined,
+    BRAND_SECONDARY_DEFAULT,
+  );
 
   const [primary, setPrimary] = useState(storedPrimary);
   const [secondary, setSecondary] = useState(storedSecondary);
@@ -104,17 +110,17 @@ function AppearancePage() {
     setSecondary(storedSecondary);
   }, [storedPrimary, storedSecondary]);
 
-  // Live preview: update the same store BrandThemeProvider watches, so the
-  // whole dashboard (and every themed page) re-colors while the picker moves.
+  // Live preview: update ONLY the dashboard palette in the store. The public
+  // site keeps the colors configured in "الشعار واسم المنصة" (branding page).
   const applyLive = useCallback(
     (p: string, s: string) => {
       if (!isValidHex(p) || !isValidHex(s)) return;
-      setPlatformBranding({
-        primaryColor: normalizeHex(p),
-        secondaryColor: normalizeHex(s),
+      setDashboardColors({
+        primary_color: normalizeHex(p),
+        secondary_color: normalizeHex(s),
       });
     },
-    [setPlatformBranding],
+    [setDashboardColors],
   );
 
   const changePrimary = useCallback(
@@ -143,8 +149,9 @@ function AppearancePage() {
     const secondaryColor = normalizeHex(secondary);
     setSaving(true);
     try {
-      // updateSite now mirrors these two colors into platform_branding, which
-      // is what the admin, instructor, student and public shells read.
+      // updateSite writes the dashboard palette into tenant_settings.branding.
+      // It no longer mirrors into platform_branding, so the public website is
+      // untouched by this save.
       await settingsService.updateSite({
         primary_color: primaryColor,
         secondary_color: secondaryColor,
@@ -155,7 +162,7 @@ function AppearancePage() {
         primary_color: primaryColor,
         secondary_color: secondaryColor,
       });
-      setPlatformBranding({ primaryColor, secondaryColor });
+      setDashboardColors({ primary_color: primaryColor, secondary_color: secondaryColor });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
@@ -163,7 +170,7 @@ function AppearancePage() {
     } finally {
       setSaving(false);
     }
-  }, [primary, secondary, setPlatformBranding, setTenantSite, tenant]);
+  }, [primary, secondary, setDashboardColors, setTenantSite, tenant]);
 
   const handleReset = useCallback(async () => {
     setSaving(true);
@@ -178,8 +185,9 @@ function AppearancePage() {
         primary_color: null,
         secondary_color: null,
       });
-      // Null platform colors make BrandThemeProvider use the platform defaults.
-      setPlatformBranding({ primaryColor: null, secondaryColor: null });
+      setDashboardColors({ primary_color: null, secondary_color: null });
+      // Dashboard falls back to its own defaults, never to the public site
+      // palette, so resetting here cannot change the website colors.
       setPrimary(BRAND_PRIMARY_DEFAULT);
       setSecondary(BRAND_SECONDARY_DEFAULT);
     } catch {
@@ -187,7 +195,7 @@ function AppearancePage() {
     } finally {
       setSaving(false);
     }
-  }, [setPlatformBranding, setTenantSite, tenant]);
+  }, [setDashboardColors, setTenantSite, tenant]);
 
   const handlePreset = useCallback(
     (p: string, s: string) => {
@@ -212,7 +220,7 @@ function AppearancePage() {
     <AppPage maxWidth="lg">
       <AppPageHeader
         title="مظهر لوحة التحكم"
-        description="اختر اللونين الأساسي والثانوي ليطبّقا فورًا على لوحة المدرّب ولوحة المدير وكل صفحات المنصة"
+        description="اختر اللونين الأساسي والثانوي لتلوين لوحة المدير ولوحة المدرّب وصفحة تسجيل الدخول للمنشأة فقط — لا يؤثران على الموقع العام"
       />
       <AppDivider className="mb-8" />
 
@@ -222,7 +230,7 @@ function AppearancePage() {
           <AppCardHeader>
             <AppCardTitle>الألوان المخصصة</AppCardTitle>
             <AppCardDescription>
-              اختر لونين أساسي وثانوي لتلوين لوحة المدير ولوحة المدرب وكل الصفحات المرتبطة بهما. التغيير يظهر في المعاينة مباشرة.
+              تُطبَّق هذه الألوان على /teacher/* و/instructor/* و/tenant-login فقط. ألوان الموقع العام تُضبط من صفحة «الشعار واسم المنصة» ولا تتأثر هنا.
             </AppCardDescription>
           </AppCardHeader>
           <AppCardContent className="space-y-6">
