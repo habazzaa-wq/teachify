@@ -114,7 +114,7 @@ function CourseStudioContentOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("mx-auto w-full max-w-3xl p-6 md:p-8", className)}
+      className={cn("mx-auto w-full max-w-3xl p-4 sm:p-6 md:p-8", className)}
     >
       <motion.div variants={itemVariants} className="mb-8">
         <div className="mb-4 flex items-center gap-3">

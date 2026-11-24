@@ -57,15 +57,15 @@ function CourseStudioHeader({
   return (
     <motion.header
       {...headerMotion}
-      className="flex shrink-0 items-center gap-3 border-b border-studio-border bg-studio-glass-toolbar px-4 py-3 backdrop-blur-xl md:px-6"
+      className="flex shrink-0 items-center gap-2 border-b border-studio-border bg-studio-glass-toolbar px-3 py-2.5 backdrop-blur-xl sm:px-4 md:gap-3 md:px-6 md:py-3"
       role="banner"
       aria-label="رأس الاستوديو"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-studio-accent-soft ring-1 ring-studio-accent-border/50">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-studio-accent-soft ring-1 ring-studio-accent-border/50 md:h-10 md:w-10">
         <GraduationCap className="h-5 w-5 text-studio-accent" aria-hidden="true" />
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
         <h2 className="truncate text-sm font-semibold text-studio-fg">
           {courseName}
         </h2>
@@ -75,48 +75,49 @@ function CourseStudioHeader({
         )}
 
         {visibility === "private" && (
-          <span className="hidden items-center gap-1 rounded-full border border-studio-border/50 bg-studio-soft px-2 py-0.5 text-[10px] text-studio-fg-muted md:inline-flex">
+          <span className="hidden items-center gap-1 rounded-full border border-studio-border/50 bg-studio-soft px-2 py-0.5 text-[10px] text-studio-fg-muted sm:inline-flex">
             خاص
           </span>
         )}
 
         {typeof studentsCount === "number" && (
-          <span className="hidden items-center gap-1 text-xs text-studio-fg-muted md:inline-flex">
+          <span className="hidden items-center gap-1 text-xs text-studio-fg-muted sm:inline-flex">
             <Users className="h-3.5 w-3.5" aria-hidden="true" />
             {studentsCount}
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-1 md:gap-2">
+      <div className="flex shrink-0 items-center gap-0.5 md:gap-2">
         {isSaving && (
-          <span className="hidden items-center gap-1.5 text-xs text-studio-warning md:inline-flex">
+          <span className="hidden items-center gap-1.5 text-xs text-studio-warning lg:inline-flex">
             <Clock className="h-3.5 w-3.5 animate-pulse" aria-hidden="true" />
             جارٍ الحفظ
           </span>
         )}
 
         {isSaved && (
-          <span className="hidden items-center gap-1.5 text-xs text-studio-success md:inline-flex">
+          <span className="hidden items-center gap-1.5 text-xs text-studio-success lg:inline-flex">
             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
             محفوظ
           </span>
         )}
 
         {lastEdited && (
-          <span className="hidden text-xs text-studio-fg-subtle md:inline-flex">
+          <span className="hidden text-xs text-studio-fg-subtle lg:inline-flex">
             {lastEdited}
           </span>
         )}
 
-        <div className="mx-1 hidden h-4 w-px bg-studio-border md:block" aria-hidden="true" />
+        <div className="mx-0.5 hidden h-4 w-px bg-studio-border lg:block" aria-hidden="true" />
 
         <StudioButton
           variant="ghost"
           size="icon"
           onClick={onToggleNavigator}
           aria-label={navigatorOpen ? "إغلاق المستكشف" : "فتح المستكشف"}
-          className="hidden md:inline-flex"
+          aria-pressed={navigatorOpen}
+          className="h-11 w-11 md:h-10 md:w-10"
         >
           {navigatorOpen ? (
             <PanelLeftClose className="h-4 w-4" />
@@ -130,7 +131,8 @@ function CourseStudioHeader({
           size="icon"
           onClick={onToggleInspector}
           aria-label={inspectorOpen ? "إغلاق الخصائص" : "فتح الخصائص"}
-          className="hidden md:inline-flex"
+          aria-pressed={inspectorOpen}
+          className="h-11 w-11 md:h-10 md:w-10"
         >
           {inspectorOpen ? (
             <PanelRightClose className="h-4 w-4" />
@@ -145,6 +147,8 @@ function CourseStudioHeader({
             size="sm"
             onClick={onPublish}
             icon={<Send className="h-3.5 w-3.5" />}
+            aria-label="نشر الدورة"
+            className="h-9 px-2.5 sm:h-8 sm:px-3"
           >
             <span className="hidden sm:inline">نشر</span>
           </StudioButton>
@@ -152,7 +156,7 @@ function CourseStudioHeader({
 
         <StudioDropdown
           trigger={
-            <StudioButton variant="ghost" size="icon" aria-label="إجراءات سريعة">
+            <StudioButton variant="ghost" size="icon" aria-label="إجراءات سريعة" className="h-11 w-11 md:h-10 md:w-10">
               <MoreHorizontal className="h-4 w-4" />
             </StudioButton>
           }

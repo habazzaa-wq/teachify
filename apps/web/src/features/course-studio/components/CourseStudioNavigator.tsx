@@ -297,7 +297,7 @@ function CourseStudioNavigator({
           المحتوى التعليمي
         </h3>
         {onCreateLecture && (
-          <StudioButton variant="ghost" size="icon" onClick={onCreateLecture} aria-label="إضافة محاضرة" className="h-7 w-7">
+          <StudioButton variant="ghost" size="icon" onClick={onCreateLecture} aria-label="إضافة محاضرة" className="h-9 w-9 hoverable:h-7 hoverable:w-7">
             <Plus className="h-3.5 w-3.5" />
           </StudioButton>
         )}
@@ -312,7 +312,7 @@ function CourseStudioNavigator({
           </div>
         ) : hasLectures ? (
           <div className="space-y-0.5">
-            {lectures.map((lecture) => (
+            {lectures.map((lecture, index) => (
               <CourseStudioLectureItem
                 key={lecture.id}
                 lecture={lecture}
@@ -342,6 +342,8 @@ function CourseStudioNavigator({
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
+                onMoveUp={index > 0 && onReorder ? () => onReorder(lectures, index, index - 1) : undefined}
+                onMoveDown={index < lectures.length - 1 && onReorder ? () => onReorder(lectures, index, index + 1) : undefined}
               />
             ))}
           </div>

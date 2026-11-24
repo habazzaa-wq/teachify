@@ -117,7 +117,7 @@ function CourseStudioCanvas({
                 onDelete={onDeleteSection}
                 onRestore={onRestoreSection}
               />
-              <div className="mx-auto w-full max-w-3xl px-6 pb-8 md:px-8">
+              <div className="mx-auto w-full max-w-3xl px-3 pb-8 sm:px-6 md:px-8">
                 <CourseStudioContentList
                   items={sectionContents ?? []}
                   selectedId={selectedContent?.id ?? null}

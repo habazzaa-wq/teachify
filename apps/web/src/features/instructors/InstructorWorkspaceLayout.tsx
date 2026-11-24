@@ -40,7 +40,7 @@ export function InstructorWorkspaceLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="tenant-theme flex min-h-screen flex-col overflow-hidden bg-studio-bg text-studio-fg md:h-screen">
+    <div className="tenant-theme flex min-h-dvh flex-col bg-studio-bg text-studio-fg md:h-dvh md:overflow-hidden">
       <header className="z-10 flex min-h-16 items-center justify-between border-b border-studio-border bg-studio-panel/95 px-4 backdrop-blur md:px-6">
         <Link href="/instructor" className="flex items-center gap-3 font-semibold">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
@@ -122,8 +122,8 @@ export function InstructorWorkspaceLayout({ children }: { children: React.ReactN
           </div>
         </aside>
 
-        <main className="tenant-aurora min-h-0 flex-1 overflow-y-auto studio-scrollbar" role="main">
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">{children}</div>
+        <main className="tenant-aurora min-h-0 flex-1 md:overflow-y-auto studio-scrollbar" role="main">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-4 md:px-6 md:py-6 lg:px-8">{children}</div>
         </main>
       </div>
       <footer className="hidden h-8 items-center justify-between border-t border-studio-border bg-studio-panel px-5 text-[11px] text-muted-foreground md:flex">

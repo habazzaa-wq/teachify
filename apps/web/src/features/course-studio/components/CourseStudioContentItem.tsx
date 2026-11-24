@@ -27,6 +27,8 @@ import {
   Link,
   Award,
   CalendarDays,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { StudioStatusBadge } from "@/components/studio/badges";
 import {
@@ -81,6 +83,8 @@ interface CourseStudioContentItemProps {
   onDragStart?: (e: React.DragEvent, item: ContentItem) => void;
   onDragOver?: (e: React.DragEvent, item: ContentItem) => void;
   onDrop?: (e: React.DragEvent, item: ContentItem) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 const CourseStudioContentItem = memo(function CourseStudioContentItem({
@@ -97,6 +101,8 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
   onDragStart,
   onDragOver,
   onDrop,
+  onMoveUp,
+  onMoveDown,
 }: CourseStudioContentItemProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -147,7 +153,7 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
         )}
       >
       <div
-        className="flex shrink-0 cursor-grab items-center opacity-0 transition-opacity group-hover:opacity-100"
+        className="hidden shrink-0 cursor-grab items-center transition-opacity hoverable:flex hoverable:opacity-0 hoverable:group-hover:opacity-100"
         aria-hidden="true"
       >
         <GripVertical className="h-3 w-3 text-studio-fg-subtle" />
@@ -178,17 +184,41 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 text-[10px] text-studio-fg-subtle">
+      <div className="hidden items-center gap-1 text-[10px] text-studio-fg-subtle sm:flex">
         <Eye className="h-3 w-3" />
         <span>{item.visibility === "public" ? "عام" : item.visibility === "preview" ? "معاينة" : "خاص"}</span>
       </div>
+
+      {/* السحب مش متاح باللمس، فبنوفّر أزرار ترتيب بديلة في الشاشات الصغيرة */}
+      {(onMoveUp || onMoveDown) && (
+        <div className="flex shrink-0 flex-col gap-0.5 lg:hidden">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+            disabled={!onMoveUp}
+            aria-label="تحريك المحتوى لأعلى"
+            className="flex h-6 w-7 items-center justify-center rounded-md bg-studio-soft text-studio-fg-muted transition-colors hover:bg-studio-accent-soft hover:text-studio-accent disabled:opacity-30"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+            disabled={!onMoveDown}
+            aria-label="تحريك المحتوى لأسفل"
+            className="flex h-6 w-7 items-center justify-center rounded-md bg-studio-soft text-studio-fg-muted transition-colors hover:bg-studio-accent-soft hover:text-studio-accent disabled:opacity-30"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <AppDropdownMenu>
         <AppDropdownMenuTrigger asChild>
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-studio-soft group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-opacity hover:bg-studio-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring hoverable:h-7 hoverable:w-7 hoverable:opacity-0 hoverable:group-hover:opacity-100 hoverable:focus-visible:opacity-100"
             aria-label="خيارات المحتوى"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />

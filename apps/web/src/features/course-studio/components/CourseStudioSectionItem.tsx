@@ -100,7 +100,7 @@ const CourseStudioSectionItem = memo(function CourseStudioSectionItem({
       onDrop={(e) => onDrop?.(e as unknown as React.DragEvent, section)}
     >
       <div
-        className="flex shrink-0 cursor-grab items-center opacity-0 transition-opacity group-hover:opacity-100"
+        className="hidden shrink-0 cursor-grab items-center transition-opacity hoverable:flex hoverable:opacity-0 hoverable:group-hover:opacity-100"
         aria-hidden="true"
       >
         <GripVertical className="h-3 w-3 text-studio-fg-subtle" />
@@ -150,7 +150,7 @@ const CourseStudioSectionItem = memo(function CourseStudioSectionItem({
             e.stopPropagation();
             onRestore(section);
           }}
-          className="flex h-7 shrink-0 items-center gap-1 rounded-md bg-studio-success/10 px-2 text-[10px] font-medium text-studio-success opacity-0 transition-opacity hover:bg-studio-success/20 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
+          className="flex h-9 shrink-0 items-center gap-1 rounded-md bg-studio-success/10 px-2 text-[10px] font-medium text-studio-success transition-opacity hover:bg-studio-success/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring hoverable:h-7 hoverable:opacity-0 hoverable:group-hover:opacity-100 hoverable:focus-visible:opacity-100"
           aria-label="استعادة القسم"
         >
           <RotateCcw className="h-3 w-3" />
@@ -163,7 +163,7 @@ const CourseStudioSectionItem = memo(function CourseStudioSectionItem({
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-studio-soft group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-opacity hover:bg-studio-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring hoverable:h-7 hoverable:w-7 hoverable:opacity-0 hoverable:group-hover:opacity-100 hoverable:focus-visible:opacity-100"
             aria-label="خيارات القسم"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
