@@ -114,7 +114,8 @@ export default async function RootLayout({
     }
   }
 
-  const tenant = await getTenantSeoContext();
+  const [tenant, origin] = await Promise.all([getTenantSeoContext(), getRequestOrigin()]);
+  const faviconUrl = resolveAssetUrl(tenant?.branding?.favicon ?? null, origin);
   const tenantFont = tenant?.branding?.font ?? null;
   const fontCssUrl = getFontCssUrl(tenantFont);
   const fontStack =
@@ -136,6 +137,11 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* The chosen favicon must be in the first HTML response. Creating it
+            only after hydration made the browser tab icon change ~0.5s in. */}
+        {faviconUrl && (
+          <link id="tenant-favicon" rel="icon" href={faviconUrl} />
+        )}
         {fontCssUrl && (
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -8,8 +8,9 @@ const FAVICON_LINK_ID = "tenant-favicon";
 
 /**
  * Keeps the browser tab (title + icon) in sync with the active tenant's
- * branding. The tenant context is only known on the client after bootstrap,
- * so both are applied here via the DOM instead of static metadata.
+ * branding. The favicon is already server-rendered by the root layout; this
+ * component only reuses that link when live branding changes, so the tab icon
+ * never has to be created (and swapped) after hydration.
  */
 export function TenantDocumentMeta() {
   const activeTenant = useTenantStore((s) => s.activeTenant);
@@ -44,21 +45,27 @@ export function TenantDocumentMeta() {
     }
   }, [activeTenant?.name]);
 
-  // Keep the browser tab icon in sync with the active tenant's favicon.
+  // Keep the browser tab icon in sync with the active tenant's favicon. Reuse
+  // the server-rendered <link rel="icon"> instead of appending a second one.
   useEffect(() => {
     const favicon = branding?.favicon ?? null;
-    let link = document.head.querySelector<HTMLLinkElement>(`#${FAVICON_LINK_ID}`);
+    const link = document.head.querySelector<HTMLLinkElement>(
+      `#${FAVICON_LINK_ID}, link[rel="icon"]`,
+    );
 
     if (!favicon) {
-      if (link) link.remove();
+      link?.remove();
       return;
     }
 
     if (!link) {
-      link = document.createElement("link");
-      link.id = FAVICON_LINK_ID;
-      link.rel = "icon";
-      document.head.appendChild(link);
+      const created = document.createElement("link");
+      created.id = FAVICON_LINK_ID;
+      created.rel = "icon";
+      document.head.appendChild(created);
+      created.type = "image/x-icon";
+      created.href = favicon;
+      return;
     }
 
     link.type = "image/x-icon";
