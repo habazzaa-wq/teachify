@@ -82,10 +82,10 @@ function MetricCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="cw3-metric"
+      className="ws2-metric"
     >
       <div className="flex items-center gap-3">
-        <div className="cw3-metric-icon">
+        <div className="ws2-metric-icon">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -196,12 +196,12 @@ function CourseStudioSectionOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("cw3-page mx-auto w-full max-w-5xl", className)}
+      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
     >
       <motion.nav
         variants={itemVariants}
         aria-label="مسار التنقل"
-        className="cw3-full flex flex-wrap items-center gap-1.5 text-xs text-studio-fg-muted"
+        className="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-studio-fg-muted"
       >
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1.5">
@@ -213,10 +213,17 @@ function CourseStudioSectionOverview({
         ))}
       </motion.nav>
 
-      <motion.div variants={itemVariants} className="cw3-hero cw3-full">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <motion.div variants={itemVariants} className="mb-6">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="cw3-hero-icon h-14 w-14 shrink-0">
+            <div
+              className="ws2-hero-icon h-14 w-14 shrink-0"
+              style={
+                section.color
+                  ? { backgroundColor: `${section.color}20` }
+                  : undefined
+              }
+            >
               <Layers className="h-7 w-7" />
             </div>
             <div className="min-w-0 flex-1">
@@ -327,8 +334,10 @@ function CourseStudioSectionOverview({
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="cw3-primary">
-        <h2 className="cw3-section-label mb-3">نظرة عامة</h2>
+      <motion.div variants={itemVariants} className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-studio-fg-muted">
+          نظرة عامة
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             icon={FileText}
@@ -353,8 +362,8 @@ function CourseStudioSectionOverview({
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="cw3-secondary">
-        <StudioSurfaceCard variant="elevated" padding="md" className="cw3-card">
+      <motion.div variants={itemVariants}>
+        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">المعلومات</span>
@@ -398,7 +407,7 @@ function CourseStudioSectionOverview({
       </motion.div>
 
       {!isDeleted && onAddContent && (
-        <motion.div variants={itemVariants} className="cw3-full mt-1">
+        <motion.div variants={itemVariants} className="mt-6">
           <StudioButton
             variant="secondary"
             size="md"

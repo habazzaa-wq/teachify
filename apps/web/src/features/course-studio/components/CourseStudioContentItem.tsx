@@ -55,6 +55,20 @@ const TYPE_ICONS: Record<ContentItemType, React.ComponentType<{ className?: stri
   session: CalendarDays,
 };
 
+const TYPE_COLORS: Record<ContentItemType, string> = {
+  video: "text-secondary bg-secondary/10",
+  pdf: "text-red-500 bg-red-500/10",
+  exam: "text-emerald-500 bg-emerald-500/10",
+  assignment: "text-orange-500 bg-orange-500/10",
+  resource: "text-cyan-500 bg-cyan-500/10",
+  audio: "text-pink-500 bg-pink-500/10",
+  live: "text-rose-500 bg-rose-500/10",
+  scorm: "text-indigo-500 bg-indigo-500/10",
+  external_link: "text-blue-500 bg-blue-500/10",
+  certificate: "text-yellow-500 bg-yellow-500/10",
+  session: "text-teal-500 bg-teal-500/10",
+};
+
 interface CourseStudioContentItemProps {
   item: ContentItem;
   isSelected: boolean;
@@ -101,6 +115,7 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
   );
 
   const Icon = TYPE_ICONS[item.type] ?? FolderOpen;
+  const colorClass = TYPE_COLORS[item.type] ?? TYPE_COLORS.resource;
   const isPublished = item.status === "published";
   const displayDuration = item.duration
     ? `${Math.round(item.duration / 60)} د`
@@ -110,7 +125,7 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
     <div
       data-content-id={item.id}
       role="listitem"
-      aria-current={isSelected ? "true" : undefined}
+      aria-selected={isSelected}
       aria-label={item.title}
       tabIndex={isSelected ? 0 : -1}
       className={cn(
@@ -144,7 +159,7 @@ const CourseStudioContentItem = memo(function CourseStudioContentItem({
         <GripVertical className="h-3 w-3 text-studio-fg-subtle" />
       </div>
 
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-studio-accent-soft text-studio-accent">
+      <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", colorClass)}>
         <Icon className="h-3.5 w-3.5" />
       </div>
 
