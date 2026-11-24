@@ -7,6 +7,8 @@ import { useTenantContext } from "@/providers/TenantProvider";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { isStudentOnly } from "@/lib/tenant-access";
+import { isAuthLogoutPending } from "@/lib/auth-logout";
+import { isStudentRoute } from "@/services/api/tenant-student-fetch";
 import { routes } from "@/constants/routes";
 import { AppLoadingState } from "@/components/ui/AppLoadingState";
 
@@ -24,6 +26,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const hasTenant = activeTenant !== null;
 
   useEffect(() => {
+    // An explicit logout is already navigating to the public platform.
+    // Redirecting here would race it and land students on /tenant-login.
+    if (isAuthLogoutPending()) {
+      return;
+    }
+
     // If we haven't hydrated the auth store yet, don't make any decisions.
     if (!isHydrated) {
       return;
@@ -48,9 +56,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Truly unauthenticated: redirect to login
-      console.log("[ProtectedRoute] Redirecting to login because status is unauthenticated and NO token found.");
-      router.replace(routes.tenantLogin);
+      // Students return to the public platform; teacher dashboards go to the
+      // tenant login page.
+      const redirectTo = isStudentRoute(pathname) ? routes.home : routes.tenantLogin;
+      console.log("[ProtectedRoute] Redirecting to", redirectTo, "because status is unauthenticated and NO token found.");
+      router.replace(redirectTo);
       return;
     }
 

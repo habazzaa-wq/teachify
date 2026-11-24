@@ -17,6 +17,12 @@ import {
 } from "@/services/api/tenant-student-fetch";
 import { isSuperAdminPath, routes } from "@/constants/routes";
 import { useTenantContext } from "@/providers/TenantProvider";
+import {
+  beginAuthLogout,
+  clearAuthLogout,
+  isAuthLogoutPending,
+  syncAuthLogout,
+} from "@/lib/auth-logout";
 
 interface AuthProviderValue {
   status: ReturnType<typeof useAuthStore.getState>["status"];
@@ -149,6 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearTenant = useTenantStore((state) => state.clear);
 
   const handleStaleSession = useCallback(() => {
+    // An intentional logout is already navigating to the public home page.
+    // Clearing/redirecting again here would send students to /tenant-login.
+    if (isAuthLogoutPending()) {
+      return;
+    }
+
     // Only clear and redirect if we are actually on a protected route.
     // This prevents accidental logouts during transition or if bootstrap fails transiently.
     const currentPath = window.location.pathname;
@@ -194,12 +206,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateSession(queryClient);
     clearTenant();
     
-    // Send expired dashboard sessions back to the teacher login so they can
-    // re-authenticate, instead of dumping them onto the public storefront
-    // home page.
-    if (window.location.pathname !== routes.tenantLogin) {
-      console.log("[AuthProvider] Redirecting to tenant login.");
-      router.replace(routes.tenantLogin);
+    // Learners belong on the public platform (the-mechanist.com); staff on a
+    // stale teacher dashboard go back to the tenant login page.
+    const redirectTo = isStudentRoute(currentPath) ? routes.home : routes.tenantLogin;
+    if (currentPath !== redirectTo) {
+      console.log("[AuthProvider] Redirecting after stale session to", redirectTo);
+      router.replace(redirectTo);
     }
   }, [clearAuth, clearTenant, queryClient, router, isHydrated, setStatus]);
 
@@ -402,6 +414,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (credentials: LoginRequest) => {
+      clearAuthLogout();
       const result = await authService.login(credentials);
 
       // Store tokens
@@ -436,6 +449,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Set before any async work: a 401 from the logout request itself must not
+    // be treated as a stale session and redirected to /tenant-login.
+    if (pathname !== routes.home) {
+      beginAuthLogout(pathname);
+    }
+
     try {
       await authService.logout();
     } catch {
@@ -445,8 +464,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuth();
     clearTenant();
     invalidateSession(queryClient);
+
+    // The public navbar keeps its own student session in localStorage. Clear it
+    // here too so the student does not appear signed in again on the platform.
+    try {
+      localStorage.removeItem("public-register-state");
+      window.dispatchEvent(new Event("public-session-expired"));
+    } catch {
+      // ignore storage/event errors
+    }
+
     router.replace(routes.home);
-  }, [clearAuth, clearTenant, queryClient, router]);
+  }, [clearAuth, clearTenant, pathname, queryClient, router]);
+
+  // Once the logout navigation lands, let the route guards work normally again.
+  useEffect(() => {
+    syncAuthLogout(pathname);
+  }, [pathname]);
 
   // Bootstrap session on mount when a tenant is already known
   useEffect(() => {
