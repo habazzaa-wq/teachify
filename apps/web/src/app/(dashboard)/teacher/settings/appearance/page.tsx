@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Save, RotateCcw } from "lucide-react";
 import {
   AppPage, AppPageHeader, AppDivider, AppButton,
@@ -10,8 +10,20 @@ import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { useTenantStore } from "@/stores/tenant.store";
 import { settingsService } from "@/features/settings/services";
 import { generateThemeColors } from "@/lib/color";
+import {
+  BRAND_PRIMARY_DEFAULT,
+  BRAND_SECONDARY_DEFAULT,
+  normalizeHex,
+} from "@/lib/brand";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
+
+const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const isValidHex = (value: string) => HEX_COLOR.test(value.trim());
+
+/** generateThemeColors returns HSL triplets; CSS needs the hsl() wrapper. */
+const previewColor = (value: string | undefined) =>
+  value ? `hsl(${value})` : "transparent";
 
 const PRESET_COLORS = [
   { primary: "#4F46E5", secondary: "#EEF2FF", label: "كحلي" },
@@ -68,40 +80,91 @@ function ColorPicker({
 function AppearancePage() {
   const { tenant } = useActiveTenant();
   const setTenantSite = useTenantStore((s) => s.setTenantSite);
+  const platformBranding = useTenantStore((s) => s.platformBranding);
+  const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
-  const brandingRecord = tenant?.branding as Record<string, string | null> | undefined;
-  const storedPrimary = tenant?.branding?.primary_color ?? brandingRecord?.primaryColor ?? "#4F46E5";
+  // The runtime theme (BrandThemeProvider) reads platformBranding, so it is
+  // the authoritative source for what is actually applied everywhere. The
+  // older `branding` group is only a compatibility fallback.
+  const authBranding = tenant?.branding as Record<string, unknown> | undefined;
+  const authColor = (snake: string, camel: string) => {
+    const value = authBranding?.[snake] ?? authBranding?.[camel];
+    return typeof value === "string" && value.trim() ? value : null;
+  };
+
+  const storedPrimary =
+    platformBranding?.primaryColor ||
+    authColor("primary_color", "primaryColor") ||
+    BRAND_PRIMARY_DEFAULT;
   const storedSecondary =
-    tenant?.branding?.secondary_color ?? brandingRecord?.secondaryColor ?? "#F1F5F9";
+    platformBranding?.secondaryColor ||
+    authColor("secondary_color", "secondaryColor") ||
+    BRAND_SECONDARY_DEFAULT;
 
   const [primary, setPrimary] = useState(storedPrimary);
   const [secondary, setSecondary] = useState(storedSecondary);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Re-sync the local pickers with the server-synced branding. On a fresh page
-  // load the tenant bootstrap completes asynchronously, so the initial state may
-  // be the default; once the saved colors arrive we must reflect them instead of
-  // leaving the inputs stuck on the default. Saving also updates the store, and
-  // this only fires when the stored value actually changes (not while typing).
+  // Re-sync the pickers when the authoritative colors arrive (bootstrap is
+  // async) or after a save/reset. Typing only changes local state.
   useEffect(() => {
     setPrimary(storedPrimary);
     setSecondary(storedSecondary);
   }, [storedPrimary, storedSecondary]);
 
+  // Live preview: update the same store BrandThemeProvider watches, so the
+  // whole dashboard (and every themed page) re-colors while the picker moves.
+  const applyLive = useCallback(
+    (p: string, s: string) => {
+      if (!isValidHex(p) || !isValidHex(s)) return;
+      setPlatformBranding({
+        primaryColor: normalizeHex(p),
+        secondaryColor: normalizeHex(s),
+      });
+    },
+    [setPlatformBranding],
+  );
+
+  const changePrimary = useCallback(
+    (value: string) => {
+      setPrimary(value);
+      applyLive(value, secondary);
+    },
+    [applyLive, secondary],
+  );
+
+  const changeSecondary = useCallback(
+    (value: string) => {
+      setSecondary(value);
+      applyLive(primary, value);
+    },
+    [applyLive, primary],
+  );
+
   const handleSave = useCallback(async () => {
+    if (!isValidHex(primary) || !isValidHex(secondary)) {
+      toast.error("أدخل لونًا صحيحًا بصيغة #RRGGBB أو #RGB");
+      return;
+    }
+
+    const primaryColor = normalizeHex(primary);
+    const secondaryColor = normalizeHex(secondary);
     setSaving(true);
     try {
+      // updateSite now mirrors these two colors into platform_branding, which
+      // is what the admin, instructor, student and public shells read.
       await settingsService.updateSite({
-        primary_color: primary,
-        secondary_color: secondary,
+        primary_color: primaryColor,
+        secondary_color: secondaryColor,
       });
       setTenantSite({
         name: tenant?.name ?? "",
         favicon: tenant?.branding?.favicon ?? null,
-        primary_color: primary,
-        secondary_color: secondary,
+        primary_color: primaryColor,
+        secondary_color: secondaryColor,
       });
+      setPlatformBranding({ primaryColor, secondaryColor });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
@@ -109,7 +172,7 @@ function AppearancePage() {
     } finally {
       setSaving(false);
     }
-  }, [primary, secondary, setTenantSite, tenant]);
+  }, [primary, secondary, setPlatformBranding, setTenantSite, tenant]);
 
   const handleReset = useCallback(async () => {
     setSaving(true);
@@ -124,27 +187,41 @@ function AppearancePage() {
         primary_color: null,
         secondary_color: null,
       });
-      setPrimary("#4F46E5");
-      setSecondary("#F1F5F9");
+      // Null platform colors make BrandThemeProvider use the platform defaults.
+      setPlatformBranding({ primaryColor: null, secondaryColor: null });
+      setPrimary(BRAND_PRIMARY_DEFAULT);
+      setSecondary(BRAND_SECONDARY_DEFAULT);
     } catch {
       toast.error("تعذّر إعادة التعيين، حاول مرة أخرى");
     } finally {
       setSaving(false);
     }
-  }, [setTenantSite, tenant]);
+  }, [setPlatformBranding, setTenantSite, tenant]);
 
-  const handlePreset = useCallback((p: string, s: string) => {
-    setPrimary(p);
-    setSecondary(s);
-  }, []);
+  const handlePreset = useCallback(
+    (p: string, s: string) => {
+      setPrimary(p);
+      setSecondary(s);
+      applyLive(p, s);
+    },
+    [applyLive],
+  );
 
-  const preview = generateThemeColors(primary, secondary, false);
+  const preview = useMemo(
+    () =>
+      generateThemeColors(
+        isValidHex(primary) ? normalizeHex(primary) : BRAND_PRIMARY_DEFAULT,
+        isValidHex(secondary) ? normalizeHex(secondary) : BRAND_SECONDARY_DEFAULT,
+        false,
+      ),
+    [primary, secondary],
+  );
 
   return (
     <AppPage maxWidth="lg">
       <AppPageHeader
         title="مظهر لوحة التحكم"
-        description="اختر الألوان الأساسية والثانوية لشكل لوحة التحكم"
+        description="اختر اللونين الأساسي والثانوي ليطبّقا فورًا على لوحة المدرّب ولوحة المدير وكل صفحات المنصة"
       />
       <AppDivider className="mb-8" />
 
@@ -154,19 +231,19 @@ function AppearancePage() {
           <AppCardHeader>
             <AppCardTitle>الألوان المخصصة</AppCardTitle>
             <AppCardDescription>
-              اختر لونين أساسي وثانوي لتلوين لوحة التحكم بالكامل
+              اختر لونين أساسي وثانوي لتلوين لوحة المدير ولوحة المدرب وكل الصفحات المرتبطة بهما. التغيير يظهر في المعاينة مباشرة.
             </AppCardDescription>
           </AppCardHeader>
           <AppCardContent className="space-y-6">
             <ColorPicker
               label="اللون الأساسي"
               value={primary}
-              onChange={setPrimary}
+              onChange={changePrimary}
             />
             <ColorPicker
               label="اللون الثانوي"
               value={secondary}
-              onChange={setSecondary}
+              onChange={changeSecondary}
             />
           </AppCardContent>
         </AppCard>
@@ -211,19 +288,19 @@ function AppearancePage() {
         <AppCard>
           <AppCardHeader>
             <AppCardTitle>معاينة حية</AppCardTitle>
-            <AppCardDescription>شكل لوحة التحكم بعد التطبيق</AppCardDescription>
+            <AppCardDescription>شكل لوحة التحكم بعد التطبيق — ويتغيّر فورًا مع اختيارك للونين</AppCardDescription>
           </AppCardHeader>
           <AppCardContent>
             <div className="overflow-hidden rounded-xl border border-studio-border">
               {/* Preview header */}
               <div
                 className="flex h-12 items-center gap-2 border-b px-4"
-                style={{ backgroundColor: preview["--studio-glass-toolbar"], borderColor: preview["--studio-glass-toolbar-border"], color: preview["--studio-glass-toolbar-fg"] }}
+                style={{ backgroundColor: previewColor(preview["--studio-glass-toolbar"]), borderColor: previewColor(preview["--studio-glass-toolbar-border"]), color: previewColor(preview["--studio-glass-toolbar-fg"]) }}
               >
                 <div className="flex items-center gap-2">
                   <div
                     className="h-6 w-6 rounded-md"
-                    style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }}
+                    style={{ backgroundColor: previewColor(preview["--studio-navbar-contrast"]), color: previewColor(preview["--studio-navbar"]) }}
                   />
                   <span className="text-sm font-semibold">
                     الأكاديمية
@@ -231,22 +308,22 @@ function AppearancePage() {
                 </div>
                 <div className="flex-1" />
                 <div className="flex gap-1.5">
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-glass-toolbar-soft"] }} />
-                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: preview["--studio-navbar-contrast"], color: preview["--studio-navbar"] }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: previewColor(preview["--studio-glass-toolbar-soft"]) }} />
+                  <div className="h-6 w-6 rounded-full" style={{ backgroundColor: previewColor(preview["--studio-navbar-contrast"]), color: previewColor(preview["--studio-navbar"]) }} />
                 </div>
               </div>
 
-              <div className="flex" style={{ backgroundColor: preview["--studio-bg"] }}>
+              <div className="flex" style={{ backgroundColor: previewColor(preview["--studio-bg"]) }}>
                 {/* Preview sidebar */}
                 <div
                   className="flex w-20 flex-col gap-2 p-3"
-                  style={{ backgroundColor: preview["--studio-glass-sidebar"] }}
+                  style={{ backgroundColor: previewColor(preview["--studio-glass-sidebar"]) }}
                 >
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
                       className="h-2 rounded"
-                      style={{ backgroundColor: i === 1 ? preview["--studio-accent"] : preview["--studio-sidebar-hover"] }}
+                      style={{ backgroundColor: previewColor(i === 1 ? preview["--studio-accent"] : preview["--studio-sidebar-hover"]) }}
                     />
                   ))}
                 </div>
@@ -255,7 +332,7 @@ function AppearancePage() {
                 <div className="flex-1 space-y-3 p-4">
                   <div
                     className="h-3 w-1/2 rounded"
-                    style={{ backgroundColor: preview["--tenant-fg"] }}
+                    style={{ backgroundColor: previewColor(preview["--tenant-fg"]) }}
                   />
                   <div
                     className="grid grid-cols-3 gap-3"
@@ -264,22 +341,22 @@ function AppearancePage() {
                       <div
                         key={i}
                         className="rounded-lg p-4"
-                        style={{ backgroundColor: preview["--studio-surface"], borderColor: preview["--studio-border"], borderWidth: 1 }}
+                        style={{ backgroundColor: previewColor(preview["--studio-surface"]), borderColor: previewColor(preview["--studio-border"]), borderWidth: 1 }}
                       >
                         <div
                           className="mb-2 h-3 w-1/2 rounded"
-                          style={{ backgroundColor: preview["--studio-muted"] }}
+                          style={{ backgroundColor: previewColor(preview["--studio-muted"]) }}
                         />
                         <div
                           className="h-2 w-3/4 rounded"
-                          style={{ backgroundColor: preview["--studio-muted"] }}
+                          style={{ backgroundColor: previewColor(preview["--studio-muted"]) }}
                         />
                       </div>
                     ))}
                   </div>
                   <div
                     className="h-10 w-24 rounded-lg"
-                    style={{ backgroundColor: preview["--studio-accent"] }}
+                    style={{ backgroundColor: previewColor(preview["--studio-accent"]) }}
                   />
                 </div>
               </div>

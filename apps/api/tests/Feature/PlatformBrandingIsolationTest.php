@@ -130,6 +130,58 @@ class PlatformBrandingIsolationTest extends TestCase
         $this->assertEquals('#DDDDDD', $bBranding->secondary_color);
     }
 
+    public function test_appearance_site_colors_are_mirrored_to_platform_branding(): void
+    {
+        $tenant = Tenant::factory()->create(['status' => 'active']);
+        $user = User::factory()->create();
+        TenantUser::factory()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($user);
+        $headers = ['X-Tenant-ID' => $tenant->id];
+
+        $this->putJson('/api/v1/settings/site', [
+            'values' => [
+                'primary_color' => '#123ABC',
+                'secondary_color' => '#DEF456',
+            ],
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('values.primary_color', '#123ABC')
+            ->assertJsonPath('values.secondary_color', '#DEF456');
+
+        // The teacher appearance editor must change the same row the runtime
+        // theme reads, otherwise the chosen colors never reach any dashboard.
+        $this->assertDatabaseHas('platform_branding', [
+            'tenant_id' => $tenant->id,
+            'primary_color' => '#123ABC',
+            'secondary_color' => '#DEF456',
+        ]);
+
+        $this->getJson('/api/v1/settings/platform', $headers)
+            ->assertOk()
+            ->assertJsonPath('branding.primaryColor', '#123ABC')
+            ->assertJsonPath('branding.secondaryColor', '#DEF456');
+
+        // Reset clears the platform colors so the frontend falls back to the
+        // built-in platform defaults.
+        $this->putJson('/api/v1/settings/site', [
+            'values' => [
+                'primary_color' => null,
+                'secondary_color' => null,
+            ],
+        ], $headers)->assertOk();
+
+        $this->assertDatabaseHas('platform_branding', [
+            'tenant_id' => $tenant->id,
+            'primary_color' => null,
+            'secondary_color' => null,
+        ]);
+    }
+
     public function test_by_domain_returns_empty_platform_branding_when_tenant_has_no_customization(): void
     {
         $tenant = Tenant::factory()->create(['status' => 'active']);
