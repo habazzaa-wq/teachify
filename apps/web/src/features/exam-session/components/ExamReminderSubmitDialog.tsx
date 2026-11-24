@@ -32,10 +32,10 @@ function ExamReminderSubmitDialogInner({
 }: ExamReminderSubmitDialogProps) {
   return (
     <AppDialog open={open} onOpenChange={onOpenChange}>
-      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-[var(--brand-primary)] p-0 sm:max-w-md">
+      <AppDialogContent className="max-w-md gap-0 overflow-hidden !rounded-3xl !border-studio-accent p-0 sm:max-w-md">
         <div className="flex items-start gap-3 border-b border-border/40 bg-muted/20 px-6 py-5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-studio-warning/10 ring-1 ring-studio-warning/25">
+            <AlertTriangle className="h-5 w-5 text-studio-warning" />
           </div>
           <AppDialogHeader>
             <AppDialogTitle className="text-lg font-extrabold text-foreground">
@@ -59,7 +59,7 @@ function ExamReminderSubmitDialogInner({
             </div>
           ) : null}
 
-          <p className="flex items-center gap-2 pt-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+          <p className="flex items-center gap-2 pt-1 text-xs font-bold text-studio-warning">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             {isOfficial
               ? "هذه محاولتك الرسمية وتُحسب نتيجتها في سجلك النهائي."
@@ -79,7 +79,7 @@ function ExamReminderSubmitDialogInner({
           <AppButton
             onClick={onConfirm}
             loading={submitting}
-            className="flex-1 border-0 text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
+            className="flex-1 border-0 text-studio-accent-fg shadow-lg shadow-studio-overlay"
             style={{ background: CTA_GRADIENT }}
           >
             <Send className="h-4 w-4" />

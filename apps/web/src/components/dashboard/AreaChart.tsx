@@ -119,7 +119,7 @@ function AreaChart({
                 y1={gl.y}
                 x2="100"
                 y2={gl.y}
-                stroke="hsl(var(--border))"
+                stroke="hsl(var(--studio-border))"
                 strokeWidth="0.5"
                 strokeDasharray="2 2"
               />
@@ -159,7 +159,7 @@ function AreaChart({
                 cx={x}
                 cy={y}
                 r="2.5"
-                fill="hsl(var(--background))"
+                fill="hsl(var(--studio-surface))"
                 stroke={color}
                 strokeWidth="1.5"
                 className="opacity-0 transition-opacity group-hover:opacity-100"
@@ -175,7 +175,7 @@ function AreaChart({
           {labels.map((label, i) => (
             <span
               key={i}
-              className="text-[10px] text-muted-foreground/60"
+              className="text-[10px] text-studio-fg-muted/60"
             >
               {label}
             </span>

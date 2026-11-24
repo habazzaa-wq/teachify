@@ -30,9 +30,9 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
   const notSubmitted = Math.max(0, summary.exams.attempts_total - summary.exams.attempts_submitted);
 
   const examDonut = [
-    { label: "نجح", value: passed, color: "hsl(var(--success))" },
-    { label: "لم يجتز", value: failed, color: "hsl(var(--destructive))" },
-    { label: "لم يُسلَّم", value: notSubmitted, color: "hsl(var(--warning))" },
+    { label: "نجح", value: passed, color: "hsl(var(--chart-1))" },
+    { label: "لم يجتز", value: failed, color: "hsl(var(--chart-2))" },
+    { label: "لم يُسلَّم", value: notSubmitted, color: "hsl(var(--chart-3))" },
   ].filter((s) => s.value > 0);
 
   return (
@@ -61,21 +61,21 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <span className="text-3xl font-bold tracking-tight tabular-nums">
                 {formatCurrency(summary.revenue.period)}
               </span>
-              <span className="ms-2 text-sm text-muted-foreground">
+              <span className="ms-2 text-sm text-studio-fg-muted">
                 إيرادات الفترة
               </span>
             </div>
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap gap-4 text-xs text-studio-fg-muted">
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-success" />
+                <span className="h-2 w-2 rounded-full bg-primary" />
                 اليوم: {formatCurrency(summary.revenue.today)}
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+                <span className="h-2 w-2 rounded-full bg-chart-1" />
                 المتوسط/يوم: {formatCurrency(summary.revenue.avg_per_day)}
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-warning" />
+                <span className="h-2 w-2 rounded-full bg-chart-2" />
                 معاملات: {formatNumber(summary.revenue.transactions_period)}
               </div>
             </div>
@@ -85,13 +85,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.revenue}
                 height={200}
-                color="hsl(var(--success))"
-                gradient={{ from: "hsl(var(--success))", to: "hsl(var(--success))" }}
+                color="hsl(var(--primary))"
+                gradient={{ from: "hsl(var(--primary))", to: "hsl(var(--primary))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -105,7 +105,7 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
         >
           <div className="flex h-[250px] flex-col items-center justify-center">
             <DonutChart segments={examDonut} size={170} strokeWidth={20} />
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-studio-fg-muted">
               إجمالي المحاولات الكلي: {formatNumber(summary.exams.attempts_total)}
             </p>
           </div>
@@ -131,13 +131,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.students_new}
                 height={150}
-                color="hsl(var(--primary))"
-                gradient={{ from: "hsl(var(--primary))", to: "hsl(var(--primary))" }}
+                color="hsl(var(--chart-1))"
+                gradient={{ from: "hsl(var(--chart-1))", to: "hsl(var(--chart-1))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -165,13 +165,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.enrollments}
                 height={150}
-                color="hsl(var(--chart-4))"
-                gradient={{ from: "hsl(var(--chart-4))", to: "hsl(var(--chart-4))" }}
+                color="hsl(var(--chart-2))"
+                gradient={{ from: "hsl(var(--chart-2))", to: "hsl(var(--chart-2))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -195,13 +195,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.exam_attempts}
                 height={150}
-                color="hsl(var(--warning))"
-                gradient={{ from: "hsl(var(--warning))", to: "hsl(var(--warning))" }}
+                color="hsl(var(--chart-3))"
+                gradient={{ from: "hsl(var(--chart-3))", to: "hsl(var(--chart-3))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -231,13 +231,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.exam_pass_rate}
                 height={150}
-                color="hsl(var(--chart-5))"
-                gradient={{ from: "hsl(var(--chart-5))", to: "hsl(var(--chart-5))" }}
+                color="hsl(var(--chart-4))"
+                gradient={{ from: "hsl(var(--chart-4))", to: "hsl(var(--chart-4))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -264,13 +264,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.certificates}
                 height={150}
-                color="hsl(var(--chart-3))"
-                gradient={{ from: "hsl(var(--chart-3))", to: "hsl(var(--chart-3))" }}
+                color="hsl(var(--chart-5))"
+                gradient={{ from: "hsl(var(--chart-5))", to: "hsl(var(--chart-5))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}
@@ -294,13 +294,13 @@ export function DashboardCharts({ data, loading }: DashboardChartsProps) {
               <AreaChart
                 data={trends.completions}
                 height={150}
-                color="hsl(var(--success))"
-                gradient={{ from: "hsl(var(--success))", to: "hsl(var(--success))" }}
+                color="hsl(var(--secondary))"
+                gradient={{ from: "hsl(var(--secondary))", to: "hsl(var(--secondary))" }}
                 showGrid
                 showLabels
               />
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-sm text-studio-fg-muted">
                 لا توجد بيانات كافية بعد
               </p>
             )}

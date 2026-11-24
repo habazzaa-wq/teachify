@@ -30,28 +30,28 @@ const colorConfig = {
     accent: "bg-primary",
   },
   success: {
-    gradient: "from-success/20 via-success/10 to-transparent",
-    icon: "bg-success/10 text-success",
-    border: "hover:border-success/30",
-    accent: "bg-success",
+    gradient: "from-studio-success/20 via-studio-success/10 to-transparent",
+    icon: "bg-studio-success/10 text-studio-success",
+    border: "hover:border-studio-success/30",
+    accent: "bg-studio-success",
   },
   warning: {
-    gradient: "from-warning/20 via-warning/10 to-transparent",
-    icon: "bg-warning/10 text-warning",
-    border: "hover:border-warning/30",
-    accent: "bg-warning",
+    gradient: "from-studio-warning/20 via-studio-warning/10 to-transparent",
+    icon: "bg-studio-warning/10 text-studio-warning",
+    border: "hover:border-studio-warning/30",
+    accent: "bg-studio-warning",
   },
   destructive: {
-    gradient: "from-destructive/20 via-destructive/10 to-transparent",
-    icon: "bg-destructive/10 text-destructive",
-    border: "hover:border-destructive/30",
-    accent: "bg-destructive",
+    gradient: "from-studio-danger/20 via-studio-danger/10 to-transparent",
+    icon: "bg-studio-danger/10 text-studio-danger",
+    border: "hover:border-studio-danger/30",
+    accent: "bg-studio-danger",
   },
   info: {
-    gradient: "from-cyan-500/20 via-cyan-500/10 to-transparent",
-    icon: "bg-cyan-500/10 text-cyan-500",
-    border: "hover:border-cyan-500/30",
-    accent: "bg-cyan-500",
+    gradient: "from-studio-accent/20 via-studio-accent/10 to-transparent",
+    icon: "bg-studio-accent/10 text-studio-accent",
+    border: "hover:border-studio-accent/30",
+    accent: "bg-studio-accent",
   },
 };
 
@@ -140,7 +140,7 @@ function AppMetricCard({
             <div
               className={cn(
                 "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                trend.positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
+                trend.positive ? "bg-studio-success/10 text-studio-success" : "bg-studio-danger/10 text-studio-danger",
               )}
             >
               {trend.positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}

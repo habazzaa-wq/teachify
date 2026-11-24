@@ -34,8 +34,8 @@ function ExamSessionTopBarInner({
     <header className="sticky top-0 z-30 border-b border-border/40 bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--brand-primary)] bg-[var(--brand-primary)]">
-            <ClipboardCheck className="h-5 w-5 text-[var(--brand-primary-contrast)]" strokeWidth={1.9} />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-studio-accent bg-studio-accent">
+            <ClipboardCheck className="h-5 w-5 text-studio-accent-fg" strokeWidth={1.9} />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -53,8 +53,7 @@ function ExamSessionTopBarInner({
             type="button"
             onClick={onSubmitClick}
             disabled={submitting}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ background: "var(--brand-primary)" }}
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-studio-accent px-4 py-2 text-sm font-bold text-studio-accent-fg shadow-lg shadow-studio-overlay transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send className="h-4 w-4" />
             <span className="hidden sm:inline">تسليم الامتحان</span>

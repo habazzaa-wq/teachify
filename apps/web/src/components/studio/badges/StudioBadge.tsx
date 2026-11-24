@@ -20,7 +20,7 @@ const toneStyles: Record<BadgeTone, string> = {
   warning: "bg-studio-warning/10 text-studio-warning border-studio-warning/20",
   danger: "bg-studio-danger/10 text-studio-danger border-studio-danger/20",
   info: "bg-studio-info/10 text-studio-info border-studio-info/20",
-  premium: "bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  premium: "border-studio-warning/20 bg-gradient-to-r from-studio-warning/20 to-studio-warning/10 text-studio-warning",
 };
 
 const sizeStyles = {

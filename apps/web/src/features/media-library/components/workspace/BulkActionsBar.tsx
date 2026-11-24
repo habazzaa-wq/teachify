@@ -44,10 +44,10 @@ function BulkActionsBarBase({
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 className="fixed bottom-4 start-1/2 z-[60] w-[calc(100vw-1rem)] max-w-[calc(100vw-1.5rem)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] sm:w-auto sm:max-w-none"
               >
-                <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:flex-nowrap sm:justify-start sm:px-4">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-studio-border bg-studio-surface/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:flex-nowrap sm:justify-start sm:px-4">
             <button
               onClick={onClear}
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
               title="إلغاء التحديد"
             >
               <X className="h-4 w-4" />
@@ -56,11 +56,11 @@ function BulkActionsBarBase({
             <span className="mx-1 text-sm font-semibold tabular-nums">
               {selectedCount}
             </span>
-            <span className="me-2 text-xs text-muted-foreground">
+            <span className="me-2 text-xs text-studio-fg-muted">
               {selectedCount === 1 ? "محدد" : "محددين"}
             </span>
 
-            <div className="hidden h-5 w-px bg-border sm:block" />
+            <div className="hidden h-5 w-px bg-studio-border sm:block" />
 
             <ActionButton icon={Download} label="تحميل" onClick={onDownload} />
             <ActionButton icon={FolderInput} label="نقل" onClick={onMove} />
@@ -70,14 +70,14 @@ function BulkActionsBarBase({
               icon={Heart}
               label="مفضلة"
               onClick={onFavorite}
-              className="text-red-500"
+              className="text-studio-danger"
             />
             {onPin && <ActionButton icon={Pin} label="تثبيت" onClick={onPin} />}
             <ActionButton icon={Archive} label="أرشفة" onClick={onArchive} />
 
-            <div className="hidden h-5 w-px bg-border sm:block" />
+            <div className="hidden h-5 w-px bg-studio-border sm:block" />
 
-            <ActionButton icon={Trash2} label="حذف" onClick={onDelete} className="text-destructive" />
+            <ActionButton icon={Trash2} label="حذف" onClick={onDelete} className="text-studio-danger" />
           </div>
               </motion.div>
             )}
@@ -103,7 +103,7 @@ function ActionButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium transition-colors hover:bg-accent",
+        "flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium transition-colors hover:bg-studio-hover",
         className,
       )}
       title={label}

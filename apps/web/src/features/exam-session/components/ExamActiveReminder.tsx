@@ -40,7 +40,7 @@ function ExamActiveReminderInner({
       role="alert"
       aria-live="polite"
     >
-      <div className="relative overflow-hidden rounded-t-3xl border border-border/60 bg-background/90 shadow-2xl shadow-black/10 backdrop-blur-xl sm:rounded-3xl">
+      <div className="relative overflow-hidden rounded-t-3xl border border-border/60 bg-background/90 shadow-2xl shadow-studio-overlay backdrop-blur-xl sm:rounded-3xl">
         <div
           className="h-1 w-full"
           style={{ background: CTA_GRADIENT }}
@@ -51,10 +51,10 @@ function ExamActiveReminderInner({
           <motion.div
             animate={{ scale: [1, 1.06, 1] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-[rgba(0,0,0,0.25)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-studio-overlay"
             style={{ background: CTA_GRADIENT }}
           >
-            <ClipboardCheck className="h-5 w-5 text-white" strokeWidth={2.1} />
+            <ClipboardCheck className="h-5 w-5 text-studio-accent-fg" strokeWidth={2.1} />
           </motion.div>
 
           <div className="min-w-0 flex-1">
@@ -67,7 +67,7 @@ function ExamActiveReminderInner({
           </div>
 
           {remainingSeconds !== null && (
-            <div className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 font-mono text-xs font-extrabold tabular-nums text-amber-600 dark:text-amber-400">
+            <div className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-studio-warning/25 bg-studio-warning/10 px-2.5 py-1.5 font-mono text-xs font-extrabold tabular-nums text-studio-warning">
               <Timer className="h-3.5 w-3.5" />
               {formatCountdown(remainingSeconds)}
             </div>
@@ -87,7 +87,7 @@ function ExamActiveReminderInner({
           <button
             type="button"
             onClick={onReturn}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-studio-accent-fg shadow-lg shadow-studio-overlay transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
             style={{ background: CTA_GRADIENT }}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -97,7 +97,7 @@ function ExamActiveReminderInner({
           <button
             type="button"
             onClick={onSubmit}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 text-sm font-bold text-amber-600 transition-all duration-200 hover:bg-amber-500/20 dark:text-amber-400"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-studio-warning/30 bg-studio-warning/10 px-4 text-sm font-bold text-studio-warning transition-all duration-200 hover:bg-studio-warning/20"
           >
             <Send className="h-4 w-4" />
             تسليم الامتحان

@@ -94,7 +94,7 @@ export function ModulesTable({
                   </td>
                   <td className="px-4 py-3">
                     {mod.featured ? (
-                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                      <Star className="h-4 w-4 text-studio-warning fill-studio-warning" />
                     ) : (
                       <span className="text-muted-foreground/20">—</span>
                     )}

@@ -49,9 +49,9 @@ function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="text-sm font-medium text-primary">مساحة المدرّب</p>
+        <p className="text-sm font-medium text-studio-accent">مساحة المدرّب</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{subtitle}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-studio-fg-muted">{subtitle}</p>
       </div>
     </div>
   );
@@ -59,8 +59,8 @@ function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
 
 function LoadingPanel() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-studio-border bg-studio-panel p-6 text-sm text-muted-foreground">
-      <LoaderCircle className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />
+    <div className="flex items-center gap-3 rounded-2xl border border-studio-border bg-studio-panel p-6 text-sm text-studio-fg-muted">
+      <LoaderCircle className="h-4 w-4 animate-spin text-studio-accent" aria-hidden="true" />
       جارٍ تحميل البيانات...
     </div>
   );
@@ -232,16 +232,16 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
   const topBar = (
     <div className="mb-6 flex items-center justify-between gap-3">
       <div>
-        <p className="text-sm font-medium text-primary">مرحباً، {user?.name}</p>
+        <p className="text-sm font-medium text-studio-accent">مرحباً، {user?.name}</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">نظرة عامة</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-studio-fg-muted">
           تابع دوراتك وطلابك ومهامك التعليمية من مساحة عمل واحدة.
         </p>
       </div>
       <button
         type="button"
         onClick={reload}
-        className="inline-flex items-center gap-2 rounded-xl border border-studio-border bg-studio-panel px-3 py-2 text-sm transition hover:border-primary"
+        className="inline-flex items-center gap-2 rounded-xl border border-studio-border bg-studio-panel px-3 py-2 text-sm transition hover:border-studio-accent"
       >
         <RefreshCw className="h-4 w-4" aria-hidden="true" />
         تحديث
@@ -254,15 +254,15 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
     return (
       <>
         <PageHeading {...content} />
-        {error && <p role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
-        {notice && <p role="status" className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />{notice}</p>}
+        {error && <p role="alert" className="mb-4 rounded-xl border border-studio-danger/30 bg-studio-danger/5 p-3 text-sm text-studio-danger">{error}</p>}
+        {notice && <p role="status" className="mb-4 flex items-center gap-2 rounded-xl border border-studio-success/30 bg-studio-success/5 p-3 text-sm text-studio-success"><CheckCircle2 className="h-4 w-4" />{notice}</p>}
         {section === "media" && (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-studio-border bg-studio-panel p-4">
             <div>
               <p className="font-semibold">أضف ملفاً إلى مكتبتك</p>
-              <p className="mt-1 text-xs text-muted-foreground">الملفات المرفوعة متاحة لك فقط في مساحة المدرّب.</p>
+              <p className="mt-1 text-xs text-studio-fg-muted">الملفات المرفوعة متاحة لك فقط في مساحة المدرّب.</p>
             </div>
-            <label className="cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+            <label className="cursor-pointer rounded-xl bg-studio-accent px-4 py-2.5 text-sm font-semibold text-studio-accent-fg transition hover:opacity-90">
               رفع ملف
               <input
                 type="file"
@@ -282,7 +282,7 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
             {section === "students" && (
               students.length === 0 ? <EmptyState text="لا يوجد طلاب مسجلون في دوراتك حتى الآن." /> : (
                 <div className="overflow-hidden rounded-2xl border border-studio-border bg-studio-panel">
-                  <div className="hidden grid-cols-[2fr_2fr_1fr_1fr] gap-4 border-b border-studio-border px-5 py-3 text-xs font-semibold text-muted-foreground md:grid">
+                  <div className="hidden grid-cols-[2fr_2fr_1fr_1fr] gap-4 border-b border-studio-border px-5 py-3 text-xs font-semibold text-studio-fg-muted md:grid">
                     <span>الطالب</span><span>البريد الإلكتروني</span><span>الدورات</span><span>تاريخ الانضمام</span>
                   </div>
                   {students.map((student) => (
@@ -291,9 +291,9 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                         <Avatar name={student.name} image={student.avatar} />
                         <span className="font-medium">{student.name || "طالب"}</span>
                       </div>
-                      <span dir="ltr" className="text-sm text-muted-foreground md:text-right">{student.email || "—"}</span>
+                      <span dir="ltr" className="text-sm text-studio-fg-muted md:text-right">{student.email || "—"}</span>
                       <span className="text-sm">{student.courses_count} دورة</span>
-                      <span className="text-xs text-muted-foreground">{formatDate(student.joined_at)}</span>
+                      <span className="text-xs text-studio-fg-muted">{formatDate(student.joined_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -306,8 +306,8 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                     <article key={exam.id} className="rounded-2xl border border-studio-border bg-studio-panel p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><GraduationCap className="h-5 w-5" /></span>
-                          <div><h2 className="font-semibold">{exam.title}</h2><p className="mt-1 text-xs text-muted-foreground">أُنشئ في {formatDate(exam.created_at)}</p></div>
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-studio-accent/10 text-studio-accent"><GraduationCap className="h-5 w-5" /></span>
+                          <div><h2 className="font-semibold">{exam.title}</h2><p className="mt-1 text-xs text-studio-fg-muted">أُنشئ في {formatDate(exam.created_at)}</p></div>
                         </div>
                         <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{exam.status}</span>
                       </div>
@@ -328,11 +328,11 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                       <div className="grid aspect-[16/9] place-items-center bg-studio-bg">
                         {asset.type === "image" && (asset.thumbnailUrl || asset.cdnUrl)
                           ? <img src={asset.thumbnailUrl || asset.cdnUrl || ""} alt="" className="h-full w-full object-cover" />
-                          : <FileImage className="h-10 w-10 text-primary/70" aria-hidden="true" />}
+                          : <FileImage className="h-10 w-10 text-studio-accent/70" aria-hidden="true" />}
                       </div>
                       <div className="p-4">
                         <p className="truncate font-medium">{asset.title || asset.originalFilename}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{asset.type} · {formatBytes(asset.sizeBytes)}</p>
+                        <p className="mt-1 text-xs text-studio-fg-muted">{asset.type} · {formatBytes(asset.sizeBytes)}</p>
                       </div>
                     </article>
                   ))}
@@ -344,18 +344,18 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                 <section className="space-y-4">
                   <div>
                     <h2 className="text-lg font-semibold">إجابات الاختبارات المقالية</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">إجابات الاختبارات التي أنشأتها فقط.</p>
+                    <p className="mt-1 text-sm text-studio-fg-muted">إجابات الاختبارات التي أنشأتها فقط.</p>
                   </div>
                   {examAnswers.length === 0 ? <EmptyState text="لا توجد إجابات اختبارات تنتظر التصحيح." /> : (
                     examAnswers.map((answer) => (
                       <article key={answer.id} className="rounded-2xl border border-studio-border bg-studio-panel p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="text-xs font-medium text-primary">{answer.exam.title}</p>
+                            <p className="text-xs font-medium text-studio-accent">{answer.exam.title}</p>
                             <h3 className="mt-1 font-semibold">{answer.question.title || "إجابة مقالية"}</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">{answer.student.name || "طالب"} · {answer.question.type || "سؤال"}</p>
+                            <p className="mt-1 text-sm text-studio-fg-muted">{answer.student.name || "طالب"} · {answer.question.type || "سؤال"}</p>
                           </div>
-                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-700">{formatDate(answer.submitted_at)} · {answer.page_count} صفحات</span>
+                          <span className="rounded-full bg-studio-warning/10 px-3 py-1 text-xs text-studio-warning">{formatDate(answer.submitted_at)} · {answer.page_count} صفحات</span>
                         </div>
                         <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-studio-bg p-4 text-sm leading-6">{formatAnswer(answer.answer)}</pre>
                         {answer.page_count > 0 && (
@@ -364,16 +364,16 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                               type="button"
                               disabled={loadingAnswerPages === answer.id}
                               onClick={() => void toggleExamAnswerPages(answer)}
-                              className="inline-flex items-center gap-2 rounded-lg border border-studio-border px-3 py-2 text-sm font-medium transition hover:border-primary disabled:opacity-60"
+                              className="inline-flex items-center gap-2 rounded-lg border border-studio-border px-3 py-2 text-sm font-medium transition hover:border-studio-accent disabled:opacity-60"
                             >
-                              <FileImage className="h-4 w-4 text-primary" aria-hidden="true" />
+                              <FileImage className="h-4 w-4 text-studio-accent" aria-hidden="true" />
                               {loadingAnswerPages === answer.id ? "جارٍ تحميل الصور..." : answerPages[answer.id] ? "إخفاء صور الإجابة" : `عرض صور الإجابة (${answer.page_count})`}
                             </button>
                             {answerPages[answer.id] && (
                               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                 {(answerPages[answer.id] ?? []).map((url, index) => (
                                   <a key={`${answer.id}-${index}`} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-studio-border">
-                                    <img src={url} alt={`صفحة ${index + 1} من إجابة الطالب`} className="max-h-[32rem] w-full bg-white object-contain" />
+                                    <img src={url} alt={`صفحة ${index + 1} من إجابة الطالب`} className="max-h-[32rem] w-full bg-studio-surface object-contain" />
                                   </a>
                                 ))}
                               </div>
@@ -383,13 +383,13 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                         <form onSubmit={(event) => void submitExamGrade(event, answer)} className="mt-4 grid gap-3 border-t border-studio-border pt-4 md:grid-cols-[140px_1fr_auto] md:items-end">
                           <label className="text-xs font-medium">
                             الدرجة (من {answer.question.points})
-                            <input name="score" type="number" min="0" max={answer.question.points} step="0.01" required defaultValue={answer.manual_score ?? ""} className="mt-1 w-full rounded-lg border border-studio-border bg-background px-3 py-2 text-sm" />
+                            <input name="score" type="number" min="0" max={answer.question.points} step="0.01" required defaultValue={answer.manual_score ?? ""} className="mt-1 w-full rounded-lg border border-studio-border bg-studio-surface px-3 py-2 text-sm" />
                           </label>
                           <label className="text-xs font-medium">
                             ملاحظات للطالب
-                            <input name="feedback" maxLength={5000} defaultValue={answer.feedback ?? ""} className="mt-1 w-full rounded-lg border border-studio-border bg-background px-3 py-2 text-sm" placeholder="أضف ملاحظات أو توجيهات..." />
+                            <input name="feedback" maxLength={5000} defaultValue={answer.feedback ?? ""} className="mt-1 w-full rounded-lg border border-studio-border bg-studio-surface px-3 py-2 text-sm" placeholder="أضف ملاحظات أو توجيهات..." />
                           </label>
-                          <button disabled={busySubmission === answer.id} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                          <button disabled={busySubmission === answer.id} className="inline-flex items-center justify-center gap-2 rounded-lg bg-studio-accent px-4 py-2.5 text-sm font-semibold text-studio-accent-fg disabled:opacity-60">
                             {busySubmission === answer.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                             حفظ التصحيح
                           </button>
@@ -401,7 +401,7 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                 <section className="space-y-4">
                   <div>
                     <h2 className="text-lg font-semibold">تسليمات الواجبات</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">التسليمات في دوراتك المسندة إليك.</p>
+                    <p className="mt-1 text-sm text-studio-fg-muted">التسليمات في دوراتك المسندة إليك.</p>
                   </div>
                   {submissions.length === 0 ? <EmptyState text="لا توجد تسليمات واجبات تنتظر التصحيح." /> : (
                     <div className="space-y-4">
@@ -409,17 +409,17 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                         <article key={submission.id} className="rounded-2xl border border-studio-border bg-studio-panel p-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-medium text-primary">{submission.assignment.course || "دورة"}</p>
+                          <p className="text-xs font-medium text-studio-accent">{submission.assignment.course || "دورة"}</p>
                           <h2 className="mt-1 font-semibold">{submission.assignment.title}</h2>
-                          <p className="mt-1 text-sm text-muted-foreground">{submission.student.name} · {submission.student.email}</p>
+                          <p className="mt-1 text-sm text-studio-fg-muted">{submission.student.name} · {submission.student.email}</p>
                         </div>
-                        <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-700">{formatDate(submission.submitted_at)}</span>
+                        <span className="rounded-full bg-studio-warning/10 px-3 py-1 text-xs text-studio-warning">{formatDate(submission.submitted_at)}</span>
                       </div>
                       {submission.notes && <p className="mt-4 whitespace-pre-wrap rounded-xl bg-studio-bg p-3 text-sm">{submission.notes}</p>}
                       {submission.files.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {submission.files.map((file, index) => file.url ? (
-                            <a key={`${submission.id}-${index}`} href={file.url} target="_blank" rel="noreferrer" className="rounded-lg border border-studio-border px-3 py-2 text-xs text-primary hover:underline">
+                            <a key={`${submission.id}-${index}`} href={file.url} target="_blank" rel="noreferrer" className="rounded-lg border border-studio-border px-3 py-2 text-xs text-studio-accent hover:underline">
                               {file.title || "عرض ملف التسليم"}
                             </a>
                           ) : null)}
@@ -428,13 +428,13 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
                       <form onSubmit={(event) => void submitGrade(event, submission)} className="mt-4 grid gap-3 border-t border-studio-border pt-4 md:grid-cols-[140px_1fr_auto] md:items-end">
                         <label className="text-xs font-medium">
                           الدرجة (من {submission.assignment.max_score})
-                          <input name="score" type="number" min="0" max={submission.assignment.max_score} required className="mt-1 w-full rounded-lg border border-studio-border bg-background px-3 py-2 text-sm" />
+                          <input name="score" type="number" min="0" max={submission.assignment.max_score} required className="mt-1 w-full rounded-lg border border-studio-border bg-studio-surface px-3 py-2 text-sm" />
                         </label>
                         <label className="text-xs font-medium">
                           ملاحظات للطالب
-                          <input name="feedback" maxLength={5000} className="mt-1 w-full rounded-lg border border-studio-border bg-background px-3 py-2 text-sm" placeholder="أضف ملاحظات أو توجيهات..." />
+                          <input name="feedback" maxLength={5000} className="mt-1 w-full rounded-lg border border-studio-border bg-studio-surface px-3 py-2 text-sm" placeholder="أضف ملاحظات أو توجيهات..." />
                         </label>
-                        <button disabled={busySubmission === submission.id} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                        <button disabled={busySubmission === submission.id} className="inline-flex items-center justify-center gap-2 rounded-lg bg-studio-accent px-4 py-2.5 text-sm font-semibold text-studio-accent-fg disabled:opacity-60">
                           {busySubmission === submission.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                           حفظ التصحيح
                         </button>
@@ -455,7 +455,7 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
   return (
     <>
       {topBar}
-      {error && <p role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="mb-4 rounded-xl border border-studio-danger/30 bg-studio-danger/5 p-3 text-sm text-studio-danger">{error}</p>}
       {loading ? <LoadingPanel /> : (
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -470,9 +470,9 @@ export function InstructorWorkspaceSection({ section }: { section: Section }) {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">ابدأ من هنا</h2>
-                <p className="mt-1 text-sm text-muted-foreground">أنشئ دورة جديدة أو تابع مهامك التعليمية.</p>
+                <p className="mt-1 text-sm text-studio-fg-muted">أنشئ دورة جديدة أو تابع مهامك التعليمية.</p>
               </div>
-              <Link href="/instructor/courses/new" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+              <Link href="/instructor/courses/new" className="inline-flex items-center gap-2 rounded-xl bg-studio-accent px-4 py-2.5 text-sm font-semibold text-studio-accent-fg transition hover:opacity-90">
                 إنشاء دورة <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
@@ -500,21 +500,21 @@ function MetricCard({
   href: string;
 }) {
   return (
-    <Link href={href} className="group rounded-2xl border border-studio-border bg-studio-panel p-5 transition hover:-translate-y-0.5 hover:border-primary hover:shadow-lg">
+    <Link href={href} className="group rounded-2xl border border-studio-border bg-studio-panel p-5 transition hover:-translate-y-0.5 hover:border-studio-accent hover:shadow-lg">
       <div className="flex items-center justify-between">
-        <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" aria-hidden="true" /></span>
-        <ArrowUpLeft className="h-4 w-4 text-muted-foreground transition group-hover:-translate-x-1 group-hover:text-primary" aria-hidden="true" />
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-studio-accent/10 text-studio-accent"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+        <ArrowUpLeft className="h-4 w-4 text-studio-fg-muted transition group-hover:-translate-x-1 group-hover:text-studio-accent" aria-hidden="true" />
       </div>
       <p className="mt-5 text-3xl font-bold tabular-nums">{value ?? "—"}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm text-studio-fg-muted">{label}</p>
     </Link>
   );
 }
 
 function QuickLink({ href, icon: Icon, label }: { href: string; icon: typeof BookOpen; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-3 rounded-xl border border-studio-border p-3 text-sm transition hover:border-primary hover:bg-studio-bg">
-      <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+    <Link href={href} className="flex items-center gap-3 rounded-xl border border-studio-border p-3 text-sm transition hover:border-studio-accent hover:bg-studio-bg">
+      <Icon className="h-4 w-4 text-studio-accent" aria-hidden="true" />
       {label}
     </Link>
   );
@@ -523,11 +523,11 @@ function QuickLink({ href, icon: Icon, label }: { href: string; icon: typeof Boo
 function Avatar({ name, image }: { name: string | null; image: string | null }) {
   return image
     ? <img src={image} alt="" className="h-9 w-9 rounded-full object-cover" />
-    : <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{name?.slice(0, 1) || "ط"}</span>;
+    : <span className="grid h-9 w-9 place-items-center rounded-full bg-studio-accent/10 text-sm font-semibold text-studio-accent">{name?.slice(0, 1) || "ط"}</span>;
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <div className="rounded-2xl border border-dashed border-studio-border bg-studio-panel px-5 py-12 text-center text-sm text-muted-foreground">{text}</div>;
+  return <div className="rounded-2xl border border-dashed border-studio-border bg-studio-panel px-5 py-12 text-center text-sm text-studio-fg-muted">{text}</div>;
 }
 
 function formatDate(value: string | null): string {

@@ -40,7 +40,7 @@ const StudioSwitch = forwardRef<HTMLButtonElement, StudioSwitchProps>(
         >
           <span
             className={cn(
-              "pointer-events-none absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-sm ring-0 transition-all duration-200",
+              "pointer-events-none absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-studio-surface shadow-sm ring-0 transition-all duration-200",
               checked ? "end-0.5" : "start-0.5",
             )}
           />

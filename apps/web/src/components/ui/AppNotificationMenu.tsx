@@ -48,8 +48,8 @@ function AppNotificationMenu({
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute end-1.5 top-1.5 flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive/75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-studio-danger/75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-studio-danger" />
             </span>
           )}
         </AppButton>
@@ -67,7 +67,7 @@ function AppNotificationMenu({
           {unreadCount > 0 && (
             <button
               onClick={onMarkAllRead}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+              className="flex items-center gap-1 text-[11px] text-studio-fg-muted transition-colors hover:text-studio-fg"
             >
               <CheckCheck className="h-3 w-3" />
               تحديد الكل مقروء
@@ -78,11 +78,11 @@ function AppNotificationMenu({
 
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Bell className="mb-2 h-8 w-8 text-muted-foreground/20" />
-            <p className="text-sm font-medium text-muted-foreground">
+            <Bell className="mb-2 h-8 w-8 text-studio-fg-muted/20" />
+            <p className="text-sm font-medium text-studio-fg-muted">
               لا توجد إشعارات
             </p>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-studio-fg-muted/60">
               {emptyHint ?? "ستظهر الإشعارات الجديدة هنا"}
             </p>
           </div>
@@ -93,13 +93,13 @@ function AppNotificationMenu({
                 key={notification.id}
                 onClick={() => onItemClick?.(notification.id)}
                 className={cn(
-                  "flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-muted/50",
-                  !notification.read && "bg-primary/[0.02]",
+                  "flex w-full gap-3 px-4 py-3 text-start transition-colors hover:bg-studio-hover",
+                  !notification.read && "bg-studio-accent/5",
                 )}
               >
                 <AppAvatar className="h-9 w-9 shrink-0">
                   {notification.initials && (
-                    <AppAvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                    <AppAvatarFallback className="bg-studio-accent/10 text-studio-accent text-[10px] font-semibold">
                       {notification.initials}
                     </AppAvatarFallback>
                   )}
@@ -110,15 +110,15 @@ function AppNotificationMenu({
                       {notification.title}
                     </p>
                     {!notification.read && (
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-studio-accent" />
                     )}
                   </div>
                   {notification.description && (
-                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                    <p className="mt-0.5 text-xs text-studio-fg-muted line-clamp-2">
                       {notification.description}
                     </p>
                   )}
-                  <p className="mt-1 text-[10px] text-muted-foreground/60">
+                  <p className="mt-1 text-[10px] text-studio-fg-muted/60">
                     {notification.timestamp}
                   </p>
                 </div>

@@ -157,13 +157,13 @@ export function UploadManager() {
             >
               <span className="relative flex">
                 {hasActivity && (
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/60" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-studio-surface/60" />
                 )}
                 <Upload className="h-5 w-5" />
               </span>
               <span className="text-sm font-semibold">مدير الرفع</span>
               {badgeCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-[11px] font-bold tabular-nums">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-studio-surface/20 px-1.5 text-[11px] font-bold tabular-nums">
                   {badgeCount > UPLOAD_LAUNCHER_COUNT_CAP ? `${UPLOAD_LAUNCHER_COUNT_CAP}+` : badgeCount}
                 </span>
               )}

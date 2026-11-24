@@ -42,19 +42,19 @@ function AppMetric({
 
   return (
     <div className={cn("space-y-1", className)}>
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-xs text-studio-fg-muted">
         {Icon && <Icon className="h-3.5 w-3.5" />}
         <span>{label}</span>
       </div>
       <div className={cn("flex items-baseline gap-2", valueClassName)}>
-        <span className="text-2xl font-bold tracking-tight tabular-nums">
+        <span className="text-2xl font-bold tracking-tight tabular-nums text-studio-fg">
           {prefix}{value}{suffix}
         </span>
         {trend && (
           <span
             className={cn(
               "inline-flex items-center gap-0.5 text-xs font-medium",
-              trend.positive ? "text-success" : "text-destructive",
+              trend.positive ? "text-studio-success" : "text-studio-danger",
             )}
           >
             {trend.positive ? (

@@ -25,9 +25,9 @@ const studioButtonVariants = cva(
           "text-studio-fg hover:bg-studio-soft active:bg-studio-soft/60",
         soft: "bg-studio-accent-soft text-studio-accent hover:bg-studio-accent-soft/80 active:bg-studio-accent-soft/60",
         danger:
-          "bg-studio-danger text-white hover:bg-studio-danger/90 active:bg-studio-danger/80 shadow-sm",
+          "bg-studio-danger text-studio-danger-foreground hover:bg-studio-danger/90 active:bg-studio-danger/80 shadow-sm",
         success:
-          "bg-studio-success text-white hover:bg-studio-success/90 active:bg-studio-success/80 shadow-sm",
+          "bg-studio-success text-studio-success-foreground hover:bg-studio-success/90 active:bg-studio-success/80 shadow-sm",
       },
       size: {
         sm: "h-8 px-3 text-xs rounded-md gap-1.5 [&_svg]:size-3.5",

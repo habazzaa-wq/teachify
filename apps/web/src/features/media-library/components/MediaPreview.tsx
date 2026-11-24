@@ -33,6 +33,14 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+const statusToneClasses: Record<string, string> = {
+  success: "border-studio-success/20 bg-studio-success/10 text-studio-success",
+  warning: "border-studio-warning/20 bg-studio-warning/10 text-studio-warning",
+  destructive: "border-studio-danger/20 bg-studio-danger/10 text-studio-danger",
+  info: "border-studio-info/20 bg-studio-info/10 text-studio-info",
+  secondary: "border-studio-border bg-studio-soft text-studio-fg-muted",
+};
+
 function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchive, onDelete }: MediaPreviewProps) {
   if (!asset) return null;
 
@@ -42,7 +50,7 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
   const resolvedUsages = usages ?? asset.usages ?? [];
 
   return (
-    <div className="flex h-full flex-col border-s bg-background">
+    <div className="flex h-full flex-col border-s border-studio-border bg-studio-panel">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <h3 className="text-sm font-semibold">معاينة</h3>
@@ -52,7 +60,7 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
       </div>
 
       {/* Preview area */}
-      <div className="flex aspect-video items-center justify-center bg-muted/30">
+      <div className="flex aspect-video items-center justify-center bg-studio-soft/30">
         {asset.thumbnailUrl ? (
           <img
             src={asset.thumbnailUrl}
@@ -66,8 +74,8 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
             className="h-full w-full object-contain"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+          <div className="flex flex-col items-center gap-2 text-studio-fg-muted">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-studio-soft">
               <span className="text-2xl font-bold uppercase">
                 {asset.extension ?? asset.type.slice(0, 2)}
               </span>
@@ -81,39 +89,39 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         <div>
           <h4 className="text-sm font-medium">{asset.title ?? asset.originalName ?? "بدون اسم"}</h4>
-          <p className="mt-0.5 text-xs text-muted-foreground">{asset.originalFilename}</p>
+          <p className="mt-0.5 text-xs text-studio-fg-muted">{asset.originalFilename}</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <AppBadge variant="outline">{typeConfig.label}</AppBadge>
-          <AppBadge variant="outline" className={statusConfig.color}>
+          <AppBadge variant="outline" className={statusToneClasses[statusConfig.color] ?? statusToneClasses.secondary}>
             {statusConfig.label}
           </AppBadge>
         </div>
 
         <div className="space-y-2 text-xs">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">الحجم</span>
+            <span className="text-studio-fg-muted">الحجم</span>
             <span>{formatSize(asset.size)}</span>
           </div>
           {asset.duration > 0 && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">المدة</span>
+              <span className="text-studio-fg-muted">المدة</span>
               <span>{formatDuration(asset.duration)}</span>
             </div>
           )}
           {asset.width && asset.height && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">الأبعاد</span>
+              <span className="text-studio-fg-muted">الأبعاد</span>
               <span>{asset.width} × {asset.height}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-muted-foreground">النوع</span>
+            <span className="text-studio-fg-muted">النوع</span>
             <span dir="ltr" className="text-end">{asset.mimeType ?? "—"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">الرؤية</span>
+            <span className="text-studio-fg-muted">الرؤية</span>
             <span className="inline-flex items-center gap-1">
               <Eye className="h-3 w-3" />
               {visibilityConfig.label}
@@ -121,35 +129,35 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
           </div>
           {asset.language && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">اللغة</span>
+              <span className="text-studio-fg-muted">اللغة</span>
               <span>{asset.language}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-muted-foreground">تاريخ الرفع</span>
+            <span className="text-studio-fg-muted">تاريخ الرفع</span>
             <span>{new Date(asset.createdAt).toLocaleDateString("ar-SA")}</span>
           </div>
           {asset.uploader && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">رفع بواسطة</span>
+              <span className="text-studio-fg-muted">رفع بواسطة</span>
               <span>{asset.uploader.name}</span>
             </div>
           )}
           {asset.createdBy && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">أنشئ بواسطة</span>
+              <span className="text-studio-fg-muted">أنشئ بواسطة</span>
               <span>{asset.createdBy.name}</span>
             </div>
           )}
           {asset.isProcessing && (
             <div className="pt-1">
               <div className="mb-1 flex justify-between">
-                <span className="text-muted-foreground">التقدم</span>
+                <span className="text-studio-fg-muted">التقدم</span>
                 <span>{asset.processingProgress}%</span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-studio-soft">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className="h-full rounded-full bg-studio-accent transition-all"
                   style={{ width: `${asset.processingProgress}%` }}
                 />
               </div>
@@ -159,12 +167,12 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
 
         {asset.tags && asset.tags.length > 0 && (
           <div>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">الوسوم</p>
+            <p className="mb-1 text-xs font-medium text-studio-fg-muted">الوسوم</p>
             <div className="flex flex-wrap gap-1">
               {asset.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-md bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                  className="rounded-md bg-studio-soft px-2 py-0.5 text-[10px] text-studio-fg-muted"
                 >
                   {tag}
                 </span>
@@ -175,12 +183,12 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
 
         {/* Where Used — extension point for future backend integration */}
         <div>
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-studio-fg-muted">
             <Link2 className="h-3.5 w-3.5" />
             مستخدم في
           </p>
           {resolvedUsages.length === 0 ? (
-            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-[11px] text-muted-foreground">
+            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-[11px] text-studio-fg-muted">
               لم يتم استخدام هذا الملف في أي محتوى بعد.
             </p>
           ) : (
@@ -188,12 +196,12 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
               {resolvedUsages.map((usage) => (
                 <li
                   key={`${usage.entityType}-${usage.entityId}-${usage.id}`}
-                  className="flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-studio-border bg-studio-panel px-3 py-2 text-xs"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{usage.entityTitle}</p>
                     {usage.context && (
-                      <p className="truncate text-[10px] text-muted-foreground">{usage.context}</p>
+                      <p className="truncate text-[10px] text-studio-fg-muted">{usage.context}</p>
                     )}
                   </div>
                   {usage.url && (
@@ -201,7 +209,7 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
                       href={usage.url}
                       target="_blank"
                       rel="noreferrer"
-                      className={cn("shrink-0 text-primary hover:underline")}
+                      className={cn("shrink-0 text-studio-accent hover:underline")}
                     >
                       فتح
                     </a>
@@ -226,7 +234,7 @@ function MediaPreview({ asset, usages, onClose, onDownload, onFavorite, onArchiv
             size="icon"
             onClick={() => onFavorite(asset)}
             title={asset.favorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
-            className={asset.favorite ? "text-red-500" : ""}
+            className={asset.favorite ? "text-studio-danger" : ""}
           >
             <Heart className={`h-4 w-4 ${asset.favorite ? "fill-current" : ""}`} />
           </AppButton>

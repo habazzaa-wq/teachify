@@ -141,27 +141,27 @@ function AppCommandPalette({ extraCommands = [] }: AppCommandPaletteProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]">
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-studio-overlay backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
       <div
         className={cn(
-          "relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border bg-popover shadow-2xl animate-scale-up",
+          "relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-studio-border bg-studio-panel text-studio-fg shadow-2xl animate-scale-up",
         )}
         onKeyDown={handleKeyDown}
       >
-        <div className="flex items-center border-b border-border/50 px-4">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <div className="flex items-center border-b border-studio-border/50 px-4">
+          <Search className="h-4 w-4 shrink-0 text-studio-fg-muted" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ابحث عن صفحة أو أمر..."
-            className="h-14 w-full bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground/50"
+            className="h-14 w-full bg-transparent px-3 text-sm outline-none placeholder:text-studio-fg-muted/50"
             aria-label="بحث في الأوامر"
           />
-          <kbd className="hidden shrink-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 py-1 text-[10px] text-muted-foreground/60 sm:flex">
+          <kbd className="hidden shrink-0 items-center gap-1 rounded-md border bg-studio-soft/60 px-1.5 py-1 text-[10px] text-studio-fg-muted/60 sm:flex">
             <Command className="h-3 w-3" />
             K
           </kbd>
@@ -169,11 +169,11 @@ function AppCommandPalette({ extraCommands = [] }: AppCommandPaletteProps) {
 
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="mb-2 h-8 w-8 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">
+            <Search className="mb-2 h-8 w-8 text-studio-fg-muted/30" />
+            <p className="text-sm font-medium text-studio-fg-muted">
               لا توجد نتائج
             </p>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-studio-fg-muted/60">
               لم نعثر على أي صفحة تطابق بحثك
             </p>
           </div>
@@ -184,7 +184,7 @@ function AppCommandPalette({ extraCommands = [] }: AppCommandPaletteProps) {
           >
             {Object.entries(grouped).map(([category, items]) => (
               <div key={category} className="mb-2 last:mb-0">
-                <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-studio-fg-muted/50">
                   {category}
                 </p>
                 {items.map((item, index) => {
@@ -198,14 +198,14 @@ function AppCommandPalette({ extraCommands = [] }: AppCommandPaletteProps) {
                       className={cn(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm transition-colors",
                         globalIndex === selectedIndex
-                          ? "bg-accent text-accent-foreground"
-                          : "text-foreground/80 hover:bg-accent/50",
+                          ? "bg-studio-accent text-studio-accent-fg"
+                          : "text-studio-fg/80 hover:bg-studio-accent/50",
                       )}
                     >
-                      <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <item.icon className="h-4 w-4 shrink-0 text-studio-fg-muted" />
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.shortcut && (
-                        <kbd className="shrink-0 rounded border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground/60">
+                        <kbd className="shrink-0 rounded border bg-studio-soft/60 px-1.5 py-0.5 text-[10px] text-studio-fg-muted/60">
                           {item.shortcut}
                         </kbd>
                       )}
@@ -217,17 +217,17 @@ function AppCommandPalette({ extraCommands = [] }: AppCommandPaletteProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-4 border-t border-border/50 px-4 py-2.5 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-4 border-t border-studio-border/50 px-4 py-2.5 text-[10px] text-studio-fg-muted/50">
           <span className="flex items-center gap-1">
-            <kbd className="rounded border bg-muted/50 px-1 py-0.5 text-[9px]">↑↓</kbd>
+            <kbd className="rounded border bg-studio-soft/60 px-1 py-0.5 text-[9px]">↑↓</kbd>
             التنقل
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="rounded border bg-muted/50 px-1 py-0.5 text-[9px]">↵</kbd>
+            <kbd className="rounded border bg-studio-soft/60 px-1 py-0.5 text-[9px]">↵</kbd>
             فتح
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="rounded border bg-muted/50 px-1 py-0.5 text-[9px]">ESC</kbd>
+            <kbd className="rounded border bg-studio-soft/60 px-1 py-0.5 text-[9px]">ESC</kbd>
             إغلاق
           </span>
         </div>

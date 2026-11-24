@@ -25,16 +25,16 @@ function AppErrorState({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 rounded-lg bg-destructive/5 px-3 py-2 text-sm",
+          "flex items-center gap-2 rounded-lg bg-studio-danger/5 px-3 py-2 text-sm",
           className,
         )}
       >
-        <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
-        <span className="flex-1 text-destructive">{title}</span>
+        <AlertCircle className="h-4 w-4 shrink-0 text-studio-danger" />
+        <span className="flex-1 text-studio-danger">{title}</span>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
+            className="text-xs font-medium text-studio-accent transition-colors hover:text-studio-accent/80"
           >
             إعادة المحاولة
           </button>
@@ -46,17 +46,17 @@ function AppErrorState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 rounded-xl border border-destructive/20 bg-destructive/[0.02] p-12 text-center",
-        variant === "card" && "bg-card shadow-sm",
+        "flex flex-col items-center justify-center gap-4 rounded-xl border border-studio-danger/20 bg-studio-danger/[0.02] p-12 text-center",
+        variant === "card" && "bg-studio-panel shadow-sm",
         className,
       )}
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-studio-danger/10 text-studio-danger">
         <AlertCircle className="h-7 w-7" />
       </div>
       <div className="space-y-1">
-        <p className="text-base font-medium text-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-base font-medium text-studio-fg">{title}</p>
+        <p className="text-sm text-studio-fg-muted">{description}</p>
       </div>
       {onRetry && (
         <AppButton variant="outline" size="sm" onClick={onRetry}>
