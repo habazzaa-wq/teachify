@@ -288,6 +288,30 @@ class PlatformBrandingIsolationTest extends TestCase
             ->assertJsonPath('platform_branding.font', null);
     }
 
+    public function test_platform_branding_falls_back_to_legacy_branding_font(): void
+    {
+        $tenant = Tenant::factory()->create(['status' => 'active']);
+
+        TenantDomain::create([
+            'tenant_id' => $tenant->id,
+            'domain' => 'legacy-font.academy.test',
+            'type' => 'custom',
+            'status' => 'active',
+            'is_primary' => true,
+        ]);
+
+        TenantSetting::create([
+            'tenant_id' => $tenant->id,
+            'group' => 'branding',
+            'values' => ['font' => 'Tajawal'],
+        ]);
+
+        $this->getJson('/api/v1/tenant/by-domain?domain=legacy-font.academy.test')
+            ->assertOk()
+            ->assertJsonPath('branding.font', 'Tajawal')
+            ->assertJsonPath('platform_branding.font', 'Tajawal');
+    }
+
     public function test_platform_branding_font_is_mirrored_back_to_tenant_branding(): void
     {
         $tenant = Tenant::factory()->create(['status' => 'active']);

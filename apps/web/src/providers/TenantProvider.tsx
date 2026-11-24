@@ -5,6 +5,7 @@ import { AUTH_EVENTS } from "@/constants/auth-events";
 import { useTenantStore } from "@/stores/tenant.store";
 import type { TenantBranding } from "@/features/tenant-bootstrap/types";
 import type { ActiveTenant } from "@/types/tenant.types";
+import { mergeTenantSeedWithStored } from "@/lib/tenant-seed";
 
 interface TenantProviderValue {
   activeTenant: ActiveTenant | null;
@@ -14,6 +15,18 @@ interface TenantProviderValue {
 }
 
 const TenantContext = createContext<TenantProviderValue | null>(null);
+
+function tenantSyncSignature(tenant: ActiveTenant | null): string {
+  if (!tenant) return "";
+  return JSON.stringify({
+    id: tenant.id,
+    name: tenant.name,
+    domain: tenant.domain,
+    feature_flags: tenant.feature_flags,
+    branding: tenant.branding,
+    platform_branding: tenant.platform_branding ?? tenant.platformBranding,
+  });
+}
 
 export function TenantProvider({
   children,
@@ -31,16 +44,35 @@ export function TenantProvider({
 }) {
   const storeActiveTenant = useTenantStore((state) => state.activeTenant);
   const storePlatformBranding = useTenantStore((state) => state.platformBranding);
+  const fontOverridden = useTenantStore((state) => state.fontOverridden);
   const setActiveTenant = useTenantStore((state) => state.setActiveTenant);
   const clear = useTenantStore((state) => state.clear);
   const [hydrated, setHydrated] = useState(false);
 
-  const activeTenant = storeActiveTenant ?? initialTenant;
+  // The hostname-resolved server payload is authoritative. A stale persisted
+  // tenant used to win here after hydration, swapping the saved font and hiding
+  // the instructors nav link. Keep live font changes made in this session.
+  const liveFont = fontOverridden
+    ? (storePlatformBranding?.font ?? storeActiveTenant?.branding?.font ?? null)
+    : undefined;
+  const activeTenant = useMemo(
+    () => mergeTenantSeedWithStored(initialTenant, storeActiveTenant, liveFont),
+    [initialTenant, storeActiveTenant, liveFont],
+  );
   const platformBranding = storePlatformBranding ?? initialPlatformBranding;
 
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  // Persist the authoritative merge so components that read the Zustand store
+  // directly (brand colors, sidebar flags) no longer see the stale copy either.
+  useEffect(() => {
+    if (!initialTenant || !activeTenant) return;
+    if (tenantSyncSignature(storeActiveTenant) !== tenantSyncSignature(activeTenant)) {
+      setActiveTenant(activeTenant);
+    }
+  }, [activeTenant, initialTenant, setActiveTenant, storeActiveTenant]);
 
   useEffect(() => {
     function handleTenantInvalid() {
