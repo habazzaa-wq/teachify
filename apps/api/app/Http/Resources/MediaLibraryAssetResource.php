@@ -136,15 +136,10 @@ class MediaLibraryAssetResource extends JsonResource
      */
     private function storageProxyUrl(): ?string
     {
-        // Only Bunny Storage objects live behind /media/serve. Local library
-        // assets already carry a direct URL from MediaStorage via cdn_url.
+        // This resource field is reserved for Bunny storage objects. Local
+        // assets are already served through the same proxy by MediaStorage,
+        // so they do not need a separate proxy URL here.
         if ($this->provider !== 'bunny' || $this->provider_service !== 'storage') {
-            return null;
-        }
-
-        // Only Bunny storage assets are proxied through the Bunny media proxy.
-        // Local/server-stored assets use their own URLs.
-        if (($this->provider ?? null) !== 'bunny') {
             return null;
         }
 

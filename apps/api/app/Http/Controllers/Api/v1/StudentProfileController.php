@@ -67,10 +67,10 @@ class StudentProfileController extends Controller
         $media = app(\App\Services\Media\MediaStorage::class);
         $disk = $media->diskName();
 
-        // Delete old avatar file if it's a local storage file
-        if ($tenantUser->avatar && str_starts_with($tenantUser->avatar, '/storage/avatars/')) {
-            $oldPath = str_replace('/storage/avatars/', '', $tenantUser->avatar);
-            $media->delete('avatars/' . $oldPath);
+        // Delete old avatar file if it's a local storage file. Both the legacy
+        // /storage URL and the current media-proxy URL point at the same path.
+        if ($tenantUser->avatar && preg_match('#^/(?:storage|api/v1/media/serve)/avatars/(.+)$#', $tenantUser->avatar, $matches)) {
+            $media->delete('avatars/' . $matches[1]);
         }
 
         // Store new avatar
@@ -78,18 +78,10 @@ class StudentProfileController extends Controller
         $filename = 'tenant_' . currentTenant()->id . '_user_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('avatars', $filename, $disk);
 
-        // Build the public URL using the tenant domain from the request header
-        // (the request comes through Next.js proxy so $request->getSchemeAndHttpHost() returns localhost)
-        if ($disk === 'public') {
-            $tenantDomain = $request->header('x-tenant-domain', '');
-            if ($tenantDomain) {
-                $avatarUrl = $request->getScheme() . '://' . $tenantDomain . '/storage/' . $path;
-            } else {
-                $avatarUrl = $request->getSchemeAndHttpHost() . '/storage/' . $path;
-            }
-        } else {
-            $avatarUrl = $media->url($path);
-        }
+        // MediaStorage returns a same-origin proxy URL for the public disk, so
+        // avatars load on tenant domains without depending on APP_URL or a
+        // /storage mount in the front proxy.
+        $avatarUrl = $media->url($path);
 
         // Update tenant_users table
         $tenantUser->update(['avatar' => $avatarUrl]);

@@ -145,8 +145,8 @@ class MediaLibraryRoutingTest extends TestCase
         $this->assertSame('storage', $asset->provider_service);
         $this->assertSame('pdf', $asset->type);
         Storage::disk('public')->assertExists($asset->storage_key);
-        $this->assertStringNotContainsString(
-            '/api/v1/media/serve/',
+        $this->assertStringStartsWith(
+            '/api/v1/media/serve/tenants/'.$tenant->id.'/assets/',
             (string) $response->json('data.asset.cdnUrl'),
         );
     }
@@ -195,7 +195,10 @@ class MediaLibraryRoutingTest extends TestCase
         $asset = MediaAsset::findOrFail($intent['asset']['id']);
         $this->assertSame('ready', $asset->status);
         $this->assertStringNotContainsString('attacker.example', (string) $asset->cdn_url);
-        $this->assertStringNotContainsString('/api/v1/media/serve/', (string) $asset->cdn_url);
+        $this->assertStringStartsWith(
+            '/api/v1/media/serve/tenants/'.$tenant->id.'/assets/',
+            (string) $asset->cdn_url,
+        );
     }
 
     public function test_list_filters_cannot_cross_library_boundaries(): void

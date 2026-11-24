@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import { instructorApi } from "@/features/instructors/api";
 import { useInstructorAuthStore } from "@/features/instructors/store";
+import { toAbsoluteAssetUrl } from "@/lib/url";
 import type {
   MediaAsset,
   MediaCaption,
@@ -137,10 +138,10 @@ function formatAsset(raw: RawAsset): MediaAsset {
     bunnyLibraryId: str(raw.bunnyLibraryId),
     bunnyStoragePath: str(raw.bunnyStoragePath),
     bunnyStreamUrl: str(raw.bunnyStreamUrl),
-    cdnUrl: str(raw.cdnUrl),
-    thumbnailUrl: str(raw.thumbnailUrl),
-    previewUrl: str(raw.previewUrl),
-    posterUrl: str(raw.posterUrl),
+    cdnUrl: toAbsoluteAssetUrl(str(raw.cdnUrl)),
+    thumbnailUrl: toAbsoluteAssetUrl(str(raw.thumbnailUrl)),
+    previewUrl: toAbsoluteAssetUrl(str(raw.previewUrl)),
+    posterUrl: toAbsoluteAssetUrl(str(raw.posterUrl)),
     mimeType: str(raw.mimeType),
     extension: str(raw.extension),
     originalName: str(raw.originalName) ?? str(raw.originalFilename),

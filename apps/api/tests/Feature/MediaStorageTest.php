@@ -25,7 +25,10 @@ class MediaStorageTest extends TestCase
         $media = new MediaStorage();
         $this->assertTrue($media->put('avatars/x.png', 'bytes'));
         Storage::disk('public')->assertExists('avatars/x.png');
-        $this->assertStringContainsString('avatars/x.png', $media->url('avatars/x.png'));
+        $this->assertSame(
+            '/api/v1/media/serve/avatars/x.png',
+            $media->url('avatars/x.png'),
+        );
     }
 
     public function test_shared_disk_writes_to_configured_disk(): void

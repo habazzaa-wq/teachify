@@ -69,9 +69,9 @@ function AssetSelector({
                 }`}
                 onClick={() => onSelect(asset)}
               >
-                {asset.thumbnailUrl ? (
+                {(asset.thumbnailUrl ?? (asset.type === "image" ? asset.cdnUrl : null)) ? (
                   <img
-                    src={asset.thumbnailUrl}
+                    src={asset.thumbnailUrl ?? asset.cdnUrl ?? undefined}
                     alt={asset.title ?? ""}
                     className="aspect-video w-full object-cover"
                   />

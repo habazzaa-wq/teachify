@@ -78,6 +78,18 @@ describe("resolveNavbarLogo", () => {
     if (plan.kind === "image") expect(plan.src).toBe("https://cdn.example.com/logo.png");
   });
 
+  it("sends an old platform storage logo through the working media proxy", () => {
+    const plan = resolveNavbarLogo({
+      logoType: "image",
+      logoImage: "https://teachify.tech/storage/tenants/28/assets/logo.png",
+    });
+
+    expect(plan.kind).toBe("image");
+    if (plan.kind === "image") {
+      expect(plan.src).toBe("/api/v1/media/serve/tenants/28/assets/logo.png");
+    }
+  });
+
   it("falls back to the icon when no image source exists at all", () => {
     const plan = resolveNavbarLogo({ logoType: "image" });
 

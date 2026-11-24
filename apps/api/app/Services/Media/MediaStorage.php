@@ -52,7 +52,21 @@ class MediaStorage
 
     public function url(string $path): string
     {
+        // Local files must be served through the same-origin media proxy.
+        // Storage::disk('public')->url() would bake APP_URL (the platform host)
+        // into the value, which breaks on tenant domains and when /storage is
+        // not exposed by the reverse proxy.
+        if ($this->diskName() === 'public') {
+            return $this->proxyUrl($path);
+        }
+
         return Storage::disk($this->diskName())->url($path);
+    }
+
+    /** Same-origin URL served by GET /api/v1/media/serve/{path}. */
+    public function proxyUrl(string $path): string
+    {
+        return '/api/v1/media/serve/' . ltrim($path, '/');
     }
 
     public function delete(string $path): void
