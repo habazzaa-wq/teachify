@@ -6,6 +6,12 @@ const stripPort = (host: string): string => {
   return parts[0] ?? "";
 };
 
+/** Normalize a request host so `www.tenant.example` is the tenant `tenant.example`. */
+export function normalizeTenantHost(hostname?: string): string {
+  const host = stripPort(hostname ?? getHostname()).toLowerCase();
+  return host.startsWith("www.") ? host.slice(4) : host;
+}
+
 export function getHostname(): string {
   if (typeof window !== "undefined") {
     return stripPort(window.location.hostname);
@@ -17,7 +23,9 @@ export function getHostname(): string {
 }
 
 export function getTenantDomainFromHeaders(headers: Headers): string {
-  return stripPort(headers.get("host") ?? headers.get("x-hostname") ?? "");
+  return normalizeTenantHost(
+    headers.get("host") ?? headers.get("x-hostname") ?? "",
+  );
 }
 
 export function getPlatformDomain(): string {
@@ -25,7 +33,7 @@ export function getPlatformDomain(): string {
 }
 
 export function getTenantSubdomain(hostname?: string): string | null {
-  const host = stripPort(hostname ?? getHostname());
+  const host = normalizeTenantHost(hostname);
   const base = getBaseDomain();
 
   if (!host || host === base || host === "localhost") return null;
@@ -39,7 +47,7 @@ export function getTenantSubdomain(hostname?: string): string | null {
 }
 
 export function isPlatformDomain(hostname?: string): boolean {
-  const host = stripPort(hostname ?? getHostname());
+  const host = normalizeTenantHost(hostname);
   const base = getBaseDomain();
 
   if (!host) return true;
@@ -53,7 +61,7 @@ export function isPlatformDomain(hostname?: string): boolean {
 }
 
 export function isTenantDomain(hostname?: string): boolean {
-  const host = stripPort(hostname ?? getHostname());
+  const host = normalizeTenantHost(hostname);
   const base = getBaseDomain();
 
   if (!host || host === "localhost") return false;
@@ -62,5 +70,5 @@ export function isTenantDomain(hostname?: string): boolean {
 }
 
 export function getDomainFromHost(hostname?: string): string {
-  return stripPort(hostname ?? getHostname());
+  return normalizeTenantHost(hostname);
 }

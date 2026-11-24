@@ -83,7 +83,78 @@ class TenantRepository
 
     public function findByDomain(string $domain): ?Tenant
     {
+        foreach ($this->domainCandidates($domain) as $candidate) {
+            $tenant = $this->findByExactDomain($candidate);
+            if ($tenant !== null) {
+                return $tenant;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find the registered domain record for a hostname, accepting `www.` as an
+     * alias in either direction. Used by the public by-domain endpoint so the
+     * response carries the canonical registered domain, not the alias.
+     */
+    public function findDomainRecord(string $domain): ?TenantDomain
+    {
+        foreach ($this->domainCandidates($domain) as $candidate) {
+            try {
+                $record = TenantDomain::query()
+                    ->where('domain', $candidate)
+                    ->where('status', 'active')
+                    ->first();
+            } catch (\Throwable $e) {
+                $this->reportFailure("domain.record.{$candidate}", $e);
+
+                return null;
+            }
+
+            if ($record !== null) {
+                return $record;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Forget every cache key that can resolve this domain, including its
+     * `www.` alias. Keeps invalidation correct after a domain changes status.
+     */
+    public function forgetDomain(string $domain): void
+    {
+        foreach ($this->domainCandidates($domain) as $candidate) {
+            $this->forgetKey("domain.owner.{$candidate}");
+        }
+    }
+
+    public function findByHostname(string $hostname): ?Tenant
+    {
+        return $this->findByDomain($hostname);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function domainCandidates(string $domain): array
+    {
         $normalized = $this->normalizeDomain($domain);
+        if ($normalized === '') {
+            return [];
+        }
+
+        $alias = str_starts_with($normalized, 'www.')
+            ? substr($normalized, strlen('www.'))
+            : 'www.'.$normalized;
+
+        return array_values(array_unique(array_filter([$normalized, $alias])));
+    }
+
+    private function findByExactDomain(string $normalized): ?Tenant
+    {
         $key = "domain.owner.{$normalized}";
 
         $tenantId = $this->read($key, 'int');
@@ -110,11 +181,6 @@ class TenantRepository
         }
 
         return $this->findById($tenantId);
-    }
-
-    public function findByHostname(string $hostname): ?Tenant
-    {
-        return $this->findByDomain($this->normalizeDomain($hostname));
     }
 
     /**

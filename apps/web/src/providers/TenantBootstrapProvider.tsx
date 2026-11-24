@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
+  getDomainFromHost,
   getHostname,
   getTenantSubdomain,
   isPlatformDomain,
@@ -33,6 +34,7 @@ export function TenantBootstrapProvider({
 }) {
   const pathname = usePathname();
   const hostname = getHostname() || serverHostname || "";
+  const tenantDomain = getDomainFromHost(hostname);
   const platform = isPlatformDomain(hostname);
   const isSuperAdmin = isSuperAdminPath(pathname);
   const [retryNonce, setRetryNonce] = useState(0);
@@ -130,7 +132,7 @@ export function TenantBootstrapProvider({
       async function attempt(attempts: number) {
         try {
           const res = await fetch(
-            `/api/v1/tenant/by-domain?domain=${encodeURIComponent(hostname)}`,
+            `/api/v1/tenant/by-domain?domain=${encodeURIComponent(tenantDomain)}`,
             {
               headers: { Accept: "application/json" },
               cache: "no-store",
@@ -200,6 +202,7 @@ export function TenantBootstrapProvider({
     platformOrSuper,
     tenantContext,
     hostname,
+    tenantDomain,
     pathname,
     retryNonce,
     setTenantBootstrap,

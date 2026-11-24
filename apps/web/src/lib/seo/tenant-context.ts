@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { headers } from "next/headers";
 import { resolveApiBaseUrl } from "@/config/env";
+import { getDomainFromHost } from "@/lib/domain";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
 
 export type TenantSeoContext = TenantByDomainResponse;
@@ -53,12 +54,13 @@ export const getTenantSeoContext = cache(async (): Promise<TenantSeoContext | nu
 
   const forwardedHost = (h.get("x-forwarded-host") ?? "").split(",")[0]?.trim() ?? "";
   const host = forwardedHost || ((h.get("host") ?? "").split(":")[0] ?? "");
+  const normalizedHost = getDomainFromHost(host);
 
-  const base = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
+  const base = (process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test").toLowerCase();
 
   // Platform / local development hosts have no tenant to resolve.
-  if (!host || host === "localhost" || host === "127.0.0.1" || host === "::1") return null;
-  if (host === base || host === `www.${base}` || host === `api.${base}`) return null;
+  if (!normalizedHost || normalizedHost === "localhost" || normalizedHost === "127.0.0.1" || normalizedHost === "::1") return null;
+  if (normalizedHost === base || normalizedHost === `api.${base}`) return null;
 
-  return fetchTenantByDomain(host);
+  return fetchTenantByDomain(normalizedHost);
 });

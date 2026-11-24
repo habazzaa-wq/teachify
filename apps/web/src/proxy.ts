@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getDomainFromHost } from "@/lib/domain";
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_APP_BASE_DOMAIN ?? "academy.test";
 
@@ -14,6 +15,7 @@ const MARKETING_PATH = "/marketing";
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const hostname = host.split(":")[0] ?? "";
+  const tenantDomain = getDomainFromHost(hostname);
   const pathname = request.nextUrl.pathname;
 
   if (
@@ -25,12 +27,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const base = BASE_DOMAIN.toLowerCase();
   const isPlatform =
-    hostname === BASE_DOMAIN ||
-    hostname === `www.${BASE_DOMAIN}` ||
-    hostname === `api.${BASE_DOMAIN}` ||
-    hostname === "localhost" ||
-    hostname === "127.0.0.1";
+    tenantDomain === base ||
+    tenantDomain === `api.${base}` ||
+    tenantDomain === "localhost" ||
+    tenantDomain === "127.0.0.1";
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-hostname", hostname);
@@ -38,7 +40,7 @@ export async function proxy(request: NextRequest) {
   if (!isPlatform) {
     // Tenant host — make the resolved domain explicit for server services and
     // SEO helpers (they still fall back to the Host header if absent).
-    requestHeaders.set("x-tenant-domain", hostname);
+    requestHeaders.set("x-tenant-domain", tenantDomain);
   }
 
   if (isPlatform) {

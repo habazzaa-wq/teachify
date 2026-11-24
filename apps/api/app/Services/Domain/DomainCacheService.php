@@ -3,17 +3,15 @@
 namespace App\Services\Domain;
 
 use App\Models\TenantDomain;
-use Illuminate\Support\Facades\Cache;
+use App\Repositories\TenantRepository;
 
 class DomainCacheService
 {
+    public function __construct(private readonly TenantRepository $tenants) {}
+
     public function invalidate(string $domain): void
     {
-        $normalized = mb_strtolower(trim($domain));
-        $normalized = preg_replace('/^https?:\/\//', '', $normalized);
-        $normalized = preg_replace('/\/+$/', '', $normalized);
-
-        Cache::forget("domain.owner.{$normalized}");
+        $this->tenants->forgetDomain($domain);
     }
 
     public function invalidateTenant(int $tenantId): void

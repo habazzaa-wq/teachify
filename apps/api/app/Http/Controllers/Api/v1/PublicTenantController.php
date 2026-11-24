@@ -19,7 +19,7 @@ class PublicTenantController extends Controller
     {
         $request->validate(['domain' => 'required|string|max:255']);
 
-        $domain = $request->input('domain');
+        $domain = $this->tenants->normalizeDomain($request->input('domain'));
         $tenant = $this->tenants->findByDomain($domain);
 
         // لو الدومين مالوش تينانت مسجّل (زي الدومين الرئيسي للمنصة
@@ -38,9 +38,10 @@ class PublicTenantController extends Controller
             ], 404);
         }
 
-        $domainRecord = $tenant->domains()
-            ->where('domain', $domain)
-            ->first();
+        // Resolve the canonical registered domain: a `www.` alias must return
+        // the same tenant and the tenant's original domain, never the alias.
+        $domainRecord = $this->tenants->findDomainRecord($domain);
+        $resolvedDomain = $domainRecord?->domain ?? $domain;
 
         $branding = $this->resolveBranding($tenant);
 
@@ -48,7 +49,7 @@ class PublicTenantController extends Controller
             'id' => $tenant->id,
             'name' => $tenant->name,
             'slug' => $tenant->slug,
-            'domain' => $domainRecord?->domain ?? $domain,
+            'domain' => $resolvedDomain,
             'status' => $tenant->status,
             'feature_flags' => [
                 'has_instructors' => (bool) ($tenant->feature_flags['has_instructors'] ?? false),
