@@ -37,6 +37,7 @@ class Tenant extends Model
         'branding',
         'limits',
         'integrations_json',
+        'settings_json',
         'security',
         'storage_json',
         'subscription',
@@ -58,6 +59,7 @@ class Tenant extends Model
             'branding' => 'array',
             'limits' => 'array',
             'integrations_json' => 'array',
+            'settings_json' => 'array',
             'security' => 'array',
             'storage_json' => 'array',
         ];
