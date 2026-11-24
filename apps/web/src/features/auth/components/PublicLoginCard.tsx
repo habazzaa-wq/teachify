@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Loader2, Phone, Lock, LogIn, CheckCircle, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, LogIn, CheckCircle, Mail, Phone } from "lucide-react";
 import { authService } from "@/services/api/auth.service";
 import { tenantService } from "@/services/api/tenant.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 import type { CurrentUserResponse, LoginResponse } from "@/types/auth.types";
+import { publicRegisterService, type GoogleAuthResponse } from "../services/public-register.service";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 import { cn } from "@/lib/cn";
 
 interface PublicLoginCardProps {
@@ -32,10 +34,16 @@ const ERROR_MESSAGES: Record<number, string> = {
   429: "محاولات كثيرة جدًا. حاول مرة أخرى لاحقًا",
 };
 
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function isPhone(value: string) {
+  return /^[\d+\s()-]{7,20}$/.test(value.trim());
+}
+
 export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardProps) {
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -44,18 +52,42 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
   const [isPending, setIsPending] = useState(false);
   const [done, setDone] = useState(false);
 
+  const [googleCompletion, setGoogleCompletion] = useState<{ token: string; profile: { name: string; email: string; avatar?: string | null } } | null>(null);
+  const [googlePhone, setGooglePhone] = useState("");
+  const [googleEmailNotifications, setGoogleEmailNotifications] = useState(true);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
   const setTenantContext = useTenantStore((s) => s.setTenantContext);
 
+  const resetForm = useCallback(() => {
+    setIdentifier("");
+    setPassword("");
+    setErrors({});
+    setTouched({});
+    setApiError(null);
+    setShowPassword(false);
+    setDone(false);
+    setGoogleCompletion(null);
+    setGooglePhone("");
+    setGoogleEmailNotifications(true);
+    setGoogleBusy(false);
+    setGoogleError(null);
+  }, []);
+
+  const handleClose = useCallback(() => { resetForm(); onClose(); }, [resetForm, onClose]);
+
   const validateField = useCallback((name: string, value: string) => {
-    if (name === "phone") {
-      if (!value.trim()) return "";
-      if (!/^[\d+\s()-]{7,20}$/.test(value.trim())) return "رقم الهاتف غير صحيح";
-    }
-    if (name === "email") {
-      if (!value.trim()) return "";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "البريد الإلكتروني غير صحيح";
+    if (name === "identifier") {
+      const v = value.trim();
+      if (!v) return "أدخل البريد الإلكتروني أو رقم الهاتف";
+      if (v.includes("@")) {
+        if (!isEmail(v)) return "البريد الإلكتروني غير صحيح";
+      } else if (!isPhone(v)) {
+        return "أدخل بريدًا إلكترونيًا صحيحًا أو رقم هاتف صحيح";
+      }
     }
     if (name === "password" && !value) return "كلمة المرور مطلوبة";
     return "";
@@ -71,8 +103,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
   }, [validateField]);
 
   const handleChange = (field: string, value: string) => {
-    if (field === "phone") setPhone(value);
-    if (field === "email") setEmail(value);
+    if (field === "identifier") setIdentifier(value);
     if (field === "password") setPassword(value);
     setApiError(null);
     if (touched[field]) validateAndUpdate(field, value);
@@ -80,91 +111,144 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
 
   const handleBlur = (field: string) => {
     setTouched((p) => ({ ...p, [field]: true }));
-    const value = field === "phone" ? phone : field === "email" ? email : password;
+    const value = field === "identifier" ? identifier : password;
     validateAndUpdate(field, value);
   };
 
-  const resetForm = useCallback(() => {
-    setPhone(""); setEmail(""); setEmailNotificationsEnabled(true); setPassword("");
-    setErrors({}); setTouched({}); setApiError(null); setShowPassword(false); setDone(false);
-  }, []);
+  const completeLogin = useCallback(async (loginResult: LoginResponse) => {
+    setAuthTokens(loginResult.access_token, loginResult.refresh_token);
+    setAuthUser(loginResult.user);
 
-  const handleClose = useCallback(() => { resetForm(); onClose(); }, [resetForm, onClose]);
+    const loginData: CurrentUserResponse = {
+      user: loginResult.user,
+      tenant: loginResult.tenant,
+      membership: loginResult.membership,
+      roles: loginResult.roles,
+      permissions: loginResult.permissions,
+      abilities: loginResult.abilities,
+      navigation: loginResult.navigation,
+      subscription: loginResult.subscription,
+      plan: loginResult.plan,
+      feature_flags: loginResult.feature_flags,
+    };
+    const context = await tenantService.resolveFromLogin(loginData);
+    setTenantContext({
+      tenant: context.tenant, membership: context.membership, roles: context.roles,
+      permissions: context.permissions, abilities: context.abilities, navigation: context.navigation,
+    });
+
+    localStorage.setItem("public-register-state", JSON.stringify({
+      name: loginResult.user.name,
+      token: loginResult.access_token,
+      refreshToken: loginResult.refresh_token,
+      avatar: loginResult.user.avatar ?? null,
+    }));
+    window.dispatchEvent(new Event("public-auth-updated"));
+
+    setDone(true);
+    setTimeout(() => onSuccess({
+      name: loginResult.user.name,
+      avatar: loginResult.user.avatar ?? null,
+      token: loginResult.access_token,
+      refreshToken: loginResult.refresh_token,
+    }), 900);
+  }, [onSuccess, setAuthTokens, setAuthUser, setTenantContext]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const allErrors: FormErrors = {};
-    const phoneErr = validateField("phone", phone);
-    const emailErr = validateField("email", email);
+    const idErr = validateField("identifier", identifier);
     const passErr = validateField("password", password);
-    if (phoneErr) allErrors.phone = phoneErr;
-    if (emailErr) allErrors.email = emailErr;
+    if (idErr) allErrors.identifier = idErr;
     if (passErr) allErrors.password = passErr;
-    if (!phone.trim() && !email.trim()) allErrors.identifier = "أدخل رقم الهاتف أو البريد الإلكتروني";
-    setTouched({ phone: true, email: true, password: true });
+    setTouched({ identifier: true, password: true });
     setErrors(allErrors);
     if (Object.keys(allErrors).length > 0) return;
 
     setIsPending(true);
     setApiError(null);
     try {
-      const payload: any = { password };
-      if (phone.trim()) payload.phone = phone.trim();
-      if (email.trim()) {
-        payload.email = email.trim();
-        payload.email_notifications_enabled = !!emailNotificationsEnabled;
-      }
-      const loginResult: LoginResponse = await authService.login(payload);
-
-      setAuthTokens(loginResult.access_token, loginResult.refresh_token);
-      setAuthUser(loginResult.user);
-
-      const loginData: CurrentUserResponse = {
-        user: loginResult.user,
-        tenant: loginResult.tenant,
-        membership: loginResult.membership,
-        roles: loginResult.roles,
-        permissions: loginResult.permissions,
-        abilities: loginResult.abilities,
-        navigation: loginResult.navigation,
-        subscription: loginResult.subscription,
-        plan: loginResult.plan,
-        feature_flags: loginResult.feature_flags,
-      };
-      const context = await tenantService.resolveFromLogin(loginData);
-      setTenantContext({
-        tenant: context.tenant, membership: context.membership, roles: context.roles,
-        permissions: context.permissions, abilities: context.abilities, navigation: context.navigation,
-      });
-
-      localStorage.setItem("public-register-state", JSON.stringify({
-        name: loginResult.user.name,
-        token: loginResult.access_token,
-        refreshToken: loginResult.refresh_token,
-        avatar: loginResult.user.avatar ?? null,
-      }));
-      window.dispatchEvent(new Event("public-auth-updated"));
-
-      setDone(true);
-      setTimeout(() => onSuccess({
-        name: loginResult.user.name,
-        avatar: loginResult.user.avatar ?? null,
-        token: loginResult.access_token,
-        refreshToken: loginResult.refresh_token,
-      }), 900);
+      const id = identifier.trim();
+      const payload: Record<string, unknown> = { password };
+      if (id.includes("@")) payload.email = id.toLowerCase();
+      else payload.phone = id;
+      const loginResult = await authService.login(payload as any);
+      await completeLogin(loginResult);
     } catch (err: unknown) {
       const apiErr = err as { status?: number; message?: string; fieldErrors?: Record<string, string[]> };
       const status = apiErr?.status ?? 0;
       if (apiErr?.fieldErrors) {
         const flat: FormErrors = {};
-        for (const [k, msgs] of Object.entries(apiErr.fieldErrors)) flat[k] = Array.isArray(msgs) ? (msgs[0] ?? "") : String(msgs);
+        for (const [k, msgs] of Object.entries(apiErr.fieldErrors)) {
+          const msg = Array.isArray(msgs) ? (msgs[0] ?? "") : String(msgs);
+          if (k === "email" || k === "phone") flat.identifier = msg;
+          else flat[k] = msg;
+        }
         setErrors((p) => ({ ...p, ...flat }));
       }
       setApiError(apiErr?.message || ERROR_MESSAGES[status] || "حدث خطأ غير متوقع. حاول مرة أخرى.");
     } finally {
       setIsPending(false);
     }
-  }, [phone, email, emailNotificationsEnabled, password, validateField, setAuthTokens, setAuthUser, setTenantContext, onSuccess]);
+  }, [identifier, password, validateField, completeLogin]);
+
+  const isFullAuthResponse = (data: GoogleAuthResponse) =>
+    !!data.access_token && !!data.user && !!data.tenant && !!data.membership;
+
+  const handleGoogleToken = useCallback(async (accessToken: string) => {
+    setGoogleError(null);
+    setGoogleBusy(true);
+    try {
+      const data = await publicRegisterService.googleAuthenticate({ access_token: accessToken });
+      if (data.needs_phone && data.completion_token) {
+        setGoogleCompletion({
+          token: data.completion_token,
+          profile: {
+            name: data.profile?.name ?? "",
+            email: data.profile?.email ?? "",
+            avatar: data.profile?.avatar ?? null,
+          },
+        });
+        setGooglePhone("");
+        return;
+      }
+      if (isFullAuthResponse(data)) {
+        await completeLogin(data as unknown as LoginResponse);
+        return;
+      }
+      setGoogleError("تعذر إكمال تسجيل الدخول عبر Google.");
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.phone?.[0] || apiErr?.fieldErrors?.google?.[0];
+      setGoogleError(fieldMsg || apiErr?.message || "تعذر تسجيل الدخول عبر Google.");
+    } finally {
+      setGoogleBusy(false);
+    }
+  }, [completeLogin]);
+
+  const handleGoogleComplete = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!googleCompletion) return;
+    const phone = googlePhone.trim();
+    if (!phone) { setGoogleError("رقم الهاتف مطلوب."); return; }
+    if (!isPhone(phone)) { setGoogleError("رقم الهاتف غير صحيح"); return; }
+    setGoogleBusy(true);
+    setGoogleError(null);
+    try {
+      const data = await publicRegisterService.googleComplete({
+        completion_token: googleCompletion.token,
+        phone,
+        email_notifications_enabled: googleEmailNotifications,
+      });
+      await completeLogin(data as unknown as LoginResponse);
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.phone?.[0] || apiErr?.fieldErrors?.completion_token?.[0];
+      setGoogleError(fieldMsg || apiErr?.message || "تعذر إكمال التسجيل عبر Google.");
+    } finally {
+      setGoogleBusy(false);
+    }
+  }, [googleCompletion, googlePhone, googleEmailNotifications, completeLogin]);
 
   const inputClasses = (field: string) => cn(
     "h-10 w-full rounded-xl border bg-background/80 px-3 text-[13px] transition-all duration-200 placeholder:text-muted-foreground/35 focus:outline-none focus:ring-2 focus:ring-offset-1",
@@ -194,52 +278,106 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
                       <LogIn className="h-5 w-5 text-white" />
                     </div>
                     <h2 className="text-base font-bold text-foreground">تسجيل الدخول</h2>
-                    <p className="mt-1 text-xs text-muted-foreground/60">أدخل رقم الهاتف أو البريد الإلكتروني مع كلمة المرور</p>
+                    <p className="mt-1 text-xs text-muted-foreground/60">سجّل الدخول بالبريد الإلكتروني أو رقم الهاتف</p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-muted-foreground/50" />رقم الهاتف</label>
-                      <input type="tel" dir="ltr" value={phone} onChange={(e) => handleChange("phone", e.target.value)} onBlur={() => handleBlur("phone")}
-                        placeholder="+20 1XXXXXXXXX" disabled={isPending} className={cn(inputClasses("phone"), "text-left")} />
-                      {touched.phone && errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                  <div className="space-y-3 mb-3">
+                    <GoogleAuthButton
+                      onToken={handleGoogleToken}
+                      onError={setGoogleError}
+                      disabled={googleBusy || isPending}
+                      label="المتابعة عبر Google"
+                    />
+                    {googleError && <p className="text-xs text-red-500 text-center">{googleError}</p>}
+                    <div className="relative flex items-center gap-3 py-1">
+                      <div className="h-px flex-1 bg-border/50" />
+                      <span className="text-[11px] text-muted-foreground/50">أو</span>
+                      <div className="h-px flex-1 bg-border/50" />
                     </div>
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-muted-foreground/50" />البريد الإلكتروني</label>
-                      <input type="email" dir="ltr" value={email} onChange={(e) => handleChange("email", e.target.value)} onBlur={() => handleBlur("email")}
-                        placeholder="name@gmail.com" disabled={isPending} className={cn(inputClasses("email"), "text-left")} />
-                      {touched.email && errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                  {googleCompletion ? (
+                    <form onSubmit={handleGoogleComplete} className="space-y-4">
+                      <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                        <div className="font-medium text-foreground/80">{googleCompletion.profile.name || "حساب Google"}</div>
+                        <div dir="ltr" className="text-left">{googleCompletion.profile.email}</div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground/50" />
+                          رقم الهاتف <span className="text-destructive">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          dir="ltr"
+                          value={googlePhone}
+                          onChange={(e) => { setGooglePhone(e.target.value); setGoogleError(null); }}
+                          placeholder="+20 1XXXXXXXXX"
+                          disabled={googleBusy}
+                          className={cn(inputClasses("phone"), "text-left")}
+                        />
+                      </div>
                       <label className="flex items-center gap-2 text-xs text-foreground/70 cursor-pointer">
-                        <input type="checkbox" checked={emailNotificationsEnabled} onChange={(e) => setEmailNotificationsEnabled(e.target.checked)} className="h-4 w-4 rounded border-border" />
+                        <input
+                          type="checkbox"
+                          checked={googleEmailNotifications}
+                          onChange={(e) => setGoogleEmailNotifications(e.target.checked)}
+                          className="h-4 w-4 rounded border-border"
+                          disabled={googleBusy}
+                        />
                         تفعيل البريد الإلكتروني لاستقبال الإشعارات
                       </label>
-                    </div>
-
-                    {errors.identifier && <p className="text-xs text-red-500">{errors.identifier}</p>}
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-muted-foreground/50" />كلمة المرور</label>
-                      <div className="relative">
-                        <input type={showPassword ? "text" : "password"} dir="ltr" value={password} onChange={(e) => handleChange("password", e.target.value)} onBlur={() => handleBlur("password")}
-                          placeholder="********" disabled={isPending} className={cn(inputClasses("password"), "text-left pe-10")} />
-                        <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground/70" tabIndex={-1}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <div className="flex gap-3 pt-1">
+                        <button type="submit" disabled={googleBusy} className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: `var(--brand-primary)` }}>
+                          {googleBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+                          <span>{googleBusy ? "جارٍ الإكمال..." : "إكمال تسجيل الدخول"}</span>
                         </button>
+                        <button type="button" onClick={() => { setGoogleCompletion(null); setGooglePhone(""); setGoogleError(null); }} disabled={googleBusy} className="h-10 px-5 rounded-xl text-sm font-medium border border-border/50 bg-background/80 text-muted-foreground hover:text-foreground">رجوع</button>
                       </div>
-                      {touched.password && errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-                    </div>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground/50" />
+                          البريد الإلكتروني او رقم الهاتف
+                        </label>
+                        <input
+                          type="text"
+                          dir="ltr"
+                          value={identifier}
+                          onChange={(e) => handleChange("identifier", e.target.value)}
+                          onBlur={() => handleBlur("identifier")}
+                          placeholder="name@gmail.com أو +20 1XXXXXXXXX"
+                          disabled={isPending}
+                          className={cn(inputClasses("identifier"), "text-left")}
+                        />
+                        {touched.identifier && errors.identifier && <p className="text-xs text-red-500">{errors.identifier}</p>}
+                      </div>
 
-                    {apiError && <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 px-4 py-3"><p className="text-sm text-red-600 dark:text-red-400 text-center">{apiError}</p></div>}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-muted-foreground/50" />كلمة المرور</label>
+                        <div className="relative">
+                          <input type={showPassword ? "text" : "password"} dir="ltr" value={password} onChange={(e) => handleChange("password", e.target.value)} onBlur={() => handleBlur("password")}
+                            placeholder="********" disabled={isPending} className={cn(inputClasses("password"), "text-left pe-10")} />
+                          <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground/70" tabIndex={-1}>
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        {touched.password && errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                      </div>
 
-                    <div className="flex gap-3 pt-1">
-                      <button type="submit" disabled={isPending} className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: `var(--brand-primary)` }}>
-                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-                        <span>{isPending ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}</span>
-                      </button>
-                      <button type="button" onClick={handleClose} disabled={isPending} className="h-10 px-5 rounded-xl text-sm font-medium border border-border/50 bg-background/80 text-muted-foreground hover:text-foreground">إلغاء</button>
-                    </div>
-                  </form>
+                      {apiError && <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 px-4 py-3"><p className="text-sm text-red-600 dark:text-red-400 text-center">{apiError}</p></div>}
+
+                      <div className="flex gap-3 pt-1">
+                        <button type="submit" disabled={isPending} className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white disabled:opacity-60" style={{ background: `var(--brand-primary)` }}>
+                          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+                          <span>{isPending ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}</span>
+                        </button>
+                        <button type="button" onClick={handleClose} disabled={isPending} className="h-10 px-5 rounded-xl text-sm font-medium border border-border/50 bg-background/80 text-muted-foreground hover:text-foreground">إلغاء</button>
+                      </div>
+                    </form>
+                  )}
                 </>
               )}
             </div>

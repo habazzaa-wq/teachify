@@ -2,9 +2,9 @@ import api from "@/services/api/axios";
 
 export interface PublicRegisterPayload {
   name: string;
-  email?: string;
+  email: string;
   email_notifications_enabled?: boolean;
-  phone?: string;
+  phone: string;
   parent_phone?: string;
   password: string;
   password_confirmation: string;
@@ -13,6 +13,30 @@ export interface PublicRegisterPayload {
   study_level?: string;
   governorate?: string;
   city?: string;
+}
+
+export interface GoogleAuthResponse {
+  needs_phone?: boolean;
+  completion_token?: string;
+  profile?: {
+    name: string;
+    email: string;
+    avatar?: string | null;
+  };
+  message?: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
+  user?: PublicRegisterResponse["user"];
+  tenant?: PublicRegisterResponse["tenant"];
+  membership?: PublicRegisterResponse["membership"];
+  roles?: PublicRegisterResponse["roles"];
+  permissions?: PublicRegisterResponse["permissions"];
+  abilities?: PublicRegisterResponse["abilities"];
+  navigation?: PublicRegisterResponse["navigation"];
+  subscription?: PublicRegisterResponse["subscription"];
+  plan?: PublicRegisterResponse["plan"];
+  feature_flags?: PublicRegisterResponse["feature_flags"];
 }
 
 export interface PublicRegisterResponse {
@@ -58,6 +82,14 @@ export interface PublicRegisterResponse {
 export const publicRegisterService = {
   async register(payload: PublicRegisterPayload): Promise<PublicRegisterResponse> {
     const { data } = await api.post<PublicRegisterResponse>("/public/register", payload);
+    return data;
+  },
+  async googleAuthenticate(payload: { access_token: string; phone?: string }): Promise<GoogleAuthResponse> {
+    const { data } = await api.post<GoogleAuthResponse>("/public/auth/google", payload);
+    return data;
+  },
+  async googleComplete(payload: { completion_token: string; phone: string; email_notifications_enabled?: boolean }): Promise<PublicRegisterResponse> {
+    const { data } = await api.post<PublicRegisterResponse>("/public/auth/google/complete", payload);
     return data;
   },
 };
