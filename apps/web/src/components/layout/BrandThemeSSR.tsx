@@ -3,6 +3,7 @@ import {
   BRAND_THEME_STYLE_ID,
   buildBrandThemeCss,
   resolveBrandThemeColors,
+  resolveDashboardBrandColors,
 } from "@/lib/brand-theme";
 
 /**
@@ -25,8 +26,11 @@ import {
 export async function BrandThemeSSR() {
   const tenant = await getTenantSeoContext();
   const branding = tenant?.platform_branding ?? tenant?.platformBranding ?? null;
-  const { primary, secondary } = resolveBrandThemeColors(branding);
-  const css = buildBrandThemeCss(primary, secondary);
+  const platform = resolveBrandThemeColors(branding);
+  // by-domain already carries the teacher's "مظهر لوحة التحكم" palette in
+  // `branding`, so the very first paint uses the colors they actually picked.
+  const dashboard = resolveDashboardBrandColors(tenant?.branding, platform);
+  const css = buildBrandThemeCss(platform.primary, platform.secondary, dashboard);
 
   return <style id={BRAND_THEME_STYLE_ID} data-ssr="true">{css}</style>;
 }

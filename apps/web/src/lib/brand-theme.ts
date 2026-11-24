@@ -37,6 +37,32 @@ export function resolveBrandThemeColors(
   };
 }
 
+/**
+ * The teacher dashboard has its own appearance palette (`branding` settings
+ * group, saved from "مظهر لوحة التحكم"), kept separate from the public-site
+ * palette (`platform_branding`). Use it for `.tenant-theme` when configured and
+ * fall back to the platform pair on fresh tenants that never touched it.
+ * Accepts both camelCase (by-domain) and snake_case (auth/bootstrap) shapes.
+ */
+export function resolveDashboardBrandColors(
+  branding: unknown,
+  fallback: { primary: string; secondary: string },
+): { primary: string; secondary: string } {
+  const b = (branding ?? {}) as Record<string, unknown>;
+  const rawPrimary = b.primaryColor ?? b.primary_color;
+  const rawSecondary = b.secondaryColor ?? b.secondary_color;
+  return {
+    primary:
+      typeof rawPrimary === "string" && rawPrimary.trim()
+        ? normalizeHex(rawPrimary)
+        : fallback.primary,
+    secondary:
+      typeof rawSecondary === "string" && rawSecondary.trim()
+        ? normalizeHex(rawSecondary)
+        : fallback.secondary,
+  };
+}
+
 function toVars(obj: Record<string, string>): string {
   return Object.entries(obj)
     .map(([k, v]) => `${k}: ${v};`)
@@ -57,7 +83,11 @@ function toVars(obj: Record<string, string>): string {
  *    live `platformBranding` changes (dashboard save, tenant switch) by
  *    rewriting the same <style> element in place.
  */
-export function buildBrandThemeCss(primary: string, secondary: string): string {
+export function buildBrandThemeCss(
+  primary: string,
+  secondary: string,
+  dashboard: { primary: string; secondary: string } = { primary, secondary },
+): string {
   const light = {
     ...generateCommunityThemeColors(primary, secondary, false),
     ...generateBrandScale(primary, secondary, false),
@@ -66,8 +96,11 @@ export function buildBrandThemeCss(primary: string, secondary: string): string {
     ...generateCommunityThemeColors(primary, secondary, true),
     ...generateBrandScale(primary, secondary, true),
   };
-  const dashLight = generateThemeColors(primary, secondary, false);
-  const dashDark = generateThemeColors(primary, secondary, true);
+  // Dashboard (sidebar, header, active/hover states) follows the palette the
+  // teacher picked in "مظهر لوحة التحكم"; the public site keeps the platform
+  // palette above.
+  const dashLight = generateThemeColors(dashboard.primary, dashboard.secondary, false);
+  const dashDark = generateThemeColors(dashboard.primary, dashboard.secondary, true);
 
   /*
    * The complete dashboard palette is emitted on :root as well as

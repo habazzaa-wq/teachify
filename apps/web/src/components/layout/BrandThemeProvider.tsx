@@ -7,6 +7,7 @@ import {
   BRAND_THEME_STYLE_ID,
   buildBrandThemeCss,
   resolveBrandThemeColors,
+  resolveDashboardBrandColors,
 } from "@/lib/brand-theme";
 
 /**
@@ -18,8 +19,10 @@ import {
  *   · .student-theme    → لوحة الطالب
  *   · :root --brand-*   → متغيّرات الألوان الخام الجاهزة للاستخدام المباشر
  *
- * وده بيضمن إن الزائر والمسجّل دخول (مدرس/طالب) يشوفوا نفس ألوان المنصة بالظبط،
- * ومن غير أي اعتماد على مظهر المدرس (activeTenant.branding) أو على localStorage.
+ * لوحة تحكم المدرس (.tenant-theme) ليها بalette مستقلة بيتحكم فيها المدرس من
+ * "مظهر لوحة التحكم" (activeTenant.branding) — عشان كده بنستخدمها للـ dashboard،
+ * مع الاحتفاظ بـ platformBranding للموقع العام وصفحة الطالب. لو المدرس ماعملش
+ * إعدادات مظهر، بنرجّع للـ platform pair عشان مفيش لوحة تظهر بلا ألوان.
  *
  * ملاحظة حول منع الوميض (FOUC): الألوان الحقيقية بتتطبّع server-side في <head>
  * عن طريق BrandThemeSSR (نفس id الـ <style>) — فلأول رسمة من اول رسمة بالألوان
@@ -29,6 +32,9 @@ import {
  */
 export function BrandThemeProvider() {
   const platformBranding = usePlatformBranding();
+  // Teacher appearance palette ("مظهر لوحة التحكم"), separate from the public
+  // site palette. This is what actually drives the dashboard sidebar colors.
+  const appearanceBranding = useTenantStore((s) => s.activeTenant?.branding);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
   const loadRef = useRef(false);
 
@@ -49,9 +55,13 @@ export function BrandThemeProvider() {
       });
   }, [platformBranding, setPlatformBranding]);
 
-  const { primary, secondary } = resolveBrandThemeColors(platformBranding);
+  const platform = resolveBrandThemeColors(platformBranding);
+  const dashboard = resolveDashboardBrandColors(appearanceBranding, platform);
 
-  const css = useMemo(() => buildBrandThemeCss(primary, secondary), [primary, secondary]);
+  const css = useMemo(
+    () => buildBrandThemeCss(platform.primary, platform.secondary, dashboard),
+    [platform.primary, platform.secondary, dashboard.primary, dashboard.secondary],
+  );
 
   useEffect(() => {
     // لو مفيش حتى الآن branding حقيقي (middleware/SSR ماجابهاش والـ fetch لسه

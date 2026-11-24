@@ -353,6 +353,7 @@ export function WorkspaceLeftSidebar() {
               <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}
                 label="مظهر لوحة التحكم"
+                active={pathname.startsWith("/teacher/settings/appearance")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/settings/appearance")}
               />

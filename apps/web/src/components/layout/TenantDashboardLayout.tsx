@@ -16,8 +16,8 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   const mobileMenuOpen = useWorkspaceStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useWorkspaceStore((s) => s.setMobileMenuOpen);
 
-  // لوحة تحكم المدرس بتستخدم ألوان المنصة العالمية (platformBranding) اللي
-  // بتطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
+  // لوحة تحكم المدرس بتستخدم ألوان "مظهر لوحة التحكم" (activeTenant.branding)
+  // اللي بيطبّقها BrandThemeProvider على .tenant-theme — فمفيش حاجة نحقنها هنا.
 
   const handleCloseMobile = useCallback(() => {
     setMobileMenuOpen(false);
