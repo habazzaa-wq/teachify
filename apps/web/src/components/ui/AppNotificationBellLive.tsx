@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useEnrolledCourses } from "@/features/course-catalog/hooks";
 import { useNotifications } from "@/hooks/useNotifications";
+import { notificationCourseHref, notificationCourseId } from "@/lib/notification-course";
 import type { NotificationItem } from "@/types/notification.types";
 import { AppNotificationMenu, type NotificationItem as MenuItem } from "./AppNotificationMenu";
 
@@ -24,12 +25,6 @@ function formatTs(ts?: string | null) {
   } catch {
     return ts;
   }
-}
-
-function sessionCourseId(notification: NotificationItem): string | null {
-  const data = notification.data as { course_id?: unknown } | null;
-  if (data?.course_id === null || data?.course_id === undefined) return null;
-  return String(data.course_id);
 }
 
 /** Original shared bell: admin, teacher and platform headers. */
@@ -70,6 +65,7 @@ function GeneralNotificationBell({
 
 /** q3 student bell: published sessions for courses the student is enrolled in. */
 function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProps) {
+  const router = useRouter();
   const { unread, all, markRead } = useNotifications("session.", enabled);
   const { data: enrolledCourses } = useEnrolledCourses();
 
@@ -82,7 +78,7 @@ function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProp
     return (notification: NotificationItem): boolean => {
       if (notification.type !== SESSION_PUBLISHED_TYPE) return false;
       if (notification.status === "archived") return false;
-      const courseId = sessionCourseId(notification);
+      const courseId = notificationCourseId(notification);
       return courseId !== null && enrolledCourseIds.has(courseId);
     };
   }, [enrolledCourseIds]);
@@ -120,8 +116,12 @@ function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProp
         unread.filter(isRelevant).forEach((notification) => markRead(notification.id));
       }}
       onItemClick={(id) => {
-        const notificationId = Number(id);
-        if (!Number.isNaN(notificationId)) markRead(notificationId);
+        const notification = visible.find((item) => String(item.id) === id);
+        if (!notification) return;
+
+        markRead(notification.id);
+        const href = notificationCourseHref(notification, enrolledCourses);
+        if (href) router.push(href);
       }}
       emptyHint="ستظهر جلسات دوراتك المسجّلة هنا"
     />
