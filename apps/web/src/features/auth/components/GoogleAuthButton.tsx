@@ -52,6 +52,7 @@ interface GoogleAuthButtonProps {
   disabled?: boolean;
   label?: string;
   className?: string;
+  clientId?: string | null;
 }
 
 export function GoogleAuthButton({
@@ -60,14 +61,19 @@ export function GoogleAuthButton({
   disabled,
   label = "المتابعة عبر Google",
   className,
+  clientId: clientIdProp,
 }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const clientRef = useRef<{ requestAccessToken: (options?: { prompt?: string }) => void } | null>(null);
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const clientId = (clientIdProp ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim() || null;
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId) {
+      setReady(false);
+      clientRef.current = null;
+      return;
+    }
     let cancelled = false;
     loadGisScript()
       .then(() => {

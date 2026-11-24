@@ -61,6 +61,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
   const setAuthTokens = useAuthStore((s) => s.setTokens);
   const setAuthUser = useAuthStore((s) => s.setUser);
   const setTenantContext = useTenantStore((s) => s.setTenantContext);
+  const googleClientId = useTenantStore((s) => s.googleClientId);
 
   const resetForm = useCallback(() => {
     setIdentifier("");
@@ -287,6 +288,7 @@ export function PublicLoginCard({ open, onClose, onSuccess }: PublicLoginCardPro
                       onError={setGoogleError}
                       disabled={googleBusy || isPending}
                       label="المتابعة عبر Google"
+                      clientId={googleClientId}
                     />
                     {googleError && <p className="text-xs text-red-500 text-center">{googleError}</p>}
                     <div className="relative flex items-center gap-3 py-1">

@@ -59,6 +59,8 @@ interface TenantState {
    *  `branding`, which is the teacher appearance applied only to the teacher
    *  dashboard and login. */
   platformBranding: TenantBranding | null;
+  /** Public Google OAuth client ID for this tenant (from by-domain/bootstrap). */
+  googleClientId: string | null;
   bootstrapStatus: BootstrapStatus;
   bootstrapError: string | null;
 
@@ -96,6 +98,7 @@ interface TenantState {
     } | null;
     branding: TenantBranding;
     platformBranding?: TenantBranding | null;
+    googleClientId?: string | null;
     subdomain?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
@@ -117,6 +120,7 @@ export const useTenantStore = create<TenantState>()(
     subdomain: null,
     branding: null,
     platformBranding: null,
+    googleClientId: null,
     bootstrapStatus: "idle",
     bootstrapError: null,
 
@@ -260,6 +264,7 @@ export const useTenantStore = create<TenantState>()(
             primaryColor,
             secondaryColor,
           }) as unknown as TenantBranding,
+          googleClientId: data.googleClientId ?? null,
           bootstrapStatus: "resolved",
           bootstrapError: null,
         };
@@ -303,6 +308,7 @@ export const useTenantStore = create<TenantState>()(
         // نحافظ على platformBranding في الذاكرة بعد تسجيل الخروج عشان الموقع
         // العام يفضل بلونه الصح فوراً من غير flicker. مش متخزّن في localStorage
         // لأنه خاص بكل دومين وبيتقرأ من سياق السيرفر/API في كل تحميل.
+        googleClientId: null,
         bootstrapStatus: "idle",
         bootstrapError: null,
       }),
@@ -318,6 +324,7 @@ export const useTenantStore = create<TenantState>()(
         ...current,
         ...(persisted as Partial<TenantState>),
         platformBranding: null,
+        googleClientId: null,
       }),
       partialize: (state) => ({
         activeTenant: state.activeTenant,

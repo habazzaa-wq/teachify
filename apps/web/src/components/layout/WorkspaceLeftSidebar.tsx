@@ -35,6 +35,7 @@ import {
   BriefcaseBusiness,
   Info,
   Mail,
+  LogIn,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSidebarSection } from "@/components/studio/navigation/StudioSidebarSection";
@@ -376,6 +377,13 @@ export function WorkspaceLeftSidebar() {
                 active={pathname.startsWith("/teacher/settings/mail")}
                 collapsed={leftSidebarCollapsed}
                 onClick={() => handleNavigate("/teacher/settings/mail")}
+              />
+              <StudioSidebarItem
+                icon={<LogIn className="h-4 w-4" />}
+                label="تسجيل الدخول بجوجل"
+                active={pathname.startsWith(routes.dashboardGoogleAuthSettings)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardGoogleAuthSettings)}
               />
 </StudioSidebarSection>
 

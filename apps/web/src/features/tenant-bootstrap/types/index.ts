@@ -53,6 +53,11 @@ export interface TenantSeoConfig {
   twitterImage?: string | null;
 }
 
+export interface TenantPublicAuthConfig {
+  google_client_id?: string | null;
+  google_enabled?: boolean;
+}
+
 export interface TenantByDomainResponse {
   id: number;
   name: string;
@@ -74,4 +79,6 @@ export interface TenantByDomainResponse {
   platformBranding?: TenantBranding | null;
   /** Present only when the proxy/API supplies tenant-specific SEO settings. */
   seo?: TenantSeoConfig | null;
+  /** Public auth configuration (e.g. Google OAuth client id). */
+  auth?: TenantPublicAuthConfig | null;
 }

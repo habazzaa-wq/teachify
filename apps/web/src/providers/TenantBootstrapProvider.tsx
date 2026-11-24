@@ -151,6 +151,7 @@ export function TenantBootstrapProvider({
               feature_flags: data.feature_flags,
               branding: data.branding,
               platformBranding: data.platform_branding ?? data.platformBranding ?? null,
+              googleClientId: data.auth?.google_client_id ?? null,
               subdomain: getTenantSubdomain(hostname),
             });
             return;
