@@ -99,9 +99,9 @@ class CurrentUserController extends Controller
     }
 
     /**
-     * Platform-level brand colors (the "platform colors" field). Resolved
-     * per-tenant and distinct from `getBranding` (tenant appearance settings)
-     * which only apply to the teacher dashboard and login.
+     * Platform-level brand colors. Resolved per-tenant and used by every
+     * themed surface. `getBranding` is the legacy tenant appearance copy;
+     * the appearance editor mirrors its two colors into this row as well.
      *
      * @return array<string, mixed>
      */
