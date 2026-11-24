@@ -221,7 +221,7 @@ export default function TenantInstructorsPage() {
         )}
       </AppSection>
       {removingInstructor && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" role="presentation">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-studio-overlay p-4" role="presentation">
           <section
             role="dialog"
             aria-modal="true"

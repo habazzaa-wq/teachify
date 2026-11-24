@@ -83,23 +83,14 @@ function AppearancePage() {
   const platformBranding = useTenantStore((s) => s.platformBranding);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
 
-  // The runtime theme (BrandThemeProvider) reads platformBranding, so it is
-  // the authoritative source for what is actually applied everywhere. The
-  // older `branding` group is only a compatibility fallback.
-  const authBranding = tenant?.branding as Record<string, unknown> | undefined;
-  const authColor = (snake: string, camel: string) => {
-    const value = authBranding?.[snake] ?? authBranding?.[camel];
-    return typeof value === "string" && value.trim() ? value : null;
-  };
+  // The runtime theme (BrandThemeProvider) reads platformBranding only. Using
+  // the legacy auth `branding` values here made the pickers show colors that
+  // were not actually applied, so the editor must reflect the same source.
+  const appliedColor = (value: string | null | undefined, fallback: string) =>
+    value && isValidHex(value) ? normalizeHex(value) : fallback;
 
-  const storedPrimary =
-    platformBranding?.primaryColor ||
-    authColor("primary_color", "primaryColor") ||
-    BRAND_PRIMARY_DEFAULT;
-  const storedSecondary =
-    platformBranding?.secondaryColor ||
-    authColor("secondary_color", "secondaryColor") ||
-    BRAND_SECONDARY_DEFAULT;
+  const storedPrimary = appliedColor(platformBranding?.primaryColor, BRAND_PRIMARY_DEFAULT);
+  const storedSecondary = appliedColor(platformBranding?.secondaryColor, BRAND_SECONDARY_DEFAULT);
 
   const [primary, setPrimary] = useState(storedPrimary);
   const [secondary, setSecondary] = useState(storedSecondary);

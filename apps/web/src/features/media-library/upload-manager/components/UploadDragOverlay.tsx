@@ -11,7 +11,7 @@ export function UploadDragOverlay() {
     <AnimatePresence>
       {isDragActive && (
         <motion.div
-          className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-studio-overlay/40 p-6"
+          className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-studio-overlay p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

@@ -29,13 +29,13 @@ function AppStatusBadge({ status, label, className, ...props }: AppStatusBadgePr
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full",
-          status === "active" && "bg-success",
-          status === "inactive" && "bg-muted-foreground",
-          status === "pending" && "bg-warning",
-          status === "suspended" && "bg-destructive",
-          status === "archived" && "bg-muted-foreground/50",
-          status === "draft" && "bg-muted-foreground/50",
-          status === "published" && "bg-success",
+          status === "active" && "bg-studio-success-foreground",
+          status === "inactive" && "bg-studio-fg-muted",
+          status === "pending" && "bg-studio-warning-foreground",
+          status === "suspended" && "bg-studio-danger-foreground",
+          status === "archived" && "bg-studio-fg-muted/50",
+          status === "draft" && "bg-studio-fg-muted/50",
+          status === "published" && "bg-studio-success-foreground",
         )}
       />
       {label ?? config.defaultLabel}

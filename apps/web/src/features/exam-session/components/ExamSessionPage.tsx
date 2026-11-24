@@ -312,7 +312,7 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
                   />
 
                   {currentQuestionBusy && (
-                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs font-bold text-amber-700 ring-1 ring-amber-500/30">
+                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-studio-warning/10 px-3 py-2.5 text-xs font-bold text-studio-warning ring-1 ring-studio-warning/30">
                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                       جارٍ رفع صفحات الإجابة... يُرجى الانتظار حتى يكتمل الرفع قبل الانتقال بين الأسئلة.
                     </div>
@@ -341,8 +341,7 @@ export function ExamSessionPage({ attemptId }: ExamSessionPageProps) {
                           : navigateTo(currentIndex + 1)
                       }
                       disabled={currentQuestionBusy}
-                      className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{ background: "var(--brand-primary)" }}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-studio-accent px-5 text-sm font-bold text-studio-accent-fg shadow-lg shadow-studio-overlay transition-all duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {currentIndex === questions.length - 1 ? "تسليم الامتحان" : "التالي"}
                       <ChevronLeft className="h-4 w-4" />
@@ -442,7 +441,7 @@ function SessionGradingScreen({ attemptId }: { attemptId: string }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
+        <Loader2 className="h-8 w-8 animate-spin text-studio-accent" />
         <p className="text-sm font-semibold">جارٍ تصحيح الامتحان...</p>
       </div>
     </main>
@@ -453,7 +452,7 @@ function SessionLoadingScreen() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
+        <Loader2 className="h-8 w-8 animate-spin text-studio-accent" />
         <p className="text-sm font-semibold">جارٍ تحميل الامتحان...</p>
       </div>
     </main>
@@ -470,8 +469,8 @@ function SessionErrorScreen({
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-3xl border border-border/40 bg-card p-7 text-center shadow-xl">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 ring-1 ring-red-500/25">
-          <AlertTriangle className="h-7 w-7 text-red-500" />
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-studio-danger/10 ring-1 ring-studio-danger/25">
+          <AlertTriangle className="h-7 w-7 text-studio-danger" />
         </div>
         <h1 className="text-lg font-extrabold text-foreground">تعذر تحميل الامتحان</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -481,8 +480,7 @@ function SessionErrorScreen({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.3)]"
-            style={{ background: "var(--brand-primary)" }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-studio-accent px-5 text-sm font-bold text-studio-accent-fg shadow-lg shadow-studio-overlay"
           >
             <ListChecks className="h-4 w-4" />
             إعادة المحاولة

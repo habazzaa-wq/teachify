@@ -110,8 +110,8 @@ function LazyThumbnail({ asset }: { asset: MediaAsset }) {
     const IconComponent = resolveTypeIcon(asset.type);
     return (
       <div className="flex flex-col items-center gap-1">
-        {createElement(IconComponent, { className: "h-8 w-8 text-muted-foreground/50" })}
-        <span className="text-[10px] font-medium uppercase text-muted-foreground/30">
+        {createElement(IconComponent, { className: "h-8 w-8 text-studio-fg-muted/50" })}
+        <span className="text-[10px] font-medium uppercase text-studio-fg-muted/30">
           {asset.extension ?? typeConfigLabel(asset)}
         </span>
       </div>
@@ -181,8 +181,8 @@ function MediaCardBase({
     <AppCard
       className={cn(
         "relative cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-lg",
-        selected && "ring-2 ring-primary ring-offset-2",
-        asset.status === "failed" && "ring-1 ring-destructive/30",
+        selected && "ring-2 ring-studio-accent ring-offset-2 ring-offset-studio-bg",
+        asset.status === "failed" && "ring-1 ring-studio-danger/30",
       )}
       onClick={handleClick}
     >
@@ -191,21 +191,21 @@ function MediaCardBase({
         <AppCheckbox
           checked={selected}
           onClick={handleSelect}
-          className="border-white/80 bg-background/80 backdrop-blur-sm"
+          className="border-studio-border bg-studio-surface/80 backdrop-blur-sm"
         />
       </div>
 
       {/* Favorite indicator */}
       {asset.favorite && (
         <div className="absolute end-2 bottom-2 z-10">
-          <Heart className="h-3.5 w-3.5 fill-red-500 text-red-500" />
+          <Heart className="h-3.5 w-3.5 fill-studio-danger text-studio-danger" />
         </div>
       )}
 
       {/* Pinned indicator */}
       {asset.pinned && (
         <div className="absolute start-2 bottom-2 z-10">
-          <Pin className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+          <Pin className="h-3.5 w-3.5 fill-studio-warning text-studio-warning" />
         </div>
       )}
 
@@ -214,15 +214,15 @@ function MediaCardBase({
         className={cn(
           "flex aspect-video items-center justify-center",
           asset.thumbnailUrl || (asset.type === "image" && asset.cdnUrl)
-            ? "bg-muted/20"
-            : "bg-gradient-to-br from-muted/50 to-muted",
+            ? "bg-studio-soft/20"
+            : "bg-gradient-to-br from-studio-soft/50 to-studio-soft",
         )}
       >
         <LazyThumbnail asset={asset} />
 
         {/* Duration overlay */}
         {asset.duration > 0 && (
-          <div className="absolute bottom-2 start-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+          <div className="absolute bottom-2 start-2 rounded bg-studio-overlay px-1.5 py-0.5 text-[10px] text-studio-glass-toolbar-fg">
             {formatDuration(asset.duration)}
           </div>
         )}
@@ -235,11 +235,11 @@ function MediaCardBase({
             {asset.title ?? asset.originalName ?? "بدون اسم"}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-[11px] text-studio-fg-muted">
           <span>{formatSize(asset.size)}</span>
           {asset.extension && (
             <>
-              <span className="text-muted-foreground/30">•</span>
+              <span className="text-studio-fg-muted/30">•</span>
               <span className="uppercase">{asset.extension}</span>
             </>
           )}
@@ -248,9 +248,9 @@ function MediaCardBase({
             variant="outline"
             className={cn(
               "h-4 px-1 text-[8px] font-medium",
-              statusConfig.color === "success" && "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400",
-              statusConfig.color === "warning" && "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400",
-              statusConfig.color === "destructive" && "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400",
+              statusConfig.color === "success" && "border-studio-success/20 bg-studio-success/10 text-studio-success",
+              statusConfig.color === "warning" && "border-studio-warning/20 bg-studio-warning/10 text-studio-warning",
+              statusConfig.color === "destructive" && "border-studio-danger/20 bg-studio-danger/10 text-studio-danger",
             )}
           >
             {statusConfig.label}
@@ -265,7 +265,7 @@ function MediaCardBase({
             <AppButton
               variant="secondary"
               size="icon"
-              className="h-7 w-7 bg-background/80 backdrop-blur-sm"
+              className="h-7 w-7 bg-studio-surface/80 backdrop-blur-sm"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
@@ -318,7 +318,7 @@ function MediaCardBase({
             <AppDropdownMenuSeparator />
             {onDelete && (
               <AppDropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="text-studio-danger focus:text-studio-danger"
                 onClick={(e) => { e.stopPropagation(); onDelete(asset); }}
               >
                 <Trash2 className="h-4 w-4" />

@@ -235,19 +235,19 @@ export function BlogStudio({ instructor = false, accessToken = null }: Props) {
 
   return (
     <div className="space-y-8" dir="rtl">
-      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 p-7 text-white shadow-xl md:p-10">
-        <div className="absolute -left-12 -top-20 h-64 w-64 rounded-full bg-violet-500/20 blur-3xl" />
+      <header className="relative overflow-hidden rounded-3xl bg-studio-accent p-7 text-studio-accent-fg shadow-xl md:p-10">
+        <div className="absolute -left-12 -top-20 h-64 w-64 rounded-full bg-studio-surface/20 blur-3xl" />
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
-            <p className="mb-3 text-sm font-semibold text-violet-200">استوديو المحتوى · المدونة</p>
+            <p className="mb-3 text-sm font-semibold text-studio-accent-fg/80">استوديو المحتوى · المدونة</p>
             <h1 className="text-3xl font-black md:text-4xl">أفكارك تستحق أن تُقرأ</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-studio-accent-fg/90">
               أنشئ مقالات غنية، نظّمها بالتصنيفات والوسوم، جهّز ظهورها في محركات البحث، ثم انشرها فوراً أو احتفظ بها كمسودة.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm">{posts.length} مقال · {draftCount} مسودة</span>
-            <button type="button" onClick={startNew} className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-950 transition hover:bg-violet-100">
+            <span className="rounded-full border border-studio-accent-fg/30 bg-studio-accent-fg/10 px-4 py-2 text-sm">{posts.length} مقال · {draftCount} مسودة</span>
+            <button type="button" onClick={startNew} className="rounded-xl bg-studio-surface px-5 py-3 text-sm font-bold text-studio-fg transition hover:bg-studio-soft">
               + مقال جديد
             </button>
           </div>
@@ -303,7 +303,7 @@ export function BlogStudio({ instructor = false, accessToken = null }: Props) {
                   <button
                     type="button"
                     onClick={() => update("cover_image_url", "")}
-                    className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-lg bg-black/70 px-3 py-2 text-xs font-semibold text-white hover:bg-black"
+                    className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-lg bg-studio-fg/80 px-3 py-2 text-xs font-semibold text-studio-bg hover:bg-studio-fg"
                   >
                     <X className="h-4 w-4" /> إزالة الصورة
                   </button>
@@ -414,7 +414,7 @@ export function BlogStudio({ instructor = false, accessToken = null }: Props) {
                 <article key={post.id} className="rounded-xl border p-4 transition hover:border-primary/40">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${post.status === "published" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : post.status === "scheduled" ? "bg-sky-500/10 text-sky-700 dark:text-sky-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>{statuses[post.status]}</span>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${post.status === "published" ? "bg-studio-success/15 text-studio-success" : post.status === "scheduled" ? "bg-studio-info/10 text-studio-info" : "bg-studio-warning/10 text-studio-warning"}`}>{statuses[post.status]}</span>
                       <h3 className="mt-2 line-clamp-2 font-bold">{post.title}</h3>
                     </div>
                     <button type="button" onClick={() => void remove(post)} aria-label={`حذف ${post.title}`} className="rounded-lg px-2 py-1 text-sm text-destructive hover:bg-destructive/10">حذف</button>

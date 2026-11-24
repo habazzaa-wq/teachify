@@ -185,7 +185,7 @@ export function CropEditor({
       <AppDialogContent className="max-w-2xl">
         <AppDialogHeader>
           <AppDialogTitle className="flex items-center gap-2">
-            <Crop className="h-5 w-5 text-[var(--brand-primary)]" />
+            <Crop className="h-5 w-5 text-studio-accent" />
             {title}
           </AppDialogTitle>
           <AppDialogDescription>
@@ -243,7 +243,7 @@ export function CropEditor({
                     key={corner}
                     type="button"
                     aria-label={`ضبط الزاوية ${corner}`}
-                    className="absolute h-4 w-4 cursor-nwse-resize rounded-full border-2 border-white bg-[var(--brand-primary)]"
+                    className="absolute h-4 w-4 cursor-nwse-resize rounded-full border-2 border-white bg-studio-accent"
                     style={{
                       ...(corner.includes("w") ? { left: "-8px" } : { right: "-8px" }),
                       ...(corner.includes("n") ? { top: "-8px" } : { bottom: "-8px" }),

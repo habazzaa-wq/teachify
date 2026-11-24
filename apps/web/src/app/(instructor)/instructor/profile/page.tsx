@@ -48,7 +48,7 @@ function splitName(name: string): [string, string] {
 }
 
 function textInputClass(): string {
-  return "w-full rounded-xl border border-studio-border bg-background px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-4 focus:ring-primary/10";
+  return "w-full rounded-xl border border-studio-border bg-studio-surface px-3.5 py-3 text-sm text-studio-fg outline-none transition placeholder:text-studio-fg-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/10";
 }
 
 function ProfileField({
@@ -62,9 +62,9 @@ function ProfileField({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <span className="text-sm font-semibold text-studio-fg">{label}</span>
       {children}
-      {hint && <span className="block text-xs leading-5 text-muted-foreground">{hint}</span>}
+      {hint && <span className="block text-xs leading-5 text-studio-fg-muted">{hint}</span>}
     </label>
   );
 }
@@ -84,8 +84,8 @@ function SectionHeading({
         <Icon className="h-5 w-5" aria-hidden="true" />
       </span>
       <div>
-        <h2 className="font-bold text-foreground">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+        <h2 className="font-bold text-studio-fg">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-studio-fg-muted">{description}</p>
       </div>
     </div>
   );
@@ -207,14 +207,14 @@ function InstructorProfileForm({
         <div>
           <Link
             href="/instructor"
-            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-primary"
+            className="inline-flex items-center gap-2 text-sm font-medium text-studio-fg-muted transition hover:text-primary"
           >
             <ArrowUpLeft className="h-4 w-4" aria-hidden="true" />
             العودة إلى مساحة العمل
           </Link>
           <p className="mt-5 text-sm font-semibold text-primary">حضورك المهني</p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">ملفي الشخصي</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-studio-fg md:text-4xl">ملفي الشخصي</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-studio-fg-muted">
             عرّف الطلاب بخبرتك وأسلوبك التعليمي. تظهر المعلومات المهنية التي تضيفها على ملفك العام وصفحات دوراتك.
           </p>
         </div>
@@ -223,14 +223,14 @@ function InstructorProfileForm({
         </span>
       </div>
 
-      <div className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-card shadow-sm">
+      <div className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-studio-panel shadow-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" aria-hidden="true" />
         <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:p-8">
           <div className="relative mx-auto shrink-0 sm:mx-0">
             <div
               role="img"
               aria-label={user.name || "الصورة الشخصية"}
-              className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-background bg-primary/10 text-3xl font-bold text-primary shadow-xl ring-1 ring-primary/20 sm:h-32 sm:w-32"
+              className="grid h-28 w-28 place-items-center overflow-hidden rounded-full border-4 border-studio-surface bg-primary/10 text-3xl font-bold text-primary shadow-xl ring-1 ring-primary/20 sm:h-32 sm:w-32"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -241,7 +241,7 @@ function InstructorProfileForm({
             </div>
             <label
               htmlFor="instructor-avatar"
-              className="absolute bottom-1 end-1 grid h-10 w-10 cursor-pointer place-items-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-lg transition hover:scale-105"
+              className="absolute bottom-1 end-1 grid h-10 w-10 cursor-pointer place-items-center rounded-full border-2 border-studio-surface bg-primary text-primary-foreground shadow-lg transition hover:scale-105"
               aria-label="تغيير الصورة الشخصية"
             >
               <Camera className="h-4 w-4" aria-hidden="true" />
@@ -257,28 +257,28 @@ function InstructorProfileForm({
           </div>
 
           <div className="min-w-0 flex-1 text-center sm:text-start">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-background/80 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-studio-surface/80 px-3 py-1 text-xs font-semibold text-primary">
               <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
               ملف المدرّب
             </span>
-            <h2 className="mt-3 truncate text-2xl font-bold text-foreground">
+            <h2 className="mt-3 truncate text-2xl font-bold text-studio-fg">
               {[values.firstName, values.lastName].filter(Boolean).join(" ") || "اسم المدرّب"}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{values.jobTitle || "أضف مسماك المهني"}</p>
+            <p className="mt-1 text-sm text-studio-fg-muted">{values.jobTitle || "أضف مسماك المهني"}</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
               {values.department && (
-                <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">{values.department}</span>
+                <span className="rounded-full bg-studio-surface/80 px-3 py-1 text-xs font-medium text-studio-fg-muted">{values.department}</span>
               )}
               {values.expertise && (
-                <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground">{values.expertise}</span>
+                <span className="rounded-full bg-studio-surface/80 px-3 py-1 text-xs font-medium text-studio-fg-muted">{values.expertise}</span>
               )}
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs text-studio-fg-muted">
               {uploading ? "جارٍ رفع الصورة إلى مكتبة الأكاديمية..." : "اضغط على أيقونة الكاميرا لتحديث صورتك"}
             </p>
           </div>
 
-          <div className="w-full rounded-2xl border border-studio-border bg-background/80 p-4 sm:w-52">
+          <div className="w-full rounded-2xl border border-studio-border bg-studio-surface/80 p-4 sm:w-52">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold">اكتمال الملف</span>
               <span className="text-sm font-bold tabular-nums text-primary">{profileCompletion}%</span>
@@ -293,7 +293,7 @@ function InstructorProfileForm({
             >
               <div className="h-full rounded-full bg-gradient-to-l from-primary to-primary/60 transition-all" style={{ width: `${profileCompletion}%` }} />
             </div>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">أكمل بياناتك لتمنح الطلاب صورة أوضح عن خبرتك.</p>
+            <p className="mt-2 text-xs leading-5 text-studio-fg-muted">أكمل بياناتك لتمنح الطلاب صورة أوضح عن خبرتك.</p>
           </div>
         </div>
       </div>
@@ -322,13 +322,13 @@ function InstructorProfileForm({
               </ProfileField>
               <ProfileField label="البريد الإلكتروني" hint="لأمان حسابك، لا يمكن تغيير البريد من هذه الصفحة.">
                 <div className="relative">
-                  <Mail className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Mail className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-studio-fg-muted" aria-hidden="true" />
                   <input readOnly value={user.email} dir="ltr" className={`${textInputClass()} bg-muted/50 ps-10`} />
                 </div>
               </ProfileField>
               <ProfileField label="رقم الهاتف">
                 <div className="relative">
-                  <Phone className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Phone className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-studio-fg-muted" aria-hidden="true" />
                   <input type="tel" maxLength={30} autoComplete="tel" className={`${textInputClass()} ps-10`} value={values.phone} onChange={(event) => update("phone", event.target.value)} placeholder="+20" />
                 </div>
               </ProfileField>
@@ -357,7 +357,7 @@ function InstructorProfileForm({
               <div className="sm:col-span-2">
                 <ProfileField label="نبذة تعريفية" hint="اكتب نبذة واضحة ومختصرة عن خبرتك وطريقتك في التدريس (حتى 2000 حرف).">
                   <textarea rows={5} maxLength={2000} className={`${textInputClass()} resize-y leading-7`} value={values.bio} onChange={(event) => update("bio", event.target.value)} placeholder="عرّف الطلاب بخبرتك، وما يميز أسلوبك التعليمي، والنتائج التي تساعدهم على تحقيقها..." />
-                  <span className="mt-1 block text-end text-xs text-muted-foreground">{values.bio.length} / 2000</span>
+                  <span className="mt-1 block text-end text-xs text-studio-fg-muted">{values.bio.length} / 2000</span>
                 </ProfileField>
               </div>
             </div>
@@ -372,34 +372,34 @@ function InstructorProfileForm({
             <div className="space-y-4">
               <ProfileField label="موقعك أو معرض أعمالك">
                 <div className="relative">
-                  <Globe2 className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Globe2 className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-studio-fg-muted" aria-hidden="true" />
                   <input type="url" maxLength={2048} dir="ltr" className={`${textInputClass()} ps-10`} value={values.websiteUrl} onChange={(event) => update("websiteUrl", event.target.value)} placeholder="https://example.com" />
                 </div>
               </ProfileField>
               <ProfileField label="LinkedIn">
                 <div className="relative">
-                  <Linkedin className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Linkedin className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-studio-fg-muted" aria-hidden="true" />
                   <input type="url" maxLength={2048} dir="ltr" className={`${textInputClass()} ps-10`} value={values.linkedinUrl} onChange={(event) => update("linkedinUrl", event.target.value)} placeholder="https://linkedin.com/in/your-profile" />
                 </div>
               </ProfileField>
               <ProfileField label="قناة YouTube">
                 <div className="relative">
-                  <Youtube className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Youtube className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-studio-fg-muted" aria-hidden="true" />
                   <input type="url" maxLength={2048} dir="ltr" className={`${textInputClass()} ps-10`} value={values.youtubeUrl} onChange={(event) => update("youtubeUrl", event.target.value)} placeholder="https://youtube.com/@your-channel" />
                 </div>
               </ProfileField>
             </div>
           </section>
 
-          {error && <p role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="rounded-2xl border border-studio-danger/30 bg-studio-danger/5 p-4 text-sm text-studio-danger">{error}</p>}
           {notice && (
-            <p role="status" className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-300">
+            <p role="status" className="flex items-center gap-2 rounded-2xl border border-studio-success/30 bg-studio-success/5 p-4 text-sm text-studio-success">
               <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
               {notice}
             </p>
           )}
           {membership.must_change_password && (
-            <p role="status" className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-200">
+            <p role="status" className="rounded-2xl border border-studio-warning/30 bg-studio-warning/5 p-4 text-sm text-studio-warning">
               يجب تغيير كلمة المرور قبل استخدام باقي خصائص الحساب.
             </p>
           )}
@@ -422,53 +422,53 @@ function InstructorProfileForm({
               </span>
               <div>
                 <h2 className="font-bold">ملفك أمام الطلاب</h2>
-                <p className="text-xs text-muted-foreground">معلومات تساعد على بناء الثقة</p>
+                <p className="text-xs text-studio-fg-muted">معلومات تساعد على بناء الثقة</p>
               </div>
             </div>
             <ul className="mt-5 space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="text-muted-foreground">{values.jobTitle || "أضف مسماك المهني"}</span>
+                <span className="text-studio-fg-muted">{values.jobTitle || "أضف مسماك المهني"}</span>
               </li>
               <li className="flex items-start gap-3">
                 <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="text-muted-foreground">{values.expertise || "حدّد تخصصك الدقيق"}</span>
+                <span className="text-studio-fg-muted">{values.expertise || "حدّد تخصصك الدقيق"}</span>
               </li>
               <li className="flex items-start gap-3">
                 <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                <span className="text-muted-foreground">
+                <span className="text-studio-fg-muted">
                   {values.experienceYears ? `${values.experienceYears} سنوات من الخبرة` : "أضف سنوات خبرتك"}
                 </span>
               </li>
             </ul>
-            {values.bio && <p className="mt-5 border-t border-studio-border pt-4 text-sm leading-7 text-muted-foreground">{values.bio}</p>}
+            {values.bio && <p className="mt-5 border-t border-studio-border pt-4 text-sm leading-7 text-studio-fg-muted">{values.bio}</p>}
           </section>
 
           <section className="rounded-3xl border border-studio-border bg-studio-panel p-5 shadow-sm">
             <h2 className="font-bold">معلومات الحساب</h2>
             <dl className="mt-4 space-y-4 text-sm">
               <div>
-                <dt className="text-xs text-muted-foreground">البريد الإلكتروني</dt>
+                <dt className="text-xs text-studio-fg-muted">البريد الإلكتروني</dt>
                 <dd className="mt-1 break-all font-medium" dir="ltr">{user.email}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">حالة الحساب</dt>
+                <dt className="text-xs text-studio-fg-muted">حالة الحساب</dt>
                 <dd className="mt-1 inline-flex items-center gap-1.5 font-medium">
-                  <span className={`h-2 w-2 rounded-full ${membership.status === "active" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <span className={`h-2 w-2 rounded-full ${membership.status === "active" ? "bg-studio-success" : "bg-studio-warning"}`} />
                   {membership.status === "active" ? "نشط" : "قيد المراجعة"}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">عضو منذ</dt>
+                <dt className="text-xs text-studio-fg-muted">عضو منذ</dt>
                 <dd className="mt-1 font-medium">{memberSince}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">رقم العضوية</dt>
+                <dt className="text-xs text-studio-fg-muted">رقم العضوية</dt>
                 <dd className="mt-1 font-medium tabular-nums">#{membership.id}</dd>
               </div>
             </dl>
           </section>
-          <p className="px-2 text-xs leading-6 text-muted-foreground">
+          <p className="px-2 text-xs leading-6 text-studio-fg-muted">
             بيانات هذا الملف خاصة بعضويتك في الأكاديمية، ولا تظهر إلا المعلومات المهنية التي تضيفها.
           </p>
         </aside>
@@ -481,7 +481,7 @@ export default function InstructorProfilePage() {
   const { user, membership, accessToken } = useInstructorAuth();
 
   if (!user || !membership) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">جارٍ تحميل بيانات الملف الشخصي...</p>;
+    return <p className="py-16 text-center text-sm text-studio-fg-muted">جارٍ تحميل بيانات الملف الشخصي...</p>;
   }
 
   return <InstructorProfileForm key={membership.id} user={user} membership={membership} accessToken={accessToken} />;

@@ -115,9 +115,9 @@ export function InstructorStudentsWorkspace() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">مساحة المدرّب</p>
+          <p className="text-sm font-medium text-studio-accent">مساحة المدرّب</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">إدارة الطلاب</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-studio-fg-muted">
             الطلاب المسجلون في الدورات المعيّنة لك فقط. يمكنك عرض بياناتهم وتصدير النتائج دون تغيير حساباتهم.
           </p>
         </div>
@@ -133,7 +133,7 @@ export function InstructorStudentsWorkspace() {
       </header>
 
       {metricsError && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+        <p role="alert" className="rounded-xl border border-studio-danger/30 bg-studio-danger/5 p-3 text-sm text-studio-danger">
           تعذر تحميل مؤشرات الطلاب: {metricsError}
         </p>
       )}
@@ -154,11 +154,11 @@ export function InstructorStudentsWorkspace() {
         ) : loading ? (
           <StudentLoadingState />
         ) : students.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-card p-12 text-center">
-            <p className="text-sm font-semibold text-foreground">
+          <div className="rounded-xl border border-dashed border-studio-border bg-studio-panel p-12 text-center">
+            <p className="text-sm font-semibold text-studio-fg">
               {hasFilters ? "لا توجد نتائج مطابقة" : "لا يوجد طلاب مسجلون في دوراتك حتى الآن"}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-studio-fg-muted">
               {hasFilters
                 ? "جرّب تغيير البحث أو عوامل التصفية."
                 : "سيظهر هنا الطلاب المسجلون في الدورات المعيّنة لك."}
@@ -187,26 +187,26 @@ export function InstructorStudentsWorkspace() {
       </section>
 
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={() => setSelectedStudent(null)}>
-          <section role="dialog" aria-modal="true" aria-labelledby="instructor-student-title" className="w-full max-w-lg rounded-2xl border bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-studio-overlay p-4" role="presentation" onClick={() => setSelectedStudent(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="instructor-student-title" className="w-full max-w-lg rounded-2xl border border-studio-border bg-studio-panel p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="instructor-student-title" className="text-lg font-bold">{selectedStudent.fullName}</h2>
-                <p className="mt-1 text-sm text-muted-foreground" dir="ltr">{selectedStudent.email}</p>
+                <p className="mt-1 text-sm text-studio-fg-muted" dir="ltr">{selectedStudent.email}</p>
               </div>
               <button type="button" className="rounded-lg border px-3 py-1.5 text-sm" onClick={() => setSelectedStudent(null)}>إغلاق</button>
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
-              <div><dt className="text-muted-foreground">الهاتف</dt><dd className="mt-1" dir="ltr">{selectedStudent.phone || "—"}</dd></div>
-              <div><dt className="text-muted-foreground">هاتف ولي الأمر</dt><dd className="mt-1" dir="ltr">{selectedStudent.parentPhone || "—"}</dd></div>
-              <div><dt className="text-muted-foreground">حالة الحساب</dt><dd className="mt-1">{STUDENT_STATUS_CONFIG[selectedStudent.status].label}</dd></div>
-              <div><dt className="text-muted-foreground">النوع</dt><dd className="mt-1">{selectedStudent.gender || "—"}</dd></div>
-              <div><dt className="text-muted-foreground">المرحلة الدراسية</dt><dd className="mt-1">{selectedStudent.studyLevel || "—"}</dd></div>
-              <div><dt className="text-muted-foreground">المحافظة / المدينة</dt><dd className="mt-1">{[selectedStudent.governorate, selectedStudent.city].filter(Boolean).join("، ") || "—"}</dd></div>
-              <div><dt className="text-muted-foreground">دوراتك المسجل بها</dt><dd className="mt-1">{selectedStudent.enrolledCoursesCount}</dd></div>
-              <div><dt className="text-muted-foreground">دورات مكتملة</dt><dd className="mt-1">{selectedStudent.completedCoursesCount}</dd></div>
-              <div><dt className="text-muted-foreground">آخر دخول</dt><dd className="mt-1">{selectedStudent.lastLoginAt ? new Intl.DateTimeFormat("ar", { dateStyle: "medium" }).format(new Date(selectedStudent.lastLoginAt)) : "—"}</dd></div>
-              <div><dt className="text-muted-foreground">آخر نشاط</dt><dd className="mt-1">{selectedStudent.lastActivityAt ? new Intl.DateTimeFormat("ar", { dateStyle: "medium" }).format(new Date(selectedStudent.lastActivityAt)) : "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">الهاتف</dt><dd className="mt-1" dir="ltr">{selectedStudent.phone || "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">هاتف ولي الأمر</dt><dd className="mt-1" dir="ltr">{selectedStudent.parentPhone || "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">حالة الحساب</dt><dd className="mt-1">{STUDENT_STATUS_CONFIG[selectedStudent.status].label}</dd></div>
+              <div><dt className="text-studio-fg-muted">النوع</dt><dd className="mt-1">{selectedStudent.gender || "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">المرحلة الدراسية</dt><dd className="mt-1">{selectedStudent.studyLevel || "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">المحافظة / المدينة</dt><dd className="mt-1">{[selectedStudent.governorate, selectedStudent.city].filter(Boolean).join("، ") || "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">دوراتك المسجل بها</dt><dd className="mt-1">{selectedStudent.enrolledCoursesCount}</dd></div>
+              <div><dt className="text-studio-fg-muted">دورات مكتملة</dt><dd className="mt-1">{selectedStudent.completedCoursesCount}</dd></div>
+              <div><dt className="text-studio-fg-muted">آخر دخول</dt><dd className="mt-1">{selectedStudent.lastLoginAt ? new Intl.DateTimeFormat("ar", { dateStyle: "medium" }).format(new Date(selectedStudent.lastLoginAt)) : "—"}</dd></div>
+              <div><dt className="text-studio-fg-muted">آخر نشاط</dt><dd className="mt-1">{selectedStudent.lastActivityAt ? new Intl.DateTimeFormat("ar", { dateStyle: "medium" }).format(new Date(selectedStudent.lastActivityAt)) : "—"}</dd></div>
             </dl>
           </section>
         </div>

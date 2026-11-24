@@ -11,7 +11,10 @@ export default function InstructorLayout({ children }: { children: React.ReactNo
 
   return (
     <InstructorAuthProvider>
-      <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      {/* The theme wrapper must include the UploadManager too. It renders a
+          fixed portal-like overlay that used to sit outside .tenant-theme and
+          therefore ignored the saved brand colors. */}
+      <div className="tenant-theme min-h-screen bg-studio-bg text-studio-fg" dir="rtl">
         <InstructorWorkspaceLayout>{children}</InstructorWorkspaceLayout>
         {!isAuthPage && <UploadManager />}
       </div>

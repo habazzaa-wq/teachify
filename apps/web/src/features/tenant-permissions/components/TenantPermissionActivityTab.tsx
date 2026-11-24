@@ -27,11 +27,11 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  created: "text-green-600 bg-green-100 dark:bg-green-900/20",
-  updated: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
-  imported: "text-cyan-600 bg-cyan-100 dark:bg-cyan-900/20",
-  archived: "text-amber-600 bg-amber-100 dark:bg-amber-900/20",
-  restored: "text-teal-600 bg-teal-100 dark:bg-teal-900/20",
+  created: "text-studio-success bg-studio-success/15",
+  updated: "text-studio-info bg-studio-info/10",
+  imported: "text-studio-info bg-studio-info/10",
+  archived: "text-studio-warning bg-studio-warning/10",
+  restored: "text-studio-success bg-studio-success/15",
 };
 
 function TenantPermissionActivityTab({ activities, loading }: TenantPermissionActivityTabProps) {

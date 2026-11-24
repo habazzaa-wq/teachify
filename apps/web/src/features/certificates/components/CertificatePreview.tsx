@@ -118,7 +118,7 @@ export const CertificatePreview = forwardRef<HTMLDivElement, Props>(function Cer
   }, [verificationUrl, shouldRenderQr, secondary]);
 
   return (
-    <div ref={ref} className="w-full overflow-auto bg-neutral-200 p-4 print:bg-white print:p-0">
+    <div ref={ref} className="w-full overflow-auto bg-studio-muted p-4 print:bg-white print:p-0">
       <div
         id={`certificate-print-${certificate.id}`}
         dir="rtl"

@@ -88,15 +88,15 @@ export function CertificateViewDialog({ certificate, platformName, platformLogoU
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-auto p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] bg-studio-overlay backdrop-blur-sm overflow-auto p-4" onClick={onClose}>
       <div className="mx-auto max-w-6xl my-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-studio-fg">
           <h3 className="text-lg font-bold">معاينة الشهادة</h3>
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleDownloadPng}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-studio-glass-dialog px-4 py-2 text-sm font-bold hover:bg-studio-surface disabled:opacity-50"
             >
               {downloading === "png" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileImage className="h-4 w-4" />}
               صورة PNG
@@ -104,7 +104,7 @@ export function CertificateViewDialog({ certificate, platformName, platformLogoU
             <button
               onClick={handleDownloadPdf}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-studio-glass-dialog px-4 py-2 text-sm font-bold hover:bg-studio-surface disabled:opacity-50"
             >
               {downloading === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               ملف PDF
@@ -112,11 +112,11 @@ export function CertificateViewDialog({ certificate, platformName, platformLogoU
             <button
               onClick={handlePrint}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2 text-sm font-bold hover:bg-white/25 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-studio-glass-dialog px-4 py-2 text-sm font-bold hover:bg-studio-surface disabled:opacity-50"
             >
               <Printer className="h-4 w-4" /> طباعة
             </button>
-            <button onClick={onClose} className="rounded-lg bg-white/15 p-2 hover:bg-white/25" aria-label="إغلاق">
+            <button onClick={onClose} className="rounded-lg bg-studio-glass-dialog p-2 hover:bg-studio-surface" aria-label="إغلاق">
               <X className="h-5 w-5" />
             </button>
           </div>

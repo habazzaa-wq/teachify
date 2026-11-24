@@ -263,15 +263,15 @@ export function ImageAnswerCapture({
         className={cn(
           "rounded-2xl border-2 border-dashed p-4",
           selectable
-            ? "border-[var(--brand-primary)]/35 bg-[var(--brand-primary)]/[0.04]"
+            ? "border-studio-accent/35 bg-studio-accent/[0.04]"
             : "border-border/40 bg-muted/30",
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <ImagePlus className="h-4 w-4 text-[var(--brand-primary)]" />
+          <ImagePlus className="h-4 w-4 text-studio-accent" />
           <h3 className="text-sm font-extrabold text-foreground">إجابة مصوّرة</h3>
           {uploader.answered && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-extrabold text-emerald-600">
+            <span className="inline-flex items-center gap-1 rounded-full bg-studio-success/15 px-2 py-0.5 text-[10px] font-extrabold text-studio-success">
               <Check className="h-3 w-3" />
               تم الرفع
             </span>
@@ -287,7 +287,7 @@ export function ImageAnswerCapture({
               <p className={SECTION_LABEL}>الصفحات المرفوعة ({existingPages.length})</p>
             </div>
             {manageError && (
-              <p className="text-[10px] font-semibold leading-relaxed text-red-500">
+              <p className="text-[10px] font-semibold leading-relaxed text-studio-danger">
                 {manageError}
               </p>
             )}
@@ -330,8 +330,7 @@ export function ImageAnswerCapture({
                   type="button"
                   disabled={!selectable}
                   onClick={() => void uploader.uploadAll()}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-extrabold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ background: "var(--brand-primary)" }}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-studio-accent px-3 text-xs font-extrabold text-studio-accent-fg shadow-sm transition-all duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <UploadCloud className="h-3.5 w-3.5" />
                   رفع الكل ({queueCount})
@@ -402,8 +401,7 @@ export function ImageAnswerCapture({
             <button
               type="button"
               onClick={() => cameraInputRef.current?.click()}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-white shadow-lg shadow-[rgba(0,0,0,0.25)] transition-all duration-200 hover:-translate-y-0.5"
-              style={{ background: "var(--brand-primary)" }}
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-studio-accent px-4 text-sm font-bold text-studio-accent-fg shadow-lg shadow-studio-overlay transition-all duration-200 hover:-translate-y-0.5"
             >
               <Camera className="h-4 w-4" />
               التقاط صورة
@@ -425,7 +423,7 @@ export function ImageAnswerCapture({
         </p>
 
         {uploader.busy && (
-          <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-700 ring-1 ring-amber-500/30">
+          <div className="mt-3 flex items-center gap-2 rounded-xl bg-studio-warning/10 px-3 py-2 text-xs font-bold text-studio-warning ring-1 ring-studio-warning/30">
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             جارٍ رفع صفحة الإجابة... يُرجى عدم الانتقال بين الأسئلة أو إغلاق الصفحة حتى يكتمل الرفع.
           </div>
@@ -549,7 +547,7 @@ function ServerPageCard({
           <button
             type="button"
             onClick={onToggle}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[var(--brand-primary)] transition-colors hover:bg-[var(--brand-primary)]/10"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-studio-accent transition-colors hover:bg-studio-accent/10"
           >
             {preview ? (
               <>
@@ -613,24 +611,24 @@ function DraftCard({
         />
 
         {uploading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/45">
-            <Loader2 className="h-6 w-6 animate-spin text-white" />
-            <span className="text-xs font-extrabold tabular-nums text-white">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-studio-fg/70">
+            <Loader2 className="h-6 w-6 animate-spin text-studio-bg" />
+            <span className="text-xs font-extrabold tabular-nums text-studio-bg">
               جارٍ الرفع {draft.progress}%
             </span>
           </div>
         )}
 
         {draft.status === "done" && (
-          <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
+          <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-studio-success px-2 py-0.5 text-[10px] font-extrabold text-studio-success-foreground">
             <Check className="h-3 w-3" strokeWidth={3} />
             تم الرفع
           </span>
         )}
 
         {draft.status === "expired" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/45 px-3 text-center">
-            <span className="text-[11px] font-bold text-white">{draft.error}</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-studio-fg/70 px-3 text-center">
+            <span className="text-[11px] font-bold text-studio-bg">{draft.error}</span>
           </div>
         )}
       </div>
@@ -641,7 +639,7 @@ function DraftCard({
             صفحة {index + 1} من {total}
           </p>
           {draft.status === "error" && draft.error && (
-            <p className="mt-0.5 line-clamp-2 text-[10px] font-semibold leading-snug text-red-500">
+            <p className="mt-0.5 line-clamp-2 text-[10px] font-semibold leading-snug text-studio-danger">
               {draft.error}
             </p>
           )}
@@ -677,7 +675,7 @@ function DraftCard({
             <button
               type="button"
               onClick={() => onUpload?.()}
-              className="inline-flex h-7 items-center gap-1 rounded-lg bg-red-500 px-2.5 text-[11px] font-extrabold text-white transition-colors hover:bg-red-600"
+              className="inline-flex h-7 items-center gap-1 rounded-lg bg-studio-danger px-2.5 text-[11px] font-extrabold text-studio-danger-foreground transition-colors hover:bg-studio-danger/90"
             >
               <RefreshCw className="h-3 w-3" />
               إعادة
@@ -688,8 +686,7 @@ function DraftCard({
             <button
               type="button"
               onClick={onUpload}
-              className="inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[11px] font-extrabold text-white transition-all duration-200 hover:-translate-y-0.5"
-              style={{ background: "var(--brand-primary)" }}
+              className="inline-flex h-7 items-center gap-1 rounded-lg bg-studio-accent px-2.5 text-[11px] font-extrabold text-studio-accent-fg transition-all duration-200 hover:-translate-y-0.5"
             >
               رفع
             </button>
@@ -724,8 +721,8 @@ function IconButton({
       onClick={onClick}
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground transition-colors",
-        !disabled && onClick && !danger && "hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]",
-        !disabled && onClick && danger && "hover:border-red-500 hover:bg-red-500/10 hover:text-red-500",
+        !disabled && onClick && !danger && "hover:border-studio-accent hover:text-studio-accent",
+        !disabled && onClick && danger && "hover:border-studio-danger hover:bg-studio-danger/10 hover:text-studio-danger",
         (disabled || !onClick) && "cursor-not-allowed opacity-40",
       )}
     >

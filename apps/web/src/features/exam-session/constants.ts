@@ -18,9 +18,9 @@ export const TIMER_WARNING_SECONDS = [600, 300, 60] as const;
 
 export const TIMER_TONES = {
   safe: "text-foreground",
-  warning: "text-amber-500",
-  danger: "text-orange-500",
-  critical: "text-red-500 animate-pulse",
+  warning: "text-studio-warning",
+  danger: "text-studio-danger",
+  critical: "text-studio-danger animate-pulse",
 } as const;
 
 export const QUESTION_TYPE_LABELS: Record<ExamSessionQuestionType, string> = {

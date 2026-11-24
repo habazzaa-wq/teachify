@@ -14,7 +14,7 @@ export function BlogCoverImage({ src, alt, className, imageClassName = "" }: Pro
   const [failed, setFailed] = useState(false);
 
   return (
-    <div className={`relative overflow-hidden bg-[var(--brand-primary)] ${className}`}>
+    <div className={`relative overflow-hidden bg-studio-accent ${className}`}>
       {!failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -24,8 +24,8 @@ export function BlogCoverImage({ src, alt, className, imageClassName = "" }: Pro
           className={`h-full w-full object-cover ${imageClassName}`}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(ellipse_at_75%_15%,var(--brand-secondary),transparent_38%),linear-gradient(145deg,var(--brand-primary),#171c36)]">
-          <BookOpen className="h-10 w-10 text-white/60" strokeWidth={1} aria-hidden="true" />
+        <div className="absolute inset-0 flex items-center justify-center bg-studio-accent">
+          <BookOpen className="h-10 w-10 text-studio-accent-fg/70" strokeWidth={1} aria-hidden="true" />
           <span className="sr-only">{alt}</span>
         </div>
       )}

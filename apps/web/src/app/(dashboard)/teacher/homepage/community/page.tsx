@@ -158,7 +158,7 @@ export default function CommunitySectionPage() {
           </AppTabsList>
           <div className="flex items-center gap-2">
             {form.design !== "classic" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-studio-success/10 px-3 py-1 text-xs font-semibold text-studio-success">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 تم اختيار: {selectedDesign.name}
               </span>

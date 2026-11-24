@@ -75,7 +75,7 @@ function formatDate(dateStr: string | null): string {
 function InspectorSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border-b py-3">
-      <h4 className="mb-2 px-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+      <h4 className="mb-2 px-4 text-[10px] font-semibold uppercase tracking-wider text-studio-fg-muted/50">
         {title}
       </h4>
       <div className="space-y-0">{children}</div>
@@ -85,8 +85,8 @@ function InspectorSection({ title, children }: { title: string; children: React.
 
 function InspectorRow({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: React.ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex items-center justify-between px-4 py-1.5 text-sm hover:bg-accent/30">
-      <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="flex items-center justify-between px-4 py-1.5 text-sm hover:bg-studio-hover/30">
+      <div className="flex items-center gap-2 text-studio-fg-muted">
         {Icon && <Icon className="h-3.5 w-3.5" />}
         <span className="text-xs">{label}</span>
       </div>
@@ -98,11 +98,11 @@ function InspectorRow({ label, value, icon: Icon }: { label: string; value: Reac
 function OnboardingState() {
   return (
     <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
-        <Eye className="h-8 w-8 text-accent/40" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-studio-accent/10">
+        <Eye className="h-8 w-8 text-studio-accent/40" />
       </div>
       <h3 className="mb-1 text-sm font-medium">لوحة التفاصيل</h3>
-      <p className="text-xs text-muted-foreground/60">
+      <p className="text-xs text-studio-fg-muted/60">
         اختر ملفاً لعرض معلوماته和技术 البيانات
       </p>
     </div>
@@ -130,10 +130,10 @@ function MediaInspectorBase({
   if (isLoading) {
     return (
       <div className="space-y-3 p-4">
-        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+        <div className="h-40 animate-pulse rounded-xl bg-studio-skeleton" />
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-6 animate-pulse rounded bg-muted/50" />
+            <div key={i} className="h-6 animate-pulse rounded bg-studio-skeleton/50" />
           ))}
         </div>
       </div>
@@ -142,7 +142,7 @@ function MediaInspectorBase({
 
   if (!asset) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-full items-center justify-center text-sm text-studio-fg-muted">
         الملف غير موجود
       </div>
     );
@@ -164,7 +164,7 @@ function MediaInspectorBase({
         {onClose && (
           <button
             onClick={onClose}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
           >
             <X className="h-4 w-4" />
           </button>
@@ -173,7 +173,7 @@ function MediaInspectorBase({
 
       {/* Preview */}
       <div className="relative border-b">
-        <div className="aspect-video flex items-center justify-center bg-muted/30">
+        <div className="aspect-video flex items-center justify-center bg-studio-soft/30">
           {asset.thumbnailUrl || (isImage && asset.cdnUrl) ? (
             <img
               src={asset.thumbnailUrl ?? asset.cdnUrl!}
@@ -185,24 +185,24 @@ function MediaInspectorBase({
               {asset.posterUrl ? (
                 <img src={asset.posterUrl} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500/20 to-blue-600/10">
-                  <Play className="h-12 w-12 text-blue-500/60" />
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-studio-info/20 to-studio-info/5">
+                  <Play className="h-12 w-12 text-studio-info/60" />
                 </div>
               )}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-studio-overlay text-studio-glass-toolbar-fg backdrop-blur-sm">
                   <Play className="h-6 w-6 fill-current" />
                 </div>
               </div>
             </div>
           ) : isAudio ? (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-              <FileText className="h-12 w-12 text-purple-500/40" />
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-chart-4/20 to-chart-4/5">
+              <FileText className="h-12 w-12 text-chart-4/40" />
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                <span className="text-xl font-bold uppercase text-muted-foreground/40">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-studio-soft">
+                <span className="text-xl font-bold uppercase text-studio-fg-muted/40">
                   {asset.extension ?? asset.type.slice(0, 3)}
                 </span>
               </div>
@@ -212,7 +212,7 @@ function MediaInspectorBase({
 
         {/* Duration overlay */}
         {asset.duration > 0 && (
-          <div className="absolute bottom-2 start-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+          <div className="absolute bottom-2 start-2 rounded-md bg-studio-overlay px-1.5 py-0.5 text-[10px] font-medium text-studio-glass-toolbar-fg">
             {formatDuration(asset.duration)}
           </div>
         )}
@@ -222,29 +222,29 @@ function MediaInspectorBase({
       <div className="border-b px-4 py-3">
         <h4 className="text-sm font-semibold">{asset.title ?? asset.originalName ?? "بدون اسم"}</h4>
         {asset.originalFilename && asset.originalFilename !== asset.title && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{asset.originalFilename}</p>
+          <p className="mt-0.5 text-xs text-studio-fg-muted">{asset.originalFilename}</p>
         )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           <span className={cn(
             "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
-            statusConfig.color === "success" && "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400",
-            statusConfig.color === "warning" && "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400",
-            statusConfig.color === "destructive" && "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400",
-            statusConfig.color === "info" && "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
-            statusConfig.color === "secondary" && "bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-400",
+            statusConfig.color === "success" && "bg-studio-success/10 text-studio-success",
+            statusConfig.color === "warning" && "bg-studio-warning/10 text-studio-warning",
+            statusConfig.color === "destructive" && "bg-studio-danger/10 text-studio-danger",
+            statusConfig.color === "info" && "bg-studio-info/10 text-studio-info",
+            statusConfig.color === "secondary" && "bg-studio-soft text-studio-fg-muted",
           )}>
             {statusConfig.label}
           </span>
-          <span className="inline-flex items-center rounded-full border bg-background px-2 py-0.5 text-[10px] font-medium">
+          <span className="inline-flex items-center rounded-full border border-studio-border bg-studio-surface px-2 py-0.5 text-[10px] font-medium">
             {typeConfig.label}
           </span>
           {asset.pinned && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-studio-warning/10 px-2 py-0.5 text-[10px] font-medium text-studio-warning">
               <Pin className="h-2.5 w-2.5" /> مثبت
             </span>
           )}
           {asset.favorite && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:bg-red-950 dark:text-red-400">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-studio-danger/10 px-2 py-0.5 text-[10px] font-medium text-studio-danger">
               <Heart className="h-2.5 w-2.5 fill-current" /> مفضل
             </span>
           )}
@@ -274,7 +274,7 @@ function MediaInspectorBase({
             <InspectorRow
               label="CDN URL"
               value={
-                <a href={asset.cdnUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                <a href={asset.cdnUrl} target="_blank" rel="noreferrer" className="text-studio-accent hover:underline">
                   فتح
                 </a>
               }
@@ -324,7 +324,7 @@ function MediaInspectorBase({
             {asset.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent"
+                className="rounded-full bg-studio-accent/10 px-2 py-0.5 text-[10px] font-medium text-studio-accent"
               >
                 {tag}
               </span>
@@ -336,12 +336,12 @@ function MediaInspectorBase({
       {/* Usage */}
       <InspectorSection title="الاستخدام">
         {usages.length === 0 ? (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground/60">
+          <p className="px-4 py-2 text-[11px] text-studio-fg-muted/60">
             لم يتم استخدام هذا الملف في أي محتوى بعد.
           </p>
         ) : (
           <div className="space-y-1 px-4">
-            <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-4 text-[11px] text-studio-fg-muted">
               {usages.filter((u) => u.entityType === "course").length > 0 && (
                 <span>{usages.filter((u) => u.entityType === "course").length} دورة</span>
               )}
@@ -359,12 +359,12 @@ function MediaInspectorBase({
               {usages.slice(0, 5).map((usage) => (
                 <li
                   key={`${usage.entityType}-${usage.entityId}-${usage.id}`}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-accent/30 px-2.5 py-1.5 text-[11px]"
+                  className="flex items-center justify-between gap-2 rounded-lg bg-studio-soft px-2.5 py-1.5 text-[11px]"
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{usage.entityTitle}</p>
                     {usage.context && (
-                      <p className="truncate text-[10px] text-muted-foreground">{usage.context}</p>
+                      <p className="truncate text-[10px] text-studio-fg-muted">{usage.context}</p>
                     )}
                   </div>
                   {usage.url && (
@@ -399,7 +399,7 @@ function MediaInspectorBase({
           {onRename && (
             <button
               onClick={() => onRename(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
             >
               <Pencil className="h-4 w-4" />
               إعادة تسمية
@@ -408,7 +408,7 @@ function MediaInspectorBase({
           {onMove && (
             <button
               onClick={() => onMove(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
             >
               <FolderInput className="h-4 w-4" />
               نقل
@@ -417,7 +417,7 @@ function MediaInspectorBase({
           {onDuplicate && (
             <button
               onClick={() => onDuplicate(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
             >
               <Copy className="h-4 w-4" />
               نسخ
@@ -426,7 +426,7 @@ function MediaInspectorBase({
           {onDownload && (
             <button
               onClick={() => onDownload(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
             >
               <Download className="h-4 w-4" />
               تحميل
@@ -436,8 +436,8 @@ function MediaInspectorBase({
             <button
               onClick={() => onFavorite(asset)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] transition-colors hover:bg-accent",
-                asset.favorite ? "text-red-500" : "text-muted-foreground hover:text-foreground",
+                "flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] transition-colors hover:bg-studio-hover",
+                asset.favorite ? "text-studio-danger" : "text-studio-fg-muted hover:text-studio-fg",
               )}
             >
               <Heart className={cn("h-4 w-4", asset.favorite && "fill-current")} />
@@ -448,8 +448,8 @@ function MediaInspectorBase({
             <button
               onClick={() => onPin(asset)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] transition-colors hover:bg-accent",
-                asset.pinned ? "text-amber-500" : "text-muted-foreground hover:text-foreground",
+                "flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] transition-colors hover:bg-studio-hover",
+                asset.pinned ? "text-studio-warning" : "text-studio-fg-muted hover:text-studio-fg",
               )}
             >
               <Pin className="h-4 w-4" />
@@ -459,7 +459,7 @@ function MediaInspectorBase({
           {onArchive && (
             <button
               onClick={() => onArchive(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
             >
               <Archive className="h-4 w-4" />
               أرشفة
@@ -468,7 +468,7 @@ function MediaInspectorBase({
           {onDelete && (
             <button
               onClick={() => onDelete(asset)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-destructive transition-colors hover:bg-destructive/10"
+              className="flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] text-studio-danger transition-colors hover:bg-studio-danger/10"
             >
               <Trash2 className="h-4 w-4" />
               حذف

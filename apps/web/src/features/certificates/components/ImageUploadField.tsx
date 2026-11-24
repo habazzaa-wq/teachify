@@ -86,7 +86,7 @@ export function ImageUploadField({ label, value, onChange, hint, shape = "square
               className={`h-full w-full ${shape === "wide" ? "object-contain p-2" : "object-cover"}`}
             />
             {upload.isPending && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+              <div className="absolute inset-0 flex items-center justify-center bg-studio-surface/80">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             )}
@@ -115,7 +115,7 @@ export function ImageUploadField({ label, value, onChange, hint, shape = "square
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50"
+            className="inline-flex items-center gap-1 rounded-lg border border-studio-danger/40 px-2.5 py-1.5 text-[11px] font-bold text-studio-danger hover:bg-studio-danger/10"
           >
             <Trash2 className="h-3.5 w-3.5" />
             حذف
@@ -124,7 +124,7 @@ export function ImageUploadField({ label, value, onChange, hint, shape = "square
       </div>
 
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-      {error && <p className="text-[11px] font-bold text-red-600">{error}</p>}
+      {error && <p className="text-[11px] font-bold text-studio-danger">{error}</p>}
     </div>
   );
 }

@@ -26,10 +26,10 @@ function TenantPermissionOverviewTab({ permission }: TenantPermissionOverviewTab
   ];
 
   const statCards = [
-    { icon: Users, label: "الأدوار المستخدمة", value: permission.rolesCount, color: "text-blue-600" },
-    { icon: EyeOff, label: "مخفي", value: permission.isHidden ? "نعم" : "لا", color: permission.isHidden ? "text-amber-600" : "text-green-600" },
-    { icon: Calendar, label: "تم الإنشاء", value: formatDate(permission.createdAt), color: "text-green-600" },
-    { icon: Clock, label: "تم التحديث", value: formatDateTime(permission.updatedAt), color: "text-amber-600" },
+    { icon: Users, label: "الأدوار المستخدمة", value: permission.rolesCount, color: "text-studio-info" },
+    { icon: EyeOff, label: "مخفي", value: permission.isHidden ? "نعم" : "لا", color: permission.isHidden ? "text-studio-warning" : "text-studio-success" },
+    { icon: Calendar, label: "تم الإنشاء", value: formatDate(permission.createdAt), color: "text-studio-success" },
+    { icon: Clock, label: "تم التحديث", value: formatDateTime(permission.updatedAt), color: "text-studio-warning" },
   ];
 
   return (

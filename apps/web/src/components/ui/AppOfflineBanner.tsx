@@ -30,7 +30,7 @@ function AppOfflineBanner() {
     return (
       <div
         className={cn(
-          "fixed bottom-4 start-4 z-50 flex items-center gap-2 rounded-xl border border-success/20 bg-success/10 px-4 py-2.5 text-sm font-medium text-success shadow-lg backdrop-blur-xl animate-slide-up",
+          "fixed bottom-4 start-4 z-50 flex items-center gap-2 rounded-xl border border-studio-success/20 bg-studio-success/10 px-4 py-2.5 text-sm font-medium text-studio-success shadow-lg backdrop-blur-xl animate-slide-up",
         )}
       >
         <RefreshCw className="h-4 w-4" />
@@ -44,7 +44,7 @@ function AppOfflineBanner() {
   return (
     <div
       className={cn(
-        "fixed inset-x-0 top-0 z-[60] flex items-center justify-center gap-2 bg-destructive/90 px-4 py-2 text-sm font-medium text-destructive-foreground backdrop-blur-xl animate-slide-down",
+        "fixed inset-x-0 top-0 z-[60] flex items-center justify-center gap-2 bg-studio-danger px-4 py-2 text-sm font-medium text-studio-danger-foreground backdrop-blur-xl animate-slide-down",
       )}
     >
       <WifiOff className="h-4 w-4" />

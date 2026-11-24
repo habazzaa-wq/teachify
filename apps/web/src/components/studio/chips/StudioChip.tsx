@@ -18,10 +18,10 @@ export interface StudioChipProps {
 const variantStyles: Record<ChipVariant, string> = {
   default: "bg-studio-soft text-studio-fg border-studio-border",
   accent: "bg-studio-accent-soft text-studio-accent border-studio-accent-border",
-  success: "bg-emerald/10 text-emerald border-emerald/20",
-  warning: "bg-amber/10 text-amber border-amber/20",
-  danger: "bg-red/10 text-red border-red/20",
-  info: "bg-blue/10 text-blue border-blue/20",
+  success: "bg-studio-success/10 text-studio-success border-studio-success/20",
+  warning: "bg-studio-warning/10 text-studio-warning border-studio-warning/20",
+  danger: "bg-studio-danger/10 text-studio-danger border-studio-danger/20",
+  info: "bg-studio-info/10 text-studio-info border-studio-info/20",
 };
 
 const sizeStyles = {

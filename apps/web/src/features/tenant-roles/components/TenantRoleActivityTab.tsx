@@ -37,16 +37,16 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  created: "text-green-600 bg-green-100 dark:bg-green-900/20",
-  edited: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
-  assigned: "text-secondary bg-secondary/10 dark:bg-secondary/20",
-  unassigned: "text-orange-600 bg-orange-100 dark:bg-orange-900/20",
-  imported: "text-cyan-600 bg-cyan-100 dark:bg-cyan-900/20",
-  archived: "text-amber-600 bg-amber-100 dark:bg-amber-900/20",
-  restored: "text-teal-600 bg-teal-100 dark:bg-teal-900/20",
-  activated: "text-green-600 bg-green-100 dark:bg-green-900/20",
-  deactivated: "text-red-600 bg-red-100 dark:bg-red-900/20",
-  duplicated: "text-indigo-600 bg-indigo-100 dark:bg-indigo-900/20",
+  created: "text-studio-success bg-studio-success/15",
+  edited: "text-studio-info bg-studio-info/10",
+  assigned: "text-secondary bg-secondary/10",
+  unassigned: "text-studio-warning bg-studio-warning/10",
+  imported: "text-studio-info bg-studio-info/10",
+  archived: "text-studio-warning bg-studio-warning/10",
+  restored: "text-studio-success bg-studio-success/15",
+  activated: "text-studio-success bg-studio-success/15",
+  deactivated: "text-studio-danger bg-studio-danger/10",
+  duplicated: "text-studio-accent bg-studio-accent/10",
 };
 
 function TenantRoleActivityTab({ activities, loading }: TenantRoleActivityTabProps) {

@@ -418,11 +418,11 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
           <div className="flex items-center gap-4 rounded-2xl border border-studio-border bg-studio-surface p-4">
             <div className="flex items-center gap-2">
               <span
-                className="h-8 w-8 rounded-full border border-black/10"
+                className="h-8 w-8 rounded-full border border-studio-border"
                 style={{ backgroundColor: primaryColor }}
               />
               <span
-                className="h-8 w-8 rounded-full border border-black/10"
+                className="h-8 w-8 rounded-full border border-studio-border"
                 style={{ backgroundColor: secondaryColor }}
               />
             </div>

@@ -152,7 +152,7 @@ export function TeacherCertificatesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-black flex items-center gap-2"><Award className="h-7 w-7 text-amber-600" /> الشهادات</h1>
+          <h1 className="text-2xl font-black flex items-center gap-2"><Award className="h-7 w-7 text-studio-warning" /> الشهادات</h1>
           <p className="text-sm text-muted-foreground mt-1">إدارة قوالب الشهادات، شروط الاستحقاق، ومراجعة طلبات الطلاب.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -285,14 +285,14 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
       {isLoading ? (
         <div className="text-sm text-muted-foreground">جارٍ تحميل القوالب...</div>
       ) : isError ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-3 text-sm">
-          <div className="font-bold text-amber-900">تعذّر تحميل قوالب الشهادات.</div>
-          <div className="text-amber-800">
+        <div className="rounded-2xl border border-studio-warning/40 bg-studio-warning/10 p-5 space-y-3 text-sm">
+          <div className="font-bold text-studio-warning">تعذّر تحميل قوالب الشهادات.</div>
+          <div className="text-studio-fg">
             تأكد من تسجيل الدخول بحساب مالك/أدمن التينانت، ومن مزامنة الصلاحيات
             (<code className="font-mono">php artisan db:seed --class=IdentityAccessSeeder</code>).
           </div>
-          {error instanceof Error && <div className="text-xs text-amber-700">{error.message}</div>}
-          <button onClick={() => void refetch()} className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100">
+          {error instanceof Error && <div className="text-xs text-studio-fg-muted">{error.message}</div>}
+          <button onClick={() => void refetch()} className="rounded-lg border border-studio-warning/40 px-3 py-1.5 text-xs font-bold text-studio-fg hover:bg-studio-warning/20">
             إعادة المحاولة
           </button>
         </div>
@@ -305,7 +305,7 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
                   <div className="font-bold">{template.name}</div>
                   <div className="text-xs text-muted-foreground">{template.slug}</div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-bold ${template.status === "active" ? "bg-green-100 text-green-700" : template.status === "draft" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-bold ${template.status === "active" ? "bg-studio-success/15 text-studio-success" : template.status === "draft" ? "bg-studio-warning/10 text-studio-warning" : "bg-studio-muted text-studio-fg-muted"}`}>
                   {template.status === "active" ? "مفعّل" : template.status === "draft" ? "مسودة" : "مؤرشف"}
                 </span>
               </div>
@@ -341,7 +341,7 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
                   onClick={() => {
                     if (window.confirm("حذف القالب؟")) remove.mutate(template.id);
                   }}
-                  className="rounded-lg border border-red-200 text-red-600 px-3 py-1.5 text-xs font-bold hover:bg-red-50"
+                  className="rounded-lg border border-studio-danger/40 text-studio-danger px-3 py-1.5 text-xs font-bold hover:bg-studio-danger/10"
                 >
                   حذف
                 </button>
@@ -382,7 +382,7 @@ function TemplatesSection({ platformName, platformLogo }: { platformName: string
             </div>
           </div>
           {saveError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">{saveError}</div>
+            <div className="rounded-lg border border-studio-danger/40 bg-studio-danger/10 p-3 text-xs font-bold text-studio-danger">{saveError}</div>
           )}
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-sm font-medium">اسم القالب<input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
@@ -539,7 +539,7 @@ function ApplicationsSection({ platformName, platformLogo }: { platformName: str
                           </button>
                         )}
                         {app.status === "approved" && !cert && (
-                          <button onClick={() => issue.mutateAsync(app.id)} className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white"><Send className="h-3.5 w-3.5" />إصدار وإرسال</button>
+                          <button onClick={() => issue.mutateAsync(app.id)} className="inline-flex items-center gap-1 rounded-lg bg-studio-accent px-3 py-1.5 text-xs font-bold text-studio-accent-fg"><Send className="h-3.5 w-3.5" />إصدار وإرسال</button>
                         )}
                         {cert && (
                           <button onClick={() => setPreviewCert(cert)} className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold"><Eye className="h-3.5 w-3.5" />عرض الشهادة</button>
@@ -585,13 +585,13 @@ function ApplicationsSection({ platformName, platformLogo }: { platformName: str
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setDecisions((current) => ({ ...current, [id]: "approved" }))}
-                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${decisions[id] !== "rejected" ? "bg-green-600 text-white" : "border"}`}
+                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${decisions[id] !== "rejected" ? "bg-studio-success text-studio-success-foreground" : "border"}`}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> مقبول
                     </button>
                     <button
                       onClick={() => setDecisions((current) => ({ ...current, [id]: "rejected" }))}
-                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${decisions[id] === "rejected" ? "bg-red-600 text-white" : "border"}`}
+                      className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold ${decisions[id] === "rejected" ? "bg-studio-danger text-studio-danger-foreground" : "border"}`}
                     >
                       <XCircle className="h-3.5 w-3.5" /> مرفوض
                     </button>
@@ -610,14 +610,14 @@ function ApplicationsSection({ platformName, platformLogo }: { platformName: str
             <button
               onClick={() => submitReview("reject")}
               disabled={reject.isPending || approve.isPending}
-              className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-lg bg-studio-danger px-4 py-2 text-sm font-bold text-studio-danger-foreground disabled:opacity-60"
             >
               <XCircle className="h-4 w-4" /> رفض الطلب
             </button>
             <button
               onClick={() => submitReview("approve")}
               disabled={approve.isPending || reject.isPending}
-              className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-lg bg-studio-success px-4 py-2 text-sm font-bold text-studio-success-foreground disabled:opacity-60"
             >
               <CheckCircle2 className="h-4 w-4" /> موافقة وإصدار
             </button>
@@ -800,7 +800,7 @@ function RuleFormPanel({
                 <div className="flex items-center gap-2 text-sm font-bold"><Icon className="h-4 w-4" /> المتطلب {index + 1}</div>
                 <button
                   onClick={() => setForm((current) => ({ ...current, requirements: current.requirements.filter((item) => item.id !== req.id) }))}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-studio-danger hover:text-studio-danger/80"
                   aria-label="حذف المتطلب"
                 >
                   <Trash2 className="h-4 w-4" />

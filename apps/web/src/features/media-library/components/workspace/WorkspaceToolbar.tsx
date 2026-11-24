@@ -327,7 +327,7 @@ function WorkspaceToolbar({ library = "media", totalAssets, selectedCount, onSel
           </div>
         )}
         {filters.favorites && (
-          <div className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs text-red-500">
+          <div className="flex items-center gap-1 rounded-full bg-studio-danger/10 px-2 py-0.5 text-xs text-studio-danger">
             <span>المفضلة</span>
             <button onClick={() => useMediaWorkspaceStore.getState().setFavoritesFilter(false)}>
               <X className="h-3 w-3" />
@@ -335,7 +335,7 @@ function WorkspaceToolbar({ library = "media", totalAssets, selectedCount, onSel
           </div>
         )}
         {filters.pinned && (
-          <div className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-500">
+          <div className="flex items-center gap-1 rounded-full bg-studio-warning/10 px-2 py-0.5 text-xs text-studio-warning">
             <span>المثبتة</span>
             <button onClick={() => useMediaWorkspaceStore.getState().setPinnedFilter(false)}>
               <X className="h-3 w-3" />

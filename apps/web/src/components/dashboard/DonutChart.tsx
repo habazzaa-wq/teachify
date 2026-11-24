@@ -47,7 +47,7 @@ function DonutChart({ segments, size = 160, strokeWidth = 20, showLegend = true 
             cy={center}
             r={radius}
             fill="none"
-            stroke="hsl(var(--muted))"
+            stroke="hsl(var(--studio-border))"
             strokeWidth={strokeWidth}
             className="opacity-40"
           />
@@ -78,7 +78,7 @@ function DonutChart({ segments, size = 160, strokeWidth = 20, showLegend = true 
           <span className="text-2xl font-bold tracking-tight tabular-nums">
             {segments.reduce((s, seg) => s + seg.value, 0)}
           </span>
-          <span className="text-[10px] text-muted-foreground">المجموع</span>
+          <span className="text-[10px] text-studio-fg-muted">المجموع</span>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ function DonutChart({ segments, size = 160, strokeWidth = 20, showLegend = true 
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: seg.color }}
               />
-              <span className="text-xs text-muted-foreground">{seg.label}</span>
+              <span className="text-xs text-studio-fg-muted">{seg.label}</span>
             </div>
           ))}
         </div>

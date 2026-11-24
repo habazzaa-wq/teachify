@@ -94,7 +94,7 @@ function MathView({ block }: { block: MathBlock }) {
     <figure
       className={cn(
         "rounded-lg border p-2",
-        lowConfidence ? "border-amber-400/60 bg-amber-50/40" : "border-studio-border bg-studio-soft/40",
+        lowConfidence ? "border-studio-warning/60 bg-studio-warning/10" : "border-studio-border bg-studio-soft/40",
       )}
     >
       <KatexDisplay latex={block.latex} />
@@ -107,7 +107,7 @@ const SVG_UNSAFE = /<\s*(script|foreignObject|iframe|object|embed|use|image)\b|j
 function DiagramView({ block }: { block: DiagramBlock }) {
   if (SVG_UNSAFE.test(block.svg)) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-amber-400/60 bg-amber-50/40 p-3 text-xs text-amber-700">
+      <div className="flex items-center gap-2 rounded-lg border border-studio-warning/60 bg-studio-warning/10 p-3 text-xs text-studio-warning">
         <AlertTriangle className="h-4 w-4" />
         تم إخفاء رسم قد يكون غير آمن. عدّل الرسم في محرر السؤال.
       </div>
@@ -119,11 +119,11 @@ function DiagramView({ block }: { block: DiagramBlock }) {
   return (
     <figure className="space-y-1">
       <div
-        className="mx-auto max-w-md overflow-x-auto rounded-lg border border-studio-border bg-white p-3 text-studio-fg [&_svg]:h-auto [&_svg]:w-full"
+        className="mx-auto max-w-md overflow-x-auto rounded-lg border border-studio-border bg-studio-surface p-3 text-studio-fg [&_svg]:h-auto [&_svg]:w-full"
         dangerouslySetInnerHTML={{ __html: block.svg }}
       />
       {lowConfidence && (
-        <figcaption dir="rtl" className="text-center text-[11px] text-amber-600">
+        <figcaption dir="rtl" className="text-center text-[11px] text-studio-warning">
           دقة التعرف على الرسم منخفضة — راجعه قبل النشر
         </figcaption>
       )}
@@ -198,7 +198,7 @@ function ChemicalView({ block }: { block: import("./types").ChemicalEquationBloc
 function CalloutView({ block }: { block: import("./types").CalloutBlock }) {
   const text = block.text ?? "";
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+    <div className="rounded-lg border border-studio-warning/40 bg-studio-warning/10 p-3 text-xs text-studio-fg">
       {block.runs ? <RunText runs={block.runs} /> : text}
     </div>
   );
@@ -215,7 +215,7 @@ function UnresolvedView({ block, index }: { block: UnresolvedVisualBlock; index:
   return (
     <div
       data-unresolved-index={index}
-      className="flex items-start gap-2 rounded-lg border border-dashed border-amber-400 bg-amber-50/50 p-3 text-xs text-amber-800"
+      className="flex items-start gap-2 rounded-lg border border-dashed border-studio-warning/60 bg-studio-warning/10 p-3 text-xs text-studio-fg"
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
       <span>

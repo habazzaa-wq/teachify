@@ -158,7 +158,7 @@ function StageFormDialog({
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, image: "" })}
-                  className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                  className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-studio-glass-toolbar text-studio-glass-toolbar-fg transition hover:bg-studio-accent"
                   aria-label="إزالة الصورة"
                 >
                   <X className="h-4 w-4" />

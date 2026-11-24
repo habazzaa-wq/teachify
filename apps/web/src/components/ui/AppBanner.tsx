@@ -20,23 +20,23 @@ interface AppBannerProps {
 
 const variantConfig: Record<BannerVariant, { container: string; icon: string; iconComponent: React.ComponentType<{ className?: string }> }> = {
   info: {
-    container: "border-blue-200/50 bg-blue-50/80 dark:border-blue-900/30 dark:bg-blue-950/30",
-    icon: "text-blue-600 dark:text-blue-400",
+    container: "border-studio-info/20 bg-studio-info/5",
+    icon: "text-studio-info",
     iconComponent: Info,
   },
   success: {
-    container: "border-success/20 bg-success/5",
-    icon: "text-success",
+    container: "border-studio-success/20 bg-studio-success/5",
+    icon: "text-studio-success",
     iconComponent: CheckCircle2,
   },
   warning: {
-    container: "border-warning/20 bg-warning/5",
-    icon: "text-warning",
+    container: "border-studio-warning/20 bg-studio-warning/5",
+    icon: "text-studio-warning",
     iconComponent: AlertTriangle,
   },
   destructive: {
-    container: "border-destructive/20 bg-destructive/5",
-    icon: "text-destructive",
+    container: "border-studio-danger/20 bg-studio-danger/5",
+    icon: "text-studio-danger",
     iconComponent: AlertCircle,
   },
 };
@@ -66,7 +66,7 @@ function AppBanner({
       <div className="min-w-0 flex-1">
         {title && <p className="text-sm font-medium">{title}</p>}
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-studio-fg-muted">{description}</p>
         )}
         {action && <div className="mt-2">{action}</div>}
       </div>
@@ -74,7 +74,7 @@ function AppBanner({
         <AppButton
           variant="ghost"
           size="icon"
-          className="h-6 w-6 shrink-0 text-muted-foreground/60 hover:text-foreground"
+          className="h-6 w-6 shrink-0 text-studio-fg-muted/60 hover:text-studio-fg"
           onClick={onDismiss}
           aria-label="إغلاق"
         >

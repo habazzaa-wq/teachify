@@ -69,13 +69,25 @@ export function buildBrandThemeCss(primary: string, secondary: string): string {
   const dashLight = generateThemeColors(primary, secondary, false);
   const dashDark = generateThemeColors(primary, secondary, true);
 
+  /*
+   * The complete dashboard palette is emitted on :root as well as
+   * .tenant-theme. Portals (dialogs, selects, dropdowns, context menus, toasts)
+   * mount on document.body, outside every themed wrapper; without this they
+   * kept the old root colors. The .tenant-theme/.student-theme blocks below
+   * re-declare the same values so specificity always favour the dashboard.
+   */
+  const rootLight = { ...light, ...dashLight };
+  const rootDark = { ...dark, ...dashDark };
+
   return `
 :root {
   --brand-primary: ${primary};
   --brand-secondary: ${secondary};
   --brand-primary-contrast: ${brandContrast(primary)};
   --brand-secondary-contrast: ${brandContrast(secondary)};
+  ${toVars(rootLight)}
 }
+.dark { ${toVars(rootDark)} }
 .community-theme { ${toVars(light)} }
 .dark .community-theme, .dark.community-theme { ${toVars(dark)} }
 .tenant-theme { ${toVars(dashLight)} }

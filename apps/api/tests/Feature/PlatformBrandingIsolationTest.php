@@ -166,6 +166,13 @@ class PlatformBrandingIsolationTest extends TestCase
             ->assertJsonPath('branding.primaryColor', '#123ABC')
             ->assertJsonPath('branding.secondaryColor', '#DEF456');
 
+        // Auth/me is what the dashboard bootstrap reads: it must expose the
+        // mirrored colors too, otherwise a fresh login still paints defaults.
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('tenant.platform_branding.primaryColor', '#123ABC')
+            ->assertJsonPath('tenant.platform_branding.secondaryColor', '#DEF456');
+
         // Reset clears the platform colors so the frontend falls back to the
         // built-in platform defaults.
         $this->putJson('/api/v1/settings/site', [

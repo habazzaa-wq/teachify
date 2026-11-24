@@ -202,6 +202,155 @@ function scaleStops(hex: string, isDark: boolean): Record<number, string> {
   };
 }
 
+type Hsl = { h: number; s: number; l: number };
+
+function shiftHue(h: number, degrees: number) {
+  return ((Math.round(h + degrees) % 360) + 360) % 360;
+}
+
+function hsl(h: number, s: number, l: number) {
+  return `${Math.round(h)} ${clamp(Math.round(s), 0, 100)}% ${clamp(Math.round(l), 0, 100)}%`;
+}
+
+/** WCAG-ish contrast pick for text placed on the brand primary color. */
+function contrastForHex(hex: string) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return "0 0% 100%";
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.6 ? "0 0% 10%" : "0 0% 100%";
+}
+
+/**
+ * Complete the dashboard palette with every token its shells actually consume.
+ *
+ * `generateThemeColors` builds the tenant and studio surface tokens, but a lot
+ * of the UI (cards, dialogs, selects, dropdowns, charts, toasts, portals) uses the
+ * shadcn-style `--background/--card/--muted/--border/...` variables. When those
+ * were left at their root defaults, parts of the dashboard kept the old fixed
+ * colors. This helper derives them from the same two brand colors, in both
+ * light and dark mode, so every surface is consistent.
+ *
+ * The same map is emitted on `:root` as well as `.tenant-theme` (see
+ * buildBrandThemeCss) so portaled elements outside the theme wrapper get the
+ * identical palette.
+ */
+function withDashboardSemanticTokens(
+  tokens: Record<string, string>,
+  ctx: {
+    p: Hsl;
+    s: Hsl;
+    pSat: number;
+    sSat: number;
+    accentL: number;
+    secL: number;
+    pContrast: string;
+    isDark: boolean;
+  },
+): Record<string, string> {
+  const v = (key: string) => tokens[key] as string;
+  const dark = ctx.isDark;
+
+  const info = v("--studio-info");
+  const success = v("--studio-success");
+  const warning = v("--studio-warning");
+  const danger = v("--studio-danger");
+
+  const infoFg = dark ? "225 25% 10%" : "0 0% 100%";
+  const successFg = dark ? "225 30% 8%" : "0 0% 100%";
+  const warningFg = "225 25% 10%";
+  const dangerFg = "0 0% 100%";
+
+  const chart1 = v("--tenant-accent");
+  const chart2 = v("--tenant-secondary");
+  const chart3 = hsl(
+    shiftHue(ctx.p.h, 32),
+    ctx.pSat - 12,
+    dark ? clamp(ctx.accentL + 10, 55, 80) : clamp(ctx.accentL + 12, 58, 78),
+  );
+  const chart4 = hsl(
+    shiftHue(ctx.s.h, -28),
+    ctx.sSat - 8,
+    dark ? clamp(ctx.secL + 8, 50, 76) : clamp(ctx.secL - 8, 50, 72),
+  );
+  const chart5 = hsl(shiftHue(ctx.p.h, 180), 55, dark ? 66 : 60);
+
+  return {
+    ...tokens,
+
+    // Surfaces and text — every card/input/portal now follows the brand pair.
+    "--background": v("--tenant-bg"),
+    "--foreground": v("--tenant-fg"),
+    "--card": v("--tenant-surface"),
+    "--card-foreground": v("--tenant-fg"),
+    "--popover": v("--tenant-soft"),
+    "--popover-foreground": v("--tenant-fg"),
+    "--muted": v("--tenant-muted"),
+    "--muted-foreground": v("--tenant-fg-muted"),
+    "--border": v("--tenant-border"),
+    "--input": v("--tenant-border"),
+
+    // shadcn interactive tokens are re-declared here to stay identical to the
+    // studio/tenant tokens in both themes (and therefore in portals too).
+    "--primary": v("--tenant-accent"),
+    "--primary-foreground": ctx.pContrast,
+    "--secondary": v("--tenant-secondary"),
+    "--secondary-foreground": v("--tenant-fg"),
+    "--accent": v("--tenant-accent"),
+    "--accent-foreground": ctx.pContrast,
+    "--ring": v("--tenant-ring"),
+
+    // Semantic status colors: fixed hues for meaning, but themed foregrounds.
+    "--destructive": danger,
+    "--destructive-foreground": dangerFg,
+    "--success": success,
+    "--success-foreground": successFg,
+    "--warning": warning,
+    "--warning-foreground": warningFg,
+    "--info": info,
+    "--info-foreground": infoFg,
+    "--studio-info-foreground": infoFg,
+    "--studio-success-foreground": successFg,
+    "--studio-warning-foreground": warningFg,
+    "--studio-danger-foreground": dangerFg,
+
+    // Sidebar family used by the generic AppSidebar primitives.
+    "--sidebar": v("--tenant-sidebar"),
+    "--sidebar-foreground": v("--tenant-sidebar-fg"),
+    "--sidebar-accent": v("--tenant-sidebar-hover"),
+    "--sidebar-accent-foreground": v("--tenant-sidebar-fg"),
+    "--sidebar-soft": v("--tenant-sidebar-soft"),
+    "--sidebar-fg-muted": v("--tenant-sidebar-fg-muted"),
+    "--sidebar-fg-subtle": v("--tenant-fg-subtle"),
+    "--sidebar-border": v("--tenant-sidebar-border"),
+    "--sidebar-ring": v("--tenant-ring"),
+
+    // Charts derive from the same two brand colors plus harmonious rotations.
+    "--chart-1": chart1,
+    "--chart-2": chart2,
+    "--chart-3": chart3,
+    "--chart-4": chart4,
+    "--chart-5": chart5,
+
+    // Named palette kept in sync for StudioChip / media file-type badges.
+    "--emerald": success,
+    "--emerald-foreground": successFg,
+    "--blue": info,
+    "--blue-foreground": infoFg,
+    "--amber": warning,
+    "--amber-foreground": warningFg,
+    "--purple": hsl(
+      shiftHue(ctx.p.h, 210),
+      clamp(ctx.pSat - 10, 35, 70),
+      dark ? 66 : 58,
+    ),
+    "--purple-foreground": dark ? "225 25% 10%" : "0 0% 100%",
+
+    // Missing studio utilities used heavily by the instructor workspace.
+    "--studio-panel": v("--studio-surface"),
+    "--studio-hover": v("--studio-sidebar-hover"),
+  };
+}
+
 export function generateThemeColors(primaryHex: string, secondaryHex: string, isDark = false) {
   const p = hexToHsl(primaryHex);
   const s = hexToHsl(secondaryHex);
@@ -236,12 +385,12 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     const secL = clamp(s.l < 50 ? s.l + 14 : s.l, 42, 64);
     const secSat = clamp(sSat, 30, 78);
     // نص متناقض مقروء: أبيض على الألوان الغامقة، داكن على الألوان الفاتحة.
-    pContrast = accentL > 62 ? "0 0% 12%" : "0 0% 100%";
+    pContrast = contrastForHex(primaryHex);
     // تفاعلية احترافية: hover/active يضيئان الأساسي تدريجياً.
     const accentHoverL = clamp(accentL + 6, 60, 74);
     const accentActiveL = clamp(accentL + 11, 64, 80);
 
-    return {
+    const tokens = {
       // — المحتوى: رمادي داكن مائل لهوى الثانوي (متناغم) —
       "--tenant-bg": `${s.h} ${clamp(sSat, 0, 10)}% 8%`,
       "--tenant-surface": "222 20% 12%",
@@ -325,6 +474,17 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
       "--studio-warning": "35 90% 55%",
       "--studio-danger": "0 72% 58%",
     };
+
+    return withDashboardSemanticTokens(tokens, {
+      p,
+      s,
+      pSat,
+      sSat,
+      accentL,
+      secL,
+      pContrast,
+      isDark: true,
+    });
   }
 
   // — Light mode —
@@ -336,12 +496,12 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
   const secL = clamp(s.l < 55 ? s.l + 16 : s.l, 55, 74);
   const secSat = clamp(sSat, 35, 80);
   // نص متناقض مقروء: داكن على الألوان الفاتحة، أبيض على الغامقة.
-  pContrast = accentL > 60 ? "0 0% 12%" : "0 0% 100%";
+  pContrast = contrastForHex(primaryHex);
   // تفاعلية احترافية: hover/active يعمّقان الأساسي تدريجياً.
   const accentHoverL = clamp(accentL - 6, 36, 52);
   const accentActiveL = clamp(accentL - 11, 30, 46);
 
-  return {
+  const tokens = {
     // — المحتوى: رمادي فاتح مائل لهوى الثانوي (متناغم ونظيف) —
     "--tenant-bg": `${s.h} ${clamp(sSat, 0, 9)}% 98%`,
     "--tenant-surface": "0 0% 100%",
@@ -424,4 +584,15 @@ export function generateThemeColors(primaryHex: string, secondaryHex: string, is
     "--studio-warning": "35 90% 48%",
     "--studio-danger": "0 72% 50%",
   };
+
+  return withDashboardSemanticTokens(tokens, {
+    p,
+    s,
+    pSat,
+    sSat,
+    accentL,
+    secL,
+    pContrast,
+    isDark: false,
+  });
 }

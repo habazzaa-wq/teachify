@@ -94,11 +94,11 @@ function ResizablePanel({
         onMouseDown={handleMouseDown}
         className={cn(
           "absolute top-0 z-20 hidden w-1 cursor-col-resize items-center justify-center lg:flex",
-          "bg-border/50 opacity-0 transition-opacity hover:bg-accent hover:opacity-100",
+          "bg-studio-border/50 opacity-0 transition-opacity hover:bg-studio-hover hover:opacity-100",
           side === "left" ? "end-0" : "start-0",
         )}
       >
-        <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+        <GripVertical className="h-4 w-4 text-studio-fg-muted/50" />
       </div>
     </div>
   );
@@ -195,7 +195,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
   const toggleRight = useCallback(() => setRightPanelOpen(!rightPanelOpen), [setRightPanelOpen, rightPanelOpen]);
 
   return (
-    <div className={cn("flex h-full overflow-hidden rounded-xl border bg-background", className)}>
+    <div className={cn("flex h-full overflow-hidden rounded-xl border border-studio-border bg-studio-panel", className)}>
       {/* Desktop left panel */}
       {isDesktop && leftPanelOpen && (
         <AnimatePresence initial={false}>
@@ -226,8 +226,8 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
           <button
             onClick={toggleFolders}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors",
-              "bg-background/80 backdrop-blur-sm hover:bg-accent hover:text-foreground",
+              "flex h-7 w-7 items-center justify-center rounded-lg text-studio-fg-muted transition-colors",
+              "bg-studio-surface/80 backdrop-blur-sm hover:bg-studio-hover hover:text-studio-fg",
             )}
             title={leftPanelOpen ? "إخفاء اللوحة اليسرى" : "إظهار اللوحة اليسرى"}
           >
@@ -238,8 +238,8 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
           <button
             onClick={toggleRight}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors",
-              "bg-background/80 backdrop-blur-sm hover:bg-accent hover:text-foreground",
+              "flex h-7 w-7 items-center justify-center rounded-lg text-studio-fg-muted transition-colors",
+              "bg-studio-surface/80 backdrop-blur-sm hover:bg-studio-hover hover:text-studio-fg",
             )}
             title={rightPanelOpen ? "إخفاء لوحة التفاصيل" : "إظهار لوحة التفاصيل"}
           >
@@ -304,7 +304,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-black/50"
+              className="fixed inset-0 z-40 bg-studio-overlay"
               onClick={() => setMobileFoldersOpen(false)}
               aria-hidden="true"
             />
@@ -313,7 +313,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 end-0 z-50 flex w-[85%] max-w-[340px] flex-col bg-background shadow-2xl"
+              className="fixed inset-y-0 end-0 z-50 flex w-[85%] max-w-[340px] flex-col bg-studio-panel shadow-2xl"
               role="dialog"
               aria-modal="true"
               aria-label="المجلدات"
@@ -324,7 +324,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
                 </span>
                 <button
                   onClick={() => setMobileFoldersOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-studio-fg-muted transition-colors hover:bg-studio-hover hover:text-studio-fg"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -346,7 +346,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-40 bg-black/50"
+              className="fixed inset-0 z-40 bg-studio-overlay"
               onClick={() => setRightPanelOpen(false)}
               aria-hidden="true"
             />
@@ -355,7 +355,7 @@ function MediaWorkspaceBase({ className, library = "media" }: MediaWorkspaceProp
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed inset-y-0 start-0 z-50 flex w-[88%] max-w-[400px] flex-col bg-background shadow-2xl"
+              className="fixed inset-y-0 start-0 z-50 flex w-[88%] max-w-[400px] flex-col bg-studio-panel shadow-2xl"
               role="dialog"
               aria-modal="true"
               aria-label="تفاصيل الملف"

@@ -14,9 +14,9 @@ interface AppProgressProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const variantStyles = {
   default: "bg-primary",
-  success: "bg-success",
-  warning: "bg-warning",
-  destructive: "bg-destructive",
+  success: "bg-studio-success",
+  warning: "bg-studio-warning",
+  destructive: "bg-studio-danger",
 };
 
 const sizeStyles = {
@@ -41,7 +41,7 @@ function AppProgress({
     <div className={cn("w-full", className)} {...props}>
       <div
         className={cn(
-          "w-full overflow-hidden rounded-full bg-muted",
+          "w-full overflow-hidden rounded-full bg-studio-soft",
           sizeStyles[size],
         )}
         role="progressbar"
@@ -59,7 +59,7 @@ function AppProgress({
         />
       </div>
       {showLabel && (
-        <div className="mt-1 text-end text-xs font-medium text-muted-foreground">
+        <div className="mt-1 text-end text-xs font-medium text-studio-fg-muted">
           {Math.round(percentage)}%
         </div>
       )}
