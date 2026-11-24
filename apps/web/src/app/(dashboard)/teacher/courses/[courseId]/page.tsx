@@ -36,13 +36,13 @@ function CourseWorkspacePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="atlas-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
+      <div className="nova-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
         <button
           type="button"
           onClick={() => setActiveTab("content")}
           role="tab"
           aria-selected={activeTab === "content"}
-          className={cn("atlas-tab", activeTab === "content" && "is-active")}
+          className={cn("nova-tab", activeTab === "content" && "is-active")}
         >
           <BookOpen className="h-4 w-4" aria-hidden="true" />
           المحتوى التعليمي
@@ -52,7 +52,7 @@ function CourseWorkspacePage() {
           onClick={() => setActiveTab("sessions")}
           role="tab"
           aria-selected={activeTab === "sessions"}
-          className={cn("atlas-tab", activeTab === "sessions" && "is-active")}
+          className={cn("nova-tab", activeTab === "sessions" && "is-active")}
         >
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
           الجلسات
@@ -66,7 +66,7 @@ function CourseWorkspacePage() {
 
       {activeTab === "content" ? (
         <>
-          <div className="h-[calc(100dvh-11rem)] min-h-[32rem] border-x border-t border-studio-border bg-studio-surface shadow-sm md:h-[calc(100dvh-12rem)] md:min-h-0">
+          <div className="h-[calc(100dvh-11rem)] min-h-[32rem] overflow-hidden rounded-[28px] border border-white/80 bg-white/40 shadow-xl shadow-studio-fg/5 backdrop-blur-sm md:h-[calc(100dvh-12rem)] md:min-h-0">
             <CourseStudio
               mode="ready"
               courseId={course.id}

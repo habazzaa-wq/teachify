@@ -2,27 +2,26 @@
 
 import { motion } from "framer-motion";
 import {
+  Award,
+  Calendar,
+  ClipboardList,
   Clock,
   Eye,
-  Lock,
-  Calendar,
-  Globe,
-  Pencil,
-  Video,
-  FileType,
-  ClipboardList,
   FileText,
+  FileType,
   FolderOpen,
+  Globe,
   Headphones,
-  Monitor,
-  Puzzle,
   Link,
-  Award,
+  Lock,
+  Monitor,
+  Pencil,
+  Puzzle,
+  Video,
 } from "lucide-react";
 import { StudioStatusBadge } from "@/components/studio/badges";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioSurfaceCard } from "@/components/studio/surfaces/StudioSurfaceCard";
-import { StudioPropertyRow } from "@/components/studio/lists/StudioPropertyRow";
 import { cn } from "@/lib/cn";
 import type { ContentItem, ContentItemType } from "@/features/course-content/types";
 
@@ -42,21 +41,12 @@ const TYPE_META: Record<ContentItemType, { label: string; icon: React.ComponentT
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.06 } },
 };
-
-const easeCurve = [0.22, 1, 0.36, 1] as const;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.35, ease: easeCurve },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 interface CourseStudioContentOverviewProps {
@@ -65,36 +55,30 @@ interface CourseStudioContentOverviewProps {
   className?: string;
 }
 
-function ExtensionPreview({ item }: { item: ContentItem }) {
+function PreviewStage({ item }: { item: ContentItem }) {
   const meta = TYPE_META[item.type] ?? TYPE_META.resource;
   const Icon = meta.icon;
 
   return (
-    <div className={cn(
-      "atlas-empty-card flex flex-col items-center justify-center p-12 text-center",
-    )}>
-      <div className={cn("mb-4 rounded-2xl p-4", meta.bg)}>
-        <Icon className={cn("h-14 w-14", meta.color)} />
+    <div className="nova-preview-stage">
+      <div className="max-w-md">
+        <div className={cn("mx-auto mb-4 grid h-20 w-20 place-items-center rounded-3xl", meta.bg)}>
+          <Icon className={cn("h-10 w-10", meta.color)} />
+        </div>
+        <h3 className="text-lg font-extrabold text-studio-fg">{meta.label}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-studio-fg-muted">
+          {item.mediaId
+            ? "تم ربط هذا المحتوى بوسائط من المكتبة."
+            : "هذا امتداد لاختيار المحتوى موجود. يمكن ربط المحتوى من الوحدة المخصصة."}
+        </p>
+        {item.externalUrl && (
+          <p className="mt-3 truncate text-xs text-studio-fg-subtle" dir="ltr">{item.externalUrl}</p>
+        )}
+        <div className="mt-4 flex flex-wrap justify-center gap-2 text-[11px] font-bold text-studio-fg-subtle">
+          {item.mediaId && <span className="rounded-full bg-white px-3 py-1">معرف الوسائط: {item.mediaId}</span>}
+          {item.examId && <span className="rounded-full bg-white px-3 py-1">معرف الاختبار: {item.examId}</span>}
+        </div>
       </div>
-      <h3 className="mb-2 text-lg font-semibold text-studio-fg">{meta.label}</h3>
-      {item.mediaId ? (
-        <p className="max-w-sm text-sm text-studio-fg-muted">
-          تم ربط هذا المحتوى بوسائط من المكتبة.
-        </p>
-      ) : (
-        <p className="max-w-sm text-sm text-studio-fg-muted">
-          هذا امتداد لاختيار {meta.label} موجود. يمكن ربط المحتوى من الوحدة المخصصة.
-        </p>
-      )}
-      {item.type === "external_link" && item.externalUrl && (
-        <p className="mt-3 text-xs text-studio-fg-subtle truncate max-w-full">{item.externalUrl}</p>
-      )}
-      {item.mediaId && (
-        <p className="mt-2 text-xs text-studio-fg-subtle">معرف الوسائط: {item.mediaId}</p>
-      )}
-      {item.examId && (
-        <p className="mt-2 text-xs text-studio-fg-subtle">معرف الاختبار: {item.examId}</p>
-      )}
     </div>
   );
 }
@@ -113,90 +97,66 @@ function CourseStudioContentOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("atlas-page mx-auto w-full max-w-5xl", className)}
+      className={cn("nova-page", className)}
     >
-      <motion.div variants={itemVariants} className="mb-8">
-        <div className="mb-4 flex items-center gap-3">
-          <div className={cn("atlas-hero-icon h-14 w-14", meta.bg)}>
-            <Icon className={cn("h-7 w-7", meta.color)} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="truncate text-2xl font-bold text-studio-fg">
-                {item.title}
-              </h1>
-              <StudioStatusBadge status={item.status} />
-              {onEdit && (
-                <StudioButton variant="ghost" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} className="ms-auto shrink-0">
-                  تعديل
-                </StudioButton>
-              )}
+      <motion.section variants={itemVariants} className="nova-editorial-hero p-5 sm:p-7" data-mark="03">
+        <div className="relative z-[1] flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className={cn("nova-hero-icon h-14 w-14", meta.bg)}>
+              <Icon className={cn("h-7 w-7", meta.color)} />
             </div>
-            <div className="mt-1 flex items-center gap-3 text-xs text-studio-fg-muted">
-              <span>{meta.label}</span>
-              {item.duration != null && item.duration > 0 && (
-                <>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {displayDuration}
-                  </span>
-                </>
-              )}
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Eye className="h-3.5 w-3.5" />
-                {item.visibility === "public" ? "عام" : item.visibility === "preview" ? "معاينة" : "خاص"}
-              </span>
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <p className="nova-section-label">{meta.label}</p>
+                <StudioStatusBadge status={item.status} />
+              </div>
+              <h1 className="truncate text-2xl font-extrabold tracking-tight text-studio-fg sm:text-3xl">{item.title}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-studio-fg-muted">
+                <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {displayDuration}</span>
+                <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {item.visibility === "public" ? "عام" : item.visibility === "preview" ? "معاينة" : "خاص"}</span>
+                {item.freePreview && <span className="inline-flex items-center gap-1 text-studio-success"><Globe className="h-3.5 w-3.5" /> معاينة مجانية</span>}
+                {item.locked && <span className="inline-flex items-center gap-1 text-studio-warning"><Lock className="h-3.5 w-3.5" /> مقفل</span>}
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {item.freePreview && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-studio-success/10 px-2.5 py-0.5 text-xs text-studio-success">
-              <Globe className="h-3.5 w-3.5" />
-              معاينة مجانية
-            </span>
-          )}
-          {item.locked && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-studio-warning/10 px-2.5 py-0.5 text-xs text-studio-warning">
-              <Lock className="h-3.5 w-3.5" />
-              مقفل
-            </span>
+          {onEdit && (
+            <StudioButton variant="primary" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={onEdit} className="nova-primary-btn shrink-0">
+              تعديل المحتوى
+            </StudioButton>
           )}
         </div>
+      </motion.section>
+
+      <motion.div variants={itemVariants} className="my-5">
+        <PreviewStage item={item} />
       </motion.div>
 
-      <motion.div variants={itemVariants} className="mb-6">
-        <ExtensionPreview item={item} />
-      </motion.div>
-
-      <motion.div variants={itemVariants} className="mb-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-studio-fg-muted">
-          وصف المحتوى
-        </h2>
-        <p className="text-sm leading-relaxed text-studio-fg-muted">
+      <motion.section variants={itemVariants} className="mb-5">
+        <p className="nova-section-label mb-2">وصف المحتوى</p>
+        <p className="rounded-2xl border border-studio-border bg-white/80 p-4 text-sm leading-relaxed text-studio-fg-muted">
           {item.description || "لا يوجد وصف"}
         </p>
-      </motion.div>
+      </motion.section>
 
       <motion.div variants={itemVariants}>
-        <StudioSurfaceCard variant="elevated" padding="md" className="atlas-card">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-studio-border pb-3">
-              <span className="text-sm text-studio-fg-muted">الخصائص</span>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <StudioPropertyRow label="النوع" value={meta.label} />
-              <StudioPropertyRow label="الحالة" value={item.status === "published" ? "منشور" : item.status === "archived" ? "مؤرشف" : "مسودة"} />
-              <StudioPropertyRow label="الظهور" value={item.visibility === "public" ? "عام" : item.visibility === "preview" ? "معاينة" : "خاص"} />
-              <StudioPropertyRow label="المدة" value={displayDuration} />
-              <StudioPropertyRow label="معاينة مجانية" value={item.freePreview ? "مفعلة" : "غير مفعلة"} />
-              <StudioPropertyRow label="مقفل" value={item.locked ? "نعم" : "لا"} />
-              <StudioPropertyRow label="تاريخ الإنشاء" value={new Date(item.createdAt).toLocaleDateString("ar-SA")} />
-              <StudioPropertyRow label="آخر تحديث" value={new Date(item.updatedAt).toLocaleDateString("ar-SA")} />
-            </div>
+        <StudioSurfaceCard variant="elevated" padding="md" className="nova-card">
+          <p className="nova-section-label mb-4">مواصفات الوحدة</p>
+          <div className="nova-meta-grid">
+            {[
+              ["النوع", meta.label],
+              ["الحالة", item.status === "published" ? "منشور" : item.status === "archived" ? "مؤرشف" : "مسودة"],
+              ["الظهور", item.visibility === "public" ? "عام" : item.visibility === "preview" ? "معاينة" : "خاص"],
+              ["المدة", displayDuration],
+              ["المعاينة المجانية", item.freePreview ? "مفعلة" : "غير مفعلة"],
+              ["القفل", item.locked ? "نعم" : "لا"],
+              ["تاريخ الإنشاء", new Date(item.createdAt).toLocaleDateString("ar-SA")],
+              ["آخر تحديث", new Date(item.updatedAt).toLocaleDateString("ar-SA")],
+            ].map(([label, value]) => (
+              <div key={label} className="nova-meta-tile">
+                <span className="nova-mini-label">{label}</span>
+                <span className="nova-mini-value">{value}</span>
+              </div>
+            ))}
           </div>
         </StudioSurfaceCard>
       </motion.div>

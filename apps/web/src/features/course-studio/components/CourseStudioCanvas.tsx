@@ -24,6 +24,7 @@ interface CourseStudioCanvasProps {
   canvasView: CanvasView | null;
   onCreateLecture?: () => void;
   onAddSection?: () => void;
+  onSelectSection?: (id: string) => void;
   onAddContent?: () => void;
   onEditSection?: (section: CourseSection) => void;
   onDuplicateSection?: (section: CourseSection) => void;
@@ -59,6 +60,7 @@ function CourseStudioCanvas({
   canvasView,
   onCreateLecture,
   onAddSection,
+  onSelectSection,
   onAddContent,
   onEditSection,
   onDuplicateSection,
@@ -105,25 +107,25 @@ function CourseStudioCanvas({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25 }}
-      className={cn("atlas-canvas flex min-w-0 flex-1 flex-col overflow-hidden", className)}
+      className={cn("nova-canvas flex min-w-0 flex-1 flex-col overflow-hidden", className)}
       role="region"
       aria-label="مساحة العمل"
     >
-      <div className="atlas-workbar flex shrink-0 items-center justify-between gap-3 px-3 py-2.5 sm:px-5">
+      <div className="nova-workbar flex shrink-0 items-center justify-between gap-3 px-3 py-2.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-2.5">
           {workbar ? (
             <>
-              <span className="atlas-row-icon hidden shrink-0 sm:flex">
+              <span className="nova-hero-icon hidden h-9 w-9 shrink-0 rounded-xl sm:flex">
                 <workbar.icon className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="atlas-section-label">{workbar.label}</p>
+                <p className="nova-section-label">{workbar.label}</p>
                 <p className="truncate text-sm font-bold text-studio-fg">{workbar.title}</p>
               </div>
             </>
           ) : (
             <div>
-              <p className="atlas-section-label">مساحة العمل</p>
+              <p className="nova-section-label">مساحة العمل</p>
               <p className="text-sm font-bold text-studio-fg">لوحة التحرير</p>
             </div>
           )}
@@ -141,7 +143,7 @@ function CourseStudioCanvas({
         )}
       </div>
 
-      <div className="studio-scrollbar flex-1 overflow-y-auto">
+      <div className="nova-scroll-region">
         <AnimatePresence mode="popLayout">
           {canvasView === "content" && selectedLecture && selectedSection && selectedContent ? (
             <motion.div
@@ -203,6 +205,7 @@ function CourseStudioCanvas({
                 lecture={selectedLecture}
                 sections={lectureSections}
                 onAddSection={onAddSection}
+                onSelectSection={onSelectSection}
               />
             </motion.div>
           ) : (

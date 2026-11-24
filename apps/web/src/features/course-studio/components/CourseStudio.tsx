@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen,
-  Command,
   HelpCircle,
-  LayoutList,
   ListTree,
   Plus,
   Send,
@@ -1013,7 +1010,15 @@ function CourseStudio({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="atlas-shell flex h-full min-h-0 flex-col overflow-hidden"
+      className="nova-shell flex h-full min-h-0 flex-col overflow-hidden"
+      data-navigator-open={String(navigatorOpen || mobileNavOpen)}
+      data-inspector-open={String(store.inspectorOpen)}
+      style={
+        {
+          "--nova-nav-width": `${navigatorWidth}px`,
+          "--nova-inspector-width": `${inspectorWidth}px`,
+        } as CSSProperties
+      }
     >
       <CourseStudioHeader
         courseName={courseName}
@@ -1031,78 +1036,11 @@ function CourseStudio({
         onQuickAction={onQuickAction}
       />
 
-      <div className="atlas-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
+      <div className="nova-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
         <CourseStudioBreadcrumb items={defaultBreadcrumb} />
       </div>
 
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {!isMobile && (
-          <aside
-            className="atlas-rail hidden shrink-0 flex-col items-center justify-between py-4 lg:flex"
-            aria-label="شريط الأوامر"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white" aria-hidden="true">
-                <Command className="h-4 w-4" />
-              </div>
-              <button
-                type="button"
-                className="atlas-rail-btn"
-                onClick={handleToggleNavigator}
-                aria-label={navigatorOpen ? "إخفاء المخطط" : "إظهار المخطط"}
-                aria-pressed={navigatorOpen}
-                title="مخطط الدورة"
-              >
-                <LayoutList className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className="atlas-rail-btn"
-                onClick={openAddChoice}
-                aria-label="إضافة محتوى"
-                title="إضافة محتوى"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className="atlas-rail-btn"
-                onClick={handleToggleInspector}
-                aria-label={store.inspectorOpen ? "إخفاء الخصائص" : "إظهار الخصائص"}
-                aria-pressed={store.inspectorOpen}
-                title="لوحة الخصائص"
-              >
-                <SlidersHorizontal className="h-5 w-5" />
-              </button>
-              {onPublish && (
-                <button
-                  type="button"
-                  className="atlas-rail-btn"
-                  onClick={onPublish}
-                  aria-label="نشر الدورة"
-                  title="نشر الدورة"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <span className="atlas-rail-label">مخطط</span>
-              {onQuickStart && (
-                <button
-                  type="button"
-                  className="atlas-rail-btn"
-                  onClick={onQuickStart}
-                  aria-label="دليل البدء"
-                  title="دليل البدء"
-                >
-                  <HelpCircle className="h-5 w-5" />
-                </button>
-              )}
-              <span className="atlas-rail-label">ATLAS</span>
-            </div>
-          </aside>
-        )}
+      <div className="nova-workspace-area">
         {isMobile ? (
           <>
             <CourseStudioCanvas
@@ -1114,6 +1052,7 @@ function CourseStudio({
               canvasView={canvasView}
               onCreateLecture={openAddChoice}
               onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
+              onSelectSection={handleSelectSection}
               onAddContent={handleAddContent}
               onEditSection={(s) => store.openEditSectionDialog(s)}
               onDuplicateSection={handleDuplicateSection}
@@ -1154,10 +1093,10 @@ function CourseStudio({
                     aria-modal="true"
                     aria-label="متصفح المحتوى"
                   >
-                    <div className="atlas-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
-                      <div className="atlas-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
+                    <div className="nova-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
+                      <div className="nova-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
                         <span className="text-sm font-semibold text-studio-fg">تصفّح الدورة</span>
-                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="atlas-icon-btn h-11 w-11">
+                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="nova-icon-btn h-11 w-11">
                           <X className="h-4 w-4" />
                         </StudioButton>
                       </div>
@@ -1216,7 +1155,7 @@ function CourseStudio({
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                    className="atlas-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
+                    className="nova-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
@@ -1251,6 +1190,7 @@ function CourseStudio({
             <CourseStudioNavigator
               open={navigatorOpen}
               width={navigatorWidth}
+              className="nova-float-panel nova-float-navigator"
               lectures={lectures ?? []}
               sections={sectionsByLecture}
               courseId={courseId ?? undefined}
@@ -1279,22 +1219,6 @@ function CourseStudio({
               onReorderSections={handleReorderSections}
             />
 
-            <AnimatePresence>
-              {navigatorOpen && (
-                <motion.div
-                  key="navigator-resizer"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="relative w-px shrink-0 cursor-col-resize bg-studio-border transition-colors hover:bg-studio-accent/30"
-                  role="separator"
-                  aria-orientation="vertical"
-                  aria-label="تغيير عرض المستكشف"
-                />
-              )}
-            </AnimatePresence>
-
             <CourseStudioCanvas
               selectedLecture={selectedLecture}
               selectedSection={selectedSection}
@@ -1304,6 +1228,7 @@ function CourseStudio({
               canvasView={canvasView}
               onCreateLecture={openAddChoice}
               onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
+              onSelectSection={handleSelectSection}
               onAddContent={handleAddContent}
               onEditSection={(s) => store.openEditSectionDialog(s)}
               onDuplicateSection={handleDuplicateSection}
@@ -1322,25 +1247,10 @@ function CourseStudio({
               onQuickStart={onQuickStart}
             />
 
-            <AnimatePresence>
-              {store.inspectorOpen && (
-                <motion.div
-                  key="inspector-resizer"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="relative w-px shrink-0 cursor-col-resize bg-studio-border transition-colors hover:bg-studio-accent/30"
-                  role="separator"
-                  aria-orientation="vertical"
-                  aria-label="تغيير عرض الخصائص"
-                />
-              )}
-            </AnimatePresence>
-
             <CourseStudioInspector
               open={store.inspectorOpen}
               width={inspectorWidth}
+              className="nova-float-panel nova-float-inspector"
               selectedSection={selectedSection}
               selectedContent={selectedContent}
               lectures={lectures}
@@ -1356,62 +1266,64 @@ function CourseStudio({
         )}
       </div>
 
-      {!isMobile && (
-        <div className="atlas-status hidden shrink-0 items-center justify-between gap-4 px-4 py-1.5 text-[10px] lg:flex">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3" aria-hidden="true" />
-              {lectures.length} محاضرة
-            </span>
-            <span>{allSections.length} قسم</span>
-            <span className="hidden xl:inline">اسحب العناصر لإعادة الترتيب · ⌘K للبحث</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>{contentItems.length} وحدة محتوى</span>
-            <span className={isSaved ? "text-emerald-400" : undefined}>
-              {isSaving ? "جارٍ الحفظ…" : isSaved ? "كل التغييرات محفوظة" : "جاهز للتحرير"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* شريط تحكم سفلي للشاشات الصغيرة والمتوسطة: كل الأدوات الأساسية متاحة بلمسة واحدة */}
-      <nav
-        className="atlas-dock flex shrink-0 items-stretch gap-1.5 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-2 lg:hidden"
-        aria-label="أدوات الاستوديو السريعة"
-      >
+      {/* Floating command pill — every primary tool stays one tap away on every viewport. */}
+      <nav className="nova-dock-floating" aria-label="أدوات الاستوديو السريعة">
         <StudioButton
-          variant={mobileNavOpen ? "soft" : "ghost"}
+          variant={navigatorOpen || mobileNavOpen ? "primary" : "ghost"}
           size="md"
           onClick={handleToggleNavigator}
-          aria-label="فتح مستكشف المحتوى"
-          aria-pressed={mobileNavOpen}
-          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
+          aria-label={navigatorOpen || mobileNavOpen ? "إخفاء المخطط" : "إظهار المخطط"}
+          aria-pressed={navigatorOpen || mobileNavOpen}
+          className="gap-2 px-4"
           icon={<ListTree className="h-4 w-4" />}
         >
-          المستكشف
+          <span className="nova-dock-label">المخطط</span>
         </StudioButton>
         <StudioButton
           variant="primary"
           size="md"
           onClick={openAddChoice}
           aria-label="إضافة محاضرة أو جلسة"
-          className="atlas-primary-btn h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
+          className="nova-primary-btn gap-2 px-4"
           icon={<Plus className="h-4 w-4" />}
         >
-          إضافة
+          <span className="nova-dock-label">إضافة</span>
         </StudioButton>
         <StudioButton
-          variant={store.inspectorOpen ? "soft" : "ghost"}
+          variant={store.inspectorOpen ? "primary" : "ghost"}
           size="md"
           onClick={handleToggleInspector}
-          aria-label="فتح خصائص العنصر"
+          aria-label={store.inspectorOpen ? "إخفاء الخصائص" : "إظهار الخصائص"}
           aria-pressed={store.inspectorOpen}
-          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
+          className="gap-2 px-4"
           icon={<SlidersHorizontal className="h-4 w-4" />}
         >
-          الخصائص
+          <span className="nova-dock-label">الخصائص</span>
         </StudioButton>
+        {onQuickStart && (
+          <StudioButton
+            variant="ghost"
+            size="md"
+            onClick={onQuickStart}
+            aria-label="دليل البدء السريع"
+            className="gap-2 px-4"
+            icon={<HelpCircle className="h-4 w-4" />}
+          >
+            <span className="nova-dock-label">الدليل</span>
+          </StudioButton>
+        )}
+        {onPublish && (
+          <StudioButton
+            variant="ghost"
+            size="md"
+            onClick={onPublish}
+            aria-label="نشر الدورة"
+            className="gap-2 px-4"
+            icon={<Send className="h-4 w-4" />}
+          >
+            <span className="nova-dock-label">نشر</span>
+          </StudioButton>
+        )}
       </nav>
 
       <CourseStudioAddItemChoiceDialog
