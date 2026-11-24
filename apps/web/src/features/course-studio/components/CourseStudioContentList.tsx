@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ListMusic } from "lucide-react";
+import { Layers, ListMusic, Plus } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { CourseStudioContentItem } from "./CourseStudioContentItem";
 import { cn } from "@/lib/cn";
@@ -67,74 +67,72 @@ function CourseStudioContentList({
   );
 
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-studio-fg">
-          <ListMusic className="h-4 w-4 text-studio-accent" />
-          وحدات المحتوى
-          <span className="rounded-full bg-studio-soft px-2 py-0.5 text-[11px] font-semibold text-studio-fg-muted">
-            {items.length}
-          </span>
-        </h3>
+    <section className={cn("mt-7", className)} aria-label="وحدات المحتوى">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="nova-hero-icon h-10 w-10 rounded-xl"><ListMusic className="h-4 w-4" /></span>
+          <div>
+            <p className="nova-section-label">تدفق الدرس</p>
+            <h3 className="flex items-center gap-2 text-base font-extrabold text-studio-fg">
+              وحدات المحتوى
+              <span className="rounded-full bg-studio-accent-soft px-2 py-0.5 text-[11px] font-bold text-studio-accent">
+                {items.length}
+              </span>
+            </h3>
+          </div>
+        </div>
         {onAddContent && (
-          <StudioButton variant="ghost" size="sm" onClick={onAddContent} icon={<Plus className="h-3.5 w-3.5" />}>
+          <StudioButton variant="primary" size="sm" onClick={onAddContent} icon={<Plus className="h-4 w-4" />} className="nova-primary-btn">
             إضافة محتوى
           </StudioButton>
         )}
       </div>
 
-      <div className="atlas-table" role="list" aria-label="قائمة المحتوى">
-        <div className="atlas-table-head" aria-hidden="true">
-          <span>العنوان</span>
-          <span>النوع</span>
-          <span>المدة</span>
-          <span>الحالة</span>
-          <span className="text-end">إجراءات</span>
-        </div>
-        <AnimatePresence mode="popLayout">
-          {items.map((item, index) => (
-            <CourseStudioContentItem
-              key={item.id}
-              item={item}
-              order={index + 1}
-              isSelected={selectedId === item.id}
-              onSelect={onSelect}
-              onEdit={onEdit}
-              onPublish={onPublish}
-              onArchive={onArchive}
-              onDuplicate={onDuplicate}
-              onDelete={onDelete}
-              onRestore={onRestore}
-              onToggleFreePreview={onToggleFreePreview}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onMoveUp={index > 0 && onReorder ? () => onReorder(items, index, index - 1) : undefined}
-              onMoveDown={index < items.length - 1 && onReorder ? () => onReorder(items, index, index + 1) : undefined}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {items.length === 0 && onAddContent && (
+      {items.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="atlas-empty-card flex flex-col items-center gap-3 p-8 text-center"
+          className="nova-empty-card flex flex-col items-center gap-3 p-10 text-center"
         >
-          <div className="atlas-hero-icon h-12 w-12">
-            <ListMusic className="h-6 w-6" />
-          </div>
+          <div className="nova-hero-icon h-12 w-12"><Layers className="h-6 w-6" /></div>
           <div>
-            <h4 className="text-sm font-semibold text-studio-fg">لم يتم إضافة محتوى بعد</h4>
+            <h4 className="text-sm font-extrabold text-studio-fg">لم يتم إضافة محتوى بعد</h4>
             <p className="mt-1 text-xs text-studio-fg-muted">أضف فيديوهات، ملفات PDF، اختبارات، أو أي نوع من المحتوى.</p>
           </div>
-          <StudioButton variant="primary" size="sm" onClick={onAddContent} icon={<Plus className="h-3.5 w-3.5" />}>
-            إضافة محتوى
-          </StudioButton>
+          {onAddContent && (
+            <StudioButton variant="primary" size="sm" onClick={onAddContent} icon={<Plus className="h-4 w-4" />} className="nova-primary-btn">
+              إضافة محتوى
+            </StudioButton>
+          )}
         </motion.div>
+      ) : (
+        <div className="nova-timeline" role="list" aria-label="قائمة المحتوى">
+          <AnimatePresence mode="popLayout">
+            {items.map((item, index) => (
+              <CourseStudioContentItem
+                key={item.id}
+                item={item}
+                order={index + 1}
+                isSelected={selectedId === item.id}
+                onSelect={onSelect}
+                onEdit={onEdit}
+                onPublish={onPublish}
+                onArchive={onArchive}
+                onDuplicate={onDuplicate}
+                onDelete={onDelete}
+                onRestore={onRestore}
+                onToggleFreePreview={onToggleFreePreview}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onMoveUp={index > 0 && onReorder ? () => onReorder(items, index, index - 1) : undefined}
+                onMoveDown={index < items.length - 1 && onReorder ? () => onReorder(items, index, index + 1) : undefined}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 

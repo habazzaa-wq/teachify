@@ -6,20 +6,19 @@ import {
   CheckCircle2,
   Clock,
   Eye,
-  GraduationCap,
+  ListTree,
   MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
   Pencil,
   Send,
+  SlidersHorizontal,
+  Sparkles,
   Trash2,
   Users,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioStatusBadge } from "@/components/studio/badges";
 import { StudioDropdown } from "@/components/studio/overlays/StudioDropdown";
+import { cn } from "@/lib/cn";
 
 interface CourseStudioHeaderProps {
   courseName?: string;
@@ -65,74 +64,54 @@ function CourseStudioHeader({
   onQuickAction,
 }: CourseStudioHeaderProps) {
   return (
-    <motion.header
-      {...headerMotion}
-      className="atlas-header shrink-0 px-3 pb-2.5 pt-3 sm:px-5 md:px-6"
-      role="banner"
-      aria-label="رأس الاستوديو"
-    >
-      <div className="flex items-center gap-2.5 md:gap-4">
-        <div className="atlas-brand-mark h-10 w-10 shrink-0 md:h-11 md:w-11">
-          <GraduationCap className="h-5 w-5 md:h-[22px] md:w-[22px]" aria-hidden="true" />
+    <motion.header {...headerMotion} className="nova-header shrink-0 px-3 pb-2.5 pt-3 sm:px-5 md:px-6" role="banner" aria-label="رأس الاستوديو">
+      <div className="flex items-center gap-3 md:gap-5">
+        <div className="nova-brand-mark h-11 w-11 shrink-0 md:h-12 md:w-12">
+          <Sparkles className="h-5 w-5 md:h-6 md:w-6" aria-hidden="true" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="atlas-eyebrow hidden sm:block">Course Studio</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="nova-eyebrow">Studio Nova</p>
             <span className="hidden h-3 w-px bg-studio-border sm:block" aria-hidden="true" />
-            <span className="text-[11px] font-medium text-studio-fg-muted">مساحة تحرير الدورة</span>
+            <span className="text-[11px] font-semibold text-studio-fg-muted">منصة تحرير المنهج</span>
             {courseStatus && <StudioStatusBadge status={courseStatus} />}
           </div>
-          <h1 className="atlas-title mt-1 truncate text-base md:text-lg" title={courseName}>
-            {courseName}
-          </h1>
+          <h1 className="nova-title mt-1 truncate text-lg md:text-xl" title={courseName}>{courseName}</h1>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1 md:gap-2">
-          <div className="hidden items-center gap-2 lg:flex">
-            {isSaving && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-studio-warning">
-                <Clock className="h-3.5 w-3.5 animate-pulse" aria-hidden="true" />
-                جارٍ الحفظ
-              </span>
-            )}
-            {!isSaving && isSaved && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-studio-success">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                محفوظ
-              </span>
-            )}
-            <span className="h-4 w-px bg-studio-border" aria-hidden="true" />
-          </div>
+        <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+          <span className={cn(
+            "hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold lg:inline-flex",
+            isSaving
+              ? "border-studio-warning/30 bg-studio-warning/10 text-studio-warning"
+              : isSaved
+                ? "border-studio-success/25 bg-studio-success/10 text-studio-success"
+                : "border-studio-border bg-white/70 text-studio-fg-muted",
+          )}>
+            {isSaving ? <Clock className="h-3.5 w-3.5 animate-pulse" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+            {isSaving ? "جارٍ الحفظ" : isSaved ? "محفوظ" : "جاهز"}
+          </span>
 
           <StudioButton
             variant="ghost"
             size="icon"
             onClick={onToggleNavigator}
-            aria-label={navigatorOpen ? "إغلاق المستكشف" : "فتح المستكشف"}
+            aria-label={navigatorOpen ? "إخفاء المخطط" : "إظهار المخطط"}
             aria-pressed={navigatorOpen}
-            className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
+            className="nova-icon-btn h-11 w-11"
           >
-            {navigatorOpen ? (
-              <PanelLeftClose className="h-4 w-4" />
-            ) : (
-              <PanelLeftOpen className="h-4 w-4" />
-            )}
+            <ListTree className="h-4 w-4" />
           </StudioButton>
-
           <StudioButton
             variant="ghost"
             size="icon"
             onClick={onToggleInspector}
-            aria-label={inspectorOpen ? "إغلاق الخصائص" : "فتح الخصائص"}
+            aria-label={inspectorOpen ? "إخفاء الخصائص" : "إظهار الخصائص"}
             aria-pressed={inspectorOpen}
-            className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
+            className="nova-icon-btn h-11 w-11"
           >
-            {inspectorOpen ? (
-              <PanelRightClose className="h-4 w-4" />
-            ) : (
-              <PanelRightOpen className="h-4 w-4" />
-            )}
+            <SlidersHorizontal className="h-4 w-4" />
           </StudioButton>
 
           {onPublish && (
@@ -142,7 +121,7 @@ function CourseStudioHeader({
               onClick={onPublish}
               icon={<Send className="h-3.5 w-3.5" />}
               aria-label="نشر الدورة"
-              className="atlas-primary-btn h-10 rounded-xl px-3 text-xs font-semibold md:px-4"
+              className="nova-primary-btn h-10 rounded-xl px-3 text-xs md:px-4"
             >
               نشر الدورة
             </StudioButton>
@@ -150,12 +129,7 @@ function CourseStudioHeader({
 
           <StudioDropdown
             trigger={
-              <StudioButton
-                variant="ghost"
-                size="icon"
-                aria-label="إجراءات سريعة"
-                className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
-              >
+              <StudioButton variant="ghost" size="icon" aria-label="إجراءات سريعة" className="nova-icon-btn h-11 w-11">
                 <MoreHorizontal className="h-4 w-4" />
               </StudioButton>
             }
@@ -172,32 +146,17 @@ function CourseStudioHeader({
         </div>
       </div>
 
-      <div className="atlas-meta-strip mt-2.5 flex items-center gap-3 overflow-x-auto pt-2 text-[11px] md:gap-5 md:text-xs">
+      <div className="nova-meta-strip mt-2.5 flex items-center gap-3 overflow-x-auto pt-2 text-[11px] md:gap-5 md:text-xs">
         {typeof studentsCount === "number" && (
-          <span className="atlas-meta-item">
-            <Users className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
-            {studentsCount} طالب
-          </span>
+          <span className="nova-meta-item"><Users className="h-3.5 w-3.5 text-studio-accent" />{studentsCount} طالب</span>
         )}
         {visibility && (
-          <span className="atlas-meta-item">
-            <Eye className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
-            {visibilityLabel[visibility] ?? visibility}
-          </span>
+          <span className="nova-meta-item"><Eye className="h-3.5 w-3.5 text-studio-accent" />{visibilityLabel[visibility] ?? visibility}</span>
         )}
         {lastEdited && (
-          <span className="atlas-meta-item">
-            <Clock className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
-            {lastEdited}
-          </span>
+          <span className="nova-meta-item"><Clock className="h-3.5 w-3.5 text-studio-accent" />{lastEdited}</span>
         )}
-        <span className="atlas-meta-item ms-auto shrink-0">
-          {isSaving ? (
-            <span className="text-studio-warning">جارٍ الحفظ…</span>
-          ) : isSaved ? (
-            <span className="text-studio-success">كل التغييرات محفوظة</span>
-          ) : null}
-        </span>
+        <span className="nova-meta-item ms-auto shrink-0 text-studio-fg-subtle">اسحب البطاقات لإعادة الترتيب</span>
       </div>
     </motion.header>
   );

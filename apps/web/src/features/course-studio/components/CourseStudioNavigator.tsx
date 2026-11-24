@@ -301,21 +301,22 @@ function CourseStudioNavigator({
 
   const hasLectures = lectures.length > 0;
   const noSearchResults = query.trim().length > 0 && filteredLectures.length === 0;
+  const isFloating = className?.includes("nova-float-panel") ?? false;
 
   const content = (
-    <div style={variant === "sidebar" ? { width } : undefined} className="atlas-nav flex h-full flex-col">
-      <div className="atlas-nav-head shrink-0 px-4 py-3.5">
+    <div style={!isFloating && variant === "sidebar" ? { width } : undefined} className="nova-nav flex h-full flex-col">
+      <div className="nova-nav-head shrink-0 px-4 py-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="atlas-eyebrow">Course Outline</p>
+            <p className="nova-eyebrow">Course Outline</p>
             <h3 className="mt-0.5 text-sm font-semibold text-studio-fg">منهج الدورة</h3>
           </div>
-          <span className="atlas-count-pill" aria-label={`${lectures.length} محاضرة`}>
+          <span className="nova-count-pill" aria-label={`${lectures.length} محاضرة`}>
             {lectures.length}
           </span>
         </div>
 
-        <label className="atlas-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
+        <label className="nova-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
           <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
           <input
             type="search"
@@ -338,7 +339,7 @@ function CourseStudioNavigator({
 
         {onCreateLecture && (
           <div className="mt-2.5 flex items-center justify-between gap-2">
-            <button type="button" onClick={onCreateLecture} className="atlas-nav-add flex-1 gap-1.5">
+            <button type="button" onClick={onCreateLecture} className="nova-nav-add flex-1 gap-1.5">
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               محاضرة جديدة
             </button>
@@ -420,18 +421,18 @@ function CourseStudioNavigator({
   );
 
   if (variant === "drawer") {
-    return open ? <div className={cn("atlas-nav flex h-full flex-col", className)}>{content}</div> : null;
+    return open ? <div className={cn("nova-nav flex h-full flex-col", className)}>{content}</div> : null;
   }
 
   return (
     <AnimatePresence initial={false}>
       {open && (
         <motion.aside
-          initial={{ width: 0, opacity: 0, minWidth: 0 }}
-          animate={{ width, opacity: 1, minWidth: width }}
-          exit={{ width: 0, opacity: 0, minWidth: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={cn("atlas-nav shrink-0 overflow-hidden border-e border-atlas-ink-line", className)}
+          initial={{ opacity: 0, x: -18, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: -18, scale: 0.98 }}
+          transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+          className={cn("nova-float-panel nova-float-navigator shrink-0 overflow-hidden", className)}
           role="navigation"
           aria-label="متصفح المحتوى"
         >
