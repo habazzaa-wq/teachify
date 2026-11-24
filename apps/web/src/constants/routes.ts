@@ -46,6 +46,7 @@ export const routes = {
   dashboardSettings: "/teacher/settings",
   dashboardSiteSettings: "/teacher/settings/site",
   dashboardBranding: "/teacher/settings/branding",
+  dashboardGoogleAuthSettings: "/teacher/settings/google-auth",
   teacherLegal: "/teacher/settings/legal",
   teacherFooter: "/teacher/settings/footer",
   teacherAbout: "/teacher/settings/about",

@@ -59,6 +59,7 @@ class PublicTenantController extends Controller
             'branding' => $branding,
             'platform_branding' => $this->resolvePlatformBranding($tenant),
             'seo' => $this->resolveSeo($tenant),
+            'auth' => $this->resolvePublicAuth($tenant),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
@@ -159,6 +160,28 @@ class PublicTenantController extends Controller
             ?? $asset->thumbnail_url
             ?? $asset->preview_url
             ?? $asset->poster_url;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolvePublicAuth($tenant): array
+    {
+        $cfg = (array) data_get($tenant->settings_json, 'google_auth', []);
+        $clientId = trim((string) ($cfg['client_id'] ?? ''));
+        $enabled = array_key_exists('is_enabled', $cfg) ? (bool) $cfg['is_enabled'] : $clientId !== '';
+
+        if ($clientId === '') {
+            $clientId = trim((string) config('services.google.client_id', ''));
+            if ($clientId !== '') {
+                $enabled = true;
+            }
+        }
+
+        return [
+            'google_client_id' => ($enabled && $clientId !== '') ? $clientId : null,
+            'google_enabled' => $enabled && $clientId !== '',
+        ];
     }
 
     /**

@@ -78,6 +78,7 @@ use App\Http\Controllers\Api\v1\Instructor\InstructorController;
 use App\Http\Controllers\Api\v1\Instructor\InstructorWorkspaceController;
 use App\Http\Controllers\Api\v1\Integrations\BunnyWebhookController;
 use App\Http\Controllers\Api\v1\Integrations\TenantWhatsAppIntegrationController;
+use App\Http\Controllers\Api\v1\Integrations\TenantGoogleAuthSettingsController;
 use App\Http\Controllers\Api\v1\Integrations\TenantMailSettingsController;
 use App\Http\Controllers\Api\v1\Integrations\WhatsAppWebhookController;
 use App\Http\Controllers\Api\v1\Learning\CompletionController;
@@ -600,6 +601,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/tenant/mail-settings', [TenantMailSettingsController::class, 'show']);
         Route::put('/tenant/mail-settings', [TenantMailSettingsController::class, 'update']);
         Route::post('/tenant/mail-settings/test', [TenantMailSettingsController::class, 'test']);
+        Route::get('/tenant/google-auth-settings', [TenantGoogleAuthSettingsController::class, 'show']);
+        Route::put('/tenant/google-auth-settings', [TenantGoogleAuthSettingsController::class, 'update']);
         Route::get('/notification-templates', [NotificationTemplateController::class, 'index']);
         Route::post('/notification-templates', [NotificationTemplateController::class, 'store']);
         Route::put('/notification-templates/{template}', [NotificationTemplateController::class, 'update']);

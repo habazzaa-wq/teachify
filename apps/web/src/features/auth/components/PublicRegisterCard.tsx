@@ -6,6 +6,7 @@ import { Eye, EyeOff, CheckCircle, Loader2, Sparkles, ChevronDown } from "lucide
 import { usePublicRegister, type PublicRegisterPayload, type PublicRegisterResponse } from "../hooks/use-public-register";
 import { publicRegisterService, type GoogleAuthResponse } from "../services/public-register.service";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
+import { useTenantStore } from "@/stores/tenant.store";
 import { GoogleAuthButton } from "./GoogleAuthButton";
 import { cn } from "@/lib/cn";
 
@@ -138,6 +139,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const registerMutation = usePublicRegister();
   const { data: stagesData } = usePublicStages();
   const stages = stagesData?.items ?? [];
+  const googleClientId = useTenantStore((s) => s.googleClientId);
 
   const availableCities = useMemo(() => {
     if (!form.governorate) return [];
@@ -387,6 +389,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                     onError={setGoogleError}
                     disabled={googleBusy || registerMutation.isPending}
                     label="التسجيل / الدخول عبر Google"
+                    clientId={googleClientId}
                   />
                   {googleError && (
                     <p className="text-xs text-red-500 text-center">{googleError}</p>
