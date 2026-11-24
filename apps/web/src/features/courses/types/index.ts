@@ -4,6 +4,12 @@ export type CourseDifficulty = "beginner" | "intermediate" | "advanced" | "all_l
 export type PricingType = "free" | "one_time" | "subscription";
 export type CourseDeliveryMode = "recorded_only" | "sessions_only" | "recorded_and_sessions" | "blended";
 
+/** A price for one country, with the currency shown to students in that country. */
+export interface RegionalPrice {
+  amount: number | null;
+  currency: string;
+}
+
 export interface Course {
   id: string;
   tenantId: string;
@@ -25,7 +31,9 @@ export interface Course {
   price: number | null;
   currency: string | null;
   discountPrice: number | null;
-  regionalPrices?: Record<string, number>;
+  regionalPrices?: Record<string, RegionalPrice>;
+  /** Price/currency used for countries that have no explicit price. */
+  defaultRegionalPrice?: RegionalPrice | null;
   enrollmentLimit: number | null;
   startDate: string | null;
   endDate: string | null;
@@ -93,7 +101,8 @@ export interface CreateCoursePayload {
   price?: number | null;
   currency?: string | null;
   discountPrice?: number | null;
-  regionalPrices?: Record<string, number>;
+  regionalPrices?: Record<string, RegionalPrice>;
+  defaultRegionalPrice?: RegionalPrice | null;
   enrollmentLimit?: number | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -127,7 +136,8 @@ export interface UpdateCoursePayload {
   price?: number | null;
   currency?: string | null;
   discountPrice?: number | null;
-  regionalPrices?: Record<string, number>;
+  regionalPrices?: Record<string, RegionalPrice>;
+  defaultRegionalPrice?: RegionalPrice | null;
   enrollmentLimit?: number | null;
   startDate?: string | null;
   endDate?: string | null;

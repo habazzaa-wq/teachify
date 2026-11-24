@@ -14,6 +14,7 @@ use App\Services\Payments\PaymentGatewayService;
 use App\Services\Payments\PaymobService;
 use App\Services\Payments\PayPalService;
 use App\Services\Payments\TenantPaymentUrl;
+use App\Support\CountryData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -66,7 +67,7 @@ class DirectCoursePaymentController extends Controller
             'amount' => $quote['amount'],
             'currency' => $quote['currency'],
             'country_code' => $quote['country_code'],
-            'country_name' => CourseRegionalPricing::COUNTRIES[$quote['country_code']]['name'],
+            'country_name' => CountryData::name($quote['country_code']),
         ];
 
         if (in_array(($validated['provider'] ?? null), ['paypal', 'paymob'], true)) {
