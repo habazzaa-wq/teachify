@@ -622,6 +622,10 @@ export interface InstructorMediaAsset {
 
 export function instructorApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
+    // A proxy 413 comes back as HTML, not the JSON envelope axios expects.
+    if (error.response?.status === 413) {
+      return "حجم الصورة كبير جداً. جرّب صورة أصغر.";
+    }
     const data = error.response?.data as
       | { message?: string; errors?: Record<string, string[]> }
       | undefined;

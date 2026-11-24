@@ -118,7 +118,7 @@ function CourseImageUploader({
                 <ImagePlus className="h-5 w-5 text-primary" />
               </div>
               <span className="text-sm font-medium">رفع صورة الكورس</span>
-              <span className="text-[11px] text-muted-foreground">JPG، PNG، WEBP</span>
+              <span className="text-[11px] text-muted-foreground">JPG، PNG، WEBP — يتم ضغطها تلقائياً</span>
             </>
           )}
         </button>

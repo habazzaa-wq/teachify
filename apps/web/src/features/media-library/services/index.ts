@@ -522,7 +522,11 @@ export const mediaLibraryService = {
     });
 
     if (!res.ok) {
-      let message = `Upload failed (${res.status})`;
+      // nginx returns an HTML page for 413, so there is no JSON message to
+      // surface. Give the user an actionable Arabic message instead.
+      let message = res.status === 413
+        ? "حجم الصورة كبير جداً. جرّب صورة أصغر."
+        : `Upload failed (${res.status})`;
       try {
         const body = await res.json();
         if (body?.message) message = body.message;

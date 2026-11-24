@@ -23,6 +23,7 @@ import { useSubjectsList } from "@/features/subjects/hooks";
 import { useActiveTenant } from "@/hooks/useActiveTenant";
 import { instructorApi, instructorApiErrorMessage } from "@/features/instructors/api";
 import { mediaLibraryService } from "@/features/media-library/services";
+import { compressCourseImage } from "../utils/compress-course-image";
 
 const nonLangOptions = LANGUAGE_OPTIONS.filter((l) => l.value !== "all");
 const countryByCode = new Map(COUNTRY_OPTIONS.map((country) => [country.code, country]));
@@ -251,10 +252,14 @@ function CourseFormPanel({
     if (pendingImageFile) {
       setUploadingImage(true);
       try {
+        // Phone photos are usually several MB. nginx rejects them with 413
+        // before Laravel sees them, so shrink the cover to fit the proxy limit
+        // while keeping a 1600px version good enough for course cards.
+        const uploadFile = await compressCourseImage(pendingImageFile);
         if (instructorToken) {
-          thumbnailPath = await instructorApi.uploadCourseImage(instructorToken, pendingImageFile);
+          thumbnailPath = await instructorApi.uploadCourseImage(instructorToken, uploadFile);
         } else {
-          const result = await mediaLibraryService.uploadFileDirect(pendingImageFile, "public");
+          const result = await mediaLibraryService.uploadFileDirect(uploadFile, "public");
           thumbnailPath = result.cdnUrl ?? result.asset?.cdnUrl ?? result.asset?.thumbnailUrl ?? null;
         }
         if (!thumbnailPath) {
@@ -263,12 +268,15 @@ function CourseFormPanel({
         updateField("thumbnailPath", thumbnailPath);
         setPendingImageFile(null);
       } catch (cause) {
+        const message = instructorToken
+          ? instructorApiErrorMessage(cause)
+          : cause instanceof Error
+            ? cause.message
+            : "فشل رفع صورة الكورس";
         setImageError(
-          instructorToken
-            ? instructorApiErrorMessage(cause)
-            : cause instanceof Error
-              ? cause.message
-              : "فشل رفع صورة الكورس",
+          message.includes("413")
+            ? "حجم الصورة كبير جداً. جرّب صورة أصغر."
+            : message,
         );
         return;
       } finally {
