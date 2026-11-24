@@ -110,6 +110,8 @@ interface TenantState {
   }) => void;
   /** Updates only the platform-level brand colors (the public-site theme). */
   setPlatformBranding: (branding: Partial<TenantBranding>) => void;
+  /** Public Google OAuth client id for the current tenant domain. */
+  setGoogleClientId: (clientId: string | null) => void;
   /** Updates only the dashboard appearance colors (الألوان المخصصة) used by
    *  the teacher/admin/instructor shells. Never touches platformBranding. */
   setDashboardColors: (colors: {
@@ -334,6 +336,9 @@ export const useTenantStore = create<TenantState>()(
       }),
 
     setBootstrapStatus: (status) => set({ bootstrapStatus: status }),
+
+    setGoogleClientId: (clientId) =>
+      set({ googleClientId: clientId?.trim() || null }),
 
     setPlatformBranding: (branding) =>
       set((state) => ({

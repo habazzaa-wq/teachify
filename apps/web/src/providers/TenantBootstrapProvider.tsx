@@ -51,6 +51,7 @@ export function TenantBootstrapProvider({
   const setBootstrapStatus = useTenantStore((s) => s.setBootstrapStatus);
   const setBootstrapError = useTenantStore((s) => s.setBootstrapError);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
+  const setGoogleClientId = useTenantStore((s) => s.setGoogleClientId);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,8 +82,12 @@ export function TenantBootstrapProvider({
     // Already bootstrapped (e.g. via login/me). Never re-clobber the tenant's
     // branding colors on client-side navigation — doing so resets the
     // control-panel colors back to defaults and causes them to "change on their
-    // own" between pages.
+    // own" between pages. The public Google client id still has to be seeded:
+    // persisted tenant state can outlive a settings change made by the admin.
     if (useTenantStore.getState().activeTenant) {
+      if (tenantContext) {
+        setGoogleClientId(tenantContext.auth?.google_client_id ?? null);
+      }
       setBootstrapStatus("resolved");
       return;
     }
@@ -222,6 +227,7 @@ export function TenantBootstrapProvider({
     setBootstrapStatus,
     setBootstrapError,
     setPlatformBranding,
+    setGoogleClientId,
   ]);
 
   const effectiveStatus =
