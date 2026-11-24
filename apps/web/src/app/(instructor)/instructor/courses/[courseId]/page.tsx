@@ -41,20 +41,22 @@ export default function InstructorCourseDetailPage() {
   }
 
   return (
-    <CourseStudio
-      mode="ready"
-      instructorMode
-      courseId={course.id}
-      courseName={course.title}
-      courseStatus={course.status}
-      courseVisibility={course.visibility}
-      studentsCount={course.studentsCount}
-      isSaved
-      breadcrumbItems={[
-        { label: "الدورات", href: "/instructor/courses" },
-        { label: course.title },
-      ]}
-      onPublish={course.status !== "published" ? handlePublish : undefined}
-    />
+    <div className="h-[calc(100dvh-13rem)] min-h-[30rem] md:h-[calc(100dvh-11rem)] md:min-h-0">
+      <CourseStudio
+        mode="ready"
+        instructorMode
+        courseId={course.id}
+        courseName={course.title}
+        courseStatus={course.status}
+        courseVisibility={course.visibility}
+        studentsCount={course.studentsCount}
+        isSaved
+        breadcrumbItems={[
+          { label: "الدورات", href: "/instructor/courses" },
+          { label: course.title },
+        ]}
+        onPublish={course.status !== "published" ? handlePublish : undefined}
+      />
+    </div>
   );
 }

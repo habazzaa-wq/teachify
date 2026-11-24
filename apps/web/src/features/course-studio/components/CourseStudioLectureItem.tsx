@@ -19,6 +19,8 @@ import {
   RotateCcw,
   XCircle,
   Plus,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { StudioStatusBadge } from "@/components/studio/badges";
 import { CourseStudioSectionItem } from "./CourseStudioSectionItem";
@@ -61,6 +63,8 @@ interface CourseStudioLectureItemProps {
   onDragStart?: (e: React.DragEvent, lecture: CourseModule) => void;
   onDragOver?: (e: React.DragEvent, lecture: CourseModule) => void;
   onDrop?: (e: React.DragEvent, lecture: CourseModule) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
@@ -91,6 +95,8 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
   onDragStart,
   onDragOver,
   onDrop,
+  onMoveUp,
+  onMoveDown,
 }: CourseStudioLectureItemProps) {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -135,7 +141,7 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
         onDrop={(e) => onDrop?.(e as unknown as React.DragEvent, lecture)}
       >
         <div
-          className="flex shrink-0 cursor-grab items-center opacity-0 transition-opacity group-hover:opacity-100"
+          className="hidden shrink-0 cursor-grab items-center transition-opacity hoverable:flex hoverable:opacity-0 hoverable:group-hover:opacity-100"
           aria-hidden="true"
         >
           <GripVertical className="h-3.5 w-3.5 text-studio-fg-subtle" />
@@ -200,7 +206,7 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-studio-soft group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-opacity hover:bg-studio-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring hoverable:h-7 hoverable:w-7 hoverable:opacity-0 hoverable:group-hover:opacity-100 hoverable:focus-visible:opacity-100"
               aria-label="خيارات المحاضرة"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
@@ -215,6 +221,19 @@ const CourseStudioLectureItem = memo(function CourseStudioLectureItem({
               <Copy className="h-4 w-4" />
               نسخ
             </AppDropdownMenuItem>
+            {(onMoveUp || onMoveDown) && <AppDropdownMenuSeparator />}
+            {onMoveUp && (
+              <AppDropdownMenuItem onClick={onMoveUp}>
+                <ArrowUp className="h-4 w-4" />
+                تحريك لأعلى
+              </AppDropdownMenuItem>
+            )}
+            {onMoveDown && (
+              <AppDropdownMenuItem onClick={onMoveDown}>
+                <ArrowDown className="h-4 w-4" />
+                تحريك لأسفل
+              </AppDropdownMenuItem>
+            )}
             <AppDropdownMenuSeparator />
             {!isPublished && !isDeleted && (
               <AppDropdownMenuItem onClick={() => onPublish(lecture)}>

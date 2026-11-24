@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { ListTree, Plus, SlidersHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { useCourseStudioStore } from "../store";
@@ -74,11 +74,13 @@ interface CourseStudioProps {
   instructorMode?: boolean;
 }
 
+// الشاشات الصغيرة والمتوسطة بتستخدم وضع اللوحة الواحدة + الأدراج،
+// عشان مساحة العمل ما تتزاحمش في عرض أقل من 1024px.
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => setIsMobile(window.innerWidth < 1024);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -924,6 +926,7 @@ function CourseStudio({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
+    setMobileNavOpen(false);
     if (isMobile) {
       store.setNavigatorOpen(false);
       store.setInspectorOpen(false);
@@ -993,7 +996,7 @@ function CourseStudio({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="flex h-full flex-col overflow-hidden"
+      className="flex h-full min-h-0 flex-col overflow-hidden"
     >
       <CourseStudioHeader
         courseName={courseName}
@@ -1011,7 +1014,7 @@ function CourseStudio({
         onQuickAction={onQuickAction}
       />
 
-      <div className="flex shrink-0 items-center border-b border-studio-border bg-studio-muted/30 px-4 py-1.5 md:px-6">
+      <div className="flex shrink-0 items-center border-b border-studio-border bg-studio-muted/30 px-3 py-1.5 sm:px-4 md:px-6">
         <CourseStudioBreadcrumb items={defaultBreadcrumb} />
       </div>
 
@@ -1022,11 +1025,17 @@ function CourseStudio({
               selectedLecture={selectedLecture}
               selectedSection={selectedSection}
               selectedContent={selectedContent}
+              lectureSections={selectedLecture ? sectionsByLecture[selectedLecture.id] : undefined}
               sectionContents={contentItems}
               canvasView={canvasView}
               onCreateLecture={openAddChoice}
               onAddSection={selectedLecture ? () => handleAddSection(selectedLecture.id) : undefined}
               onAddContent={handleAddContent}
+              onEditSection={(s) => store.openEditSectionDialog(s)}
+              onDuplicateSection={handleDuplicateSection}
+              onArchiveSection={handleArchiveSection}
+              onDeleteSection={handleDeleteSection}
+              onRestoreSection={handleRestoreSection}
               onSelectContent={handleSelectContent}
               onEditContent={handleEditContent}
               onPublishContent={handlePublishContent}
@@ -1055,14 +1064,15 @@ function CourseStudio({
                     animate={{ x: 0 }}
                     exit={{ x: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-y-0 end-0 z-50 w-[min(320px,85vw)]"
+                    className="absolute inset-y-0 end-0 z-50 w-[min(340px,92vw)] max-w-full pb-[env(safe-area-inset-bottom)]"
                     role="dialog"
                     aria-modal="true"
                     aria-label="متصفح المحتوى"
                   >
-                    <div className="flex h-full flex-col bg-studio-surface border-s border-studio-border">
-                      <div className="flex shrink-0 items-center justify-end border-b border-studio-border px-2 py-2">
-                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة">
+                    <div className="flex h-full flex-col border-s border-studio-border bg-studio-surface shadow-2xl">
+                      <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-2">
+                        <span className="text-xs font-semibold text-studio-fg-muted">تصفّح الدورة</span>
+                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="h-11 w-11">
                           <X className="h-4 w-4" />
                         </StudioButton>
                       </div>
@@ -1078,7 +1088,7 @@ function CourseStudio({
                           selectedSectionId={store.selectedSectionId}
                           expandedLectures={store.expandedLectures}
                           isLoading={lecturesLoading}
-                          onSelectLecture={(id) => { handleSelectLecture(id); }}
+                          onSelectLecture={(id) => { handleSelectLecture(id); setMobileNavOpen(false); }}
                           onToggleLecture={handleToggleLecture}
                           onSelectSection={(id) => { handleSelectSection(id); setMobileNavOpen(false); }}
                           onCreateLecture={() => { openAddChoice(); }}
@@ -1117,16 +1127,19 @@ function CourseStudio({
                     aria-hidden="true"
                   />
                   <motion.aside
-                    initial={{ x: "-100%" }}
-                    animate={{ x: 0 }}
-                    exit={{ x: "-100%" }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="absolute inset-y-0 start-0 z-50 w-[min(360px,92vw)]"
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 32 }}
+                    className="absolute inset-x-0 bottom-0 z-50 flex max-h-[78%] flex-col rounded-t-2xl bg-studio-surface shadow-2xl"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
                   >
-                    <div className="h-full bg-studio-surface border-e border-studio-border overflow-hidden">
+                    <div className="flex shrink-0 justify-center py-2" aria-hidden="true">
+                      <span className="h-1 w-10 rounded-full bg-studio-border" />
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto border-t border-studio-border pb-[env(safe-area-inset-bottom)]">
                       <CourseStudioInspector
                         variant="drawer"
                         open={store.inspectorOpen}
@@ -1256,6 +1269,45 @@ function CourseStudio({
           </>
         )}
       </div>
+
+      {/* شريط تحكم سفلي للشاشات الصغيرة والمتوسطة: كل الأدوات الأساسية متاحة بلمسة واحدة */}
+      <nav
+        className="flex shrink-0 items-stretch gap-1 border-t border-studio-border bg-studio-glass-toolbar px-2 pb-[max(env(safe-area-inset-bottom),0.35rem)] pt-1.5 backdrop-blur-xl lg:hidden"
+        aria-label="أدوات الاستوديو السريعة"
+      >
+        <StudioButton
+          variant={mobileNavOpen ? "soft" : "ghost"}
+          size="md"
+          onClick={handleToggleNavigator}
+          aria-label="فتح مستكشف المحتوى"
+          aria-pressed={mobileNavOpen}
+          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          icon={<ListTree className="h-4 w-4" />}
+        >
+          المستكشف
+        </StudioButton>
+        <StudioButton
+          variant="primary"
+          size="md"
+          onClick={openAddChoice}
+          aria-label="إضافة محاضرة أو جلسة"
+          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          icon={<Plus className="h-4 w-4" />}
+        >
+          إضافة
+        </StudioButton>
+        <StudioButton
+          variant={store.inspectorOpen ? "soft" : "ghost"}
+          size="md"
+          onClick={handleToggleInspector}
+          aria-label="فتح خصائص العنصر"
+          aria-pressed={store.inspectorOpen}
+          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          icon={<SlidersHorizontal className="h-4 w-4" />}
+        >
+          الخصائص
+        </StudioButton>
+      </nav>
 
       <CourseStudioAddItemChoiceDialog
         open={addChoiceOpen}

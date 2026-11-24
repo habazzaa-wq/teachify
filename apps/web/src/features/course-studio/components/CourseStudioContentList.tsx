@@ -91,7 +91,7 @@ function CourseStudioContentList({
 
       <div className="space-y-0.5" role="list" aria-label="قائمة المحتوى">
         <AnimatePresence mode="popLayout">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <CourseStudioContentItem
               key={item.id}
               item={item}
@@ -107,6 +107,8 @@ function CourseStudioContentList({
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              onMoveUp={index > 0 && onReorder ? () => onReorder(items, index, index - 1) : undefined}
+              onMoveDown={index < items.length - 1 && onReorder ? () => onReorder(items, index, index + 1) : undefined}
             />
           ))}
         </AnimatePresence>

@@ -34,19 +34,23 @@ function CourseWorkspacePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b bg-background px-4 pt-3">
-        <div className="flex gap-2">
+      <div className="border-b bg-background px-3 pt-2 sm:px-4 md:pt-3">
+        <div className="flex gap-2 overflow-x-auto studio-scrollbar" role="tablist" aria-label="أقسام الدورة">
           <button
             type="button"
             onClick={() => setActiveTab("content")}
-            className={`rounded-t-lg px-4 py-2 text-sm font-medium ${activeTab === "content" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            role="tab"
+            aria-selected={activeTab === "content"}
+            className={`shrink-0 whitespace-nowrap rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "content" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             المحتوى
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("sessions")}
-            className={`rounded-t-lg px-4 py-2 text-sm font-medium ${activeTab === "sessions" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            role="tab"
+            aria-selected={activeTab === "sessions"}
+            className={`shrink-0 whitespace-nowrap rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "sessions" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             الجلسات
             {hasSessions && <span className="ms-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">مفعّل</span>}
@@ -56,16 +60,20 @@ function CourseWorkspacePage() {
 
       {activeTab === "content" ? (
         <>
-          <CourseStudio
-            mode="ready"
-            courseId={course.id}
-            courseName={course.title}
-            courseStatus={course.status}
-            courseVisibility={course.visibility}
-            studentsCount={course.studentsCount}
-            isSaved
-            onPublish={course.status !== "published" ? handlePublish : undefined}
-          />
+          {/* ارتفاع ثابت نسبيًا للشاشة عشان لوحة العمل تفضل قابلة للتحكم
+              والتمرير جوهها، وباقي الأقسام تفضل متاحة بالتمرير تحت. */}
+          <div className="h-[calc(100dvh-11rem)] min-h-[30rem] md:h-[calc(100dvh-12rem)] md:min-h-0">
+            <CourseStudio
+              mode="ready"
+              courseId={course.id}
+              courseName={course.title}
+              courseStatus={course.status}
+              courseVisibility={course.visibility}
+              studentsCount={course.studentsCount}
+              isSaved
+              onPublish={course.status !== "published" ? handlePublish : undefined}
+            />
+          </div>
           <CourseInstructorAssignments course={course} />
         </>
       ) : (

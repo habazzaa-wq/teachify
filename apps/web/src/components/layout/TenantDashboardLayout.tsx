@@ -34,7 +34,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
-    <div className="tenant-theme flex h-screen flex-col bg-studio-bg text-studio-fg overflow-hidden">
+    <div className="tenant-theme flex min-h-dvh flex-col bg-studio-bg text-studio-fg md:h-dvh md:overflow-hidden">
       {/* Header */}
       <WorkspaceHeader />
 
@@ -47,12 +47,12 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
 
         {/* Center viewport */}
         <main
-          className="tenant-aurora flex min-w-0 flex-1 flex-col overflow-hidden"
+          className="tenant-aurora flex min-w-0 flex-1 flex-col md:overflow-hidden"
           role="main"
           aria-label="مساحة العمل الرئيسية"
         >
-          <div className="flex-1 overflow-y-auto studio-scrollbar">
-            <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
+          <div className="flex-1 md:overflow-y-auto studio-scrollbar">
+            <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-4 md:px-6 md:py-6 lg:px-8">
               {children}
             </div>
           </div>
@@ -79,7 +79,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
             aria-hidden="true"
           />
           <aside
-            className="fixed inset-y-0 right-0 z-50 w-[280px] md:hidden shadow-2xl transition-transform duration-300 ease-in-out"
+            className="fixed inset-y-0 right-0 z-50 w-[min(300px,88vw)] max-w-full pb-[env(safe-area-inset-bottom)] md:hidden shadow-2xl transition-transform duration-300 ease-in-out"
             role="dialog"
             aria-modal="true"
             aria-label="القائمة الجانبية"
