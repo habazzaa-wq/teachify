@@ -20,7 +20,7 @@ import {
 import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
 import { buildPwaMetadata } from "@/lib/pwa/metadata";
-import { resolveManifestColor } from "@/lib/pwa/manifest";
+import { resolvePlatformThemeColor } from "@/lib/pwa/manifest";
 import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
 
 const cairo = Cairo({
@@ -89,7 +89,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export async function generateViewport(): Promise<Viewport> {
   const tenant = await getTenantSeoContext();
   return {
-    themeColor: resolveManifestColor(tenant?.branding?.primaryColor),
+    themeColor: resolvePlatformThemeColor(tenant),
   };
 }
 

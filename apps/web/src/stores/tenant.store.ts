@@ -85,6 +85,12 @@ interface TenantState {
   }) => void;
   /** Updates only the platform-level brand colors (the public-site theme). */
   setPlatformBranding: (branding: Partial<TenantBranding>) => void;
+  /** Updates only the dashboard appearance colors (الألوان المخصصة) used by
+   *  the teacher/admin/instructor shells. Never touches platformBranding. */
+  setDashboardColors: (colors: {
+    primary_color?: string | null;
+    secondary_color?: string | null;
+  }) => void;
   setTenantBootstrap: (data: {
     id: number;
     name: string;
@@ -291,6 +297,33 @@ export const useTenantStore = create<TenantState>()(
           ...branding,
         } as TenantBranding,
       })),
+
+    setDashboardColors: ({ primary_color, secondary_color }) =>
+      set((state) => {
+        const apply = (branding: unknown) => {
+          const base = (branding ?? {}) as Record<string, unknown>;
+          return normalizeBranding({
+            ...base,
+            ...(primary_color !== undefined && { primary_color, primaryColor: primary_color }),
+            ...(secondary_color !== undefined && {
+              secondary_color,
+              secondaryColor: secondary_color,
+            }),
+          });
+        };
+
+        return {
+          activeTenant: state.activeTenant
+            ? {
+                ...state.activeTenant,
+                branding: apply(state.activeTenant.branding) as unknown as AuthBranding,
+              }
+            : state.activeTenant,
+          branding: state.branding
+            ? (apply(state.branding) as unknown as TenantBranding)
+            : state.branding,
+        };
+      }),
 
     setBootstrapError: (error) => set({ bootstrapError: error }),
 

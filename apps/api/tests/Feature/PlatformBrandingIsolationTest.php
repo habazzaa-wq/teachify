@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\PlatformBranding;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
+use App\Models\TenantSetting;
 use App\Models\TenantUser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -130,7 +131,7 @@ class PlatformBrandingIsolationTest extends TestCase
         $this->assertEquals('#DDDDDD', $bBranding->secondary_color);
     }
 
-    public function test_appearance_site_colors_are_mirrored_to_platform_branding(): void
+    public function test_appearance_colors_never_change_platform_branding(): void
     {
         $tenant = Tenant::factory()->create(['status' => 'active']);
         $user = User::factory()->create();
@@ -143,6 +144,13 @@ class PlatformBrandingIsolationTest extends TestCase
         Sanctum::actingAs($user);
         $headers = ['X-Tenant-ID' => $tenant->id];
 
+        // The public-site palette is owned by the branding editor.
+        $this->putJson('/api/v1/settings/platform', [
+            'primary_color' => '#FF0000',
+            'secondary_color' => '#00FF00',
+        ], $headers)->assertOk();
+
+        // The appearance editor only writes the dashboard palette.
         $this->putJson('/api/v1/settings/site', [
             'values' => [
                 'primary_color' => '#123ABC',
@@ -153,28 +161,39 @@ class PlatformBrandingIsolationTest extends TestCase
             ->assertJsonPath('values.primary_color', '#123ABC')
             ->assertJsonPath('values.secondary_color', '#DEF456');
 
-        // The teacher appearance editor must change the same row the runtime
-        // theme reads, otherwise the chosen colors never reach any dashboard.
+        $this->assertDatabaseHas('tenant_settings', [
+            'tenant_id' => $tenant->id,
+            'group' => 'branding',
+        ]);
+        $appearance = TenantSetting::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('group', 'branding')
+            ->firstOrFail();
+        $this->assertEquals('#123ABC', $appearance->values['primary_color']);
+        $this->assertEquals('#DEF456', $appearance->values['secondary_color']);
+
+        // The public-site palette must be untouched.
         $this->assertDatabaseHas('platform_branding', [
             'tenant_id' => $tenant->id,
-            'primary_color' => '#123ABC',
-            'secondary_color' => '#DEF456',
+            'primary_color' => '#FF0000',
+            'secondary_color' => '#00FF00',
         ]);
 
         $this->getJson('/api/v1/settings/platform', $headers)
             ->assertOk()
-            ->assertJsonPath('branding.primaryColor', '#123ABC')
-            ->assertJsonPath('branding.secondaryColor', '#DEF456');
+            ->assertJsonPath('branding.primaryColor', '#FF0000')
+            ->assertJsonPath('branding.secondaryColor', '#00FF00');
 
-        // Auth/me is what the dashboard bootstrap reads: it must expose the
-        // mirrored colors too, otherwise a fresh login still paints defaults.
+        // Auth/me exposes both palettes separately: the dashboard bootstrap
+        // reads `branding`, the public shells read `platform_branding`.
         $this->getJson('/api/v1/auth/me', $headers)
             ->assertOk()
-            ->assertJsonPath('tenant.platform_branding.primaryColor', '#123ABC')
-            ->assertJsonPath('tenant.platform_branding.secondaryColor', '#DEF456');
+            ->assertJsonPath('tenant.branding.primary_color', '#123ABC')
+            ->assertJsonPath('tenant.branding.secondary_color', '#DEF456')
+            ->assertJsonPath('tenant.platform_branding.primaryColor', '#FF0000')
+            ->assertJsonPath('tenant.platform_branding.secondaryColor', '#00FF00');
 
-        // Reset clears the platform colors so the frontend falls back to the
-        // built-in platform defaults.
+        // Resetting appearance never resets the public-site palette.
         $this->putJson('/api/v1/settings/site', [
             'values' => [
                 'primary_color' => null,
@@ -184,8 +203,8 @@ class PlatformBrandingIsolationTest extends TestCase
 
         $this->assertDatabaseHas('platform_branding', [
             'tenant_id' => $tenant->id,
-            'primary_color' => null,
-            'secondary_color' => null,
+            'primary_color' => '#FF0000',
+            'secondary_color' => '#00FF00',
         ]);
     }
 

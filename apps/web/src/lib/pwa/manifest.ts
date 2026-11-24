@@ -97,9 +97,21 @@ export function getManifestId(tenant: TenantSeoContext | null): string {
   return slug ? `/?tenant=${encodeURIComponent(slug)}` : "/";
 }
 
-/** Resolve the theme color from tenant branding, falling back to the platform default. */
+/** Resolve the theme color from the PUBLIC site palette, falling back to the
+ *  platform default. Never from `branding` (the dashboard appearance palette). */
 export function resolveManifestColor(color: string | null | undefined): string {
   return normalizeHex(color ?? BRAND_PRIMARY_DEFAULT);
+}
+
+/** Pick the public-site primary color from a server tenant context. Accepts
+ *  both the snake_case API key and the camelCase alias. */
+export function resolvePlatformThemeColor(tenant: TenantSeoContext | null): string {
+  const platformBranding = tenant?.platform_branding ?? tenant?.platformBranding ?? null;
+  const primary =
+    platformBranding?.primaryColor ??
+    (platformBranding as unknown as { primary_color?: string | null } | null)?.primary_color ??
+    null;
+  return resolveManifestColor(primary);
 }
 
 export interface BuildManifestInput {
@@ -119,7 +131,7 @@ export interface BuildManifestInput {
 export function buildManifest({ tenant, origin }: BuildManifestInput): MetadataRoute.Manifest {
   const name = getSiteName(tenant);
   const iconUrl = resolveAssetUrl(pickTenantIconUrl(tenant), origin);
-  const themeColor = resolveManifestColor(tenant?.branding?.primaryColor);
+  const themeColor = resolvePlatformThemeColor(tenant);
 
   return {
     name,

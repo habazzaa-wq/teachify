@@ -110,9 +110,10 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
     (initial.secondaryColor ?? initial.secondary_color ?? "").trim() || BRAND_SECONDARY_DEFAULT,
   );
 
-  // يطبّق اللونين فوراً على كامل المنصة (the-mechanist.com) أثناء التعديل —
-  // من غير انتظار الحفظ — عن طريق تحديث متجر platformBranding اللي بيقريء منه
-  // BrandThemeProvider ويغيّر متغيرات CSS فوراً.
+  // يطبّق اللونين فوراً على الموقع العام فقط (the-mechanist.com من برّه) أثناء
+  // التعديل — عن طريق تحديث platformBranding. لوحات التحكم (/teacher/*،
+  // /instructor/*، /tenant-login) تقرأ palette مستقلة من «مظهر لوحة التحكم»
+  // وبالتالي لا تتأثر بهذه الألوان إطلاقاً.
   const applyLive = useCallback(
     (primary: string, secondary: string) => {
       setPlatformBranding({ primaryColor: primary, secondaryColor: secondary });
@@ -345,7 +346,7 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
             <Palette className="h-4 w-4" /> ألوان الموقع
           </AppCardTitle>
           <AppCardDescription>
-            اللونان الأساسيان للمنصة — يظهران في شريط التنقّل والأزرار والكورسات وكامل صفحات الموقع
+            اللونان الأساسيان للموقع العام — يظهران في شريط التنقّل والأزرار والكورسات وصفحات الموقع. لا يؤثران على ألوان لوحات التحكم.
           </AppCardDescription>
         </AppCardHeader>
         <AppCardContent className="space-y-6">
@@ -427,7 +428,7 @@ function BrandingForm({ initial }: { initial: SiteSettings }) {
               />
             </div>
            <div className="text-sm text-studio-fg-muted">
-               اللونان يُطبَّقان فوراً على كامل المنصة (the-mechanist.com) أثناء التعديل. احفظ لإبقائهما.
+               اللونان يُطبَّقان فوراً على الموقع العام (the-mechanist.com من برّه) فقط أثناء التعديل. احفظ لإبقائهما — لوحات التحكم لها ألوانها المستقلة.
              </div>
           </div>
         </AppCardContent>

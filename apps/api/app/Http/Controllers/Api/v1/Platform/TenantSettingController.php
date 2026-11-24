@@ -13,12 +13,12 @@ use Illuminate\Validation\Rule;
 class TenantSettingController extends Controller
 {
     /**
-     * Platform-level brand colors. These drive every themed surface (public
-     * site, tenant admin dashboard, instructor workspace and student pages)
-     * through `platform_branding`. The teacher appearance editor also writes
-     * the same two colors here so its choices are actually applied; the
-     * `branding` settings group is kept only as a compatible copy for older
-     * consumers (auth/me branding payload).
+     * Public-site brand colors (ألوان الموقع), stored in `platform_branding`.
+     * These drive the public site only (.community-theme / --brand-*).
+     *
+     * They are deliberately separate from the `branding` settings group
+     * (ألوان المخصصة), which drives the teacher/admin/instructor dashboards
+     * and is saved through `updateSite`. Never mirror one into the other.
      */
     public function platform(): JsonResponse
     {
@@ -30,9 +30,9 @@ class TenantSettingController extends Controller
     }
 
     /**
-     * Persist the platform-level brand colors onto the current tenant's own
-     * `platform_branding` row. `updateSite` (teacher appearance) writes the
-     * same two columns so both editors stay in sync.
+     * Persist the public-site brand colors onto the current tenant's own
+     * `platform_branding` row. This endpoint is used only by the branding
+     * editor (ألوان الموقع) and never touches the dashboard palette.
      */
     public function updatePlatformBranding(Request $request): JsonResponse
     {
@@ -49,7 +49,7 @@ class TenantSettingController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $branding = (new \App\Services\Platform\PlatformBrandingService())->update($tenant->id, $validated);
+        $branding = (new PlatformBrandingService())->update($tenant->id, $validated);
 
         return response()->json([
             'message' => 'Platform branding updated.',
@@ -128,15 +128,11 @@ class TenantSettingController extends Controller
             );
         }
 
-        // The appearance editor must change the real runtime theme, not just a
-        // settings row that nothing reads. Mirror the two colors onto the
-        // platform_branding row consumed by every themed shell (admin,
-        // instructor, student, public site). Null resets fall back to the
-        // platform defaults in the frontend theme generator.
-        $platformColors = array_intersect_key($values, array_flip(['primary_color', 'secondary_color']));
-        if ($platformColors !== []) {
-            app(PlatformBrandingService::class)->update($tenant->id, $platformColors);
-        }
+        // IMPORTANT: do NOT mirror these colors into `platform_branding`.
+        // This endpoint saves the dashboard appearance palette (ألوان المخصصة)
+        // for the teacher/admin/instructor shells. The public-site palette
+        // (ألوان الموقع) is owned exclusively by updatePlatformBranding().
+        // Mirroring here was the reason editing one page recolored the other.
 
         $tenant->refresh();
         $branding = $tenant->settings()
@@ -168,7 +164,7 @@ class TenantSettingController extends Controller
      */
     private function resolvePlatformBranding(\App\Models\Tenant $tenant): array
     {
-        return (new \App\Services\Platform\PlatformBrandingService())->resolve($tenant->id);
+        return (new PlatformBrandingService())->resolve($tenant->id);
     }
 
     public function index(): JsonResponse

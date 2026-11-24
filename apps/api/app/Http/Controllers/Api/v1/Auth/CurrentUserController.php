@@ -99,9 +99,9 @@ class CurrentUserController extends Controller
     }
 
     /**
-     * Platform-level brand colors. Resolved per-tenant and used by every
-     * themed surface. `getBranding` is the legacy tenant appearance copy;
-     * the appearance editor mirrors its two colors into this row as well.
+     * Public-site brand colors (ألوان الموقع), resolved per-tenant. Kept
+     * separate from `getBranding`, which is the dashboard appearance palette
+     * (ألوان المخصصة) used by the teacher/admin/instructor shells.
      *
      * @return array<string, mixed>
      */

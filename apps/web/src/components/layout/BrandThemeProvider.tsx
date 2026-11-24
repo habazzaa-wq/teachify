@@ -1,45 +1,41 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useTenantStore } from "@/stores/tenant.store";
 import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import {
   BRAND_THEME_STYLE_ID,
   buildBrandThemeCss,
+  DASHBOARD_THEME_BODY_CLASS,
+  isDashboardPath,
   resolveBrandThemeColors,
   resolveDashboardBrandColors,
 } from "@/lib/brand-theme";
 
 /**
- * المصدر الوحيد والموثوق لألوان المنصة (platformBranding) على طول التطبيق.
+ * Applies TWO independent color systems to their own surfaces:
  *
- * بيطبّق نفس لونين الأساسيين (primary/secondary) على كل الأسطح الملوّنة:
- *   · .community-theme  → الموقع العام (navbar/hero/cards/wallet/courses…)
- *   · .tenant-theme     → لوحة تحكم المدرس + صفحة تسجيل الدخول
- *   · .student-theme    → لوحة الطالب
- *   · :root --brand-*   → متغيّرات الألوان الخام الجاهزة للاستخدام المباشر
+ *  · `platformBranding` (ألوان الموقع, settings/branding) → :root, .dark,
+ *    .community-theme and the `--brand-*` raw tokens = public website only.
+ *  · `activeTenant.branding` (الألوان المخصصة, settings/appearance) →
+ *    .tenant-theme, .student-theme and body.dashboard-theme = dashboards only
+ *    (/teacher/*, /instructor/*, /tenant-login, /student/*).
  *
- * لوحة تحكم المدرس (.tenant-theme) ليها بalette مستقلة بيتحكم فيها المدرس من
- * "مظهر لوحة التحكم" (activeTenant.branding) — عشان كده بنستخدمها للـ dashboard،
- * مع الاحتفاظ بـ platformBranding للموقع العام وصفحة الطالب. لو المدرس ماعملش
- * إعدادات مظهر، بنرجّع للـ platform pair عشان مفيش لوحة تظهر بلا ألوان.
+ * Changing one palette can no longer recolor the other surface.
  *
- * ملاحظة حول منع الوميض (FOUC): الألوان الحقيقية بتتطبّع server-side في <head>
- * عن طريق BrandThemeSSR (نفس id الـ <style>) — فلأول رسمة من اول رسمة بالألوان
- * الصحيحة. هنا على الـ client بنعيد كتابة نفس العنصر جوه المكان بس لما الألوان
- * الحية (platformBranding) تبقى معروفة فعلاً، وبنمنع كتابة قيم الـ fallback
- * (الموجودة في globals.css) مكانها قبل ما توصل الألوان — وده كان سبب الوميض.
+ * FOUC: the real colors are pre-rendered server-side into the same <style> id
+ * by BrandThemeSSR. On the client we rewrite that element in place once the
+ * live palettes are known, never replacing real colors with fallbacks.
  */
 export function BrandThemeProvider() {
   const platformBranding = usePlatformBranding();
-  // Teacher appearance palette ("مظهر لوحة التحكم"), separate from the public
-  // site palette. This is what actually drives the dashboard sidebar colors.
   const appearanceBranding = useTenantStore((s) => s.activeTenant?.branding);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
+  const pathname = usePathname();
   const loadRef = useRef(false);
 
-  // تحميل ذاتي لألوان المنصة (مرّة واحدة، ومستقل عن حالة تسجيل الدخول). لو كانت
-  // الألوان موجودة من الـ SSR/البوتستراب بنكتفي بيها.
+  // Self-load the public-site palette once, independent of login state.
   useEffect(() => {
     if (platformBranding || loadRef.current) return;
     loadRef.current = true;
@@ -50,25 +46,39 @@ export function BrandThemeProvider() {
         if (data?.platform_branding) setPlatformBranding(data.platform_branding);
       })
       .catch(() => {
-        // لو فشل، نسمح بإعادة المحاولة في المرة الجاية.
+        // Allow a retry on the next render if the request failed.
         loadRef.current = false;
       });
   }, [platformBranding, setPlatformBranding]);
 
-  const platform = resolveBrandThemeColors(platformBranding);
-  const dashboard = resolveDashboardBrandColors(appearanceBranding, platform);
+  // Portals (dialogs, selects, toasts) mount on <body>, outside .tenant-theme.
+  // Mark dashboard routes so they inherit the dashboard palette there too.
+  useEffect(() => {
+    if (!isDashboardPath(pathname)) return;
+    document.body.classList.add(DASHBOARD_THEME_BODY_CLASS);
+    return () => document.body.classList.remove(DASHBOARD_THEME_BODY_CLASS);
+  }, [pathname]);
+
+  const platform = useMemo(
+    () => resolveBrandThemeColors(platformBranding),
+    [platformBranding],
+  );
+  // Unset dashboard colors fall back to dashboard defaults — never to the
+  // public site pair — so the two systems stay fully independent.
+  const dashboard = useMemo(
+    () => resolveDashboardBrandColors(appearanceBranding),
+    [appearanceBranding],
+  );
 
   const css = useMemo(
     () => buildBrandThemeCss(platform.primary, platform.secondary, dashboard),
-    [platform.primary, platform.secondary, dashboard.primary, dashboard.secondary],
+    [platform, dashboard],
   );
 
   useEffect(() => {
-    // لو مفيش حتى الآن branding حقيقي (middleware/SSR ماجابهاش والـ fetch لسه
-    // شغال)، منكتبش style إطلاقاً عشان منستبدلش الألوان الصحيحة اللي طبّعها الـ
-    // SSR في <head> بألوان الـ fallback — اللي كان سبب الوميض. أول ما توصل
-    // الألوان الحقيقية، بنعيد كتابة نفس العنصر جوه المكان بالقيم نفسها فمفيش تغيير مرئي.
-    if (!platformBranding) return;
+    // Do not overwrite the SSR stylesheet with fallbacks while either palette
+    // is still loading. Once real branding arrives, rewrite the same node.
+    if (!platformBranding && !appearanceBranding) return;
 
     let styleTag = document.getElementById(BRAND_THEME_STYLE_ID) as HTMLStyleElement | null;
     if (!styleTag) {
@@ -77,7 +87,7 @@ export function BrandThemeProvider() {
       document.head.appendChild(styleTag);
     }
     styleTag.textContent = css;
-  }, [css, platformBranding]);
+  }, [css, platformBranding, appearanceBranding]);
 
   return null;
 }

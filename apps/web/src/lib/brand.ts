@@ -25,16 +25,26 @@ export function normalizeHex(hex: string): string {
   return `#${clean.toUpperCase()}`;
 }
 
+/**
+ * JS hex values for PUBLIC-SITE use only. Never pass the tenant `branding`
+ * (dashboard appearance) object here — that palette must not reach the site.
+ */
 export function resolveBrandHexColors(
-  activeTenant?: { branding?: { primary_color?: string | null; secondary_color?: string | null } } | null,
-  branding?: { primaryColor?: string | null; secondaryColor?: string | null } | null,
+  branding?:
+    | {
+        primaryColor?: string | null;
+        secondaryColor?: string | null;
+        primary_color?: string | null;
+        secondary_color?: string | null;
+      }
+    | null,
 ): { primary: string; secondary: string } {
   return {
     primary: normalizeHex(
-      activeTenant?.branding?.primary_color ?? branding?.primaryColor ?? BRAND_PRIMARY_DEFAULT,
+      branding?.primaryColor ?? branding?.primary_color ?? BRAND_PRIMARY_DEFAULT,
     ),
     secondary: normalizeHex(
-      activeTenant?.branding?.secondary_color ?? branding?.secondaryColor ?? BRAND_SECONDARY_DEFAULT,
+      branding?.secondaryColor ?? branding?.secondary_color ?? BRAND_SECONDARY_DEFAULT,
     ),
   };
 }
