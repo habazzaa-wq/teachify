@@ -85,6 +85,12 @@ class DirectCoursePaymentController extends Controller
                 throw ValidationException::withMessages([
                     'payment' => [$exception->getMessage()],
                 ]);
+            } catch (\Throwable $exception) {
+                $this->reportSafely($exception);
+
+                throw ValidationException::withMessages([
+                    'payment' => ['تعذر تحميل بيانات بوابة الدفع. حاول مرة أخرى لاحقاً.'],
+                ]);
             }
 
             $data['gateway_amount'] = $gatewayAmount['amount'];
@@ -165,6 +171,14 @@ class DirectCoursePaymentController extends Controller
         } catch (PaymentGatewayException $exception) {
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
+            ]);
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            $this->reportSafely($exception);
+
+            throw ValidationException::withMessages([
+                'payment' => ['تعذر تجهيز بوابة الدفع. حاول مرة أخرى لاحقاً.'],
             ]);
         }
         $reference = 'COURSE-'.strtoupper(Str::random(16));
@@ -279,6 +293,16 @@ class DirectCoursePaymentController extends Controller
             throw ValidationException::withMessages([
                 'payment' => [$exception->getMessage()],
             ]);
+        } catch (\Throwable $exception) {
+            $this->reportSafely($exception);
+            $payment->update([
+                'status' => WalletPayment::STATUS_FAILED,
+                'failure_reason' => 'Unexpected payment gateway error.',
+            ]);
+
+            throw ValidationException::withMessages([
+                'payment' => ['تعذر إنشاء رابط الدفع، حاول مرة أخرى لاحقاً.'],
+            ]);
         }
 
         if ($result['url'] === '') {
@@ -341,5 +365,19 @@ class DirectCoursePaymentController extends Controller
                 'course_slug' => $payment->metadata['course_slug'] ?? null,
             ],
         ]);
+    }
+
+    /**
+     * Report a gateway failure without letting a broken log channel turn a
+     * handled payment error into a generic 500 response.
+     */
+    private function reportSafely(\Throwable $exception): void
+    {
+        try {
+            report($exception);
+        } catch (\Throwable) {
+            // The validation response above is more useful to the student than
+            // an opaque server error caused by an unwritable log file.
+        }
     }
 }
