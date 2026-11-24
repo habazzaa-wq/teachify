@@ -29,7 +29,12 @@ export const FONT_CATEGORY_LABELS: Record<FontCategory, string> = {
 const WEIGHT_PARAM = ":wght@300;400;500;600;700;800;900";
 
 function css2(family: string): string {
-  return `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}${WEIGHT_PARAM}&display=swap`;
+  // `optional` avoids the visible fallback → chosen-font swap (~0.5s on a cold
+  // load) that `swap` produced: if the font is not ready for the first paint the
+  // page keeps the fallback for that load instead of reflowing all the text.
+  // On repeat visits the stylesheet/fonts are cached and the chosen font is
+  // applied immediately.
+  return `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}${WEIGHT_PARAM}&display=optional`;
 }
 
 interface FontSeed {

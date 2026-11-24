@@ -99,15 +99,24 @@ function WalletBalanceBadgeFallback(): React.ReactNode {
 }
 
 function ThemeBtn() {
-  const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
+  // Both icons stay mounted and CSS (`.dark` on <html>) decides which one is
+  // visible. Rendering a single icon from the persisted Zustand theme made the
+  // server HTML (always "light") disagree with the first client render (stored
+  // "dark"), replaying .home-icon-swap ~0.5s after every page load. The swap
+  // animation is now tied to an actual click, never to hydration.
+  const [toggleCount, setToggleCount] = useState(0);
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
+      onClick={() => {
+        setToggleCount((count) => count + 1);
+        toggleTheme();
+      }}
       className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
-      aria-label={theme === "light" ? "الوضع الليلي" : "الوضع النهاري"}
+      aria-label="تبديل وضع العرض"
+      title="تبديل وضع العرض"
     >
       {/* Default border */}
       <span
@@ -126,14 +135,14 @@ function ThemeBtn() {
         }}
       />
       <span
-        key={theme}
-        className="home-icon-swap relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300"
-      >
-        {theme === "light" ? (
-          <Moon className="h-[18px] w-[18px]" />
-        ) : (
-          <Sun className="h-[18px] w-[18px]" />
+        key={toggleCount}
+        className={cn(
+          "relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300",
+          toggleCount > 0 && "home-icon-swap",
         )}
+      >
+        <Moon className="hidden h-[18px] w-[18px] dark:block" aria-hidden="true" />
+        <Sun className="h-[18px] w-[18px] dark:hidden" aria-hidden="true" />
       </span>
     </button>
   );
