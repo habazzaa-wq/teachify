@@ -36,13 +36,13 @@ function CourseWorkspacePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="ws2-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
+      <div className="atlas-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
         <button
           type="button"
           onClick={() => setActiveTab("content")}
           role="tab"
           aria-selected={activeTab === "content"}
-          className={cn("ws2-tab", activeTab === "content" && "is-active")}
+          className={cn("atlas-tab", activeTab === "content" && "is-active")}
         >
           <BookOpen className="h-4 w-4" aria-hidden="true" />
           المحتوى التعليمي
@@ -52,7 +52,7 @@ function CourseWorkspacePage() {
           onClick={() => setActiveTab("sessions")}
           role="tab"
           aria-selected={activeTab === "sessions"}
-          className={cn("ws2-tab", activeTab === "sessions" && "is-active")}
+          className={cn("atlas-tab", activeTab === "sessions" && "is-active")}
         >
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
           الجلسات

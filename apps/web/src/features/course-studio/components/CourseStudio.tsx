@@ -2,7 +2,17 @@
 
 import { useEffect, useCallback, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ListTree, Plus, SlidersHorizontal, X } from "lucide-react";
+import {
+  BookOpen,
+  Command,
+  HelpCircle,
+  LayoutList,
+  ListTree,
+  Plus,
+  Send,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { useCourseStudioStore } from "../store";
@@ -1003,7 +1013,7 @@ function CourseStudio({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="flex h-full min-h-0 flex-col overflow-hidden"
+      className="atlas-shell flex h-full min-h-0 flex-col overflow-hidden"
     >
       <CourseStudioHeader
         courseName={courseName}
@@ -1021,11 +1031,78 @@ function CourseStudio({
         onQuickAction={onQuickAction}
       />
 
-      <div className="ws2-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
+      <div className="atlas-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
         <CourseStudioBreadcrumb items={defaultBreadcrumb} />
       </div>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        {!isMobile && (
+          <aside
+            className="atlas-rail hidden shrink-0 flex-col items-center justify-between py-4 lg:flex"
+            aria-label="شريط الأوامر"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white" aria-hidden="true">
+                <Command className="h-4 w-4" />
+              </div>
+              <button
+                type="button"
+                className="atlas-rail-btn"
+                onClick={handleToggleNavigator}
+                aria-label={navigatorOpen ? "إخفاء المخطط" : "إظهار المخطط"}
+                aria-pressed={navigatorOpen}
+                title="مخطط الدورة"
+              >
+                <LayoutList className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className="atlas-rail-btn"
+                onClick={openAddChoice}
+                aria-label="إضافة محتوى"
+                title="إضافة محتوى"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                className="atlas-rail-btn"
+                onClick={handleToggleInspector}
+                aria-label={store.inspectorOpen ? "إخفاء الخصائص" : "إظهار الخصائص"}
+                aria-pressed={store.inspectorOpen}
+                title="لوحة الخصائص"
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+              </button>
+              {onPublish && (
+                <button
+                  type="button"
+                  className="atlas-rail-btn"
+                  onClick={onPublish}
+                  aria-label="نشر الدورة"
+                  title="نشر الدورة"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <span className="atlas-rail-label">مخطط</span>
+              {onQuickStart && (
+                <button
+                  type="button"
+                  className="atlas-rail-btn"
+                  onClick={onQuickStart}
+                  aria-label="دليل البدء"
+                  title="دليل البدء"
+                >
+                  <HelpCircle className="h-5 w-5" />
+                </button>
+              )}
+              <span className="atlas-rail-label">ATLAS</span>
+            </div>
+          </aside>
+        )}
         {isMobile ? (
           <>
             <CourseStudioCanvas
@@ -1052,6 +1129,7 @@ function CourseStudio({
               onRestoreContent={handleRestoreContent}
               onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
               onReorderContent={handleReorderContent}
+              onQuickStart={onQuickStart}
             />
 
             <AnimatePresence>
@@ -1076,10 +1154,10 @@ function CourseStudio({
                     aria-modal="true"
                     aria-label="متصفح المحتوى"
                   >
-                    <div className="ws2-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
-                      <div className="ws2-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
+                    <div className="atlas-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
+                      <div className="atlas-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
                         <span className="text-sm font-semibold text-studio-fg">تصفّح الدورة</span>
-                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="ws2-icon-btn h-11 w-11">
+                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="atlas-icon-btn h-11 w-11">
                           <X className="h-4 w-4" />
                         </StudioButton>
                       </div>
@@ -1138,7 +1216,7 @@ function CourseStudio({
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                    className="ws2-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
+                    className="atlas-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
@@ -1241,6 +1319,7 @@ function CourseStudio({
               onRestoreContent={handleRestoreContent}
               onToggleFreePreview={instructorMode ? undefined : handleToggleFreePreview}
               onReorderContent={handleReorderContent}
+              onQuickStart={onQuickStart}
             />
 
             <AnimatePresence>
@@ -1277,9 +1356,28 @@ function CourseStudio({
         )}
       </div>
 
+      {!isMobile && (
+        <div className="atlas-status hidden shrink-0 items-center justify-between gap-4 px-4 py-1.5 text-[10px] lg:flex">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-3 w-3" aria-hidden="true" />
+              {lectures.length} محاضرة
+            </span>
+            <span>{allSections.length} قسم</span>
+            <span className="hidden xl:inline">اسحب العناصر لإعادة الترتيب · ⌘K للبحث</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>{contentItems.length} وحدة محتوى</span>
+            <span className={isSaved ? "text-emerald-400" : undefined}>
+              {isSaving ? "جارٍ الحفظ…" : isSaved ? "كل التغييرات محفوظة" : "جاهز للتحرير"}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* شريط تحكم سفلي للشاشات الصغيرة والمتوسطة: كل الأدوات الأساسية متاحة بلمسة واحدة */}
       <nav
-        className="ws2-dock flex shrink-0 items-stretch gap-1.5 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-2 lg:hidden"
+        className="atlas-dock flex shrink-0 items-stretch gap-1.5 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-2 lg:hidden"
         aria-label="أدوات الاستوديو السريعة"
       >
         <StudioButton
@@ -1298,7 +1396,7 @@ function CourseStudio({
           size="md"
           onClick={openAddChoice}
           aria-label="إضافة محاضرة أو جلسة"
-          className="ws2-primary-btn h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
+          className="atlas-primary-btn h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
           icon={<Plus className="h-4 w-4" />}
         >
           إضافة

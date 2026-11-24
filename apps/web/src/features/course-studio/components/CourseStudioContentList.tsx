@@ -49,13 +49,10 @@ function CourseStudioContentList({
     [items],
   );
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent, _item: ContentItem) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-    },
-    [],
-  );
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent, item: ContentItem) => {
@@ -71,30 +68,35 @@ function CourseStudioContentList({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-studio-fg flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-studio-fg">
           <ListMusic className="h-4 w-4 text-studio-accent" />
-          المحتوى
-          <span className="text-xs font-normal text-studio-fg-muted">({items.length})</span>
+          وحدات المحتوى
+          <span className="rounded-full bg-studio-soft px-2 py-0.5 text-[11px] font-semibold text-studio-fg-muted">
+            {items.length}
+          </span>
         </h3>
         {onAddContent && (
-          <StudioButton
-            variant="ghost"
-            size="sm"
-            onClick={onAddContent}
-            icon={<Plus className="h-3.5 w-3.5" />}
-          >
+          <StudioButton variant="ghost" size="sm" onClick={onAddContent} icon={<Plus className="h-3.5 w-3.5" />}>
             إضافة محتوى
           </StudioButton>
         )}
       </div>
 
-      <div className="space-y-0.5" role="list" aria-label="قائمة المحتوى">
+      <div className="atlas-table" role="list" aria-label="قائمة المحتوى">
+        <div className="atlas-table-head" aria-hidden="true">
+          <span>العنوان</span>
+          <span>النوع</span>
+          <span>المدة</span>
+          <span>الحالة</span>
+          <span className="text-end">إجراءات</span>
+        </div>
         <AnimatePresence mode="popLayout">
           {items.map((item, index) => (
             <CourseStudioContentItem
               key={item.id}
               item={item}
+              order={index + 1}
               isSelected={selectedId === item.id}
               onSelect={onSelect}
               onEdit={onEdit}
@@ -118,19 +120,16 @@ function CourseStudioContentList({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center rounded-xl border border-dashed border-studio-border bg-studio-soft/30 p-8 text-center"
+          className="atlas-empty-card flex flex-col items-center gap-3 p-8 text-center"
         >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-studio-accent-soft">
-            <ListMusic className="h-6 w-6 text-studio-accent" />
+          <div className="atlas-hero-icon h-12 w-12">
+            <ListMusic className="h-6 w-6" />
           </div>
-          <h4 className="mb-1 text-sm font-medium text-studio-fg">لم يتم إضافة محتوى بعد</h4>
-          <p className="mb-4 text-xs text-studio-fg-muted">أضف فيديوهات، ملفات PDF، اختبارات، أو أي نوع من المحتوى.</p>
-          <StudioButton
-            variant="primary"
-            size="sm"
-            onClick={onAddContent}
-            icon={<Plus className="h-3.5 w-3.5" />}
-          >
+          <div>
+            <h4 className="text-sm font-semibold text-studio-fg">لم يتم إضافة محتوى بعد</h4>
+            <p className="mt-1 text-xs text-studio-fg-muted">أضف فيديوهات، ملفات PDF، اختبارات، أو أي نوع من المحتوى.</p>
+          </div>
+          <StudioButton variant="primary" size="sm" onClick={onAddContent} icon={<Plus className="h-3.5 w-3.5" />}>
             إضافة محتوى
           </StudioButton>
         </motion.div>
