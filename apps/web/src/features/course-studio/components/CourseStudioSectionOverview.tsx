@@ -82,11 +82,11 @@ function MetricCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl border border-studio-border bg-studio-surface p-4"
+      className="ws2-metric"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-studio-accent-soft">
-          <Icon className="h-5 w-5 text-studio-accent" />
+        <div className="ws2-metric-icon">
+          <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-studio-fg-muted">{label}</p>
@@ -196,7 +196,7 @@ function CourseStudioSectionOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("mx-auto w-full max-w-3xl p-4 sm:p-6 md:p-8", className)}
+      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
     >
       <motion.nav
         variants={itemVariants}
@@ -217,17 +217,14 @@ function CourseStudioSectionOverview({
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             <div
-              className={cn(
-                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-4 ring-studio-bg",
-                "bg-studio-accent-soft",
-              )}
+              className="ws2-hero-icon h-14 w-14 shrink-0"
               style={
                 section.color
                   ? { backgroundColor: `${section.color}20` }
                   : undefined
               }
             >
-              <Layers className="h-7 w-7 text-studio-accent" />
+              <Layers className="h-7 w-7" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -366,7 +363,7 @@ function CourseStudioSectionOverview({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <StudioSurfaceCard variant="outline" padding="md">
+        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">المعلومات</span>

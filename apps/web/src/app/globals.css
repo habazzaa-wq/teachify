@@ -1332,3 +1332,430 @@ body.page-is-scrolling .nav-touch-solid {
 .transition-shadow {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Workspace v2 — "Quiet Studio"
+   A calm, editorial palette for course authoring: ink-blue text, warm paper
+   surfaces and a restrained teal accent. Unlayered so it wins over utility
+   classes; applied only when a workspace route is mounted.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+html:has(.workspace-v2),
+.tenant-theme.workspace-v2,
+.workspace-v2.tenant-theme {
+  --studio-bg: 214 32% 97%;
+  --studio-surface: 0 0% 100%;
+  --studio-soft: 212 32% 96%;
+  --studio-border: 214 24% 89%;
+  --studio-muted: 214 30% 93%;
+  --studio-fg: 222 38% 14%;
+  --studio-fg-muted: 215 16% 42%;
+  --studio-fg-subtle: 215 14% 58%;
+  --studio-accent: 173 68% 29%;
+  --studio-accent-fg: 0 0% 100%;
+  --studio-accent-soft: 169 52% 94%;
+  --studio-accent-border: 168 36% 78%;
+  --studio-ring: 173 68% 32%;
+  --studio-secondary: 216 24% 91%;
+  --studio-secondary-soft: 214 32% 96%;
+  --studio-secondary-border: 214 22% 86%;
+  --studio-sidebar-hover: 212 32% 96%;
+  --studio-glass: 0 0% 100% / 0.72;
+  --studio-glass-border: 214 24% 89% / 0.7;
+  --studio-glass-toolbar: 0 0% 100% / 0.9;
+  --studio-glass-toolbar-fg: 222 38% 14%;
+  --studio-glass-toolbar-fg-muted: 215 16% 42%;
+  --studio-glass-toolbar-border: 214 24% 89%;
+  --studio-glass-toolbar-soft: 214 32% 96%;
+  --studio-glass-toolbar-soft-hover: 212 28% 93%;
+  --studio-navbar: 222 38% 14%;
+  --studio-navbar-contrast: 0 0% 100%;
+  --studio-glass-sidebar: 0 0% 100% / 0.96;
+  --studio-glass-dialog: 0 0% 100% / 0.96;
+  --studio-glass-floating: 0 0% 100% / 0.94;
+  --studio-overlay: 222 38% 14% / 0.32;
+  --studio-skeleton: 214 24% 91%;
+  --studio-skeleton-shine: 214 32% 95%;
+  --studio-info: 214 76% 46%;
+  --studio-success: 160 64% 34%;
+  --studio-warning: 32 88% 42%;
+  --studio-danger: 0 68% 50%;
+}
+
+.dark:has(.workspace-v2),
+.dark .tenant-theme.workspace-v2,
+.dark.workspace-v2.tenant-theme {
+  --studio-bg: 222 36% 8%;
+  --studio-surface: 222 30% 12%;
+  --studio-soft: 220 24% 16%;
+  --studio-border: 218 18% 24%;
+  --studio-muted: 220 22% 14%;
+  --studio-fg: 210 32% 95%;
+  --studio-fg-muted: 215 16% 68%;
+  --studio-fg-subtle: 215 12% 54%;
+  --studio-accent: 168 58% 50%;
+  --studio-accent-fg: 222 40% 8%;
+  --studio-accent-soft: 170 35% 18%;
+  --studio-accent-border: 168 30% 34%;
+  --studio-ring: 168 58% 50%;
+  --studio-secondary: 220 20% 22%;
+  --studio-secondary-soft: 220 24% 17%;
+  --studio-secondary-border: 218 18% 28%;
+  --studio-sidebar-hover: 220 24% 17%;
+  --studio-glass: 222 30% 12% / 0.78;
+  --studio-glass-border: 218 18% 24% / 0.8;
+  --studio-glass-toolbar: 222 30% 12% / 0.94;
+  --studio-glass-toolbar-fg: 210 32% 95%;
+  --studio-glass-toolbar-fg-muted: 215 16% 68%;
+  --studio-glass-toolbar-border: 218 18% 24%;
+  --studio-glass-toolbar-soft: 220 24% 17%;
+  --studio-glass-toolbar-soft-hover: 220 22% 20%;
+  --studio-navbar: 222 36% 9%;
+  --studio-navbar-contrast: 210 32% 95%;
+  --studio-glass-sidebar: 222 30% 12% / 0.96;
+  --studio-glass-dialog: 222 30% 12% / 0.97;
+  --studio-glass-floating: 222 30% 13% / 0.95;
+  --studio-overlay: 0 0% 0% / 0.6;
+  --studio-skeleton: 220 20% 18%;
+  --studio-skeleton-shine: 220 22% 22%;
+  --studio-info: 210 80% 62%;
+  --studio-success: 158 60% 48%;
+  --studio-warning: 35 90% 58%;
+  --studio-danger: 0 72% 60%;
+}
+
+/* Header: two calm tiers, a clear title and always-reachable controls. */
+.workspace-v2 .ws2-header {
+  position: relative;
+  z-index: 20;
+  background:
+    linear-gradient(180deg, hsl(var(--studio-surface) / 0.96), hsl(var(--studio-soft) / 0.92)),
+    hsl(var(--studio-glass-toolbar));
+  border-bottom: 1px solid hsl(var(--studio-border));
+  box-shadow: 0 1px 0 hsl(var(--studio-surface) / 0.9), 0 8px 24px -20px hsl(var(--studio-fg) / 0.55);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.workspace-v2 .ws2-header::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, hsl(var(--studio-accent)), hsl(var(--studio-accent) / 0.25));
+}
+
+.workspace-v2 .ws2-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--studio-accent-border));
+  border-radius: 14px;
+  background: linear-gradient(145deg, hsl(var(--studio-accent-soft)), hsl(var(--studio-surface)));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 0 1px 0 hsl(var(--studio-surface) / 0.9), 0 2px 6px -3px hsl(var(--studio-accent) / 0.4);
+}
+
+.workspace-v2 .ws2-eyebrow {
+  color: hsl(var(--studio-accent));
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.workspace-v2 .ws2-title {
+  color: hsl(var(--studio-fg));
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.workspace-v2 .ws2-meta-strip {
+  scrollbar-width: none;
+  color: hsl(var(--studio-fg-muted));
+  border-top: 1px solid hsl(var(--studio-border) / 0.75);
+}
+
+.workspace-v2 .ws2-meta-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.workspace-v2 .ws2-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.workspace-v2 .ws2-icon-btn,
+.workspace-v2 .ws2-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--studio-border));
+  border-radius: 11px;
+  background: hsl(var(--studio-surface));
+  color: hsl(var(--studio-fg-muted));
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.workspace-v2 .ws2-icon-btn:hover,
+.workspace-v2 .ws2-add-btn:hover {
+  border-color: hsl(var(--studio-accent-border));
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+}
+
+.workspace-v2 .ws2-icon-btn[aria-pressed="true"] {
+  border-color: hsl(var(--studio-accent-border));
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 0 0 0 1px hsl(var(--studio-accent) / 0.12);
+}
+
+.workspace-v2 .ws2-primary-btn {
+  background: linear-gradient(135deg, hsl(var(--studio-accent)), hsl(var(--studio-accent) / 0.84));
+  color: hsl(var(--studio-accent-fg));
+  border: 1px solid hsl(var(--studio-accent) / 0.7);
+  box-shadow: 0 4px 12px -6px hsl(var(--studio-accent) / 0.7);
+}
+
+.workspace-v2 .ws2-primary-btn:hover {
+  background: linear-gradient(135deg, hsl(var(--studio-accent) / 0.94), hsl(var(--studio-accent)));
+}
+
+/* Breadcrumb strip under the header. */
+.workspace-v2 .ws2-crumb-bar {
+  background: hsl(var(--studio-surface) / 0.62);
+  border-bottom: 1px solid hsl(var(--studio-border) / 0.8);
+}
+
+/* Navigator: deliberate hierarchy, searchable tree, generous touch rows. */
+.workspace-v2 .ws2-nav-head {
+  background: linear-gradient(180deg, hsl(var(--studio-surface)), hsl(var(--studio-soft) / 0.7));
+  border-bottom: 1px solid hsl(var(--studio-border));
+}
+
+.workspace-v2 .ws2-count-pill {
+  display: inline-flex;
+  min-width: 1.75rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.workspace-v2 .ws2-search {
+  border: 1px solid hsl(var(--studio-border));
+  background: hsl(var(--studio-surface));
+  color: hsl(var(--studio-fg-subtle));
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.workspace-v2 .ws2-search:focus-within {
+  border-color: hsl(var(--studio-accent-border));
+  box-shadow: 0 0 0 3px hsl(var(--studio-accent) / 0.1);
+}
+
+.workspace-v2 .ws2-search input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  color: hsl(var(--studio-fg));
+  font-size: 12px;
+  outline: none;
+}
+
+.workspace-v2 .ws2-search input::placeholder {
+  color: hsl(var(--studio-fg-subtle));
+}
+
+.workspace-v2 .ws2-add-btn {
+  height: 2.25rem;
+  padding-inline: 0.75rem;
+  color: hsl(var(--studio-accent));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.workspace-v2 .ws2-add-btn:hover {
+  color: hsl(var(--studio-accent));
+}
+
+.workspace-v2 [data-lecture-id] {
+  margin-block: 2px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: hsl(var(--studio-surface) / 0.6);
+  padding: 0.65rem 0.6rem;
+  color: hsl(var(--studio-fg));
+}
+
+.workspace-v2 [data-lecture-id]:hover {
+  border-color: hsl(var(--studio-border));
+  background: hsl(var(--studio-soft));
+}
+
+.workspace-v2 [data-lecture-id][aria-selected="true"] {
+  border-color: hsl(var(--studio-accent-border));
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 3px 0 0 hsl(var(--studio-accent));
+}
+
+.workspace-v2 [data-section-id] {
+  border-radius: 10px;
+}
+
+/* Canvas: roomy reading column with quiet depth and clear section headings. */
+.workspace-v2 .ws2-canvas {
+  background:
+    radial-gradient(30rem 20rem at 88% -8%, hsl(var(--studio-accent) / 0.09), transparent 65%),
+    radial-gradient(24rem 18rem at -6% 8%, hsl(var(--studio-secondary) / 0.3), transparent 60%),
+    hsl(var(--studio-bg));
+}
+
+.workspace-v2 .ws2-page {
+  max-width: 68rem;
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .workspace-v2 .ws2-page {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .workspace-v2 .ws2-page {
+    padding: 2.25rem;
+  }
+}
+
+.workspace-v2 .ws2-page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.workspace-v2 .ws2-hero-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--studio-accent-border));
+  border-radius: 18px;
+  background: linear-gradient(145deg, hsl(var(--studio-accent-soft)), hsl(var(--studio-surface)));
+  color: hsl(var(--studio-accent));
+  box-shadow: 0 6px 18px -12px hsl(var(--studio-accent) / 0.7);
+}
+
+.workspace-v2 .ws2-section-label {
+  color: hsl(var(--studio-fg-muted));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.workspace-v2 .ws2-metric,
+.workspace-v2 .ws2-card,
+.workspace-v2 .ws2-info-card {
+  border: 1px solid hsl(var(--studio-border));
+  background: hsl(var(--studio-surface));
+  box-shadow: 0 1px 2px hsl(var(--studio-fg) / 0.03), inset 0 1px 0 hsl(var(--studio-surface));
+}
+
+.workspace-v2 .ws2-metric {
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.workspace-v2 .ws2-metric-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: hsl(var(--studio-accent-soft));
+  color: hsl(var(--studio-accent));
+}
+
+.workspace-v2 .ws2-card {
+  border-radius: 18px;
+}
+
+.workspace-v2 .ws2-info-card {
+  border-radius: 14px;
+  background: hsl(var(--studio-soft) / 0.7);
+  padding: 0.9rem;
+}
+
+.workspace-v2 .ws2-empty-card {
+  border: 1px dashed hsl(var(--studio-accent-border));
+  border-radius: 20px;
+  background: linear-gradient(160deg, hsl(var(--studio-accent-soft) / 0.5), hsl(var(--studio-surface)));
+}
+
+/* Inspector: panel-like grouping instead of a dense list of rows. */
+.workspace-v2 .ws2-panel-head {
+  background: linear-gradient(180deg, hsl(var(--studio-surface)), hsl(var(--studio-soft) / 0.6));
+  border-bottom: 1px solid hsl(var(--studio-border));
+}
+
+/* Tabs and mobile dock: obvious affordances, safe touch targets. */
+.workspace-v2 .ws2-tabs {
+  background: hsl(var(--studio-surface) / 0.7);
+  border-bottom: 1px solid hsl(var(--studio-border));
+}
+
+.workspace-v2 .ws2-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border-radius: 10px 10px 0 0;
+  padding: 0.6rem 1rem;
+  color: hsl(var(--studio-fg-muted));
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.workspace-v2 .ws2-tab:hover {
+  background: hsl(var(--studio-soft));
+  color: hsl(var(--studio-fg));
+}
+
+.workspace-v2 .ws2-tab[aria-selected="true"] {
+  background: hsl(var(--studio-surface));
+  color: hsl(var(--studio-accent));
+  box-shadow: inset 0 -2px 0 hsl(var(--studio-accent));
+}
+
+.workspace-v2 .ws2-dock {
+  background: hsl(var(--studio-glass-toolbar));
+  border-top: 1px solid hsl(var(--studio-border));
+  box-shadow: 0 -10px 30px -24px hsl(var(--studio-fg) / 0.7);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.workspace-v2 .ws2-dock button {
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+.workspace-v2 .ws2-drawer {
+  border: 1px solid hsl(var(--studio-border));
+  background: hsl(var(--studio-surface));
+  box-shadow: 0 24px 60px -28px hsl(var(--studio-fg) / 0.55);
+}
