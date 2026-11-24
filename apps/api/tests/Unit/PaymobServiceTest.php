@@ -21,9 +21,9 @@ class PaymobServiceTest extends TestCase
     public function test_it_creates_a_hosted_card_payment_link(): void
     {
         Http::fake([
-            'accept.paymob.com/api/auth/tokens' => Http::response(['token' => 'auth-token']),
-            'accept.paymob.com/api/ecommerce/orders' => Http::response(['id' => 987]),
-            'accept.paymob.com/api/acceptance/payment_keys' => Http::response(['token' => 'payment-token']),
+            'accept.paymobsolutions.com/api/auth/tokens' => Http::response(['token' => 'auth-token']),
+            'accept.paymobsolutions.com/api/ecommerce/orders' => Http::response(['id' => 987]),
+            'accept.paymobsolutions.com/api/acceptance/payment_keys' => Http::response(['token' => 'payment-token']),
         ]);
 
         $result = app(PaymobService::class)->createPaymentLink(
@@ -44,7 +44,7 @@ class PaymobServiceTest extends TestCase
 
         $this->assertSame('987', $result['order_id']);
         $this->assertSame(
-            'https://accept.paymob.com/api/acceptance/iframes/67890?payment_token=payment-token',
+            'https://accept.paymobsolutions.com/api/acceptance/iframes/67890?payment_token=payment-token',
             $result['url'],
         );
         Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/ecommerce/orders')
@@ -59,6 +59,34 @@ class PaymobServiceTest extends TestCase
             && $request['notification_url'] === 'https://tenant.example/api/v1/payments/paymob/webhook'
             && $request['redirection_url'] === 'https://tenant.example/api/v1/payments/paymob/return?reference=COURSE-REFERENCE'
         );
+    }
+
+    public function test_it_uses_the_live_paymob_host_for_live_credentials(): void
+    {
+        Http::fake([
+            'accept.paymob.com/api/auth/tokens' => Http::response(['token' => 'auth-token']),
+            'accept.paymob.com/api/ecommerce/orders' => Http::response(['id' => 987]),
+            'accept.paymob.com/api/acceptance/payment_keys' => Http::response(['token' => 'payment-token']),
+        ]);
+
+        $result = app(PaymobService::class)->createPaymentLink(
+            [...$this->config, 'environment' => 'live'],
+            'COURSE-REFERENCE',
+            '500.00',
+            'EGP',
+            [
+                'first_name' => 'Test',
+                'last_name' => 'Student',
+                'email' => 'student@example.com',
+                'phone' => '01012345678',
+                'country' => 'EG',
+            ],
+            'https://tenant.example/api/v1/payments/paymob/webhook',
+            'https://tenant.example/api/v1/payments/paymob/return',
+        );
+
+        $this->assertStringStartsWith('https://accept.paymob.com/api/acceptance/iframes/', $result['url']);
+        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://accept.paymob.com/'));
     }
 
     public function test_it_uses_the_quoted_amount_and_currency_without_conversion(): void

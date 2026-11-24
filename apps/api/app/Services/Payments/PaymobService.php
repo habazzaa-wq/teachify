@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Http;
 
 class PaymobService
 {
-    private const BASE_URL = 'https://accept.paymob.com';
+    private const LIVE_BASE_URL = 'https://accept.paymob.com';
+
+    private const TEST_BASE_URL = 'https://accept.paymobsolutions.com';
 
     private const TIMEOUT = 30;
 
@@ -85,9 +87,14 @@ class PaymobService
         string $redirectionUrl,
     ): array {
         $amountCents = $this->amountInCents($amount);
-        $token = $this->accessToken($config);
+        if (empty($config['integration_id']) || empty($config['iframe_id'])) {
+            throw new PaymentGatewayException('بيانات ربط Paymob غير مكتملة. راجع معرف التكامل ومعرف iframe.');
+        }
 
-        $order = $this->post('/api/ecommerce/orders', [
+        $baseUrl = $this->baseUrl($config);
+        $token = $this->accessToken($config, $baseUrl);
+
+        $order = $this->post($baseUrl, '/api/ecommerce/orders', [
             'auth_token' => $token,
             'delivery_needed' => false,
             'amount_cents' => $amountCents,
@@ -99,7 +106,7 @@ class PaymobService
             throw new PaymentGatewayException('لم يرجع Paymob رقم طلب صالحاً.');
         }
 
-        $paymentKey = $this->post('/api/acceptance/payment_keys', [
+        $paymentKey = $this->post($baseUrl, '/api/acceptance/payment_keys', [
             'auth_token' => $token,
             'amount_cents' => $amountCents,
             'expiration' => 3600,
@@ -133,7 +140,7 @@ class PaymobService
         return [
             'order_id' => (string) $order['id'],
             'transaction_id' => '',
-            'url' => self::BASE_URL.'/api/acceptance/iframes/'
+            'url' => $baseUrl.'/api/acceptance/iframes/'
                 .rawurlencode((string) $config['iframe_id'])
                 .'?payment_token='.rawurlencode($paymentKey['token']),
         ];
@@ -194,13 +201,13 @@ class PaymobService
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function post(string $path, array $payload): array
+    private function post(string $baseUrl, string $path, array $payload): array
     {
         try {
             $response = Http::acceptJson()
                 ->asJson()
                 ->timeout(self::TIMEOUT)
-                ->post(self::BASE_URL.$path, $payload);
+                ->post($baseUrl.$path, $payload);
         } catch (ConnectionException $exception) {
             throw new PaymentGatewayException('تعذّر الاتصال بـ Paymob، حاول مرة أخرى لاحقاً.', previous: $exception);
         }
@@ -214,15 +221,31 @@ class PaymobService
     }
 
     /**
+     * Base URL matching the tenant's configured Paymob environment.
+     *
+     * Paymob uses a separate host for sandbox credentials. Tokens and iframe
+     * URLs must be created on the same host as the configured environment,
+     * otherwise the hosted checkout can reject them at runtime.
+     *
      * @param  array<string, mixed>  $config
      */
-    private function accessToken(array $config): string
+    private function baseUrl(array $config): string
+    {
+        return ($config['environment'] ?? 'live') === 'test'
+            ? self::TEST_BASE_URL
+            : self::LIVE_BASE_URL;
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    private function accessToken(array $config, ?string $baseUrl = null): string
     {
         if (empty($config['api_key'])) {
             throw new PaymentGatewayException('أدخل مفتاح API الخاص بحساب Paymob.');
         }
 
-        $body = $this->post('/api/auth/tokens', ['api_key' => $config['api_key']]);
+        $body = $this->post($baseUrl ?? $this->baseUrl($config), '/api/auth/tokens', ['api_key' => $config['api_key']]);
         if (empty($body['token']) || ! is_string($body['token'])) {
             throw new PaymentGatewayException('تعذّر التحقق من مفتاح API الخاص بـ Paymob.');
         }

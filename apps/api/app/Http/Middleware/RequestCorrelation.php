@@ -85,12 +85,17 @@ class RequestCorrelation
             return;
         }
 
-        Log::warning('http.request.slow', [
-            'request_id' => Correlation::id(),
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'status' => $response->getStatusCode(),
-            'duration_ms' => (int) $durationMs,
-        ]);
+        try {
+            Log::warning('http.request.slow', [
+                'request_id' => Correlation::id(),
+                'method' => $request->method(),
+                'path' => $request->path(),
+                'status' => $response->getStatusCode(),
+                'duration_ms' => (int) $durationMs,
+            ]);
+        } catch (\Throwable) {
+            // Observability must never turn a successful response into a 500
+            // (for example when the log file is not writable by PHP-FPM).
+        }
     }
 }

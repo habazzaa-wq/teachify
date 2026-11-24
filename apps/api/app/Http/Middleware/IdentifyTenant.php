@@ -84,7 +84,6 @@ class IdentifyTenant
             || $request->is('api/v1/payments/paypal/return')
             || $request->is('api/v1/payments/paypal/cancel')
             || $request->is('api/v1/tenant/by-domain')
-            || $request->is('api/v1/auth/refresh')
             || $request->is('api/v1/tenant/auth/login')
             || $request->is('api/v1/tenant/auth/refresh')
             || $request->is('api/v1/tenant/auth/forgot-password')
@@ -97,8 +96,6 @@ class IdentifyTenant
             || str_ends_with($path, '/tenant/auth/forgot-password')
             || str_ends_with($path, '/tenant/auth/reset-password')
             || str_ends_with($path, '/tenant/by-domain')
-            || str_ends_with($path, '/auth/refresh')
-            || str_ends_with($path, '/auth/login')
             // Liveness / readiness are unauthenticated infrastructure probes.
             || $request->is('api/v1/health/ready')
             || $request->is('api/v1/health/live')

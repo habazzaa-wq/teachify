@@ -55,6 +55,34 @@ class AuthenticationFoundationTest extends TestCase
         $this->assertNotNull($membership->refresh()->last_accessed_at);
     }
 
+    public function test_login_resolves_tenant_from_forwarded_host_without_explicit_header(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $tenant->domains()->create([
+            'domain' => 'auth-tenant.test',
+            'is_primary' => true,
+            'status' => 'active',
+            'type' => 'custom',
+        ]);
+        $user = User::factory()->create([
+            'email' => 'host-member@example.com',
+            'password' => 'password',
+        ]);
+        TenantUser::factory()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+        ]);
+
+        $this->withHeaders(['X-Forwarded-Host' => 'auth-tenant.test'])
+            ->postJson('/api/v1/auth/login', [
+                'email' => 'host-member@example.com',
+                'password' => 'password',
+            ])
+            ->assertOk()
+            ->assertJsonPath('tenant.id', $tenant->id);
+    }
+
     public function test_login_rejects_suspended_membership(): void
     {
         $tenant = Tenant::factory()->create();

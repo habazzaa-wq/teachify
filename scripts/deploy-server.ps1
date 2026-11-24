@@ -237,6 +237,14 @@ if [ "$DO_BUILD" = "1" ] || [ "$DO_BUILD" = "2" ]; then
     php artisan view:cache
     php artisan event:cache
     php artisan storage:link --force 2>/dev/null || true
+
+    # PHP-FPM runs as www-data while artisan runs as the deploy user. Any log
+    # file created by artisan is therefore owned by deplo:deplo and www-data
+    # cannot append to it, so even a slow-request warning becomes a hard 500.
+    # Keep the deploy user as owner, but let www-data write the logs.
+    echo "==> Make log files writable by PHP-FPM"
+    find "$REMOTE_DIR/apps/api/storage/logs" -type f -user "$(whoami)" -exec chgrp www-data {} + 2>/dev/null || true
+    find "$REMOTE_DIR/apps/api/storage/logs" -type f -user "$(whoami)" -exec chmod g+rw {} + 2>/dev/null || true
   else
     echo "==> Backend unchanged -> skipping composer/migrate/caches"
   fi
