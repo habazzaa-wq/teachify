@@ -1,10 +1,12 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, CheckCircle, Loader2, Sparkles, ChevronDown } from "lucide-react";
 import { usePublicRegister, type PublicRegisterPayload, type PublicRegisterResponse } from "../hooks/use-public-register";
+import { publicRegisterService, type GoogleAuthResponse } from "../services/public-register.service";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 import { cn } from "@/lib/cn";
 
 const secondary = "var(--brand-secondary)";
@@ -82,11 +84,11 @@ function validateField(name: string, value: string, allData: FormData): string {
       return "";
     }
     case "email":
-      if (!value.trim()) return "";
+      if (!value.trim()) return "البريد الإلكتروني مطلوب";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return "البريد الإلكتروني غير صحيح";
       return "";
     case "phone":
-      if (!value.trim()) return "";
+      if (!value.trim()) return "رقم الهاتف مطلوب";
       if (!/^[\d+\s()-]{7,20}$/.test(value.trim())) return "رقم الهاتف غير صحيح";
       return "";
     case "parent_phone":
@@ -112,6 +114,11 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [googleCompletion, setGoogleCompletion] = useState<{ token: string; profile: { name: string; email: string; avatar?: string | null } } | null>(null);
+  const [googlePhone, setGooglePhone] = useState("");
+  const [googleEmailNotifications, setGoogleEmailNotifications] = useState(true);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -180,6 +187,70 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
 
   const hasErrors = Object.keys(errors).length > 0;
 
+  const isFullAuthResponse = (data: GoogleAuthResponse): data is PublicRegisterResponse =>
+    !!data.access_token && !!data.user && !!data.tenant && !!data.membership;
+
+  const handleGoogleToken = useCallback(async (accessToken: string) => {
+    setGoogleError(null);
+    setGoogleBusy(true);
+    try {
+      const data = await publicRegisterService.googleAuthenticate({ access_token: accessToken });
+      if (data.needs_phone && data.completion_token) {
+        setGoogleCompletion({
+          token: data.completion_token,
+          profile: {
+            name: data.profile?.name ?? "",
+            email: data.profile?.email ?? "",
+            avatar: data.profile?.avatar ?? null,
+          },
+        });
+        setGooglePhone("");
+        return;
+      }
+      if (isFullAuthResponse(data)) {
+        onSuccess(data);
+        return;
+      }
+      setGoogleError("تعذر إكمال تسجيل الدخول عبر Google.");
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.phone?.[0] || apiErr?.fieldErrors?.google?.[0];
+      setGoogleError(fieldMsg || apiErr?.message || "تعذر تسجيل الدخول عبر Google.");
+    } finally {
+      setGoogleBusy(false);
+    }
+  }, [onSuccess]);
+
+  const handleGoogleComplete = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!googleCompletion) return;
+    const phone = googlePhone.trim();
+    if (!phone) {
+      setGoogleError("رقم الهاتف مطلوب.");
+      return;
+    }
+    if (!/^[\d+\s()-]{7,20}$/.test(phone)) {
+      setGoogleError("رقم الهاتف غير صحيح");
+      return;
+    }
+    setGoogleBusy(true);
+    setGoogleError(null);
+    try {
+      const data = await publicRegisterService.googleComplete({
+        completion_token: googleCompletion.token,
+        phone,
+        email_notifications_enabled: googleEmailNotifications,
+      });
+      onSuccess(data);
+    } catch (err: unknown) {
+      const apiErr = err as { message?: string; fieldErrors?: Record<string, string[]> };
+      const fieldMsg = apiErr?.fieldErrors?.phone?.[0] || apiErr?.fieldErrors?.completion_token?.[0];
+      setGoogleError(fieldMsg || apiErr?.message || "تعذر إكمال التسجيل عبر Google.");
+    } finally {
+      setGoogleBusy(false);
+    }
+  }, [googleCompletion, googlePhone, googleEmailNotifications, onSuccess]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -198,12 +269,12 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
 
       const payload: PublicRegisterPayload = {
         name: form.name.trim(),
+        email: form.email.trim(),
+        email_notifications_enabled: !!form.email_notifications_enabled,
+        phone: form.phone.trim(),
         password: form.password,
         password_confirmation: form.password_confirmation,
       };
-      if (form.email.trim()) payload.email = form.email.trim();
-      payload.email_notifications_enabled = !!form.email_notifications_enabled;
-      if (form.phone.trim()) payload.phone = form.phone.trim();
       if (form.parent_phone.trim()) payload.parent_phone = form.parent_phone.trim();
       if (form.gender) payload.gender = form.gender;
       if (form.study_type) payload.study_type = form.study_type;
@@ -252,6 +323,11 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
     setErrors({});
     setTouched({});
     setShowPassword(false);
+    setGoogleCompletion(null);
+    setGooglePhone("");
+    setGoogleEmailNotifications(true);
+    setGoogleBusy(false);
+    setGoogleError(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -305,6 +381,74 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                   </p>
                 </div>
 
+                <div className="space-y-3 mb-3">
+                  <GoogleAuthButton
+                    onToken={handleGoogleToken}
+                    onError={setGoogleError}
+                    disabled={googleBusy || registerMutation.isPending}
+                    label="التسجيل / الدخول عبر Google"
+                  />
+                  {googleError && (
+                    <p className="text-xs text-red-500 text-center">{googleError}</p>
+                  )}
+                  <div className="relative flex items-center gap-3 py-1">
+                    <div className="h-px flex-1 bg-border/50" />
+                    <span className="text-[11px] text-muted-foreground/50">أو</span>
+                    <div className="h-px flex-1 bg-border/50" />
+                  </div>
+                </div>
+
+                {googleCompletion ? (
+                  <form onSubmit={handleGoogleComplete} className="space-y-3">
+                    <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                      <div className="font-medium text-foreground/80">{googleCompletion.profile.name || "حساب Google"}</div>
+                      <div dir="ltr" className="text-left">{googleCompletion.profile.email}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">
+                        رقم الهاتف <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        dir="ltr"
+                        value={googlePhone}
+                        onChange={(e) => { setGooglePhone(e.target.value); setGoogleError(null); }}
+                        placeholder="+20 1XXXXXXXXX"
+                        className={cn(inputClasses("phone"), "text-left")}
+                        disabled={googleBusy}
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-foreground/70 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={googleEmailNotifications}
+                        onChange={(e) => setGoogleEmailNotifications(e.target.checked)}
+                        className="h-4 w-4 rounded border-border"
+                        disabled={googleBusy}
+                      />
+                      تفعيل البريد الإلكتروني لاستقبال الإشعارات
+                    </label>
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        type="submit"
+                        disabled={googleBusy}
+                        className="relative flex-1 flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-semibold text-white transition-all duration-300 disabled:opacity-60"
+                        style={{ background: `var(--brand-primary)`, boxShadow: `0 4px 16px rgba(0,0,0,0.251)` }}
+                      >
+                        {googleBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        <span>{googleBusy ? "جارٍ الإكمال..." : "إكمال التسجيل"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setGoogleCompletion(null); setGooglePhone(""); setGoogleError(null); }}
+                        disabled={googleBusy}
+                        className="h-10 px-5 rounded-lg text-sm font-medium border border-border/50 bg-background/80 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
+                      >
+                        رجوع
+                      </button>
+                    </div>
+                  </form>
+                ) : (
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground/80">
@@ -323,7 +467,9 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                     )}
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/80">البريد الإلكتروني</label>
+                    <label className="text-xs font-medium text-foreground/80">
+                      البريد الإلكتروني <span className="text-destructive">*</span>
+                    </label>
                     <input
                       type="email"
                       dir="ltr"
@@ -368,7 +514,9 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground/80">رقم الهاتف</label>
+                      <label className="text-xs font-medium text-foreground/80">
+                        رقم الهاتف <span className="text-destructive">*</span>
+                      </label>
                       <input
                         type="tel"
                         dir="ltr"
@@ -554,6 +702,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                     </button>
                   </div>
                 </form>
+                )}
 
                 <div className="mt-3 pt-3 border-t border-border/30 text-center">
                   <p className="text-[11px] text-muted-foreground/40">

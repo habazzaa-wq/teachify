@@ -27,9 +27,9 @@ class PublicStudentRegisterController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
             'email_notifications_enabled' => ['nullable', 'boolean'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['required', 'string', 'max:50'],
             'parent_phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:8'],
             'password_confirmation' => ['required', 'string', 'same:password'],
@@ -41,33 +41,25 @@ class PublicStudentRegisterController extends Controller
         ]);
 
         $tenantId = $tenant->id;
-        $phone = $validated['phone'] ?? null;
+        $phone = trim((string) $validated['phone']);
+        $email = mb_strtolower(trim((string) $validated['email']));
 
-        if ($phone) {
-            $existingMembership = TenantUser::query()
-                ->where('tenant_id', $tenantId)
-                ->where('phone', $phone)
-                ->exists();
+        $existingMembership = TenantUser::query()
+            ->where('tenant_id', $tenantId)
+            ->where('phone', $phone)
+            ->exists();
 
-            if ($existingMembership) {
-                throw ValidationException::withMessages([
-                    'phone' => ['هذا الرقم مسجل بالفعل في هذه الأكاديمية.'],
-                ]);
-            }
+        if ($existingMembership) {
+            throw ValidationException::withMessages([
+                'phone' => ['هذا الرقم مسجل بالفعل في هذه الأكاديمية.'],
+            ]);
         }
 
-        $providedEmail = isset($validated['email']) ? trim((string) $validated['email']) : null;
-        $email = $providedEmail !== '' && $providedEmail !== null
-            ? strtolower($providedEmail)
-            : 'student_' . Str::random(16) . '@' . $tenant->slug . '.local';
-
-        if ($providedEmail) {
-            $emailExists = User::query()->whereRaw('LOWER(email) = ?', [$email])->exists();
-            if ($emailExists) {
-                throw ValidationException::withMessages([
-                    'email' => ['هذا البريد الإلكتروني مستخدم بالفعل.'],
-                ]);
-            }
+        $emailExists = User::query()->whereRaw('LOWER(email) = ?', [$email])->exists();
+        if ($emailExists) {
+            throw ValidationException::withMessages([
+                'email' => ['هذا البريد الإلكتروني مستخدم بالفعل.'],
+            ]);
         }
 
         $user = User::create([
@@ -100,14 +92,12 @@ class PublicStudentRegisterController extends Controller
 
         $emailEnabled = array_key_exists('email_notifications_enabled', $validated)
             ? (bool) $validated['email_notifications_enabled']
-            : ($providedEmail ? true : false);
-        if ($providedEmail) {
-            foreach (['session.scheduled', 'session.rescheduled', 'session.cancelled'] as $type) {
-                \App\Models\NotificationPreference::updateOrCreate(
-                    ['tenant_id' => $tenantId, 'tenant_user_id' => $membership->id, 'notification_type' => $type],
-                    ['in_app_enabled' => true, 'email_enabled' => $emailEnabled, 'whatsapp_enabled' => false]
-                );
-            }
+            : true;
+        foreach (['session.scheduled', 'session.rescheduled', 'session.cancelled'] as $type) {
+            \App\Models\NotificationPreference::updateOrCreate(
+                ['tenant_id' => $tenantId, 'tenant_user_id' => $membership->id, 'notification_type' => $type],
+                ['in_app_enabled' => true, 'email_enabled' => $emailEnabled, 'whatsapp_enabled' => false]
+            );
         }
 
         $membership->load('roles.permissions');
