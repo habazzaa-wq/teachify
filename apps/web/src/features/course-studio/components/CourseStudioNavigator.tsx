@@ -303,19 +303,19 @@ function CourseStudioNavigator({
   const noSearchResults = query.trim().length > 0 && filteredLectures.length === 0;
 
   const content = (
-    <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
-      <div className="ws2-nav-head shrink-0 px-4 py-3.5">
+    <div style={variant === "sidebar" ? { width } : undefined} className="atlas-nav flex h-full flex-col">
+      <div className="atlas-nav-head shrink-0 px-4 py-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="ws2-eyebrow">Course Outline</p>
+            <p className="atlas-eyebrow">Course Outline</p>
             <h3 className="mt-0.5 text-sm font-semibold text-studio-fg">منهج الدورة</h3>
           </div>
-          <span className="ws2-count-pill" aria-label={`${lectures.length} محاضرة`}>
+          <span className="atlas-count-pill" aria-label={`${lectures.length} محاضرة`}>
             {lectures.length}
           </span>
         </div>
 
-        <label className="ws2-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
+        <label className="atlas-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
           <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
           <input
             type="search"
@@ -338,7 +338,7 @@ function CourseStudioNavigator({
 
         {onCreateLecture && (
           <div className="mt-2.5 flex items-center justify-between gap-2">
-            <button type="button" onClick={onCreateLecture} className="ws2-add-btn flex-1 gap-1.5">
+            <button type="button" onClick={onCreateLecture} className="atlas-nav-add flex-1 gap-1.5">
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               محاضرة جديدة
             </button>
@@ -420,7 +420,7 @@ function CourseStudioNavigator({
   );
 
   if (variant === "drawer") {
-    return open ? <div className={cn("flex h-full flex-col bg-studio-surface", className)}>{content}</div> : null;
+    return open ? <div className={cn("atlas-nav flex h-full flex-col", className)}>{content}</div> : null;
   }
 
   return (
@@ -431,7 +431,7 @@ function CourseStudioNavigator({
           animate={{ width, opacity: 1, minWidth: width }}
           exit={{ width: 0, opacity: 0, minWidth: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className={cn("shrink-0 overflow-hidden border-e border-studio-border bg-studio-surface", className)}
+          className={cn("atlas-nav shrink-0 overflow-hidden border-e border-atlas-ink-line", className)}
           role="navigation"
           aria-label="متصفح المحتوى"
         >

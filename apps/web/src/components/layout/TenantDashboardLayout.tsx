@@ -34,7 +34,7 @@ function TenantDashboardLayout({ children }: TenantDashboardLayoutProps) {
   }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
-    <div className="tenant-theme workspace-v2 flex min-h-dvh flex-col bg-studio-bg text-studio-fg md:h-dvh md:overflow-hidden">
+    <div className="tenant-theme studio-atlas flex min-h-dvh flex-col bg-studio-bg text-studio-fg md:h-dvh md:overflow-hidden">
       {/* Header */}
       <WorkspaceHeader />
 

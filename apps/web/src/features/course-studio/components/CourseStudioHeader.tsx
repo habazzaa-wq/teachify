@@ -67,23 +67,23 @@ function CourseStudioHeader({
   return (
     <motion.header
       {...headerMotion}
-      className="ws2-header shrink-0 px-3 pb-2.5 pt-3 sm:px-5 md:px-6"
+      className="atlas-header shrink-0 px-3 pb-2.5 pt-3 sm:px-5 md:px-6"
       role="banner"
       aria-label="رأس الاستوديو"
     >
       <div className="flex items-center gap-2.5 md:gap-4">
-        <div className="ws2-brand-mark h-10 w-10 shrink-0 md:h-11 md:w-11">
+        <div className="atlas-brand-mark h-10 w-10 shrink-0 md:h-11 md:w-11">
           <GraduationCap className="h-5 w-5 md:h-[22px] md:w-[22px]" aria-hidden="true" />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="ws2-eyebrow hidden sm:block">Course Studio</p>
+            <p className="atlas-eyebrow hidden sm:block">Course Studio</p>
             <span className="hidden h-3 w-px bg-studio-border sm:block" aria-hidden="true" />
             <span className="text-[11px] font-medium text-studio-fg-muted">مساحة تحرير الدورة</span>
             {courseStatus && <StudioStatusBadge status={courseStatus} />}
           </div>
-          <h1 className="ws2-title mt-1 truncate text-base md:text-lg" title={courseName}>
+          <h1 className="atlas-title mt-1 truncate text-base md:text-lg" title={courseName}>
             {courseName}
           </h1>
         </div>
@@ -111,7 +111,7 @@ function CourseStudioHeader({
             onClick={onToggleNavigator}
             aria-label={navigatorOpen ? "إغلاق المستكشف" : "فتح المستكشف"}
             aria-pressed={navigatorOpen}
-            className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+            className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
           >
             {navigatorOpen ? (
               <PanelLeftClose className="h-4 w-4" />
@@ -126,7 +126,7 @@ function CourseStudioHeader({
             onClick={onToggleInspector}
             aria-label={inspectorOpen ? "إغلاق الخصائص" : "فتح الخصائص"}
             aria-pressed={inspectorOpen}
-            className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+            className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
           >
             {inspectorOpen ? (
               <PanelRightClose className="h-4 w-4" />
@@ -142,7 +142,7 @@ function CourseStudioHeader({
               onClick={onPublish}
               icon={<Send className="h-3.5 w-3.5" />}
               aria-label="نشر الدورة"
-              className="ws2-primary-btn h-10 rounded-xl px-3 text-xs font-semibold md:px-4"
+              className="atlas-primary-btn h-10 rounded-xl px-3 text-xs font-semibold md:px-4"
             >
               نشر الدورة
             </StudioButton>
@@ -154,7 +154,7 @@ function CourseStudioHeader({
                 variant="ghost"
                 size="icon"
                 aria-label="إجراءات سريعة"
-                className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+                className="atlas-icon-btn h-11 w-11 md:h-10 md:w-10"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </StudioButton>
@@ -172,26 +172,26 @@ function CourseStudioHeader({
         </div>
       </div>
 
-      <div className="ws2-meta-strip mt-2.5 flex items-center gap-3 overflow-x-auto pt-2 text-[11px] md:gap-5 md:text-xs">
+      <div className="atlas-meta-strip mt-2.5 flex items-center gap-3 overflow-x-auto pt-2 text-[11px] md:gap-5 md:text-xs">
         {typeof studentsCount === "number" && (
-          <span className="ws2-meta-item">
+          <span className="atlas-meta-item">
             <Users className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
             {studentsCount} طالب
           </span>
         )}
         {visibility && (
-          <span className="ws2-meta-item">
+          <span className="atlas-meta-item">
             <Eye className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
             {visibilityLabel[visibility] ?? visibility}
           </span>
         )}
         {lastEdited && (
-          <span className="ws2-meta-item">
+          <span className="atlas-meta-item">
             <Clock className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
             {lastEdited}
           </span>
         )}
-        <span className="ws2-meta-item ms-auto shrink-0">
+        <span className="atlas-meta-item ms-auto shrink-0">
           {isSaving ? (
             <span className="text-studio-warning">جارٍ الحفظ…</span>
           ) : isSaved ? (

@@ -71,7 +71,7 @@ function ExtensionPreview({ item }: { item: ContentItem }) {
 
   return (
     <div className={cn(
-      "ws2-empty-card flex flex-col items-center justify-center p-12 text-center",
+      "atlas-empty-card flex flex-col items-center justify-center p-12 text-center",
     )}>
       <div className={cn("mb-4 rounded-2xl p-4", meta.bg)}>
         <Icon className={cn("h-14 w-14", meta.color)} />
@@ -113,11 +113,11 @@ function CourseStudioContentOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
+      className={cn("atlas-page mx-auto w-full max-w-5xl", className)}
     >
       <motion.div variants={itemVariants} className="mb-8">
         <div className="mb-4 flex items-center gap-3">
-          <div className={cn("ws2-hero-icon h-14 w-14", meta.bg)}>
+          <div className={cn("atlas-hero-icon h-14 w-14", meta.bg)}>
             <Icon className={cn("h-7 w-7", meta.color)} />
           </div>
           <div className="min-w-0 flex-1">
@@ -182,7 +182,7 @@ function CourseStudioContentOverview({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
+        <StudioSurfaceCard variant="elevated" padding="md" className="atlas-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">الخصائص</span>

@@ -93,8 +93,8 @@ function ContentProperties({ item }: { item: ContentItem }) {
         </div>
       </div>
 
-      <div className="ws2-info-card space-y-1">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
+      <div className="atlas-group">
+        <h4 className="atlas-group-title">
           الخصائص
         </h4>
         <StudioPropertyRow
@@ -140,8 +140,8 @@ function ContentProperties({ item }: { item: ContentItem }) {
         <StudioPropertyRow label="النوع" value={meta.label} />
       </div>
 
-      <div className="ws2-info-card space-y-1">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
+      <div className="atlas-group">
+        <h4 className="atlas-group-title">
           المعلومات
         </h4>
         <StudioPropertyRow
@@ -185,13 +185,13 @@ function CourseStudioInspector({
 }: CourseStudioInspectorProps) {
   const inner = (
     <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
-            <div className="ws2-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3.5">
+            <div className="atlas-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3.5">
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className="ws2-hero-icon h-9 w-9 shrink-0 rounded-[11px]">
+                <span className="atlas-hero-icon h-9 w-9 shrink-0 rounded-[11px]">
                   <Settings className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="ws2-eyebrow">Inspector</p>
+                  <p className="atlas-eyebrow">Inspector</p>
                   <h3 className="truncate text-sm font-semibold text-studio-fg">
                     {selectedContent
                       ? "خصائص المحتوى"
@@ -207,7 +207,7 @@ function CourseStudioInspector({
                   size="icon"
                   onClick={onClose}
                   aria-label="إغلاق لوحة الخصائص"
-                  className="ws2-icon-btn h-9 w-9"
+                  className="atlas-icon-btn h-9 w-9"
                 >
                   <X className="h-4 w-4" />
                 </StudioButton>
@@ -237,8 +237,8 @@ function CourseStudioInspector({
                     </div>
                   </div>
 
-                  <div className="ws2-info-card space-y-1">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
+                  <div className="atlas-group">
+                    <h4 className="atlas-group-title">
                       الخصائص
                     </h4>
                     <StudioPropertyRow
@@ -291,8 +291,8 @@ function CourseStudioInspector({
                     />
                   </div>
 
-                  <div className="ws2-info-card space-y-1">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
+                  <div className="atlas-group">
+                    <h4 className="atlas-group-title">
                       المعلومات
                     </h4>
                     <StudioPropertyRow
@@ -315,8 +315,8 @@ function CourseStudioInspector({
                     />
                   </div>
 
-                  <div className="ws2-info-card space-y-1">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
+                  <div className="atlas-group">
+                    <h4 className="atlas-group-title">
                       الإجراءات
                     </h4>
                     <div className="grid grid-cols-2 gap-2">
@@ -425,7 +425,7 @@ function CourseStudioInspector({
   );
 
   if (variant === "drawer") {
-    return open ? <div className={cn("ws2-drawer flex h-full flex-col bg-studio-surface", className)}>{inner}</div> : null;
+    return open ? <div className={cn("atlas-drawer flex h-full flex-col bg-studio-surface", className)}>{inner}</div> : null;
   }
 
   return (

@@ -1,6 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, FileText, Layers, Pencil, Plus } from "lucide-react";
+import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { cn } from "@/lib/cn";
 import { CourseStudioLectureOverview } from "./CourseStudioLectureOverview";
 import { CourseStudioSectionOverview } from "./CourseStudioSectionOverview";
@@ -75,19 +77,71 @@ function CourseStudioCanvas({
   onQuickStart,
   className,
 }: CourseStudioCanvasProps) {
+  const workbar = canvasView === "content" && selectedContent
+    ? {
+        icon: FileText,
+        label: "وحدة المحتوى",
+        title: selectedContent.title,
+        action: onEditContent ? { label: "تعديل المحتوى", icon: Pencil, onClick: () => onEditContent(selectedContent) } : null,
+      }
+    : canvasView === "section" && selectedSection
+      ? {
+          icon: Layers,
+          label: "القسم",
+          title: selectedSection.title,
+          action: onAddContent ? { label: "إضافة محتوى", icon: Plus, onClick: onAddContent } : null,
+        }
+      : canvasView === "lecture" && selectedLecture
+        ? {
+            icon: BookOpen,
+            label: "المحاضرة",
+            title: selectedLecture.title,
+            action: onAddSection ? { label: "قسم جديد", icon: Plus, onClick: onAddSection } : null,
+          }
+        : null;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(
-        "ws2-canvas flex min-w-0 flex-1 flex-col overflow-hidden bg-studio-bg",
-        className,
-      )}
+      transition={{ duration: 0.25 }}
+      className={cn("atlas-canvas flex min-w-0 flex-1 flex-col overflow-hidden", className)}
       role="region"
       aria-label="مساحة العمل"
     >
-      <div className="flex-1 overflow-y-auto studio-scrollbar">
+      <div className="atlas-workbar flex shrink-0 items-center justify-between gap-3 px-3 py-2.5 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {workbar ? (
+            <>
+              <span className="atlas-row-icon hidden shrink-0 sm:flex">
+                <workbar.icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="atlas-section-label">{workbar.label}</p>
+                <p className="truncate text-sm font-bold text-studio-fg">{workbar.title}</p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <p className="atlas-section-label">مساحة العمل</p>
+              <p className="text-sm font-bold text-studio-fg">لوحة التحرير</p>
+            </div>
+          )}
+        </div>
+        {workbar?.action && (
+          <StudioButton
+            variant="primary"
+            size="sm"
+            icon={<workbar.action.icon className="h-4 w-4" />}
+            onClick={workbar.action.onClick}
+            className="shrink-0"
+          >
+            <span className="hidden sm:inline">{workbar.action.label}</span>
+          </StudioButton>
+        )}
+      </div>
+
+      <div className="studio-scrollbar flex-1 overflow-y-auto">
         <AnimatePresence mode="popLayout">
           {canvasView === "content" && selectedLecture && selectedSection && selectedContent ? (
             <motion.div
@@ -95,9 +149,12 @@ function CourseStudioCanvas({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.22 }}
             >
-              <CourseStudioContentOverview item={selectedContent} onEdit={onEditContent ? () => onEditContent(selectedContent) : undefined} />
+              <CourseStudioContentOverview
+                item={selectedContent}
+                onEdit={onEditContent ? () => onEditContent(selectedContent) : undefined}
+              />
             </motion.div>
           ) : canvasView === "section" && selectedLecture && selectedSection ? (
             <motion.div
@@ -105,7 +162,7 @@ function CourseStudioCanvas({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.22 }}
             >
               <CourseStudioSectionOverview
                 section={selectedSection}
@@ -117,7 +174,7 @@ function CourseStudioCanvas({
                 onDelete={onDeleteSection}
                 onRestore={onRestoreSection}
               />
-              <div className="mx-auto w-full max-w-3xl px-3 pb-8 sm:px-6 md:px-8">
+              <div className="mx-auto w-full max-w-6xl px-3 pb-10 sm:px-5">
                 <CourseStudioContentList
                   items={sectionContents ?? []}
                   selectedId={selectedContent?.id ?? null}
@@ -140,7 +197,7 @@ function CourseStudioCanvas({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.22 }}
             >
               <CourseStudioLectureOverview
                 lecture={selectedLecture}
@@ -154,16 +211,8 @@ function CourseStudioCanvas({
               variant="canvas"
               title="ابدأ ببناء منهجك التعليمي"
               description="قم بإضافة المحاضرات والأقسام والمحتوى التفاعلي لبناء دورة تعليمية متكاملة. استخدم الأدوات المتاحة لتنظيم وتحرير المحتوى الخاص بك."
-              primaryAction={
-                onCreateLecture
-                  ? { label: "إنشاء محاضرة", onClick: onCreateLecture }
-                  : undefined
-              }
-              secondaryAction={
-                onQuickStart
-                  ? { label: "مشاهدة دليل البدء السريع", onClick: onQuickStart }
-                  : undefined
-              }
+              primaryAction={onCreateLecture ? { label: "إنشاء محاضرة", onClick: onCreateLecture } : undefined}
+              secondaryAction={onQuickStart ? { label: "مشاهدة دليل البدء السريع", onClick: onQuickStart } : undefined}
               shortcuts={shortcuts}
             />
           )}
