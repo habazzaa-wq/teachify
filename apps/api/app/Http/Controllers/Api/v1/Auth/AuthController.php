@@ -196,7 +196,7 @@ class AuthController extends Controller
             'primary_color' => $values['primary_color'] ?? null,
             'secondary_color' => $values['secondary_color'] ?? null,
             'accent_color' => $values['accent_color'] ?? null,
-            'font' => $values['font'] ?? null,
+            'font' => $values['font'] ?? (new \App\Services\Platform\PlatformBrandingService())->resolveFont($tenant->id),
             'dark_logo' => $values['dark_logo'] ?? null,
             'light_logo' => $values['light_logo'] ?? null,
             'domain' => $domain?->domain ?? $tenant->slug . '.' . config('app.base_domain', 'localhost'),

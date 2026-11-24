@@ -19,7 +19,7 @@ export default function HomeRouteLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={displayFont.variable}>
+    <div className={`public-display-font ${displayFont.variable}`}>
       <PublicLayout>{children}</PublicLayout>
     </div>
   );

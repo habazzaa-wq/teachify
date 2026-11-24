@@ -21,7 +21,11 @@ import { getTenantSeoContext } from "@/lib/seo/tenant-context";
 import { getRequestOrigin, resolveAssetUrl } from "@/lib/seo/url";
 import { buildPwaMetadata } from "@/lib/pwa/metadata";
 import { resolveManifestColor } from "@/lib/pwa/manifest";
-import { getFontCssUrl, buildFontStack } from "@/features/settings/constants/google-fonts";
+import {
+  getFontCssUrl,
+  buildFontStack,
+  resolveTenantFont,
+} from "@/features/settings/constants/google-fonts";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -32,7 +36,10 @@ const cairo = Cairo({
 const almarai = Almarai({
   subsets: ["arabic", "latin"],
   weight: ["300", "400", "700"],
-  variable: "--font-display",
+  // Keep the bundled face under its own variable. `--font-display` is a
+  // semantic slot that follows the tenant font (see below); using it here
+  // made Almarai circular once a font was selected.
+  variable: "--font-almarai-local",
   display: "swap",
 });
 
@@ -115,7 +122,14 @@ export default async function RootLayout({
   }
 
   const tenant = await getTenantSeoContext();
-  const tenantFont = tenant?.branding?.font ?? null;
+  // One font for every surface: the site editor mirrors the value into both
+  // branding rows, but accept either shape so a legacy/default payload still
+  // renders the tenant's choice on the public site.
+  const tenantFont = resolveTenantFont(
+    tenant?.branding,
+    tenant?.platform_branding,
+    tenant?.platformBranding,
+  );
   const fontCssUrl = getFontCssUrl(tenantFont);
   const fontStack =
     buildFontStack(tenantFont) ??
@@ -127,9 +141,15 @@ export default async function RootLayout({
       dir="rtl"
       className={`${cairo.variable} ${almarai.variable} h-full theme-initializing${initialTheme === "dark" ? " dark" : ""}`}
       data-theme={initialTheme}
+      data-tenant-font={tenantFont ? "true" : undefined}
       style={
         {
           "--font-sans": fontStack,
+          // Headings use the same face once the teacher picks one; without a
+          // saved font keep the built-in display face as before.
+          "--font-display": tenantFont
+            ? fontStack
+            : 'var(--font-almarai-local), "Almarai", "system-ui", "sans-serif"',
           colorScheme: initialTheme,
         } as React.CSSProperties
       }

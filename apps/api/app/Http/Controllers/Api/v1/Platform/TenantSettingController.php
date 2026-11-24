@@ -30,9 +30,9 @@ class TenantSettingController extends Controller
     }
 
     /**
-     * Persist the platform-level brand colors onto the current tenant's own
-     * `platform_branding` row. `updateSite` (teacher appearance) writes the
-     * same two columns so both editors stay in sync.
+     * Persist the platform-wide branding (colors + font) onto the current
+     * tenant's own `platform_branding` row. `updateSite` writes the same
+     * values so both editors stay in sync.
      */
     public function updatePlatformBranding(Request $request): JsonResponse
     {
@@ -49,7 +49,17 @@ class TenantSettingController extends Controller
         ]);
 
         $tenant = currentTenant();
-        $branding = (new \App\Services\Platform\PlatformBrandingService())->update($tenant->id, $validated);
+        $brandingService = new PlatformBrandingService();
+        $branding = $brandingService->update($tenant->id, $validated);
+
+        // The font is platform-wide, not dashboard-only. Keep the legacy
+        // `branding` settings row in sync so the auth/bootstrap and by-domain
+        // payloads (which read that row) resolve the same face everywhere.
+        if (array_key_exists('font', $validated)) {
+            $this->mergeBrandingValues($tenant, ['font' => $validated['font']]);
+        }
+
+        app(TenantRepository::class)->forget($tenant->id);
 
         return response()->json([
             'message' => 'Platform branding updated.',
@@ -77,7 +87,7 @@ class TenantSettingController extends Controller
                 'logo_type' => $values['logo_type'] ?? null,
                 'logo_icon' => $values['logo_icon'] ?? null,
                 'logo_image' => $values['logo_image'] ?? null,
-                'font' => $values['font'] ?? null,
+                'font' => $values['font'] ?? (new PlatformBrandingService())->resolveFont($tenant->id),
                 'primary_color' => $values['primary_color'] ?? null,
                 'secondary_color' => $values['secondary_color'] ?? null,
             ],
@@ -113,29 +123,24 @@ class TenantSettingController extends Controller
         $brandingValues = array_intersect_key($values, array_flip($brandingKeys));
 
         if (! empty($brandingValues)) {
-            $existing = $tenant->settings()
-                ->where('group', 'branding')
-                ->first();
-
-            $merged = array_merge($existing?->values ?? [], $brandingValues);
-
-            TenantSetting::updateOrCreate(
-                [
-                    'tenant_id' => $tenant->id,
-                    'group' => 'branding',
-                ],
-                ['values' => $merged],
-            );
+            $brandingValues = $this->mergeBrandingValues($tenant, $brandingValues);
         }
 
-        // The appearance editor must change the real runtime theme, not just a
-        // settings row that nothing reads. Mirror the two colors onto the
-        // platform_branding row consumed by every themed shell (admin,
-        // instructor, student, public site). Null resets fall back to the
-        // platform defaults in the frontend theme generator.
-        $platformColors = array_intersect_key($values, array_flip(['primary_color', 'secondary_color']));
-        if ($platformColors !== []) {
-            app(PlatformBrandingService::class)->update($tenant->id, $platformColors);
+        // The site editor must change the real runtime theme, not just a
+        // settings row that nothing reads. Mirror the font together with the
+        // two colors onto the platform_branding row consumed by every themed
+        // shell (admin, instructor, student, public site). Null resets fall
+        // back to the frontend defaults.
+        $platformValues = array_intersect_key($values, array_flip(['font', 'primary_color', 'secondary_color']));
+        if ($platformValues !== []) {
+            app(PlatformBrandingService::class)->update($tenant->id, $platformValues);
+        }
+
+        // Branding/font/colors are read from the tenant payload on every
+        // request, so drop cached tenant/domain resolution after any edit —
+        // otherwise a public page can keep serving an old font.
+        if ($brandingValues !== [] || array_key_exists('name', $values)) {
+            app(TenantRepository::class)->forget($tenant->id);
         }
 
         $tenant->refresh();
@@ -156,11 +161,37 @@ class TenantSettingController extends Controller
                 'logo_type' => $brandingValues['logo_type'] ?? null,
                 'logo_icon' => $brandingValues['logo_icon'] ?? null,
                 'logo_image' => $brandingValues['logo_image'] ?? null,
-                'font' => $brandingValues['font'] ?? null,
+                'font' => $brandingValues['font'] ?? (new PlatformBrandingService())->resolveFont($tenant->id),
                 'primary_color' => $brandingValues['primary_color'] ?? null,
                 'secondary_color' => $brandingValues['secondary_color'] ?? null,
             ],
         ]);
+    }
+
+    /**
+     * Merge values into the tenant's `branding` settings row — the shape read
+     * by auth/bootstrap and by-domain responses.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function mergeBrandingValues(\App\Models\Tenant $tenant, array $values): array
+    {
+        $existing = $tenant->settings()
+            ->where('group', 'branding')
+            ->first();
+
+        $merged = array_merge($existing?->values ?? [], $values);
+
+        TenantSetting::updateOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'group' => 'branding',
+            ],
+            ['values' => $merged],
+        );
+
+        return $merged;
     }
 
     /**

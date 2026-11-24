@@ -28,6 +28,7 @@ const FONT_CATEGORY_ORDER = ["arabic", "professional", "serif", "display", "hand
 function SiteForm({ initial }: { initial: SiteSettings }) {
   const updateSite = useUpdateSiteSettings();
   const setTenantSite = useTenantStore((s) => s.setTenantSite);
+  const setTenantFont = useTenantStore((s) => s.setTenantFont);
 
   const [name, setName] = useState(initial.name ?? "");
   const [favicon, setFavicon] = useState(initial.favicon ?? "");
@@ -43,14 +44,18 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
 
     updateSite.mutate(values, {
       onSuccess: (result) => {
+        const savedFont = result.font ?? null;
         setTenantSite({
           name: result.name,
           favicon: result.favicon ?? null,
-          font: result.font ?? null,
+          font: savedFont,
         });
+        // Mirror into platformBranding too, so the public site, login and the
+        // student/instructor shells pick it up without a reload.
+        setTenantFont(savedFont);
       },
     });
-  }, [name, favicon, font, updateSite, setTenantSite]);
+  }, [name, favicon, font, updateSite, setTenantSite, setTenantFont]);
 
   const selectedFont = getFontOption(font);
 
@@ -171,7 +176,12 @@ function SiteForm({ initial }: { initial: SiteSettings }) {
             <Label>الخط</Label>
             <AppSelect
               value={font ?? ""}
-              onValueChange={(value) => setFont(value === "__default__" ? null : value)}
+              onValueChange={(value) => {
+                const next = value === "__default__" ? null : value;
+                setFont(next);
+                // Live preview across every shell, not just the dashboard.
+                setTenantFont(next);
+              }}
             >
               <AppSelectTrigger className="w-full">
                 <AppSelectValue placeholder="الخط الافتراضي (القاهرة)" />

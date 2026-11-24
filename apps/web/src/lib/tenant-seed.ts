@@ -31,7 +31,13 @@ export function tenantSeedToActiveTenant(
       primary_color: b?.primaryColor ?? null,
       secondary_color: b?.secondaryColor ?? null,
       accent_color: b?.accentColor ?? null,
-      font: b?.font ?? null,
+      // Accept either branding row so the first paint on a public domain uses
+      // the saved font even if only the platform copy carries it.
+      font:
+        b?.font ??
+        seed.platform_branding?.font ??
+        seed.platformBranding?.font ??
+        null,
       dark_logo: b?.darkLogo ?? null,
       light_logo: b?.lightLogo ?? null,
       logo_type: b?.logoType ?? null,

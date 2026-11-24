@@ -61,7 +61,15 @@ export function TenantBootstrapProvider({
     // السيرفر (SSR) لو موجودة عشان أول رسمية تكون صح من غير وميض.
     const platformBranding = tenantContext?.platform_branding ?? tenantContext?.platformBranding ?? null;
     if (platformBranding) {
-      setPlatformBranding(platformBranding);
+      const store = useTenantStore.getState();
+      setPlatformBranding({
+        ...platformBranding,
+        // The site editor can change the font live. A later client navigation
+        // re-runs this effect with the older SSR payload — keep the new font.
+        ...(store.fontOverridden
+          ? { font: store.platformBranding?.font ?? null }
+          : {}),
+      });
     }
 
     // المنصة/السوبر أدمن: مفيش tenant فرعي، نكتفي ببذر ألوان المنصة.

@@ -9,6 +9,13 @@ html.theme-initializing *::after {
   transition: none !important;
 }
 
+/* One platform-wide font: when the teacher saves a font, public headings must
+   stop using the editorial display face and follow the saved tenant font too.
+   The marker is set server-side and kept in sync by TenantFontProvider. */
+html[data-tenant-font="true"] .public-display-font {
+  --font-display: var(--font-sans) !important;
+}
+
 .hero-backdrop {
   background: radial-gradient(ellipse at 50% 30%, #faf8f5 0%, #f7f4ef 40%, #f3efe8 80%, #efeae1 100%);
 }

@@ -205,4 +205,97 @@ class PlatformBrandingIsolationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('platform_branding.primaryColor', null);
     }
+
+    public function test_site_font_reaches_the_public_site_and_every_bootstrap_payload(): void
+    {
+        $tenant = Tenant::factory()->create(['status' => 'active']);
+        $user = User::factory()->create();
+        TenantUser::factory()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+        ]);
+        TenantDomain::create([
+            'tenant_id' => $tenant->id,
+            'domain' => 'typography.academy.test',
+            'type' => 'custom',
+            'status' => 'active',
+            'is_primary' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+        $headers = ['X-Tenant-ID' => $tenant->id];
+
+        $this->putJson('/api/v1/settings/site', [
+            'values' => ['font' => 'Tajawal'],
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('values.font', 'Tajawal');
+
+        // The saved font must live in the row every themed shell reads.
+        $this->assertDatabaseHas('platform_branding', [
+            'tenant_id' => $tenant->id,
+            'font' => 'Tajawal',
+        ]);
+
+        $this->getJson('/api/v1/settings/platform', $headers)
+            ->assertOk()
+            ->assertJsonPath('branding.font', 'Tajawal');
+
+        // Anonymous visitors of the public domain get the same face.
+        $this->getJson('/api/v1/tenant/by-domain?domain=typography.academy.test')
+            ->assertOk()
+            ->assertJsonPath('branding.font', 'Tajawal')
+            ->assertJsonPath('platform_branding.font', 'Tajawal');
+
+        // ...as does a fresh dashboard login.
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('tenant.branding.font', 'Tajawal')
+            ->assertJsonPath('tenant.platform_branding.font', 'Tajawal');
+
+        // Resetting to the default clears it everywhere, not just the editor.
+        $this->putJson('/api/v1/settings/site', [
+            'values' => ['font' => null],
+        ], $headers)->assertOk();
+
+        $this->assertDatabaseHas('platform_branding', [
+            'tenant_id' => $tenant->id,
+            'font' => null,
+        ]);
+        $this->getJson('/api/v1/tenant/by-domain?domain=typography.academy.test')
+            ->assertOk()
+            ->assertJsonPath('branding.font', null)
+            ->assertJsonPath('platform_branding.font', null);
+    }
+
+    public function test_platform_branding_font_is_mirrored_back_to_tenant_branding(): void
+    {
+        $tenant = Tenant::factory()->create(['status' => 'active']);
+        $user = User::factory()->create();
+        TenantUser::factory()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'status' => 'active',
+        ]);
+
+        Sanctum::actingAs($user);
+        $headers = ['X-Tenant-ID' => $tenant->id];
+
+        $this->putJson('/api/v1/settings/platform', [
+            'font' => 'Cairo',
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('branding.font', 'Cairo');
+
+        $this->assertDatabaseHas('tenant_settings', [
+            'tenant_id' => $tenant->id,
+            'group' => 'branding',
+            'values->font' => 'Cairo',
+        ]);
+
+        $this->getJson('/api/v1/auth/me', $headers)
+            ->assertOk()
+            ->assertJsonPath('tenant.branding.font', 'Cairo');
+    }
 }

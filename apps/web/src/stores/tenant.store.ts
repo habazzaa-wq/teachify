@@ -44,6 +44,27 @@ function normalizeBranding(branding: unknown): Record<string, unknown> | null {
   };
 }
 
+/** The font is platform-wide, so every branding copy must carry the same value. */
+function withPlatformFont(
+  branding: TenantBranding | null,
+  font: string | null,
+): TenantBranding {
+  return {
+    logo: null,
+    favicon: null,
+    primaryColor: null,
+    secondaryColor: null,
+    accentColor: null,
+    darkLogo: null,
+    lightLogo: null,
+    logoType: null,
+    logoIcon: null,
+    logoImage: null,
+    ...(branding ?? {}),
+    font,
+  } as TenantBranding;
+}
+
 interface TenantState {
   activeTenant: ActiveTenant | null;
   membership: Membership | null;
@@ -63,6 +84,8 @@ interface TenantState {
   googleClientId: string | null;
   bootstrapStatus: BootstrapStatus;
   bootstrapError: string | null;
+  /** Font changed in this session — bootstrap refreshes keep our newer value. */
+  fontOverridden: boolean;
 
   setActiveTenant: (tenant: ActiveTenant | null) => void;
   setTenantSite: (site: {
@@ -75,6 +98,8 @@ interface TenantState {
     primary_color?: string | null;
     secondary_color?: string | null;
   }) => void;
+  /** Apply the font to every branding copy at once so all shells see it live. */
+  setTenantFont: (font: string | null) => void;
   setTenantContext: (context: {
     tenant: ActiveTenant;
     membership: Membership;
@@ -123,6 +148,7 @@ export const useTenantStore = create<TenantState>()(
     googleClientId: null,
     bootstrapStatus: "idle",
     bootstrapError: null,
+    fontOverridden: false,
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
 
@@ -172,8 +198,34 @@ export const useTenantStore = create<TenantState>()(
                 ...(secondary_color !== undefined && { secondaryColor: secondary_color }),
               }) as unknown as TenantBranding)
             : state.branding,
+          // `platformBranding` is what the public site and the other shells
+          // read; keeping its font in sync is what makes the choice global.
+          // Don't create an empty palette when none was bootstrapped yet.
+          ...(font !== undefined && state.platformBranding
+            ? { platformBranding: withPlatformFont(state.platformBranding, font) }
+            : {}),
         };
       }),
+
+    setTenantFont: (font) =>
+      set((state) => ({
+        activeTenant: state.activeTenant
+          ? {
+              ...state.activeTenant,
+              branding: normalizeBranding({
+                ...(state.activeTenant.branding ?? {}),
+                font,
+              }) as unknown as AuthBranding,
+            }
+          : null,
+        branding: state.branding
+          ? (normalizeBranding({ ...state.branding, font }) as unknown as TenantBranding)
+          : state.branding,
+        platformBranding: state.platformBranding
+          ? withPlatformFont(state.platformBranding, font)
+          : state.platformBranding,
+        fontOverridden: true,
+      })),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
       set(() => {
@@ -234,6 +286,10 @@ export const useTenantStore = create<TenantState>()(
           prev?.secondary_color ??
           null;
 
+        // A font changed in the current session is newer than any SSR payload;
+        // never let a re-bootstrap put the old font back.
+        const liveFont = state.platformBranding?.font ?? prev?.font ?? null;
+
         return {
           activeTenant: {
             id: data.id,
@@ -248,7 +304,7 @@ export const useTenantStore = create<TenantState>()(
               primary_color: primaryColor,
               secondary_color: secondaryColor,
               accent_color: incoming.accentColor ?? prev?.accent_color ?? null,
-              font: incoming.font ?? prev?.font ?? null,
+              font: state.fontOverridden ? liveFont : (incoming.font ?? prev?.font ?? null),
               dark_logo: incoming.darkLogo ?? prev?.dark_logo ?? null,
               light_logo: incoming.lightLogo ?? prev?.light_logo ?? null,
               logo_type: incoming.logoType ?? prev?.logo_type ?? null,
@@ -263,6 +319,7 @@ export const useTenantStore = create<TenantState>()(
             ...incoming,
             primaryColor,
             secondaryColor,
+            ...(state.fontOverridden ? { font: liveFont } : {}),
           }) as unknown as TenantBranding,
           googleClientId: data.googleClientId ?? null,
           bootstrapStatus: "resolved",
@@ -311,6 +368,7 @@ export const useTenantStore = create<TenantState>()(
         googleClientId: null,
         bootstrapStatus: "idle",
         bootstrapError: null,
+        fontOverridden: false,
       }),
     }),
     {
