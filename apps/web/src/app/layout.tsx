@@ -26,6 +26,12 @@ import {
   buildFontStack,
   resolveTenantFont,
 } from "@/features/settings/constants/google-fonts";
+import { loadTenantFontAssets } from "@/lib/fonts/tenant-font-assets";
+import {
+  TENANT_FONT_STYLE_ID,
+  TENANT_FONT_LINK_ID,
+  TENANT_FONT_PRELOAD_ATTRIBUTE,
+} from "@/lib/fonts/tenant-font-dom";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -132,6 +138,7 @@ export default async function RootLayout({
     tenant?.platformBranding,
   );
   const fontCssUrl = getFontCssUrl(tenantFont);
+  const fontAssets = fontCssUrl ? await loadTenantFontAssets(fontCssUrl) : null;
   const fontStack =
     buildFontStack(tenantFont) ??
     'var(--font-cairo-local), "Cairo", "system-ui", "sans-serif"';
@@ -166,12 +173,33 @@ export default async function RootLayout({
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-            <link
-              id="tenant-dynamic-font"
-              rel="stylesheet"
-              href={fontCssUrl}
-              fetchPriority="high"
-            />
+            {fontAssets ? (
+              <>
+                <style
+                  id={TENANT_FONT_STYLE_ID}
+                  data-font-family={tenantFont ?? ""}
+                  dangerouslySetInnerHTML={{ __html: fontAssets.css }}
+                />
+                {fontAssets.preloadUrls.map((url) => (
+                  <link
+                    key={url}
+                    rel="preload"
+                    as="font"
+                    type="font/woff2"
+                    href={url}
+                    crossOrigin="anonymous"
+                    data-tenant-font-preload={tenantFont ?? ""}
+                  />
+                ))}
+              </>
+            ) : (
+              <link
+                id={TENANT_FONT_LINK_ID}
+                rel="stylesheet"
+                href={fontCssUrl}
+                fetchPriority="high"
+              />
+            )}
           </>
         )}
         <ThemeScript />

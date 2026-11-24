@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFontStack, resolveTenantFont } from "./google-fonts";
+import { buildFontStack, getFontCssUrl, resolveTenantFont } from "./google-fonts";
 
 describe("resolveTenantFont", () => {
   it("uses the tenant branding font when present", () => {
@@ -32,5 +32,19 @@ describe("buildFontStack", () => {
     expect(buildFontStack("Noto Kufi Arabic")).toBe(
       '"Noto Kufi Arabic", "system-ui", "sans-serif"',
     );
+  });
+});
+
+describe("getFontCssUrl", () => {
+  it("loads Google fonts with block display so the first paint uses the chosen face", () => {
+    const url = getFontCssUrl("Tajawal");
+    expect(url).toContain("display=block");
+    expect(url).not.toContain("display=optional");
+    expect(url).not.toContain("display=swap");
+  });
+
+  it("keeps using the locally bundled faces for Cairo and Almarai", () => {
+    expect(getFontCssUrl("Cairo")).toBeNull();
+    expect(getFontCssUrl("Almarai")).toBeNull();
   });
 });
