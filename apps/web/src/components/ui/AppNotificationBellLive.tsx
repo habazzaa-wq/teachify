@@ -2,13 +2,9 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useEnrolledCourses } from "@/features/course-catalog/hooks";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { NotificationItem } from "@/types/notification.types";
 import { AppNotificationMenu, type NotificationItem as MenuItem } from "./AppNotificationMenu";
-
-/** Only newly published sessions are surfaced in the student navbar. */
-const SESSION_PUBLISHED_TYPE = "session.scheduled";
 
 interface AppNotificationBellLiveProps {
   enabled?: boolean;
@@ -24,12 +20,6 @@ function formatTs(ts?: string | null) {
   } catch {
     return ts;
   }
-}
-
-function sessionCourseId(notification: NotificationItem): string | null {
-  const data = notification.data as { course_id?: unknown } | null;
-  if (data?.course_id === null || data?.course_id === undefined) return null;
-  return String(data.course_id);
 }
 
 /** Original shared bell: admin, teacher and platform headers. */
@@ -68,24 +58,22 @@ function GeneralNotificationBell({
   );
 }
 
-/** q3 student bell: published sessions for courses the student is enrolled in. */
+const SESSION_TITLES: Record<string, string> = {
+  "session.scheduled": "جلسة جديدة في دورتك",
+  "session.rescheduled": "تم تغيير موعد جلسة",
+  "session.cancelled": "تم إلغاء جلسة",
+  "session.reminder": "تذكير بجلسة قادمة",
+  "lesson.published": "محتوى جديد في دورتك",
+};
+
+/** Student bell: everything the server addressed to this student. */
 function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProps) {
-  const { unread, all, markRead } = useNotifications("session.", enabled);
-  const { data: enrolledCourses } = useEnrolledCourses();
+  const { unread, all, markRead } = useNotifications(enabled);
 
-  const enrolledCourseIds = useMemo(
-    () => new Set((enrolledCourses ?? []).map((course) => String(course.id))),
-    [enrolledCourses],
+  const isRelevant = useMemo(
+    () => (notification: NotificationItem) => notification.status !== "archived",
+    [],
   );
-
-  const isRelevant = useMemo(() => {
-    return (notification: NotificationItem): boolean => {
-      if (notification.type !== SESSION_PUBLISHED_TYPE) return false;
-      if (notification.status === "archived") return false;
-      const courseId = sessionCourseId(notification);
-      return courseId !== null && enrolledCourseIds.has(courseId);
-    };
-  }, [enrolledCourseIds]);
 
   const visible = useMemo(() => all.filter(isRelevant), [all, isRelevant]);
   const unreadVisibleIds = useMemo(
@@ -97,18 +85,22 @@ function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProp
     const data = notification.data as {
       course_title?: unknown;
       session_title?: unknown;
+      lesson_title?: unknown;
     } | null;
     const courseTitle = typeof data?.course_title === "string" ? data.course_title : "";
     const sessionTitle = typeof data?.session_title === "string" ? data.session_title : "";
-    const fallbackBody = [courseTitle, sessionTitle].filter(Boolean).join(" — ");
+    const lessonTitle = typeof data?.lesson_title === "string" ? data.lesson_title : "";
+    const fallbackBody = [courseTitle, sessionTitle || lessonTitle]
+      .filter(Boolean)
+      .join(" — ");
 
     return {
       id: String(notification.id),
-      title: "جلسة جديدة في دورتك",
+      title: SESSION_TITLES[notification.type] ?? notification.title ?? "إشعار جديد",
       description: notification.body?.trim() || fallbackBody || undefined,
       timestamp: formatTs(notification.created_at),
       read: !unreadVisibleIds.has(notification.id),
-      initials: "ج",
+      initials: notification.type.startsWith("lesson.") ? "م" : "ج",
     };
   });
 
@@ -123,7 +115,7 @@ function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProp
         const notificationId = Number(id);
         if (!Number.isNaN(notificationId)) markRead(notificationId);
       }}
-      emptyHint="ستظهر جلسات دوراتك المسجّلة هنا"
+      emptyHint="ستظهر إشعارات جلساتك ودوراتك هنا"
     />
   );
 }

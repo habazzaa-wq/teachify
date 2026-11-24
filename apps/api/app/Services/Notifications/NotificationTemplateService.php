@@ -85,9 +85,12 @@ class NotificationTemplateService
             ->first();
 
         if (! $template) {
+            // Fall back to the caller-provided Arabic copy. Without this the
+            // inbox showed "Session scheduled" with an empty body whenever a
+            // tenant had not created a template for this event type.
             return [
-                'title' => str($slug)->replace(['.', '_'], ' ')->headline()->toString(),
-                'body' => '',
+                'title' => (string) ($variables['title'] ?? str($slug)->replace(['.', '_'], ' ')->headline()->toString()),
+                'body' => (string) ($variables['body'] ?? ''),
             ];
         }
 

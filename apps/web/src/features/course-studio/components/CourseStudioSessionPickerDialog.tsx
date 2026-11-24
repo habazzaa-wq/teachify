@@ -66,13 +66,23 @@ export function CourseStudioSessionPickerDialog({ open, courseId, onClose, onSel
       toast.error("العنوان ووقت البداية والنهاية مطلوبان");
       return;
     }
+    if (form.session_type === "live" && !form.meeting_url.trim()) {
+      toast.error("رابط الاجتماع مطلوب للجلسة المباشرة");
+      return;
+    }
+    if (form.session_type !== "live" && !form.location_name.trim()) {
+      toast.error("اسم المكان مطلوب لهذا النوع من الجلسات");
+      return;
+    }
     setCreating(true);
     try {
       const payload: SessionPayload = {
         title: form.title.trim(),
         description: form.description || null,
         session_type: form.session_type,
-        status: "draft",
+        // Publishing on creation is what makes the student receive the
+        // notification immediately.
+        status: "scheduled",
         starts_at_utc: new Date(form.starts_at_utc).toISOString(),
         ends_at_utc: new Date(form.ends_at_utc).toISOString(),
         timezone: form.timezone || "UTC",
@@ -80,7 +90,7 @@ export function CourseStudioSessionPickerDialog({ open, courseId, onClose, onSel
         location_name: form.location_name || null,
       };
       const session = await courseSessionsApi.create(courseId, payload);
-      toast.success("تم إنشاء الجلسة");
+      toast.success("تم إنشاء الجلسة وإشعار الطلاب المسجلين");
       onSelect(session);
     } catch (e: any) {
       const msg =

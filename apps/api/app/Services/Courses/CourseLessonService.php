@@ -15,6 +15,7 @@ class CourseLessonService
 {
     public function __construct(
         private readonly CourseLessonRepository $repository,
+        private readonly CourseContentNotificationService $contentNotifications,
     ) {}
 
     public function list(Course $course, ?CourseSection $section = null, array $params = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
@@ -31,7 +32,7 @@ class CourseLessonService
     {
         $this->ensureSectionBelongsToCourse($course, $section);
 
-        return DB::transaction(function () use ($course, $section, $data): CourseLesson {
+        $lesson = DB::transaction(function () use ($course, $section, $data): CourseLesson {
             return $this->repository->create([
                 'tenant_id' => $course->tenant_id,
                 'course_id' => $course->id,
@@ -60,13 +61,17 @@ class CourseLessonService
                 'published_at' => ($data['status'] ?? 'published') === 'published' ? now() : null,
             ]);
         });
+
+        DB::afterCommit(fn () => $this->contentNotifications->notifyPublished($course, $lesson));
+
+        return $lesson;
     }
 
     public function update(Course $course, CourseSection $section, CourseLesson $lesson, array $data): CourseLesson
     {
         $this->ensureLessonBelongsToSection($course, $section, $lesson);
 
-        return DB::transaction(function () use ($course, $section, $lesson, $data): CourseLesson {
+        $updated = DB::transaction(function () use ($course, $section, $lesson, $data): CourseLesson {
             $updateData = collect($data)->only([
                 'title', 'short_description', 'description', 'status', 'visibility',
                 'sort_order', 'duration_seconds', 'estimated_duration',
@@ -94,6 +99,10 @@ class CourseLessonService
 
             return $this->repository->update($lesson, $updateData);
         });
+
+        DB::afterCommit(fn () => $this->contentNotifications->notifyPublished($course, $updated));
+
+        return $updated;
     }
 
     public function delete(Course $course, CourseSection $section, CourseLesson $lesson): void
@@ -169,7 +178,11 @@ class CourseLessonService
             $updateData['published_at'] = now();
         }
 
-        return $this->repository->update($lesson, $updateData);
+        $updated = $this->repository->update($lesson, $updateData);
+
+        DB::afterCommit(fn () => $this->contentNotifications->notifyPublished($course, $updated));
+
+        return $updated;
     }
 
     public function publish(Course $course, CourseSection $section, CourseLesson $lesson): CourseLesson

@@ -35,6 +35,8 @@ function toLocalInput(utc?: string | null) {
 export function CourseStudioSessionEditDialog({ open, courseId, sessionId, onClose, onSaved }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [status, setStatus] = useState<string>("draft");
   const [form, setForm] = useState({
     title: "", description: "", session_type: "live" as "live" | "field" | "offline",
     starts_at: "", ends_at: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
@@ -46,6 +48,7 @@ export function CourseStudioSessionEditDialog({ open, courseId, sessionId, onClo
     setLoading(true);
     courseSessionsApi.get(courseId, sessionId)
       .then((s) => {
+        setStatus(s.status ?? "draft");
         setForm({
           title: s.title ?? "",
           description: s.description ?? "",
@@ -92,6 +95,27 @@ export function CourseStudioSessionEditDialog({ open, courseId, sessionId, onClo
     }
   };
 
+  const publish = async () => {
+    if (!sessionId) return;
+    setPublishing(true);
+    try {
+      const published = await courseSessionsApi.schedule(courseId, sessionId);
+      setStatus(published.status ?? "scheduled");
+      toast.success("تم نشر الجلسة وإشعار الطلاب المسجلين");
+      onSaved(published);
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message ||
+        (e?.response?.data?.errors
+          ? Object.values(e.response.data.errors).flat().join(" ")
+          : null) ||
+        "تعذر نشر الجلسة";
+      toast.error(String(msg));
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   return (
     <AppDialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <AppDialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -126,6 +150,11 @@ export function CourseStudioSessionEditDialog({ open, courseId, sessionId, onClo
             )}
             <div className="flex justify-end gap-2 pt-2">
               <AppButton variant="outline" onClick={onClose}>إلغاء</AppButton>
+              {status === "draft" && (
+                <AppButton variant="outline" onClick={publish} disabled={publishing || saving}>
+                  {publishing ? "جاري النشر..." : "نشر وإشعار الطلاب"}
+                </AppButton>
+              )}
               <AppButton variant="default" onClick={save} disabled={saving}>{saving ? "جاري الحفظ..." : "حفظ التغييرات"}</AppButton>
             </div>
           </div>

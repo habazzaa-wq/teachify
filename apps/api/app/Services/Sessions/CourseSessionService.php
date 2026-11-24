@@ -112,6 +112,8 @@ class CourseSessionService
     public function schedule(Tenant $tenant, CourseSession $session): CourseSession
     {
         $oldStatus = $session->status;
+        // Never publish (and notify) an incomplete session.
+        $this->validatePayload($tenant, ['status' => CourseSession::STATUS_SCHEDULED], $session);
         $this->applyStatus($session, CourseSession::STATUS_SCHEDULED);
         $session->save();
         $fresh = $session->refresh();
@@ -175,10 +177,16 @@ class CourseSessionService
         $locationAddress = array_key_exists('location_address', $data) ? $data['location_address'] : $session?->location_address;
         $maps = array_key_exists('location_maps_url', $data) ? $data['location_maps_url'] : $session?->location_maps_url;
 
-        if ($type === CourseSession::DELIVERY_TYPE_LIVE && blank($meeting)) {
+        // Drafts are internal placeholders (the course studio creates them before
+        // the instructor fills in the meeting details), so only published
+        // sessions need a meeting link or a location.
+        $targetStatus = $data['status'] ?? $session?->status ?? CourseSession::STATUS_DRAFT;
+        $isDraft = $targetStatus === CourseSession::STATUS_DRAFT;
+
+        if (! $isDraft && $type === CourseSession::DELIVERY_TYPE_LIVE && blank($meeting)) {
             throw ValidationException::withMessages(['meeting_url' => ['Meeting URL is required for live sessions.']]);
         }
-        if (in_array($type, [CourseSession::DELIVERY_TYPE_FIELD, CourseSession::DELIVERY_TYPE_OFFLINE], true)
+        if (! $isDraft && in_array($type, [CourseSession::DELIVERY_TYPE_FIELD, CourseSession::DELIVERY_TYPE_OFFLINE], true)
             && blank($locationName) && blank($locationAddress) && blank($maps)) {
             throw ValidationException::withMessages(['location_name' => ['Location information is required for field/offline sessions.']]);
         }

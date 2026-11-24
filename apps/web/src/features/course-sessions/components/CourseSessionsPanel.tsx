@@ -28,10 +28,10 @@ export function CourseSessionsPanel({ courseId }: { courseId: string }) {
   const [editing, setEditing] = useState<CourseSession | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [attendanceSessionId, setAttendanceSessionId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ title: "", description: "", session_type: "live", status: "draft", starts_at: "", ends_at: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", meeting_url: "", location_name: "", location_address: "", location_maps_url: "" });
+  const [form, setForm] = useState<any>({ title: "", description: "", session_type: "live", status: "scheduled", starts_at: "", ends_at: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", meeting_url: "", location_name: "", location_address: "", location_maps_url: "" });
 
   const sessions = data?.data ?? [];
-  const reset = () => setForm({ title: "", description: "", session_type: "live", status: "draft", starts_at: "", ends_at: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", meeting_url: "", location_name: "", location_address: "", location_maps_url: "" });
+  const reset = () => setForm({ title: "", description: "", session_type: "live", status: "scheduled", starts_at: "", ends_at: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", meeting_url: "", location_name: "", location_address: "", location_maps_url: "" });
 
   const startEdit = (s: CourseSession) => {
     setEditing(s);
@@ -56,7 +56,13 @@ export function CourseSessionsPanel({ courseId }: { courseId: string }) {
     try {
       if (editing) await updateSession.mutateAsync({ sessionId: editing.id, payload });
       else await createSession.mutateAsync(payload as any);
-      toast.success(editing ? "تم تحديث الجلسة" : "تم إنشاء الجلسة");
+      toast.success(
+        editing
+          ? "تم تحديث الجلسة"
+          : form.status === "scheduled"
+            ? "تم إنشاء الجلسة وإشعار الطلاب المسجلين"
+            : "تم إنشاء الجلسة كمسودة",
+      );
       setOpenForm(false); setEditing(null); reset();
     } catch (e: any) { toast.error(e?.response?.data?.message || "فشل حفظ الجلسة"); }
   };
