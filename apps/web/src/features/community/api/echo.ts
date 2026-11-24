@@ -1,6 +1,8 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 import { env, resolveApiUrl } from "@/config/env";
+import { isInstructorWorkspace } from "@/features/instructors/workspace";
+import { useInstructorAuthStore } from "@/features/instructors/store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useTenantStore } from "@/stores/tenant.store";
 
@@ -14,6 +16,7 @@ declare global {
 }
 
 let echoInstance: CommunityEcho | null = null;
+let echoAuthKey: string | null = null;
 
 /**
  * Names for the Reverb channels the backend broadcasts on.
@@ -31,6 +34,10 @@ export const communityTenantChannelName = (tenantId: string) =>
 export const communityPresenceChannelName = (tenantId: string) =>
   `presence-community.tenant.${tenantId}`;
 
+/** Per-member private inbox channel (see apps/api/routes/channels.php). */
+export const notificationChannelName = (tenantId: string, membershipId: string) =>
+  `notifications.tenant.${tenantId}.user.${membershipId}`;
+
 export function echoAvailable(): boolean {
   return typeof window !== "undefined";
 }
@@ -38,11 +45,27 @@ export function echoAvailable(): boolean {
 /** Lazily build the shared Echo (Reverb over Pusher protocol) client. */
 export function getCommunityEcho(): CommunityEcho | null {
   if (typeof window === "undefined") return null;
-  if (echoInstance) return echoInstance;
 
-  const accessToken = useAuthStore.getState().accessToken;
-  const tenantId = useTenantStore.getState().activeTenant?.id?.toString() ?? null;
-  const tenantDomain = useTenantStore.getState().domain ?? null;
+  const instructor = isInstructorWorkspace();
+  const instructorAuth = useInstructorAuthStore.getState();
+  const accessToken = instructor
+    ? instructorAuth.accessToken
+    : useAuthStore.getState().accessToken;
+  const tenantId = instructor
+    ? instructorAuth.membership?.tenant_id?.toString() ?? null
+    : useTenantStore.getState().activeTenant?.id?.toString() ?? null;
+  const tenantDomain = instructor ? null : useTenantStore.getState().domain ?? null;
+  const authKey = `${instructor ? "instructor" : "tenant"}:${accessToken ?? ""}:${tenantId ?? ""}`;
+
+  if (echoInstance && echoAuthKey === authKey) return echoInstance;
+  if (echoInstance && echoAuthKey !== authKey) {
+    try {
+      echoInstance.disconnect();
+    } catch {
+      // ignore
+    }
+    echoInstance = null;
+  }
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -73,6 +96,7 @@ export function getCommunityEcho(): CommunityEcho | null {
   window.Pusher = Pusher;
 
   echoInstance = instance;
+  echoAuthKey = authKey;
   return instance;
 }
 
@@ -84,6 +108,7 @@ export function destroyCommunityEcho(): void {
     // ignore
   }
   echoInstance = null;
+  echoAuthKey = null;
   if (typeof window !== "undefined") {
     window.Echo = undefined;
   }

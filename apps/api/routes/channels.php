@@ -101,6 +101,23 @@ Broadcast::channel('community.tenant.{tenantId}', function ($user, int $tenantId
     return $tenant && communityAuthorize($tenant, $user);
 });
 
+/**
+ * Private inbox channel. Each tenant membership receives only its own
+ * notifications; the channel id is the TenantUser (membership) id, not the
+ * global User id.
+ */
+Broadcast::channel('notifications.tenant.{tenantId}.user.{membershipId}', function ($user, int $tenantId, int $membershipId) {
+    $tenant = Tenant::query()->whereKey($tenantId)->first();
+
+    if (! $tenant) {
+        return false;
+    }
+
+    $membership = app(App\Services\Auth\TenantMembershipService::class)->activeMembership($user, $tenant);
+
+    return $membership !== null && $membership->id === $membershipId;
+});
+
 Broadcast::channel('presence-community.tenant.{tenantId}', function ($user, int $tenantId) {
     $tenant = Tenant::query()->whereKey($tenantId)->first();
 

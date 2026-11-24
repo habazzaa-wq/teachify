@@ -2,13 +2,17 @@
 
 namespace App\Services\Notifications;
 
+use App\Events\Notifications\NotificationCreated;
 use App\Models\Notification;
 use App\Models\NotificationDelivery;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class NotificationService
 {
@@ -72,6 +76,38 @@ class NotificationService
         ])->refresh();
 
         $this->dispatchDeliveryRecords($tenant, $notification, $recipient, $inAppEnabled, $emailEnabled, $whatsappEnabled);
+
+        if ($inAppEnabled) {
+            $payload = [
+                'id' => $notification->id,
+                'tenant_id' => $notification->tenant_id,
+                'tenant_user_id' => $notification->tenant_user_id,
+                'type' => $notification->type,
+                'title' => $notification->title,
+                'body' => $notification->body,
+                'status' => $notification->status,
+                'priority' => $notification->priority,
+                'data' => $notification->data,
+                'read_at' => $notification->read_at?->toIso8601String(),
+                'created_at' => $notification->created_at?->toIso8601String(),
+                'updated_at' => $notification->updated_at?->toIso8601String(),
+            ];
+
+            DB::afterCommit(function () use ($tenant, $recipient, $payload): void {
+                try {
+                    event(new NotificationCreated($tenant->id, $recipient->id, $payload));
+                } catch (Throwable $exception) {
+                    // Reverb may be down in local/dev setups. The inbox still works
+                    // through polling, so a broadcast failure must never break the
+                    // instructor's save operation.
+                    Log::warning('Notification broadcast failed', [
+                        'tenant_id' => $tenant->id,
+                        'notification_id' => $payload['id'],
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+            });
+        }
 
         return $notification->load('deliveries');
     }

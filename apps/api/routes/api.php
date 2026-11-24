@@ -199,6 +199,13 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('instructor')->middleware(['auth:sanctum', 'instructor.context'])->group(function () {
+        // Instructor credentials are intentionally blocked from the regular
+        // tenant.membership group, so expose the own-inbox endpoints here too.
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread', [NotificationController::class, 'unread']);
+        Route::patch('/notifications/{notification}/read', [NotificationController::class, 'read']);
+        Route::patch('/notifications/{notification}/archive', [NotificationController::class, 'archive']);
+
         Route::post('/blog/manage/upload-image', [BlogController::class, 'uploadImage'])->middleware('throttle:30,1');
         Route::get('/blog/manage', [BlogController::class, 'manageIndex']);
         Route::post('/blog/manage', [BlogController::class, 'store']);
