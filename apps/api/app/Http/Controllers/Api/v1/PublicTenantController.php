@@ -202,7 +202,7 @@ class PublicTenantController extends Controller
             'primaryColor' => $values['primary_color'] ?? null,
             'secondaryColor' => $values['secondary_color'] ?? null,
             'accentColor' => $values['accent_color'] ?? null,
-            'font' => $values['font'] ?? null,
+            'font' => $values['font'] ?? (new \App\Services\Platform\PlatformBrandingService())->resolveFont($tenant->id),
             'darkLogo' => $values['dark_logo'] ?? null,
             'lightLogo' => $values['light_logo'] ?? null,
             'logoType' => $values['logo_type'] ?? null,

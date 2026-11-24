@@ -272,6 +272,22 @@ export function getFontOption(family: string | null | undefined): GoogleFontOpti
   return FONT_BY_FAMILY.get(family.trim().toLowerCase()) ?? null;
 }
 
+/**
+ * Resolve the one tenant font from any payload shape used across the app.
+ * The same value is written to both `branding` (auth/bootstrap) and
+ * `platform_branding` (public by-domain), but older rows can still carry it
+ * in only one of the two — so every shell checks both before falling back.
+ */
+export function resolveTenantFont(
+  ...sources: Array<{ font?: string | null } | null | undefined>
+): string | null {
+  for (const source of sources) {
+    const font = source?.font;
+    if (typeof font === "string" && font.trim() !== "") return font.trim();
+  }
+  return null;
+}
+
 /** Google Fonts stylesheet URL for a saved family, or null when unset/unknown. */
 export function getFontCssUrl(family: string | null | undefined): string | null {
   // Cairo and Almarai are already bundled locally by the root layout. Loading
@@ -294,7 +310,9 @@ export function buildFontStack(family: string | null | undefined): string | null
     return 'var(--font-cairo-local), "Cairo", "system-ui", "sans-serif"';
   }
   if (normalized === "almarai") {
-    return 'var(--font-display), "Almarai", "system-ui", "sans-serif"';
+    // Never point at `--font-display`: the public shell redefines that variable
+    // with an editorial face, which made a saved Almarai render as Amiri there.
+    return 'var(--font-almarai-local), "Almarai", "system-ui", "sans-serif"';
   }
   return `"${option.family}", "system-ui", "sans-serif"`;
 }

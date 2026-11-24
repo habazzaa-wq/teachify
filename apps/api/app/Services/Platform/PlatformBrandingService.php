@@ -50,6 +50,19 @@ class PlatformBrandingService
     }
 
     /**
+     * Resolve just the tenant font. Used as a fallback by the legacy branding
+     * payloads so a font saved from any settings editor reaches every shell.
+     */
+    public function resolveFont(int $tenantId): ?string
+    {
+        $font = PlatformBranding::query()
+            ->where('tenant_id', $tenantId)
+            ->value('font');
+
+        return is_string($font) && $font !== '' ? $font : null;
+    }
+
+    /**
      * Persist a tenant's platform branding and return the resolved shape.
      *
      * @param  array<string, mixed>  $validated
