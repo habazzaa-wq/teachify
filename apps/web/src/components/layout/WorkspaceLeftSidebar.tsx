@@ -222,15 +222,18 @@ export function WorkspaceLeftSidebar() {
                 icon={<Layout className="h-4 w-4" />}
                 label="مساحة العمل"
                 collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.tenantDashboard)}
               />
             </StudioSidebarSection>
 
-            {/* Navigation placeholder */}
+            {/* Navigation */}
             <StudioSidebarSection label={leftSidebarCollapsed ? undefined : "التنقل"} collapsed={leftSidebarCollapsed}>
               <StudioSidebarItem
-                icon={<Layout className="h-4 w-4" />}
+                icon={<Home className="h-4 w-4" />}
                 label="الرئيسية"
+                active={pathname === routes.dashboard}
                 collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboard)}
               />
               <StudioSidebarItem
                 icon={<Layout className="h-4 w-4" />}
