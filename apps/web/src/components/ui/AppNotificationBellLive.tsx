@@ -2,9 +2,14 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useEnrolledCourses } from "@/features/course-catalog/hooks";
 import { useNotifications } from "@/hooks/useNotifications";
+import { notificationCourseHref, notificationCourseId } from "@/lib/notification-course";
 import type { NotificationItem } from "@/types/notification.types";
 import { AppNotificationMenu, type NotificationItem as MenuItem } from "./AppNotificationMenu";
+
+/** Only newly published sessions are surfaced in the student navbar. */
+const SESSION_PUBLISHED_TYPE = "session.scheduled";
 
 interface AppNotificationBellLiveProps {
   enabled?: boolean;
@@ -66,14 +71,28 @@ const SESSION_TITLES: Record<string, string> = {
   "lesson.published": "محتوى جديد في دورتك",
 };
 
-/** Student bell: everything the server addressed to this student. */
+/**
+ * Student bell: published sessions for courses the student is enrolled in.
+ * Keeps the q4 title/fallback refinements and adds the w4 course deep-link.
+ */
 function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProps) {
-  const { unread, all, markRead } = useNotifications(enabled);
+  const router = useRouter();
+  const { unread, all, markRead } = useNotifications("session.", enabled);
+  const { data: enrolledCourses } = useEnrolledCourses();
 
-  const isRelevant = useMemo(
-    () => (notification: NotificationItem) => notification.status !== "archived",
-    [],
+  const enrolledCourseIds = useMemo(
+    () => new Set((enrolledCourses ?? []).map((course) => String(course.id))),
+    [enrolledCourses],
   );
+
+  const isRelevant = useMemo(() => {
+    return (notification: NotificationItem): boolean => {
+      if (notification.type !== SESSION_PUBLISHED_TYPE) return false;
+      if (notification.status === "archived") return false;
+      const courseId = notificationCourseId(notification);
+      return courseId !== null && enrolledCourseIds.has(courseId);
+    };
+  }, [enrolledCourseIds]);
 
   const visible = useMemo(() => all.filter(isRelevant), [all, isRelevant]);
   const unreadVisibleIds = useMemo(
@@ -112,8 +131,12 @@ function SessionNotificationBell({ enabled = true }: AppNotificationBellLiveProp
         unread.filter(isRelevant).forEach((notification) => markRead(notification.id));
       }}
       onItemClick={(id) => {
-        const notificationId = Number(id);
-        if (!Number.isNaN(notificationId)) markRead(notificationId);
+        const notification = visible.find((item) => String(item.id) === id);
+        if (!notification) return;
+
+        markRead(notification.id);
+        const href = notificationCourseHref(notification, enrolledCourses);
+        if (href) router.push(href);
       }}
       emptyHint="ستظهر إشعارات جلساتك ودوراتك هنا"
     />
