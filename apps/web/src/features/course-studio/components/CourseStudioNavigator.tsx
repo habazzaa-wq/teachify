@@ -304,18 +304,18 @@ function CourseStudioNavigator({
 
   const content = (
     <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
-      <div className="ws2-nav-head shrink-0 px-4 py-3.5">
+      <div className="cw3-nav-head shrink-0 px-4 py-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="ws2-eyebrow">Course Outline</p>
+            <p className="cw3-eyebrow">Course Outline</p>
             <h3 className="mt-0.5 text-sm font-semibold text-studio-fg">منهج الدورة</h3>
           </div>
-          <span className="ws2-count-pill" aria-label={`${lectures.length} محاضرة`}>
+          <span className="cw3-count-pill" aria-label={`${lectures.length} محاضرة`}>
             {lectures.length}
           </span>
         </div>
 
-        <label className="ws2-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
+        <label className="cw3-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
           <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
           <input
             type="search"
@@ -338,7 +338,7 @@ function CourseStudioNavigator({
 
         {onCreateLecture && (
           <div className="mt-2.5 flex items-center justify-between gap-2">
-            <button type="button" onClick={onCreateLecture} className="ws2-add-btn flex-1 gap-1.5">
+            <button type="button" onClick={onCreateLecture} className="cw3-add-btn flex-1 gap-1.5">
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               محاضرة جديدة
             </button>
@@ -378,6 +378,7 @@ function CourseStudioNavigator({
                   sections={sections?.[lecture.id]}
                   isSelected={selectedLectureId === lecture.id}
                   isExpanded={expandedLectures?.includes(lecture.id) ?? false}
+                  displayOrder={originalIndex + 1}
                   selectedSectionId={selectedSectionId}
                   onSelect={onSelectLecture}
                   onToggle={() => onToggleLecture?.(lecture.id)}

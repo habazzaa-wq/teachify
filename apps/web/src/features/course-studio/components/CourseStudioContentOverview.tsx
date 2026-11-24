@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import {
@@ -26,18 +26,18 @@ import { StudioPropertyRow } from "@/components/studio/lists/StudioPropertyRow";
 import { cn } from "@/lib/cn";
 import type { ContentItem, ContentItemType } from "@/features/course-content/types";
 
-const TYPE_META: Record<ContentItemType, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
-  video: { label: "فيديو", icon: Video, color: "text-secondary", bg: "bg-secondary/10" },
-  pdf: { label: "PDF", icon: FileType, color: "text-red-500", bg: "bg-red-500/10" },
-  exam: { label: "اختبار", icon: ClipboardList, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  assignment: { label: "واجب", icon: FileText, color: "text-orange-500", bg: "bg-orange-500/10" },
-  resource: { label: "مورد", icon: FolderOpen, color: "text-cyan-500", bg: "bg-cyan-500/10" },
-  audio: { label: "صوت", icon: Headphones, color: "text-pink-500", bg: "bg-pink-500/10" },
-  live: { label: "جلسة مباشرة", icon: Monitor, color: "text-rose-500", bg: "bg-rose-500/10" },
-  scorm: { label: "SCORM", icon: Puzzle, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-  external_link: { label: "رابط خارجي", icon: Link, color: "text-blue-500", bg: "bg-blue-500/10" },
-  certificate: { label: "شهادة", icon: Award, color: "text-yellow-500", bg: "bg-yellow-500/10" },
-  session: { label: "جلسة", icon: Calendar, color: "text-teal-500", bg: "bg-teal-500/10" },
+const TYPE_META: Record<ContentItemType, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+  video: { label: "فيديو", icon: Video },
+  pdf: { label: "PDF", icon: FileType },
+  exam: { label: "اختبار", icon: ClipboardList },
+  assignment: { label: "واجب", icon: FileText },
+  resource: { label: "مورد", icon: FolderOpen },
+  audio: { label: "صوت", icon: Headphones },
+  live: { label: "جلسة مباشرة", icon: Monitor },
+  scorm: { label: "SCORM", icon: Puzzle },
+  external_link: { label: "رابط خارجي", icon: Link },
+  certificate: { label: "شهادة", icon: Award },
+  session: { label: "جلسة", icon: Calendar },
 };
 
 const containerVariants = {
@@ -71,10 +71,10 @@ function ExtensionPreview({ item }: { item: ContentItem }) {
 
   return (
     <div className={cn(
-      "ws2-empty-card flex flex-col items-center justify-center p-12 text-center",
+      "cw3-empty-card flex flex-col items-center justify-center p-12 text-center",
     )}>
-      <div className={cn("mb-4 rounded-2xl p-4", meta.bg)}>
-        <Icon className={cn("h-14 w-14", meta.color)} />
+      <div className="cw3-hero-icon mb-4 h-16 w-16">
+        <Icon className="h-8 w-8" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-studio-fg">{meta.label}</h3>
       {item.mediaId ? (
@@ -113,12 +113,12 @@ function CourseStudioContentOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
+      className={cn("cw3-page mx-auto w-full max-w-5xl", className)}
     >
-      <motion.div variants={itemVariants} className="mb-8">
-        <div className="mb-4 flex items-center gap-3">
-          <div className={cn("ws2-hero-icon h-14 w-14", meta.bg)}>
-            <Icon className={cn("h-7 w-7", meta.color)} />
+      <motion.div variants={itemVariants} className="cw3-hero cw3-full">
+        <div className="flex items-center gap-3">
+          <div className="cw3-hero-icon h-14 w-14">
+            <Icon className="h-7 w-7" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -168,21 +168,19 @@ function CourseStudioContentOverview({
         </div>
       </motion.div>
 
-      <motion.div variants={itemVariants} className="mb-6">
+      <motion.div variants={itemVariants} className="cw3-full">
         <ExtensionPreview item={item} />
       </motion.div>
 
-      <motion.div variants={itemVariants} className="mb-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-studio-fg-muted">
-          وصف المحتوى
-        </h2>
-        <p className="text-sm leading-relaxed text-studio-fg-muted">
+      <motion.div variants={itemVariants} className="cw3-primary">
+        <h2 className="cw3-section-label mb-3">وصف المحتوى</h2>
+        <div className="cw3-card p-4 text-sm leading-relaxed text-studio-fg-muted">
           {item.description || "لا يوجد وصف"}
-        </p>
+        </div>
       </motion.div>
 
-      <motion.div variants={itemVariants}>
-        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
+      <motion.div variants={itemVariants} className="cw3-secondary">
+        <StudioSurfaceCard variant="elevated" padding="md" className="cw3-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">الخصائص</span>

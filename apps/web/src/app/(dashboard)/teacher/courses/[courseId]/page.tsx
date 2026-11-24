@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
@@ -8,7 +8,6 @@ import { CourseStudio } from "@/features/course-studio";
 import { CourseInstructorAssignments } from "@/features/courses/components/CourseInstructorAssignments";
 import { CourseSessionsPanel } from "@/features/course-sessions/components/CourseSessionsPanel";
 import { useCourse, usePublishCourse } from "@/features/courses/hooks";
-import { cn } from "@/lib/cn";
 
 function CourseWorkspacePage() {
   const params = useParams<{ courseId: string }>();
@@ -35,14 +34,14 @@ function CourseWorkspacePage() {
   const hasSessions = course.deliveryMode === "sessions_only" || course.deliveryMode === "recorded_and_sessions" || course.deliveryMode === "blended";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="ws2-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
+    <div className="cw3-route flex min-h-0 flex-1 flex-col">
+      <div className="cw3-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
         <button
           type="button"
           onClick={() => setActiveTab("content")}
           role="tab"
           aria-selected={activeTab === "content"}
-          className={cn("ws2-tab", activeTab === "content" && "is-active")}
+          className="cw3-tab"
         >
           <BookOpen className="h-4 w-4" aria-hidden="true" />
           المحتوى التعليمي
@@ -52,7 +51,7 @@ function CourseWorkspacePage() {
           onClick={() => setActiveTab("sessions")}
           role="tab"
           aria-selected={activeTab === "sessions"}
-          className={cn("ws2-tab", activeTab === "sessions" && "is-active")}
+          className="cw3-tab"
         >
           <CalendarDays className="h-4 w-4" aria-hidden="true" />
           الجلسات

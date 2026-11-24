@@ -81,7 +81,7 @@ function CourseStudioCanvas({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "ws2-canvas flex min-w-0 flex-1 flex-col overflow-hidden bg-studio-bg",
+        "cw3-stage cw3-canvas flex min-w-0 flex-1 flex-col overflow-hidden",
         className,
       )}
       role="region"

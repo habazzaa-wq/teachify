@@ -53,7 +53,7 @@ function ContentOnboardingIllustration() {
             transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
             className="absolute -bottom-1 -end-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-studio-border/60 bg-studio-surface shadow-lg"
           >
-            <ClipboardList className="h-5 w-5 text-emerald-500" />
+            <ClipboardList className="h-5 w-5 text-studio-accent" />
           </motion.div>
           <div className="relative flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-studio-accent-soft ring-8 ring-studio-bg">
             <Sparkles className="h-10 w-10 text-studio-accent" />
@@ -61,9 +61,9 @@ function ContentOnboardingIllustration() {
           <motion.div
             animate={{ scale: [1, 1.15, 1] }}
             transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 1 }}
-            className="absolute -end-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-xl bg-studio-success/15"
+            className="absolute -end-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-xl bg-studio-accent-soft"
           >
-            <Sparkles className="h-4 w-4 text-studio-success" />
+            <Sparkles className="h-4 w-4 text-studio-accent" />
           </motion.div>
         </div>
       </div>
