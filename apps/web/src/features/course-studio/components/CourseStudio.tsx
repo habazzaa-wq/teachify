@@ -924,9 +924,16 @@ function CourseStudio({
   const navigatorOpen = isMobile ? false : store.navigatorOpen;
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [previousIsMobile, setPreviousIsMobile] = useState(isMobile);
+
+  // Reset the mobile drawer while rendering when the breakpoint changes, so the
+  // effect below only synchronises the store (no cascading render from setState).
+  if (previousIsMobile !== isMobile) {
+    setPreviousIsMobile(isMobile);
+    setMobileNavOpen(false);
+  }
 
   useEffect(() => {
-    setMobileNavOpen(false);
     if (isMobile) {
       store.setNavigatorOpen(false);
       store.setInspectorOpen(false);
@@ -1014,7 +1021,7 @@ function CourseStudio({
         onQuickAction={onQuickAction}
       />
 
-      <div className="flex shrink-0 items-center border-b border-studio-border bg-studio-muted/30 px-3 py-1.5 sm:px-4 md:px-6">
+      <div className="ws2-crumb-bar flex shrink-0 items-center border-b border-studio-border px-3 py-2 sm:px-5 md:px-6">
         <CourseStudioBreadcrumb items={defaultBreadcrumb} />
       </div>
 
@@ -1069,10 +1076,10 @@ function CourseStudio({
                     aria-modal="true"
                     aria-label="متصفح المحتوى"
                   >
-                    <div className="flex h-full flex-col border-s border-studio-border bg-studio-surface shadow-2xl">
-                      <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-2">
-                        <span className="text-xs font-semibold text-studio-fg-muted">تصفّح الدورة</span>
-                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="h-11 w-11">
+                    <div className="ws2-drawer flex h-full flex-col border-s border-studio-border bg-studio-surface">
+                      <div className="ws2-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-3 py-3">
+                        <span className="text-sm font-semibold text-studio-fg">تصفّح الدورة</span>
+                        <StudioButton variant="ghost" size="icon" onClick={handleCloseMobileNav} aria-label="إغلاق القائمة" className="ws2-icon-btn h-11 w-11">
                           <X className="h-4 w-4" />
                         </StudioButton>
                       </div>
@@ -1131,7 +1138,7 @@ function CourseStudio({
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                    className="absolute inset-x-0 bottom-0 z-50 flex max-h-[78%] flex-col rounded-t-2xl bg-studio-surface shadow-2xl"
+                    className="ws2-drawer absolute inset-x-0 bottom-0 z-50 flex max-h-[82%] flex-col rounded-t-[24px] bg-studio-surface"
                     role="dialog"
                     aria-modal="true"
                     aria-label="خصائص العنصر"
@@ -1272,7 +1279,7 @@ function CourseStudio({
 
       {/* شريط تحكم سفلي للشاشات الصغيرة والمتوسطة: كل الأدوات الأساسية متاحة بلمسة واحدة */}
       <nav
-        className="flex shrink-0 items-stretch gap-1 border-t border-studio-border bg-studio-glass-toolbar px-2 pb-[max(env(safe-area-inset-bottom),0.35rem)] pt-1.5 backdrop-blur-xl lg:hidden"
+        className="ws2-dock flex shrink-0 items-stretch gap-1.5 px-2 pb-[max(env(safe-area-inset-bottom),0.4rem)] pt-2 lg:hidden"
         aria-label="أدوات الاستوديو السريعة"
       >
         <StudioButton
@@ -1281,7 +1288,7 @@ function CourseStudio({
           onClick={handleToggleNavigator}
           aria-label="فتح مستكشف المحتوى"
           aria-pressed={mobileNavOpen}
-          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
           icon={<ListTree className="h-4 w-4" />}
         >
           المستكشف
@@ -1291,7 +1298,7 @@ function CourseStudio({
           size="md"
           onClick={openAddChoice}
           aria-label="إضافة محاضرة أو جلسة"
-          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          className="ws2-primary-btn h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
           icon={<Plus className="h-4 w-4" />}
         >
           إضافة
@@ -1302,7 +1309,7 @@ function CourseStudio({
           onClick={handleToggleInspector}
           aria-label="فتح خصائص العنصر"
           aria-pressed={store.inspectorOpen}
-          className="h-11 flex-1 flex-col gap-0.5 text-[10px]"
+          className="h-12 flex-1 flex-col gap-0.5 text-[11px] font-semibold"
           icon={<SlidersHorizontal className="h-4 w-4" />}
         >
           الخصائص

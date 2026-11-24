@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useMemo, useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from "lucide-react";
-import { StudioButton } from "@/components/studio/primitives/StudioButton";
+import { Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CourseStudioLectureItem } from "./CourseStudioLectureItem";
 import { CourseStudioOnboarding } from "./CourseStudioOnboarding";
@@ -77,6 +76,18 @@ function CourseStudioNavigator({
 }: CourseStudioNavigatorProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const dragItem = useRef<number | null>(null);
+  const [query, setQuery] = useState("");
+
+  const filteredLectures = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle) return lectures;
+    return lectures.filter((lecture) => {
+      if (lecture.title.toLocaleLowerCase().includes(needle)) return true;
+      return (sections?.[lecture.id] ?? []).some((section) =>
+        section.title.toLocaleLowerCase().includes(needle),
+      );
+    });
+  }, [lectures, sections, query]);
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, lecture: CourseModule) => {
@@ -289,63 +300,112 @@ function CourseStudioNavigator({
   }, [open, lectures, selectedLectureId, selectedSectionId, expandedLectures, sections, onSelectLecture, onSelectSection, onDeleteLecture, onDeleteSection, onArchiveSection, onRestoreSection, onToggleLecture]);
 
   const hasLectures = lectures.length > 0;
+  const noSearchResults = query.trim().length > 0 && filteredLectures.length === 0;
 
   const content = (
     <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted">
-          المحتوى التعليمي
-        </h3>
+      <div className="ws2-nav-head shrink-0 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="ws2-eyebrow">Course Outline</p>
+            <h3 className="mt-0.5 text-sm font-semibold text-studio-fg">منهج الدورة</h3>
+          </div>
+          <span className="ws2-count-pill" aria-label={`${lectures.length} محاضرة`}>
+            {lectures.length}
+          </span>
+        </div>
+
+        <label className="ws2-search mt-3 flex h-10 items-center gap-2 rounded-xl px-3">
+          <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ابحث عن محاضرة أو قسم…"
+            aria-label="البحث في منهج الدورة"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="مسح البحث"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-studio-fg-subtle hover:bg-studio-soft hover:text-studio-fg"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </label>
+
         {onCreateLecture && (
-          <StudioButton variant="ghost" size="icon" onClick={onCreateLecture} aria-label="إضافة محاضرة" className="h-9 w-9 hoverable:h-7 hoverable:w-7">
-            <Plus className="h-3.5 w-3.5" />
-          </StudioButton>
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            <button type="button" onClick={onCreateLecture} className="ws2-add-btn flex-1 gap-1.5">
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              محاضرة جديدة
+            </button>
+            <span className="hidden text-[10px] text-studio-fg-subtle sm:block">اسحب لإعادة الترتيب</span>
+          </div>
         )}
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto studio-scrollbar p-2" role="tree" aria-label="قائمة المحاضرات">
+      <div ref={listRef} className="studio-scrollbar min-h-0 flex-1 overflow-y-auto px-2 py-2" role="tree" aria-label="قائمة المحاضرات">
         {isLoading ? (
           <div className="space-y-2 p-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-lg bg-studio-skeleton" />
+              <div key={i} className="h-14 animate-pulse rounded-xl bg-studio-skeleton" />
             ))}
           </div>
+        ) : noSearchResults ? (
+          <div className="rounded-xl border border-dashed border-studio-border bg-studio-soft/40 p-5 text-center">
+            <Search className="mx-auto h-5 w-5 text-studio-fg-subtle" aria-hidden="true" />
+            <p className="mt-2 text-xs font-medium text-studio-fg">لا توجد نتائج مطابقة</p>
+            <p className="mt-1 text-[11px] text-studio-fg-muted">جرّب كلمة مختلفة أو امسح البحث.</p>
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="mt-3 rounded-lg border border-studio-border bg-studio-surface px-3 py-1.5 text-xs font-medium text-studio-accent hover:bg-studio-accent-soft"
+            >
+              مسح البحث
+            </button>
+          </div>
         ) : hasLectures ? (
-          <div className="space-y-0.5">
-            {lectures.map((lecture, index) => (
-              <CourseStudioLectureItem
-                key={lecture.id}
-                lecture={lecture}
-                sections={sections?.[lecture.id]}
-                isSelected={selectedLectureId === lecture.id}
-                isExpanded={expandedLectures?.includes(lecture.id) ?? false}
-                selectedSectionId={selectedSectionId}
-                onSelect={onSelectLecture}
-                onToggle={() => onToggleLecture?.(lecture.id)}
-                onEdit={onEditLecture ?? (() => {})}
-                onPublish={onPublishLecture ?? (() => {})}
-                onArchive={onArchiveLecture ?? (() => {})}
-                onDuplicate={onDuplicateLecture ?? (() => {})}
-                onDelete={onDeleteLecture ?? (() => {})}
-                onRestore={onRestoreLecture ?? (() => {})}
-                onSelectSection={onSelectSection}
-                onEditSection={onEditSection}
-                onPublishSection={onPublishSection}
-                onArchiveSection={onArchiveSection}
-                onDuplicateSection={onDuplicateSection}
-                onDeleteSection={onDeleteSection}
-                onRestoreSection={onRestoreSection}
-                onAddSection={onAddSection ? () => onAddSection(lecture.id) : undefined}
-                onDragSectionStart={handleSectionDragStart}
-                onDragSectionOver={handleSectionDragOver}
-                onDropSection={handleSectionDrop}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onMoveUp={index > 0 && onReorder ? () => onReorder(lectures, index, index - 1) : undefined}
-                onMoveDown={index < lectures.length - 1 && onReorder ? () => onReorder(lectures, index, index + 1) : undefined}
-              />
-            ))}
+          <div className="space-y-1">
+            {filteredLectures.map((lecture) => {
+              const originalIndex = lectures.findIndex((l) => l.id === lecture.id);
+              return (
+                <CourseStudioLectureItem
+                  key={lecture.id}
+                  lecture={lecture}
+                  sections={sections?.[lecture.id]}
+                  isSelected={selectedLectureId === lecture.id}
+                  isExpanded={expandedLectures?.includes(lecture.id) ?? false}
+                  selectedSectionId={selectedSectionId}
+                  onSelect={onSelectLecture}
+                  onToggle={() => onToggleLecture?.(lecture.id)}
+                  onEdit={onEditLecture ?? (() => {})}
+                  onPublish={onPublishLecture ?? (() => {})}
+                  onArchive={onArchiveLecture ?? (() => {})}
+                  onDuplicate={onDuplicateLecture ?? (() => {})}
+                  onDelete={onDeleteLecture ?? (() => {})}
+                  onRestore={onRestoreLecture ?? (() => {})}
+                  onSelectSection={onSelectSection}
+                  onEditSection={onEditSection}
+                  onPublishSection={onPublishSection}
+                  onArchiveSection={onArchiveSection}
+                  onDuplicateSection={onDuplicateSection}
+                  onDeleteSection={onDeleteSection}
+                  onRestoreSection={onRestoreSection}
+                  onAddSection={onAddSection ? () => onAddSection(lecture.id) : undefined}
+                  onDragSectionStart={handleSectionDragStart}
+                  onDragSectionOver={handleSectionDragOver}
+                  onDropSection={handleSectionDrop}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onMoveUp={originalIndex > 0 && onReorder ? () => onReorder(lectures, originalIndex, originalIndex - 1) : undefined}
+                  onMoveDown={originalIndex < lectures.length - 1 && onReorder ? () => onReorder(lectures, originalIndex, originalIndex + 1) : undefined}
+                />
+              );
+            })}
           </div>
         ) : (
           <CourseStudioOnboarding

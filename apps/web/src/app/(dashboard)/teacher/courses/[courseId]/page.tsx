@@ -2,11 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
+import { BookOpen, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { CourseStudio } from "@/features/course-studio";
 import { CourseInstructorAssignments } from "@/features/courses/components/CourseInstructorAssignments";
 import { CourseSessionsPanel } from "@/features/course-sessions/components/CourseSessionsPanel";
 import { useCourse, usePublishCourse } from "@/features/courses/hooks";
+import { cn } from "@/lib/cn";
 
 function CourseWorkspacePage() {
   const params = useParams<{ courseId: string }>();
@@ -34,35 +36,37 @@ function CourseWorkspacePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b bg-background px-3 pt-2 sm:px-4 md:pt-3">
-        <div className="flex gap-2 overflow-x-auto studio-scrollbar" role="tablist" aria-label="أقسام الدورة">
-          <button
-            type="button"
-            onClick={() => setActiveTab("content")}
-            role="tab"
-            aria-selected={activeTab === "content"}
-            className={`shrink-0 whitespace-nowrap rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "content" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            المحتوى
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("sessions")}
-            role="tab"
-            aria-selected={activeTab === "sessions"}
-            className={`shrink-0 whitespace-nowrap rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${activeTab === "sessions" ? "border border-b-0 bg-muted/40 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            الجلسات
-            {hasSessions && <span className="ms-2 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] text-primary">مفعّل</span>}
-          </button>
-        </div>
+      <div className="ws2-tabs flex shrink-0 items-end gap-1 overflow-x-auto px-2 pt-2 sm:px-4" role="tablist" aria-label="أقسام الدورة">
+        <button
+          type="button"
+          onClick={() => setActiveTab("content")}
+          role="tab"
+          aria-selected={activeTab === "content"}
+          className={cn("ws2-tab", activeTab === "content" && "is-active")}
+        >
+          <BookOpen className="h-4 w-4" aria-hidden="true" />
+          المحتوى التعليمي
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("sessions")}
+          role="tab"
+          aria-selected={activeTab === "sessions"}
+          className={cn("ws2-tab", activeTab === "sessions" && "is-active")}
+        >
+          <CalendarDays className="h-4 w-4" aria-hidden="true" />
+          الجلسات
+          {hasSessions && (
+            <span className="rounded-full bg-studio-accent-soft px-2 py-0.5 text-[10px] font-bold text-studio-accent">
+              مفعّل
+            </span>
+          )}
+        </button>
       </div>
 
       {activeTab === "content" ? (
         <>
-          {/* ارتفاع ثابت نسبيًا للشاشة عشان لوحة العمل تفضل قابلة للتحكم
-              والتمرير جوهها، وباقي الأقسام تفضل متاحة بالتمرير تحت. */}
-          <div className="h-[calc(100dvh-11rem)] min-h-[30rem] md:h-[calc(100dvh-12rem)] md:min-h-0">
+          <div className="h-[calc(100dvh-11rem)] min-h-[32rem] border-x border-t border-studio-border bg-studio-surface shadow-sm md:h-[calc(100dvh-12rem)] md:min-h-0">
             <CourseStudio
               mode="ready"
               courseId={course.id}
@@ -77,8 +81,8 @@ function CourseWorkspacePage() {
           <CourseInstructorAssignments course={course} />
         </>
       ) : (
-        <div className="flex-1 overflow-auto">
-          <div className="px-4 pb-8">
+        <div className="flex-1 rounded-b-2xl border-x border-b border-studio-border bg-studio-surface shadow-sm">
+          <div className="p-4 sm:p-6">
             <CourseSessionsPanel courseId={course.id} />
           </div>
         </div>

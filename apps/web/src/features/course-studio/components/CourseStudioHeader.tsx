@@ -2,16 +2,20 @@
 
 import { motion } from "framer-motion";
 import {
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Eye,
   GraduationCap,
-  Users,
-  Send,
   MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  CheckCircle2,
-  Clock,
+  Pencil,
+  Send,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { StudioButton } from "@/components/studio/primitives/StudioButton";
 import { StudioStatusBadge } from "@/components/studio/badges";
@@ -39,6 +43,12 @@ const headerMotion = {
   transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+const visibilityLabel: Record<string, string> = {
+  private: "خاص",
+  public: "عام",
+  preview: "معاينة",
+};
+
 function CourseStudioHeader({
   courseName = "عنوان الدورة",
   courseStatus,
@@ -57,119 +67,137 @@ function CourseStudioHeader({
   return (
     <motion.header
       {...headerMotion}
-      className="flex shrink-0 items-center gap-2 border-b border-studio-border bg-studio-glass-toolbar px-3 py-2.5 backdrop-blur-xl sm:px-4 md:gap-3 md:px-6 md:py-3"
+      className="ws2-header shrink-0 px-3 pb-2.5 pt-3 sm:px-5 md:px-6"
       role="banner"
       aria-label="رأس الاستوديو"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-studio-accent-soft ring-1 ring-studio-accent-border/50 md:h-10 md:w-10">
-        <GraduationCap className="h-5 w-5 text-studio-accent" aria-hidden="true" />
+      <div className="flex items-center gap-2.5 md:gap-4">
+        <div className="ws2-brand-mark h-10 w-10 shrink-0 md:h-11 md:w-11">
+          <GraduationCap className="h-5 w-5 md:h-[22px] md:w-[22px]" aria-hidden="true" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="ws2-eyebrow hidden sm:block">Course Studio</p>
+            <span className="hidden h-3 w-px bg-studio-border sm:block" aria-hidden="true" />
+            <span className="text-[11px] font-medium text-studio-fg-muted">مساحة تحرير الدورة</span>
+            {courseStatus && <StudioStatusBadge status={courseStatus} />}
+          </div>
+          <h1 className="ws2-title mt-1 truncate text-base md:text-lg" title={courseName}>
+            {courseName}
+          </h1>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1 md:gap-2">
+          <div className="hidden items-center gap-2 lg:flex">
+            {isSaving && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-studio-warning">
+                <Clock className="h-3.5 w-3.5 animate-pulse" aria-hidden="true" />
+                جارٍ الحفظ
+              </span>
+            )}
+            {!isSaving && isSaved && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-studio-success">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                محفوظ
+              </span>
+            )}
+            <span className="h-4 w-px bg-studio-border" aria-hidden="true" />
+          </div>
+
+          <StudioButton
+            variant="ghost"
+            size="icon"
+            onClick={onToggleNavigator}
+            aria-label={navigatorOpen ? "إغلاق المستكشف" : "فتح المستكشف"}
+            aria-pressed={navigatorOpen}
+            className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+          >
+            {navigatorOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </StudioButton>
+
+          <StudioButton
+            variant="ghost"
+            size="icon"
+            onClick={onToggleInspector}
+            aria-label={inspectorOpen ? "إغلاق الخصائص" : "فتح الخصائص"}
+            aria-pressed={inspectorOpen}
+            className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+          >
+            {inspectorOpen ? (
+              <PanelRightClose className="h-4 w-4" />
+            ) : (
+              <PanelRightOpen className="h-4 w-4" />
+            )}
+          </StudioButton>
+
+          {onPublish && (
+            <StudioButton
+              variant="primary"
+              size="sm"
+              onClick={onPublish}
+              icon={<Send className="h-3.5 w-3.5" />}
+              aria-label="نشر الدورة"
+              className="ws2-primary-btn h-10 rounded-xl px-3 text-xs font-semibold md:px-4"
+            >
+              نشر الدورة
+            </StudioButton>
+          )}
+
+          <StudioDropdown
+            trigger={
+              <StudioButton
+                variant="ghost"
+                size="icon"
+                aria-label="إجراءات سريعة"
+                className="ws2-icon-btn h-11 w-11 md:h-10 md:w-10"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </StudioButton>
+            }
+            items={[
+              { label: "تعديل الدورة", value: "edit", icon: <Pencil className="h-4 w-4" /> },
+              { label: "معاينة", value: "preview", icon: <Eye className="h-4 w-4" /> },
+              { label: "الإحصائيات", value: "analytics", icon: <BarChart3 className="h-4 w-4" /> },
+              { separator: true } as const,
+              { label: "حذف الدورة", value: "delete", danger: true, icon: <Trash2 className="h-4 w-4" /> },
+            ]}
+            onSelect={(item) => onQuickAction?.(item.value ?? item.label)}
+            align="end"
+          />
+        </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
-        <h2 className="truncate text-sm font-semibold text-studio-fg">
-          {courseName}
-        </h2>
-
-        {courseStatus && (
-          <StudioStatusBadge status={courseStatus} />
-        )}
-
-        {visibility === "private" && (
-          <span className="hidden items-center gap-1 rounded-full border border-studio-border/50 bg-studio-soft px-2 py-0.5 text-[10px] text-studio-fg-muted sm:inline-flex">
-            خاص
-          </span>
-        )}
-
+      <div className="ws2-meta-strip mt-2.5 flex items-center gap-3 overflow-x-auto pt-2 text-[11px] md:gap-5 md:text-xs">
         {typeof studentsCount === "number" && (
-          <span className="hidden items-center gap-1 text-xs text-studio-fg-muted sm:inline-flex">
-            <Users className="h-3.5 w-3.5" aria-hidden="true" />
-            {studentsCount}
+          <span className="ws2-meta-item">
+            <Users className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
+            {studentsCount} طالب
           </span>
         )}
-      </div>
-
-      <div className="flex shrink-0 items-center gap-0.5 md:gap-2">
-        {isSaving && (
-          <span className="hidden items-center gap-1.5 text-xs text-studio-warning lg:inline-flex">
-            <Clock className="h-3.5 w-3.5 animate-pulse" aria-hidden="true" />
-            جارٍ الحفظ
+        {visibility && (
+          <span className="ws2-meta-item">
+            <Eye className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
+            {visibilityLabel[visibility] ?? visibility}
           </span>
         )}
-
-        {isSaved && (
-          <span className="hidden items-center gap-1.5 text-xs text-studio-success lg:inline-flex">
-            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-            محفوظ
-          </span>
-        )}
-
         {lastEdited && (
-          <span className="hidden text-xs text-studio-fg-subtle lg:inline-flex">
+          <span className="ws2-meta-item">
+            <Clock className="h-3.5 w-3.5 text-studio-accent" aria-hidden="true" />
             {lastEdited}
           </span>
         )}
-
-        <div className="mx-0.5 hidden h-4 w-px bg-studio-border lg:block" aria-hidden="true" />
-
-        <StudioButton
-          variant="ghost"
-          size="icon"
-          onClick={onToggleNavigator}
-          aria-label={navigatorOpen ? "إغلاق المستكشف" : "فتح المستكشف"}
-          aria-pressed={navigatorOpen}
-          className="h-11 w-11 md:h-10 md:w-10"
-        >
-          {navigatorOpen ? (
-            <PanelLeftClose className="h-4 w-4" />
-          ) : (
-            <PanelLeftOpen className="h-4 w-4" />
-          )}
-        </StudioButton>
-
-        <StudioButton
-          variant="ghost"
-          size="icon"
-          onClick={onToggleInspector}
-          aria-label={inspectorOpen ? "إغلاق الخصائص" : "فتح الخصائص"}
-          aria-pressed={inspectorOpen}
-          className="h-11 w-11 md:h-10 md:w-10"
-        >
-          {inspectorOpen ? (
-            <PanelRightClose className="h-4 w-4" />
-          ) : (
-            <PanelRightOpen className="h-4 w-4" />
-          )}
-        </StudioButton>
-
-        {onPublish && (
-          <StudioButton
-            variant="primary"
-            size="sm"
-            onClick={onPublish}
-            icon={<Send className="h-3.5 w-3.5" />}
-            aria-label="نشر الدورة"
-            className="h-9 px-2.5 sm:h-8 sm:px-3"
-          >
-            <span className="hidden sm:inline">نشر</span>
-          </StudioButton>
-        )}
-
-        <StudioDropdown
-          trigger={
-            <StudioButton variant="ghost" size="icon" aria-label="إجراءات سريعة" className="h-11 w-11 md:h-10 md:w-10">
-              <MoreHorizontal className="h-4 w-4" />
-            </StudioButton>
-          }
-          items={[
-            { label: "تعديل الدورة", value: "edit", icon: <GraduationCap className="h-4 w-4" /> },
-            { label: "معاينة", value: "preview", icon: <GraduationCap className="h-4 w-4" /> },
-            { label: "الإحصائيات", value: "analytics", icon: <GraduationCap className="h-4 w-4" /> },
-            { separator: true } as const,
-            { label: "حذف الدورة", value: "delete", danger: true, icon: <GraduationCap className="h-4 w-4" /> },
-          ]}
-          onSelect={(item) => onQuickAction?.(item.value ?? item.label)}
-          align="end"
-        />
+        <span className="ws2-meta-item ms-auto shrink-0">
+          {isSaving ? (
+            <span className="text-studio-warning">جارٍ الحفظ…</span>
+          ) : isSaved ? (
+            <span className="text-studio-success">كل التغييرات محفوظة</span>
+          ) : null}
+        </span>
       </div>
     </motion.header>
   );

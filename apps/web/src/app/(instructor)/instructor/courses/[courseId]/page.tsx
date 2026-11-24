@@ -41,7 +41,7 @@ export default function InstructorCourseDetailPage() {
   }
 
   return (
-    <div className="h-[calc(100dvh-13rem)] min-h-[30rem] md:h-[calc(100dvh-11rem)] md:min-h-0">
+    <div className="h-[calc(100dvh-13rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-studio-border bg-studio-surface shadow-sm md:h-[calc(100dvh-11rem)] md:min-h-0">
       <CourseStudio
         mode="ready"
         instructorMode

@@ -56,11 +56,11 @@ function MetricCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl border border-studio-border bg-studio-surface p-4"
+      className="ws2-metric"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-studio-accent-soft">
-          <Icon className="h-5 w-5 text-studio-accent" />
+        <div className="ws2-metric-icon">
+          <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-studio-fg-muted">{label}</p>
@@ -92,12 +92,12 @@ function CourseStudioLectureOverview({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn("mx-auto w-full max-w-3xl p-4 sm:p-6 md:p-8", className)}
+      className={cn("ws2-page mx-auto w-full max-w-5xl", className)}
     >
       <motion.div variants={itemVariants} className="mb-8">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-studio-accent-soft ring-4 ring-studio-bg">
-            <BookOpen className="h-7 w-7 text-studio-accent" />
+          <div className="ws2-hero-icon h-14 w-14">
+            <BookOpen className="h-7 w-7" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -117,12 +117,12 @@ function CourseStudioLectureOverview({
         {!hasSections && (
           <motion.div
             variants={itemVariants}
-            className="relative overflow-hidden rounded-2xl border border-studio-border bg-gradient-to-br from-studio-accent/5 via-studio-surface to-studio-surface p-8 text-center"
+            className="ws2-empty-card relative overflow-hidden p-8 text-center"
           >
-            <div className="absolute -inset-4 rounded-full bg-studio-accent/5 blur-3xl" />
+            <div className="absolute -inset-4 rounded-full bg-studio-accent/5 blur-3xl" aria-hidden="true" />
             <div className="relative">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-studio-accent-soft">
-                <Sparkles className="h-10 w-10 text-studio-accent" />
+              <div className="ws2-hero-icon mx-auto mb-4 h-20 w-20 rounded-[1.75rem]">
+                <Sparkles className="h-10 w-10" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-studio-fg">
                 لم يتم إضافة أقسام بعد
@@ -169,7 +169,7 @@ function CourseStudioLectureOverview({
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <StudioSurfaceCard variant="outline" padding="md">
+        <StudioSurfaceCard variant="elevated" padding="md" className="ws2-card">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-studio-border pb-3">
               <span className="text-sm text-studio-fg-muted">المعلومات</span>
@@ -217,7 +217,7 @@ function CourseStudioLectureOverview({
             {sectionList.map((section) => (
               <div
                 key={section.id}
-                className="flex items-center gap-3 rounded-xl border border-studio-border bg-studio-surface p-3"
+                className="ws2-card flex items-center gap-3 p-3"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-studio-accent-soft">
                   <Layers className="h-4 w-4 text-studio-accent" />

@@ -66,7 +66,7 @@ export function WorkspaceHeader() {
       <div className="hidden md:flex flex-1 max-w-md mx-auto">
         <button
           onClick={handleSearchClick}
-          className="studio-glass-toolbar-soft-hover flex w-full items-center gap-3 rounded-xl border border-studio-glass-toolbar-border bg-studio-glass-toolbar-soft px-4 py-2 text-sm text-studio-glass-toolbar-fg-muted transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
+          className="flex w-full items-center gap-3 rounded-xl border border-studio-glass-toolbar-border bg-studio-glass-toolbar-soft px-4 py-2 text-sm text-studio-glass-toolbar-fg-muted transition-all hover:bg-studio-glass-toolbar-soft-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-ring"
           aria-label="فتح البحث العام"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden="true" />

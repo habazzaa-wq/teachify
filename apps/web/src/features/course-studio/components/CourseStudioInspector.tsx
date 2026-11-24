@@ -93,7 +93,7 @@ function ContentProperties({ item }: { item: ContentItem }) {
         </div>
       </div>
 
-      <div className="space-y-1 rounded-xl border border-studio-border bg-studio-soft/50 p-3">
+      <div className="ws2-info-card space-y-1">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
           الخصائص
         </h4>
@@ -140,7 +140,7 @@ function ContentProperties({ item }: { item: ContentItem }) {
         <StudioPropertyRow label="النوع" value={meta.label} />
       </div>
 
-      <div className="space-y-1 rounded-xl border border-studio-border bg-studio-soft/50 p-3">
+      <div className="ws2-info-card space-y-1">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
           المعلومات
         </h4>
@@ -185,16 +185,21 @@ function CourseStudioInspector({
 }: CourseStudioInspectorProps) {
   const inner = (
     <div style={variant === "sidebar" ? { width } : undefined} className="flex h-full flex-col">
-            <div className="flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-studio-fg-muted" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-studio-fg">
-                  {selectedContent
-                    ? "خصائص المحتوى"
-                    : selectedSection
-                      ? "خصائص القسم"
-                      : "خصائص العنصر"}
-                </h3>
+            <div className="ws2-panel-head flex shrink-0 items-center justify-between border-b border-studio-border px-4 py-3.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="ws2-hero-icon h-9 w-9 shrink-0 rounded-[11px]">
+                  <Settings className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="ws2-eyebrow">Inspector</p>
+                  <h3 className="truncate text-sm font-semibold text-studio-fg">
+                    {selectedContent
+                      ? "خصائص المحتوى"
+                      : selectedSection
+                        ? "خصائص القسم"
+                        : "خصائص العنصر"}
+                  </h3>
+                </div>
               </div>
               {onClose && (
                 <StudioButton
@@ -202,6 +207,7 @@ function CourseStudioInspector({
                   size="icon"
                   onClick={onClose}
                   aria-label="إغلاق لوحة الخصائص"
+                  className="ws2-icon-btn h-9 w-9"
                 >
                   <X className="h-4 w-4" />
                 </StudioButton>
@@ -231,7 +237,7 @@ function CourseStudioInspector({
                     </div>
                   </div>
 
-                  <div className="space-y-1 rounded-xl border border-studio-border bg-studio-soft/50 p-3">
+                  <div className="ws2-info-card space-y-1">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
                       الخصائص
                     </h4>
@@ -285,7 +291,7 @@ function CourseStudioInspector({
                     />
                   </div>
 
-                  <div className="space-y-1 rounded-xl border border-studio-border bg-studio-soft/50 p-3">
+                  <div className="ws2-info-card space-y-1">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
                       المعلومات
                     </h4>
@@ -309,7 +315,7 @@ function CourseStudioInspector({
                     />
                   </div>
 
-                  <div className="space-y-1 rounded-xl border border-studio-border bg-studio-soft/50 p-3">
+                  <div className="ws2-info-card space-y-1">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-studio-fg-muted mb-2">
                       الإجراءات
                     </h4>
@@ -419,7 +425,7 @@ function CourseStudioInspector({
   );
 
   if (variant === "drawer") {
-    return open ? <div className={cn("flex h-full flex-col bg-studio-surface", className)}>{inner}</div> : null;
+    return open ? <div className={cn("ws2-drawer flex h-full flex-col bg-studio-surface", className)}>{inner}</div> : null;
   }
 
   return (
