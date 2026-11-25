@@ -415,19 +415,27 @@ export function PublicNavbar() {
 
   useEffect(() => {
     const handleProfileUpdated = (event: Event) => {
-      const detail = (event as CustomEvent<{ avatar?: string | null }>).detail;
+      const detail = (event as CustomEvent<{ avatar?: string | null; name?: string }>).detail;
       if (!detail) return;
 
-      // Keep the auth-store user avatar fresh so authUser?.avatar matches
+      // Keep the auth-store user fresh so the navbar shows the latest name/avatar
       const current = useAuthStore.getState().user;
       if (current) {
-        setAuthUser({ ...current, avatar: detail.avatar ?? current.avatar });
+        setAuthUser({
+          ...current,
+          name: detail.name ?? current.name,
+          avatar: detail.avatar ?? current.avatar,
+        });
       }
 
       // Keep the navbar's mirrored session state + localStorage in sync
       setStudentRegistered((prev) => {
         if (!prev) return prev;
-        const next = { ...prev, avatar: detail.avatar ?? prev.avatar };
+        const next = {
+          ...prev,
+          name: detail.name ?? prev.name,
+          avatar: detail.avatar ?? prev.avatar,
+        };
         try {
           localStorage.setItem("public-register-state", JSON.stringify(next));
         } catch {
