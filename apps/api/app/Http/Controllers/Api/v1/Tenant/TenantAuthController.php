@@ -15,6 +15,7 @@ use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\TenantMembershipService;
 use App\Services\Security\AuditLogger;
 use App\Services\Support\EmailNormalizer;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -330,6 +331,7 @@ class TenantAuthController extends Controller
                 'branding' => $this->getBranding($tenant),
                 // Platform brand colors (public-site theme).
                 'platform_branding' => $this->getPlatformBranding($tenant),
+                'student_fields' => StudentFields::resolve($tenant->id),
             ],
             'membership' => [
                 'id' => $membership->id,

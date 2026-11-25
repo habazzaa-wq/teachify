@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\AuthenticationService;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -86,6 +87,7 @@ class AuthController extends Controller
                 'domain' => $tenant->getDefaultDomain(),
                 'branding' => $this->getBranding($tenant),
                 'platform_branding' => $this->getPlatformBranding($tenant),
+                'student_fields' => StudentFields::resolve($tenant->id),
                 'platform_plan_id' => $tenant->platform_plan_id,
                 // The canonical assignment, so the dashboard can show the real
                 // plan instead of guessing one from the legacy JSON columns.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { UserPlus, Mail, Eye, EyeOff } from "lucide-react";
 import {
   AppButton,
@@ -16,6 +16,14 @@ import {
   AppSelectItem,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import {
+  CITIES_BY_GOVERNORATE,
+  GENDER_OPTIONS,
+  GOVERNORATES,
+  normalizeStudentFieldConfig,
+  STUDY_TYPES,
+} from "@/features/student-fields";
+import { useTenantStore } from "@/stores/tenant.store";
 import { useCreateStudent, useInviteStudent } from "../hooks";
 import { useEducationalStagesList } from "@/features/homepage/educational-stages/hooks";
 
@@ -40,7 +48,9 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
     parent_phone: "",
     password: "",
     password_confirmation: "",
+    gender: "",
     nationality: "",
+    study_type: "",
     study_level: "",
     governorate: "",
     city: "",
@@ -50,8 +60,13 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
 
   const createStudent = useCreateStudent();
   const inviteStudent = useInviteStudent();
+  const studentFields = normalizeStudentFieldConfig(useTenantStore((s) => s.studentFields));
   const { data: stagesData } = useEducationalStagesList();
   const stages = stagesData?.data ?? [];
+  const availableCities = useMemo(
+    () => (directForm.governorate ? CITIES_BY_GOVERNORATE[directForm.governorate] ?? [] : []),
+    [directForm.governorate],
+  );
 
   const resetForms = useCallback(() => {
     setDirectForm({
@@ -61,7 +76,9 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
       parent_phone: "",
       password: "",
       password_confirmation: "",
+      gender: "",
       nationality: "",
+      study_type: "",
       study_level: "",
       governorate: "",
       city: "",
@@ -89,6 +106,10 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
         setErrors({ email: "البريد الإلكتروني مطلوب" });
         return;
       }
+      if (!directForm.phone.trim()) {
+        setErrors({ phone: "رقم الهاتف مطلوب" });
+        return;
+      }
       if (!directForm.password || directForm.password.length < 8) {
         setErrors({ password: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
         return;
@@ -102,14 +123,16 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
         {
           name: directForm.name.trim(),
           email: directForm.email.trim(),
-          phone: directForm.phone.trim() || undefined,
-          parent_phone: directForm.parent_phone.trim() || undefined,
+          phone: directForm.phone.trim(),
+          parent_phone: studentFields.parent_phone ? directForm.parent_phone.trim() || undefined : undefined,
           password: directForm.password,
           password_confirmation: directForm.password_confirmation,
-          nationality: directForm.nationality.trim() || undefined,
-          study_level: directForm.study_level.trim() || undefined,
-          governorate: directForm.governorate.trim() || undefined,
-          city: directForm.city.trim() || undefined,
+          gender: studentFields.gender ? directForm.gender || undefined : undefined,
+          nationality: studentFields.nationality ? directForm.nationality.trim() || undefined : undefined,
+          study_type: studentFields.study_type ? directForm.study_type || undefined : undefined,
+          study_level: studentFields.study_level ? directForm.study_level.trim() || undefined : undefined,
+          governorate: studentFields.governorate ? directForm.governorate.trim() || undefined : undefined,
+          city: studentFields.city ? directForm.city.trim() || undefined : undefined,
         },
         {
           onSuccess: () => handleClose(),
@@ -127,7 +150,7 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
         },
       );
     },
-    [directForm, createStudent, handleClose],
+    [directForm, createStudent, handleClose, studentFields],
   );
 
   const handleInviteSubmit = useCallback(
@@ -246,26 +269,31 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">رقم الهاتف</label>
+                <label className="text-sm font-medium">
+                  رقم الهاتف <span className="text-destructive">*</span>
+                </label>
                 <AppInput
                   dir="ltr"
                   value={directForm.phone}
                   onChange={(e) => setDirectForm((p) => ({ ...p, phone: e.target.value }))}
                   placeholder="+966 5XXXXXXXX"
-                  className="text-left"
+                  className={cn("text-left", errors.phone && "border-destructive")}
                 />
+                {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">رقم هاتف ولي الأمر</label>
-                <AppInput
-                  dir="ltr"
-                  value={directForm.parent_phone}
-                  onChange={(e) => setDirectForm((p) => ({ ...p, parent_phone: e.target.value }))}
-                  placeholder="+966 5XXXXXXXX"
-                  className="text-left"
-                />
-              </div>
+              {studentFields.parent_phone && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">رقم هاتف ولي الأمر</label>
+                  <AppInput
+                    dir="ltr"
+                    value={directForm.parent_phone}
+                    onChange={(e) => setDirectForm((p) => ({ ...p, parent_phone: e.target.value }))}
+                    placeholder="+966 5XXXXXXXX"
+                    className="text-left"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
@@ -306,15 +334,58 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
                 {errors.password_confirmation && <p className="text-xs text-destructive">{errors.password_confirmation}</p>}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">الجنسية</label>
-                <AppInput
-                  value={directForm.nationality}
-                  onChange={(e) => setDirectForm((p) => ({ ...p, nationality: e.target.value }))}
-                  placeholder="مصرية / سعودية / ..."
-                />
-              </div>
+              {studentFields.gender && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">الجنس</label>
+                  <AppSelect
+                    value={directForm.gender}
+                    onValueChange={(v) => setDirectForm((p) => ({ ...p, gender: v }))}
+                  >
+                    <AppSelectTrigger>
+                      <AppSelectValue placeholder="اختر الجنس..." />
+                    </AppSelectTrigger>
+                    <AppSelectContent>
+                      {GENDER_OPTIONS.map((option) => (
+                        <AppSelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </AppSelectItem>
+                      ))}
+                    </AppSelectContent>
+                  </AppSelect>
+                </div>
+              )}
 
+              {studentFields.study_type && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">نوع الدراسة</label>
+                  <AppSelect
+                    value={directForm.study_type}
+                    onValueChange={(v) => setDirectForm((p) => ({ ...p, study_type: v }))}
+                  >
+                    <AppSelectTrigger>
+                      <AppSelectValue placeholder="اختر نوع الدراسة..." />
+                    </AppSelectTrigger>
+                    <AppSelectContent>
+                      {STUDY_TYPES.map((type) => (
+                        <AppSelectItem key={type} value={type}>{type}</AppSelectItem>
+                      ))}
+                    </AppSelectContent>
+                  </AppSelect>
+                </div>
+              )}
+
+              {studentFields.nationality && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">الجنسية</label>
+                  <AppInput
+                    value={directForm.nationality}
+                    onChange={(e) => setDirectForm((p) => ({ ...p, nationality: e.target.value }))}
+                    placeholder="مصرية / سعودية / ..."
+                  />
+                </div>
+              )}
+
+              {studentFields.study_level && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">المرحلة الدراسية</label>
                 <AppSelect
@@ -333,25 +404,49 @@ function StudentCreateDrawer({ open, onOpenChange }: StudentCreateDrawerProps) {
                   </AppSelectContent>
                 </AppSelect>
               </div>
+              )}
 
+              {(studentFields.governorate || studentFields.city) && (
               <div className="grid grid-cols-2 gap-4">
+                {studentFields.governorate && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">المحافظة</label>
-                  <AppInput
+                  <AppSelect
                     value={directForm.governorate}
-                    onChange={(e) => setDirectForm((p) => ({ ...p, governorate: e.target.value }))}
-                    placeholder="القاهرة / الرياض / ..."
-                  />
+                    onValueChange={(v) => setDirectForm((p) => ({ ...p, governorate: v, city: "" }))}
+                  >
+                    <AppSelectTrigger>
+                      <AppSelectValue placeholder="اختر المحافظة..." />
+                    </AppSelectTrigger>
+                    <AppSelectContent>
+                      {GOVERNORATES.map((gov) => (
+                        <AppSelectItem key={gov} value={gov}>{gov}</AppSelectItem>
+                      ))}
+                    </AppSelectContent>
+                  </AppSelect>
                 </div>
+                )}
+                {studentFields.city && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">المدينة</label>
-                  <AppInput
+                  <AppSelect
                     value={directForm.city}
-                    onChange={(e) => setDirectForm((p) => ({ ...p, city: e.target.value }))}
-                    placeholder="مدينة نصر / جدة / ..."
-                  />
+                    disabled={!directForm.governorate}
+                    onValueChange={(v) => setDirectForm((p) => ({ ...p, city: v }))}
+                  >
+                    <AppSelectTrigger>
+                      <AppSelectValue placeholder="اختر المدينة..." />
+                    </AppSelectTrigger>
+                    <AppSelectContent>
+                      {availableCities.map((city) => (
+                        <AppSelectItem key={city} value={city}>{city}</AppSelectItem>
+                      ))}
+                    </AppSelectContent>
+                  </AppSelect>
                 </div>
+                )}
               </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <AppButton type="submit" className="flex-1" loading={isSubmitting}>

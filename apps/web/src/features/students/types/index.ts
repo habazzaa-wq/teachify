@@ -11,6 +11,7 @@ export interface Student {
   parentPhone: string;
   gender: string;
   nationality: string;
+  studyType?: string;
   studyLevel: string;
   governorate: string;
   city: string;
@@ -91,6 +92,7 @@ export interface CreateStudentPayload {
   password_confirmation: string;
   gender?: string;
   nationality?: string;
+  study_type?: string;
   study_level?: string;
   governorate?: string;
   city?: string;

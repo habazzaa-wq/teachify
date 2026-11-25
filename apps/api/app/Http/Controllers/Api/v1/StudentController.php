@@ -13,10 +13,12 @@ use App\Services\Instructors\InstructorMembershipGuard;
 use App\Services\AvatarGenerator;
 use App\Services\Auth\InvitationService;
 use App\Support\Pagination;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
@@ -247,21 +249,18 @@ class StudentController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'parent_phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['required', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:8'],
             'password_confirmation' => ['required', 'string', 'same:password'],
-            'gender' => ['nullable', 'string', 'max:20'],
-            'nationality' => ['nullable', 'string', 'max:100'],
-            'study_level' => ['nullable', 'string', 'max:100'],
-            'governorate' => ['nullable', 'string', 'max:100'],
-            'city' => ['nullable', 'string', 'max:100'],
-        ]);
+        ] + StudentFields::rulesFor(currentTenant()->id);
+        $validated = Validator::make($request->all(), $rules)->validate();
 
         $tenantId = currentTenant()->id;
+        // Disabled fields are ignored even when sent by the admin form/client.
+        $studentAttributes = StudentFields::onlyEnabled($tenantId, $validated);
         $email = mb_strtolower(trim($validated['email']));
 
         $existingUser = User::where('email', $email)->first();
@@ -286,22 +285,16 @@ class StudentController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $avatar = AvatarGenerator::generate($validated['gender'] ?? null, $user->id);
+        $avatar = AvatarGenerator::generate($studentAttributes['gender'] ?? null, $user->id);
 
-        $membership = TenantUser::create([
+        $membership = TenantUser::create(array_merge([
             'tenant_id' => $tenantId,
             'user_id' => $user->id,
             'status' => 'active',
-            'phone' => $validated['phone'] ?? null,
-            'parent_phone' => $validated['parent_phone'] ?? null,
-            'gender' => $validated['gender'] ?? null,
-            'nationality' => $validated['nationality'] ?? null,
-            'study_level' => $validated['study_level'] ?? null,
-            'governorate' => $validated['governorate'] ?? null,
-            'city' => $validated['city'] ?? null,
+            'phone' => $validated['phone'],
             'avatar' => $avatar,
             'joined_at' => now(),
-        ]);
+        ], $studentAttributes));
 
         $studentRole = Role::where('tenant_id', $tenantId)->where('slug', 'student')->first();
         if ($studentRole) {
@@ -496,6 +489,7 @@ class StudentController extends Controller
             'parentPhone' => $membership->parent_phone ?? '',
             'gender' => $membership->gender ?? '',
             'nationality' => $membership->nationality ?? '',
+            'studyType' => $membership->study_type ?? '',
             'studyLevel' => $membership->study_level ?? '',
             'governorate' => $membership->governorate ?? '',
             'city' => $membership->city ?? '',

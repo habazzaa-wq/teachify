@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +7,13 @@ import { usePublicRegister, type PublicRegisterPayload, type PublicRegisterRespo
 import { publicRegisterService, isVerificationRequired, type GoogleAuthResponse } from "../services/public-register.service";
 import { usePublicStages } from "@/features/homepage/educational-stages/hooks";
 import { useTenantStore } from "@/stores/tenant.store";
+import {
+  CITIES_BY_GOVERNORATE,
+  GENDER_OPTIONS,
+  GOVERNORATES,
+  normalizeStudentFieldConfig,
+  STUDY_TYPES,
+} from "@/features/student-fields";
 import { GoogleAuthButton } from "./GoogleAuthButton";
 import { cn } from "@/lib/cn";
 
@@ -31,50 +38,13 @@ interface FormData {
   password: string;
   password_confirmation: string;
   gender: string;
+  nationality: string;
   study_type: string;
   study_level: string;
   governorate: string;
   city: string;
 }
 
-const STUDY_TYPES = [
-  "أونلاين", "اوفلاين",
-];
-
-const GOVERNORATES = [
-  "القاهرة", "الجيزة", "الإسكندرية", "الدقهلية", "البحيرة", "المنوفية",
-  "الغربية", "كفر الشيخ", "دمياط", "الشرقية", "الفيوم", "بني سويف",
-  "المنيا", "أسيوط", "الوادي الجديد", "سوهاج", "قنا", "الأقصر",
-  "أسوان", "البحر الأحمر", "الإسماعيلية", "السويس", "بورسعيد",
-  "شمال سيناء", "جنوب سيناء", "مطروح",
-];
-
-const CITIES_BY_GOVERNORATE: Record<string, string[]> = {
-  "القاهرة": ["مدينة نصر", "المعادي", "شبرا", "مصر الجديدة", "الزمالك", "وسط البلد", "التجمع الخامس", "الشروق", "العبور"],
-  "الجيزة": ["الهرم", "فيصل", "الدقي", "المهندسين", "أكتوبر", "السادس من أكتوبر", "الحى السابع", "العبور"],
-  "الإسكندرية": ["سيدي جابر", "المنشية", "العطاريد", "الرمل", "الجمرك", "الບাকوس", "المايストرو", "العجمي"],
-  "السويس": ["الجناين", "الفيروز", "عريش", "عتاقة", "ال-arab"],
-  "الدقهلية": ["المنصورة", "طلخا", "المحلة الكبيرة", "نبروه", "شربين"],
-  "البحيرة": ["الإسكندرية", "دمنهور", "كفر الدوار", "رشيد", "الرحمانية"],
-  "المنوفية": ["شبين الكوم", "منوف", "السادات", "أشمون"],
-  "الغربية": ["المحلة الكبيرة", "زفتى", "طنطا", "السنبلاوين", "كفر الزيات"],
-  "كفر الشيخ": ["كفر الشيخ", "دسوق", "بيلا", "الحامول", "فوه"],
-  "الفيوم": ["الفيوم", "سنورس", "طامية", "إبشواي", "العOKIE"],
-  "الشرقية": ["الزقازيق", "العاشر من رمضان", "بلبيس", "منيا القمح", "أبو حماد"],
-  "بني سويف": ["بني سويف", "الواسطى", "ناصر", "إهناسيا", "ببا"],
-  "المنيا": ["المنيا", "ملوي", "سمالوط", "أبوقرقاص", "العدوة"],
-  "أسيوط": ["أسيوط", "القوصية", "الغنايم", "أبو تيج", "طموه"],
-  "سوهاج": ["سوهاج", "جراجة", "العريش", "طهطا", "البلينا"],
-  "قنا": ["قنا", "دشنا", "فرشوط", "القوصية", "أبو تشت"],
-  "الأقصر": ["الأقصر", "الوادي الجديد", "إسنا", "طيبة"],
-  "أسوان": ["أسوان", "كوم أمبو", "دراو", "نصر النوبة", "إدفو"],
-  "البحر الأحمر": ["الغردقة", "رأس سدر", "ال�hea", "سافاجا"],
-  "الإسماعيلية": ["الإسماعيلية", "القنطرة شرق", "القنطرة غرب", "فايد"],
-  "بورسعيد": ["بورسعيد", "العرب"],
-  "شمال سيناء": ["العريش", "رفح", "الشيخ زويد"],
-  "جنوب سيناء": ["الطور", "سانت كاترين", "دهب", "طابا"],
-  "مطروح": ["مطروح", "الحمام", "العلمين", "سلوم"],
-};
 
 function validateField(name: string, value: string, allData: FormData): string {
   switch (name) {
@@ -136,6 +106,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
     password: "",
     password_confirmation: "",
     gender: "",
+    nationality: "",
     study_type: "",
     study_level: "",
     governorate: "",
@@ -147,6 +118,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
   const stages = stagesData?.items ?? [];
   const googleClientId = useTenantStore((s) => s.googleClientId);
   const googleEnabled = Boolean(googleClientId?.trim());
+  const storedFields = useTenantStore((s) => s.studentFields);
+  const studentFields = normalizeStudentFieldConfig(storedFields);
 
   const availableCities = useMemo(() => {
     if (!form.governorate) return [];
@@ -324,12 +297,13 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
         password: form.password,
         password_confirmation: form.password_confirmation,
       };
-      if (form.parent_phone.trim()) payload.parent_phone = form.parent_phone.trim();
-      if (form.gender) payload.gender = form.gender;
-      if (form.study_type) payload.study_type = form.study_type;
-      if (form.study_level) payload.study_level = form.study_level;
-      if (form.governorate) payload.governorate = form.governorate;
-      if (form.city) payload.city = form.city;
+      if (studentFields.parent_phone && form.parent_phone.trim()) payload.parent_phone = form.parent_phone.trim();
+      if (studentFields.gender && form.gender) payload.gender = form.gender;
+      if (studentFields.study_type && form.study_type) payload.study_type = form.study_type;
+      if (studentFields.study_level && form.study_level) payload.study_level = form.study_level;
+      if (studentFields.nationality && form.nationality.trim()) payload.nationality = form.nationality.trim();
+      if (studentFields.governorate && form.governorate) payload.governorate = form.governorate;
+      if (studentFields.city && form.city) payload.city = form.city;
 
       registerMutation.mutate(payload, {
         onSuccess: (data) => {
@@ -358,7 +332,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
         },
       });
     },
-    [form, registerMutation, onSuccess],
+    [form, registerMutation, onSuccess, studentFields],
   );
 
   const resetForm = useCallback(() => {
@@ -371,6 +345,7 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
       password: "",
       password_confirmation: "",
       gender: "",
+      nationality: "",
       study_type: "",
       study_level: "",
       governorate: "",
@@ -632,25 +607,27 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                   </div>
 
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/80">نوع الدراسة</label>
-                    <div className="relative">
-                      <select
-                        value={form.study_type}
-                        onChange={(e) => handleChange("study_type", e.target.value)}
-                        onBlur={() => handleBlur("study_type")}
-                        className={selectClasses("study_type")}
-                      >
-                        <option value="">اختر النوع</option>
-                        {STUDY_TYPES.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                  {studentFields.study_type && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">نوع الدراسة</label>
+                      <div className="relative">
+                        <select
+                          value={form.study_type}
+                          onChange={(e) => handleChange("study_type", e.target.value)}
+                          onBlur={() => handleBlur("study_type")}
+                          className={selectClasses("study_type")}
+                        >
+                          <option value="">اختر النوع</option>
+                          {STUDY_TYPES.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={cn("grid gap-3", studentFields.parent_phone ? "grid-cols-2" : "grid-cols-1")}>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground/80">
                         رقم الهاتف <span className="text-destructive">*</span>
@@ -668,21 +645,23 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                         <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500">{errors.phone}</motion.p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground/80">رقم هاتف ولي الأمر</label>
-                      <input
-                        type="tel"
-                        dir="ltr"
-                        value={form.parent_phone}
-                        onChange={(e) => handleChange("parent_phone", e.target.value)}
-                        onBlur={() => handleBlur("parent_phone")}
-                        placeholder="+20 1XXXXXXXXX"
-                        className={cn(inputClasses("parent_phone"), "text-left")}
-                      />
-                      {touched.parent_phone && errors.parent_phone && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500">{errors.parent_phone}</motion.p>
-                      )}
-                    </div>
+                    {studentFields.parent_phone && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground/80">رقم هاتف ولي الأمر</label>
+                        <input
+                          type="tel"
+                          dir="ltr"
+                          value={form.parent_phone}
+                          onChange={(e) => handleChange("parent_phone", e.target.value)}
+                          onBlur={() => handleBlur("parent_phone")}
+                          placeholder="+20 1XXXXXXXXX"
+                          className={cn(inputClasses("parent_phone"), "text-left")}
+                        />
+                        {touched.parent_phone && errors.parent_phone && (
+                          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500">{errors.parent_phone}</motion.p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1">
@@ -730,42 +709,63 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                     )}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/80">الجنس</label>
-                    <div className="relative">
-                      <select
-                        value={form.gender}
-                        onChange={(e) => handleChange("gender", e.target.value)}
-                        onBlur={() => handleBlur("gender")}
-                        className={selectClasses("gender")}
-                      >
-                        <option value="">اختر الجنس</option>
-                        <option value="ذكر">ذكر</option>
-                        <option value="أنثى">أنثى</option>
-                      </select>
-                      <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                  {studentFields.gender && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">الجنس</label>
+                      <div className="relative">
+                        <select
+                          value={form.gender}
+                          onChange={(e) => handleChange("gender", e.target.value)}
+                          onBlur={() => handleBlur("gender")}
+                          className={selectClasses("gender")}
+                        >
+                          <option value="">اختر الجنس</option>
+                          {GENDER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground/80">المرحلة الدراسية</label>
-                    <div className="relative">
-                      <select
-                        value={form.study_level}
-                        onChange={(e) => handleChange("study_level", e.target.value)}
-                        onBlur={() => handleBlur("study_level")}
-                        className={selectClasses("study_level")}
-                      >
-                        <option value="">اختر المرحلة الدراسية</option>
-                        {stages.map((stage) => (
-                          <option key={stage.id} value={stage.name}>{stage.name}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                  {studentFields.nationality && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">الجنسية</label>
+                      <input
+                        type="text"
+                        value={form.nationality}
+                        onChange={(e) => handleChange("nationality", e.target.value)}
+                        onBlur={() => handleBlur("nationality")}
+                        placeholder="مصرية / سعودية / ..."
+                        className={inputClasses("nationality")}
+                      />
                     </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  {studentFields.study_level && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground/80">المرحلة الدراسية</label>
+                      <div className="relative">
+                        <select
+                          value={form.study_level}
+                          onChange={(e) => handleChange("study_level", e.target.value)}
+                          onBlur={() => handleBlur("study_level")}
+                          className={selectClasses("study_level")}
+                        >
+                          <option value="">اختر المرحلة الدراسية</option>
+                          {stages.map((stage) => (
+                            <option key={stage.id} value={stage.name}>{stage.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+
+                  {(studentFields.governorate || studentFields.city) && (
+                  <div className={cn("grid gap-3", studentFields.governorate && studentFields.city ? "grid-cols-2" : "grid-cols-1")}>
+                    {studentFields.governorate && (
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground/80">المحافظة</label>
                       <div className="relative">
@@ -783,6 +783,8 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                         <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
                       </div>
                     </div>
+                    )}
+                    {studentFields.city && (
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground/80">المدينة</label>
                       <div className="relative">
@@ -801,7 +803,9 @@ export function PublicRegisterCard({ open, onClose, onSuccess }: PublicRegisterC
                         <ChevronDown className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 pointer-events-none" />
                       </div>
                     </div>
+                    )}
                   </div>
+                  )}
 
                   {registerMutation.isError && !hasErrors && (
                     <motion.div

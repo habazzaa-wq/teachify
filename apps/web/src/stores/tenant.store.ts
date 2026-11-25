@@ -13,6 +13,10 @@ import type {
 } from "@/types/tenant.types";
 import type { AuthBranding } from "@/types/auth.types";
 import type { TenantBranding } from "@/features/tenant-bootstrap/types";
+import {
+  normalizeStudentFieldConfig,
+  type StudentFieldConfig,
+} from "@/features/student-fields";
 
 export type BootstrapStatus =
   | "idle"
@@ -82,6 +86,8 @@ interface TenantState {
   platformBranding: TenantBranding | null;
   /** Public Google OAuth client ID for this tenant (from by-domain/bootstrap). */
   googleClientId: string | null;
+  /** Optional student-account fields enabled on this platform. */
+  studentFields: StudentFieldConfig | null;
   bootstrapStatus: BootstrapStatus;
   bootstrapError: string | null;
   /** Font changed in this session — bootstrap refreshes keep our newer value. */
@@ -112,6 +118,8 @@ interface TenantState {
   setPlatformBranding: (branding: Partial<TenantBranding>) => void;
   /** Public Google OAuth client id for the current tenant domain. */
   setGoogleClientId: (clientId: string | null) => void;
+  /** Update the enabled student fields after an admin saves the settings. */
+  setStudentFields: (fields: StudentFieldConfig) => void;
   /** Updates only the dashboard appearance colors (الألوان المخصصة) used by
    *  the teacher/admin/instructor shells. Never touches platformBranding. */
   setDashboardColors: (colors: {
@@ -132,6 +140,7 @@ interface TenantState {
     branding: TenantBranding;
     platformBranding?: TenantBranding | null;
     googleClientId?: string | null;
+    student_fields?: Partial<StudentFieldConfig> | null;
     subdomain?: string | null;
   }) => void;
   setBootstrapStatus: (status: BootstrapStatus) => void;
@@ -154,6 +163,7 @@ export const useTenantStore = create<TenantState>()(
     branding: null,
     platformBranding: null,
     googleClientId: null,
+    studentFields: null,
     bootstrapStatus: "idle",
     bootstrapError: null,
     fontOverridden: false,
@@ -236,7 +246,7 @@ export const useTenantStore = create<TenantState>()(
       })),
 
     setTenantContext: ({ tenant, membership, roles, permissions, abilities, navigation }) =>
-      set(() => {
+      set((state) => {
         const activeTenant = tenant
           ? { ...tenant, branding: normalizeBranding(tenant.branding) as unknown as AuthBranding }
           : tenant;
@@ -259,6 +269,9 @@ export const useTenantStore = create<TenantState>()(
           permissions,
           abilities,
           navigation,
+          studentFields: tenant?.student_fields
+            ? normalizeStudentFieldConfig(tenant.student_fields)
+            : state.studentFields,
           ...(tenantPlatformBranding
             ? {
                 platformBranding: normalizeBranding(
@@ -330,6 +343,9 @@ export const useTenantStore = create<TenantState>()(
             ...(state.fontOverridden ? { font: liveFont } : {}),
           }) as unknown as TenantBranding,
           googleClientId: data.googleClientId ?? null,
+          studentFields: data.student_fields
+            ? normalizeStudentFieldConfig(data.student_fields)
+            : (state.studentFields ?? normalizeStudentFieldConfig()),
           bootstrapStatus: "resolved",
           bootstrapError: null,
         };
@@ -339,6 +355,9 @@ export const useTenantStore = create<TenantState>()(
 
     setGoogleClientId: (clientId) =>
       set({ googleClientId: clientId?.trim() || null }),
+
+    setStudentFields: (fields) =>
+      set({ studentFields: normalizeStudentFieldConfig(fields) }),
 
     setPlatformBranding: (branding) =>
       set((state) => ({
@@ -404,6 +423,7 @@ export const useTenantStore = create<TenantState>()(
         // العام يفضل بلونه الصح فوراً من غير flicker. مش متخزّن في localStorage
         // لأنه خاص بكل دومين وبيتقرأ من سياق السيرفر/API في كل تحميل.
         googleClientId: null,
+        studentFields: null,
         bootstrapStatus: "idle",
         bootstrapError: null,
         fontOverridden: false,
