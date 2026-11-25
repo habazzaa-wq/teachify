@@ -56,6 +56,17 @@ export function useUpdateSettingsGroup() {
   return useMutation({
     mutationFn: ({ group, values }: { group: string; values: Record<string, unknown> }) =>
       settingsService.updateGroup(group, values),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] }),
+    onSuccess: (response, variables) => {
+      // Seed the group cache with the saved values before invalidation. Without
+      // this, clearing a local draft falls back to the pre-save cached data and
+      // switches visibly flip back on while the refetch is in flight.
+      if (response?.values && typeof response.values === "object") {
+        qc.setQueryData(
+          [SETTINGS_QUERY_KEY, "group", variables.group],
+          response.values,
+        );
+      }
+      qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] });
+    },
   });
 }
