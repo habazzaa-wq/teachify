@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\TenantUser;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -12,36 +13,45 @@ class StudentProfileController extends Controller
 {
     public function profile(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $membership = app('currentTenantMembership')->load('roles');
+        [$user, $tenantUser] = $this->currentMembership($request);
 
-        $tenantUser = TenantUser::where('tenant_id', currentTenant()->id)
-            ->where('user_id', $user->id)
-            ->first();
+        return response()->json([
+            'data' => $this->formatProfile($user, $tenantUser),
+        ]);
+    }
 
-        if (! $tenantUser) {
-            throw ValidationException::withMessages([
-                'profile' => ['لم يتم العثور على حسابك في هذه الأكاديمية.'],
-            ]);
+    /**
+     * Self-service profile edit. Email, phone and parent phone are deliberately
+     * absent from the validation rules so they can never be changed here.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        [$user, $tenantUser] = $this->currentMembership($request);
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'gender' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'study_level' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'governorate' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+        ]);
+
+        if (array_key_exists('name', $validated)) {
+            $user->update(['name' => $validated['name']]);
+        }
+
+        $membershipFields = array_intersect_key($validated, array_flip([
+            'gender', 'nationality', 'study_level', 'governorate', 'city',
+        ]));
+
+        if ($membershipFields !== []) {
+            $tenantUser->update($membershipFields);
         }
 
         return response()->json([
-            'data' => [
-                'id' => (string) $tenantUser->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $tenantUser->phone ?? '',
-                'parentPhone' => $tenantUser->parent_phone ?? '',
-                'gender' => $tenantUser->gender ?? '',
-                'nationality' => $tenantUser->nationality ?? '',
-                'studyLevel' => $tenantUser->study_level ?? '',
-                'governorate' => $tenantUser->governorate ?? '',
-                'city' => $tenantUser->city ?? '',
-                'avatar' => $tenantUser->avatar ?? $user->avatar ?? null,
-                'status' => $tenantUser->status,
-                'joinedAt' => $tenantUser->joined_at?->toIso8601String(),
-                'createdAt' => $tenantUser->created_at->toIso8601String(),
-            ],
+            'message' => 'تم تحديث المعلومات الشخصية بنجاح.',
+            'data' => $this->formatProfile($user->refresh(), $tenantUser->refresh()),
         ]);
     }
 
@@ -92,5 +102,48 @@ class StudentProfileController extends Controller
                 'avatar' => $avatarUrl,
             ],
         ]);
+    }
+
+    /**
+     * @return array{0: User, 1: TenantUser}
+     */
+    private function currentMembership(Request $request): array
+    {
+        $user = $request->user();
+
+        $tenantUser = TenantUser::where('tenant_id', currentTenant()->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $tenantUser) {
+            throw ValidationException::withMessages([
+                'profile' => ['لم يتم العثور على حسابك في هذه الأكاديمية.'],
+            ]);
+        }
+
+        return [$user, $tenantUser];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatProfile(User $user, TenantUser $tenantUser): array
+    {
+        return [
+            'id' => (string) $tenantUser->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $tenantUser->phone ?? '',
+            'parentPhone' => $tenantUser->parent_phone ?? '',
+            'gender' => $tenantUser->gender ?? '',
+            'nationality' => $tenantUser->nationality ?? '',
+            'studyLevel' => $tenantUser->study_level ?? '',
+            'governorate' => $tenantUser->governorate ?? '',
+            'city' => $tenantUser->city ?? '',
+            'avatar' => $tenantUser->avatar ?? $user->avatar ?? null,
+            'status' => $tenantUser->status,
+            'joinedAt' => $tenantUser->joined_at?->toIso8601String(),
+            'createdAt' => $tenantUser->created_at->toIso8601String(),
+        ];
     }
 }

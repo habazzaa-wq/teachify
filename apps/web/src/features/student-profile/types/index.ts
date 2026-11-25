@@ -14,3 +14,9 @@ export interface StudentProfile {
   joinedAt: string | null;
   createdAt: string;
 }
+
+/** Fields a student is allowed to edit from the profile drawer. */
+export type StudentEditableProfileFields = Pick<
+  StudentProfile,
+  "name" | "gender" | "nationality" | "studyLevel" | "governorate" | "city"
+>;

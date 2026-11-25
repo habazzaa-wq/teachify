@@ -558,6 +558,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/student/dashboard', [StudentDashboardController::class, 'show']);
         Route::get('/student/courses', [StudentCourseController::class, 'index']);
         Route::get('/student/profile', [StudentProfileController::class, 'profile']);
+        Route::put('/student/profile', [StudentProfileController::class, 'updateProfile']);
         Route::post('/student/profile/avatar', [StudentProfileController::class, 'updateAvatar']);
 
         // Teacher payment gateway settings

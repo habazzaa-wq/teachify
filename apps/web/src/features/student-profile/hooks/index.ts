@@ -17,6 +17,18 @@ export function useStudentProfile(options?: { enabled?: boolean }) {
   });
 }
 
+export function useUpdateStudentProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: studentProfileService.updateProfile,
+    onSuccess: (profile) => {
+      queryClient.setQueryData(studentProfileKeys.profile(), profile);
+      queryClient.invalidateQueries({ queryKey: studentProfileKeys.all });
+    },
+  });
+}
+
 export function useUploadAvatar() {
   const queryClient = useQueryClient();
 
