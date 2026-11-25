@@ -5,7 +5,7 @@ import {
   DASHBOARD_THEME_BODY_CLASS,
   resolveDashboardBrandColors,
 } from "./brand-theme";
-import { generateThemeColors } from "./color";
+import { generateCommunityThemeColors, generateThemeColors } from "./color";
 
 const REQUIRED_DASHBOARD_TOKENS = [
   "--background",
@@ -118,6 +118,22 @@ describe("dashboard brand theme", () => {
       expect(body, `${token} missing on body.${DASHBOARD_THEME_BODY_CLASS}`).toContain(`${token}:`);
     }
     expect(css).not.toContain("undefined");
+  });
+
+  it("keeps the public navbar palette out of the student dashboard scope", () => {
+    const css = buildBrandThemeCss("#123ABC", "#DEF456", {
+      primary: "#059669",
+      secondary: "#FEF3C7",
+    });
+    const community = css.match(/\.community-theme \{([\s\S]*?)\}/)?.[1] ?? "";
+    const student = css.match(/\.student-theme \{([\s\S]*?)\}/)?.[1] ?? "";
+
+    const publicAccent = generateCommunityThemeColors("#123ABC", "#DEF456")["--accent"];
+    const dashboardAccent = generateThemeColors("#059669", "#FEF3C7")["--accent"];
+
+    expect(publicAccent).not.toBe(dashboardAccent);
+    expect(community).toContain(`--accent: ${publicAccent};`);
+    expect(student).toContain(`--accent: ${dashboardAccent};`);
   });
 
   it("changes only the public tokens when the site colors change", () => {
