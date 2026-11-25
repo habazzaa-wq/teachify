@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Sparkles, Users, Clock, GraduationCap } from "lucide-react";
 import { formatNumber } from "@/lib/format";
+import { isLocalMediaProxyUrl } from "@/lib/url";
 import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import { formatCoursePrice } from "../utils";
 import { SectionHeader } from "./primitives";
@@ -42,13 +43,14 @@ function RelatedCourseCard({ course }: { course: RelatedCourse }) {
       >
         {/* Cover */}
         <div className="relative aspect-video w-full overflow-hidden">
-          {coverSrc && coverSrc.startsWith("https") ? (
+          {coverSrc ? (
             <Image
               src={coverSrc}
               alt={course.title}
               fill
               sizes="(max-width: 1024px) 288px, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
+              unoptimized={isLocalMediaProxyUrl(coverSrc)}
             />
           ) : (
             <div
