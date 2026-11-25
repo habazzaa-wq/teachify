@@ -51,6 +51,33 @@ module.exports = {
       min_uptime: "5s",
     },
     {
+      // Tenant notification emails (SendEmailNotificationJob) and session
+      // reminders are dispatched on the `notifications` queue. Without a
+      // dedicated worker these jobs stay pending forever.
+      name: "teachify-queue-notifications",
+      script: "artisan",
+      interpreter: "php",
+      args:
+        "queue:work --queue=notifications --sleep=3 --tries=3 --timeout=60 --max-time=3600 --max-jobs=500",
+      cwd: "./apps/api",
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "256M",
+      env: {
+        APP_ENV: "production",
+        APP_DEBUG: "false",
+      },
+      error_file: "./logs/queue-notifications-error.log",
+      out_file: "./logs/queue-notifications-out.log",
+      merge_logs: true,
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      exp_backoff_restart_delay: 100,
+      max_restarts: 10,
+      min_uptime: "5s",
+    },
+    {
       // Bunny CDN upload/delete/sync/thumbnail jobs.
       name: "teachify-queue-bunny",
       script: "artisan",

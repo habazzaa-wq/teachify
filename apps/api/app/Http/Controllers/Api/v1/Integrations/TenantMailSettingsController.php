@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Api\v1\Integrations;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\TenantRepository;
 use App\Services\Authorization\TenantAuthorizationService;
+use App\Services\Mail\TenantMailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Throwable;
 
 class TenantMailSettingsController extends Controller
 {
+    public function __construct(private readonly TenantRepository $tenants) {}
+
     public function show(Request $request): JsonResponse
     {
         $tenant = currentTenant();
@@ -53,9 +58,14 @@ class TenantMailSettingsController extends Controller
         $settings['mail'] = $mail;
         $tenant->forceFill(['settings_json' => $settings])->save();
 
+        // Mail is resolved from the cached Tenant instance in requests and jobs.
+        // Invalidate it so a new password/host takes effect immediately.
+        $this->tenants->forget($tenant->id);
+        $fresh = $tenant->fresh() ?? $tenant;
+
         return response()->json([
             'message' => 'Mail settings updated.',
-            'data' => $this->publicShape($tenant->fresh(), $mail),
+            'data' => $this->publicShape($fresh, (array) data_get($fresh->settings_json, 'mail', $mail)),
         ]);
     }
 
@@ -65,8 +75,33 @@ class TenantMailSettingsController extends Controller
         $this->authorizeAdmin($request, $tenant);
 
         $mail = (array) data_get($tenant->settings_json, 'mail', []);
-        $configured = !empty($mail['is_enabled']) && !empty($mail['host']) && !empty($mail['from_address']);
-        return response()->json(['data' => ['configured' => $configured, 'status' => $configured ? 'active' : 'inactive']]);
+        $complete = ! empty($mail['is_enabled'])
+            && ! empty($mail['host'])
+            && ! empty($mail['username'])
+            && ! empty($mail['from_address'])
+            && (! empty($mail['password_encrypted']) || ! empty($mail['password_configured']));
+
+        $error = null;
+        $smtp = false;
+        if ($complete) {
+            try {
+                app(TenantMailService::class)->verifyTransport($tenant);
+                $smtp = true;
+            } catch (Throwable $e) {
+                $error = mb_substr($e->getMessage(), 0, 500);
+            }
+        }
+
+        $configured = $complete && $smtp;
+
+        return response()->json([
+            'data' => [
+                'configured' => $configured,
+                'smtp' => $smtp,
+                'status' => $configured ? 'active' : 'inactive',
+                'error' => $error,
+            ],
+        ]);
     }
 
     private function publicShape($tenant, array $mail): array

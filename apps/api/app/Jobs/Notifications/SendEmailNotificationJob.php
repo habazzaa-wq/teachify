@@ -7,14 +7,13 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Queue\Middleware\SetCorrelationContext;
 use App\Queue\Middleware\SetTenantContext;
+use App\Services\Mail\TenantMailService;
 use App\Services\Notifications\NotificationPreferenceService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 class SendEmailNotificationJob implements ShouldQueue
@@ -82,19 +81,12 @@ class SendEmailNotificationJob implements ShouldQueue
         }
 
         try {
-            $mailer = $this->resolveMailer($tenant);
-            $fromAddress = data_get($tenant->settings_json, 'mail.from_address') ?: config('mail.from.address');
-            $fromName = data_get($tenant->settings_json, 'mail.from_name') ?: ($tenant->name ?: config('mail.from.name'));
+            $mailer = app(TenantMailService::class)->resolveMailer($tenant);
             $subject = $notification->title ?: 'إشعار جديد';
             $body = $notification->body ?: '';
             $html = $this->renderHtml($tenant, $subject, $body);
 
-            Mail::mailer($mailer)->html($html, function ($message) use ($email, $subject, $fromAddress, $fromName) {
-                $message->to($email)->subject($subject);
-                if ($fromAddress) {
-                    $message->from($fromAddress, $fromName ?: null);
-                }
-            });
+            app(TenantMailService::class)->sendHtml($tenant, $email, $subject, $html);
 
             $delivery->forceFill([
                 'status' => 'sent',
@@ -113,33 +105,6 @@ class SendEmailNotificationJob implements ShouldQueue
             ])->save();
             throw $e;
         }
-    }
-
-    private function resolveMailer(Tenant $tenant): string
-    {
-        $mail = (array) data_get($tenant->settings_json, 'mail', []);
-        $enabled = !empty($mail['is_enabled']);
-        $host = $mail['host'] ?? null;
-        if (! $enabled || ! filled($host)) {
-            return config('mail.default', 'log');
-        }
-
-        $password = null;
-        if (!empty($mail['password_encrypted'])) {
-            try { $password = Crypt::decryptString($mail['password_encrypted']); } catch (Throwable) { $password = null; }
-        }
-
-        $name = 'tenant_mail_'.$tenant->id;
-        config(["mail.mailers.$name" => [
-            'transport' => $mail['mailer'] ?? 'smtp',
-            'host' => $mail['host'] ?? '',
-            'port' => (int) ($mail['port'] ?? 587),
-            'encryption' => ($mail['encryption'] ?? 'tls') === 'null' ? null : ($mail['encryption'] ?? 'tls'),
-            'username' => $mail['username'] ?? null,
-            'password' => $password,
-            'timeout' => null,
-        ]]);
-        return $name;
     }
 
     private function renderHtml(Tenant $tenant, string $subject, string $body): string

@@ -16,7 +16,10 @@ class DispatchDueSessionRemindersCommand extends Command
     {
         $limit = max(1, (int) $this->option('limit'));
 
-        $dispatches = ScheduledNotificationDispatch::query()
+        // This command runs globally from the scheduler with no tenant context.
+        // BelongsToTenant's global scope would otherwise call currentTenant()
+        // and fail every minute with "Tenant context is missing".
+        $dispatches = ScheduledNotificationDispatch::withoutGlobalScopes()
             ->where('status', ScheduledNotificationDispatch::STATUS_PENDING)
             ->where('scheduled_for_utc', '<=', now())
             ->orderBy('scheduled_for_utc')

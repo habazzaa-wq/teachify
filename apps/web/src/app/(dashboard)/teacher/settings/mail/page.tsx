@@ -64,7 +64,13 @@ export default function MailSettingsPage() {
 
   const test = useMutation({
     mutationFn: async () => (await api.post("/tenant/mail-settings/test")).data,
-    onSuccess: (res) => toast.success(res?.data?.configured ? "الإعدادات مكتملة" : "الإعدادات غير مكتملة"),
+    onSuccess: (res) => {
+      if (res?.data?.configured) {
+        toast.success("الاتصال بـ SMTP يعمل بشكل صحيح");
+      } else {
+        toast.error(res?.data?.error || "الإعدادات غير مكتملة — راجع الحقول وكلمة المرور");
+      }
+    },
     onError: (e: any) => toast.error(e?.response?.data?.message || "فشل الاختبار"),
   });
 
@@ -92,9 +98,9 @@ export default function MailSettingsPage() {
           <Field label="المضيف (SMTP Host)" value={form.host} onChange={(v) => setForm({ ...form, host: v })} placeholder="smtp.gmail.com" dir="ltr" />
           <Field label="المنفذ (Port)" value={String(form.port)} onChange={(v) => setForm({ ...form, port: Number(v) || 587 })} placeholder="587" dir="ltr" />
           <Field label="اسم المستخدم" value={form.username} onChange={(v) => setForm({ ...form, username: v })} placeholder="user@gmail.com" dir="ltr" />
-          <Field label="كلمة المرور" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder={data?.passwordConfigured ? "مهيأة - اكتب قيمة جديدة للتغيير" : "كلمة مرور SMTP / App Password"} dir="ltr" />
+          <Field label="كلمة المرور" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder={data?.passwordConfigured ? "مهيأة - اكتب قيمة جديدة للتغيير" : "كلمة مرور SMTP / App Password"} dir="ltr" hint="لجيميل: يجب إدخال App Password المكوّن من 16 حرفًا، وليس كلمة مرور الحساب ولا أي نص آخر." />
           <Field label="التشفير (tls/ssl)" value={form.encryption} onChange={(v) => setForm({ ...form, encryption: v })} placeholder="tls" dir="ltr" />
-          <Field label="البريد المرسل (From Address)" value={form.from_address} onChange={(v) => setForm({ ...form, from_address: v })} placeholder="noreply@example.com" dir="ltr" />
+          <Field label="البريد المرسل (From Address)" value={form.from_address} onChange={(v) => setForm({ ...form, from_address: v })} placeholder="noreply@example.com" dir="ltr" hint="لجيميل: استخدم بريد الحساب نفسه أو بريدًا أضفته كـ Send-as alias ومفعّل، وإلا سيرفض الإرسال." />
           <Field label="اسم المرسل (From Name)" value={form.from_name} onChange={(v) => setForm({ ...form, from_name: v })} placeholder="أكاديمية ..." />
 
           <div className="flex gap-2 justify-end">
@@ -107,11 +113,12 @@ export default function MailSettingsPage() {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", dir }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; dir?: string }) {
+function Field({ label, value, onChange, placeholder, type = "text", dir, hint }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; dir?: string; hint?: string }) {
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">{label}</label>
       <AppInput type={type} dir={dir} value={value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)} placeholder={placeholder} autoComplete="new-password" />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

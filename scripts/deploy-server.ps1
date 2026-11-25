@@ -286,7 +286,14 @@ fi
 if [ "$DO_RESTART" = "1" ]; then
   if [ -n "$API_CHANGED" ]; then
     echo "==> Restarting Laravel workers (PM2)"
-    pm2 restart teachify-queue teachify-reverb teachify-scheduler
+    pm2 restart teachify-queue teachify-reverb teachify-scheduler 2>/dev/null || true
+    # New installs need the notifications worker created from the ecosystem file.
+    if pm2 describe teachify-queue-notifications >/dev/null 2>&1; then
+      pm2 restart teachify-queue-notifications
+    else
+      pm2 start ecosystem.config.js --only teachify-queue-notifications
+      pm2 save
+    fi
   fi
   if [ -z "$WEB_CHANGED" ] && [ -z "$API_CHANGED" ]; then
     echo "==> Nothing changed -> no restart needed"

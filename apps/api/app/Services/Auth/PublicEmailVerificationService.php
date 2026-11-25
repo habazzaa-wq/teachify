@@ -5,11 +5,9 @@ namespace App\Services\Auth;
 use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
-use Illuminate\Support\Facades\Crypt;
+use App\Services\Mail\TenantMailService;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Throwable;
 
 class PublicEmailVerificationService
 {
@@ -138,44 +136,7 @@ class PublicEmailVerificationService
         $subject = 'تفعيل بريدك الإلكتروني - ' . $tenantName;
         $html = $this->renderHtml($tenantName, $user->name ?: 'طالبنا', $code, $verifyUrl);
 
-        $mail = (array) data_get($tenant->settings_json, 'mail', []);
-        $mailer = $this->resolveMailer($tenant, $mail);
-        $fromAddress = data_get($tenant->settings_json, 'mail.from_address') ?: config('mail.from.address');
-        $fromName = data_get($tenant->settings_json, 'mail.from_name') ?: ($tenantName ?: config('mail.from.name'));
-
-        Mail::mailer($mailer)->html($html, function ($message) use ($email, $subject, $fromAddress, $fromName) {
-            $message->to($email)->subject($subject);
-            if ($fromAddress) {
-                $message->from($fromAddress, $fromName ?: null);
-            }
-        });
-    }
-
-    private function resolveMailer(Tenant $tenant, array $mail): string
-    {
-        $enabled = !empty($mail['is_enabled']);
-        $host = $mail['host'] ?? null;
-        if (! $enabled || ! filled($host)) {
-            return config('mail.default', 'log');
-        }
-
-        $password = null;
-        if (!empty($mail['password_encrypted'])) {
-            try { $password = Crypt::decryptString($mail['password_encrypted']); } catch (Throwable) { $password = null; }
-        }
-
-        $name = 'tenant_mail_' . $tenant->id;
-        config(["mail.mailers.$name" => [
-            'transport' => $mail['mailer'] ?? 'smtp',
-            'host' => $mail['host'] ?? '',
-            'port' => (int) ($mail['port'] ?? 587),
-            'encryption' => ($mail['encryption'] ?? 'tls') === 'null' ? null : ($mail['encryption'] ?? 'tls'),
-            'username' => $mail['username'] ?? null,
-            'password' => $password,
-            'timeout' => null,
-        ]]);
-
-        return $name;
+        app(TenantMailService::class)->sendHtml($tenant, $email, $subject, $html);
     }
 
     private function renderHtml(string $tenantName, string $userName, string $code, string $verifyUrl): string

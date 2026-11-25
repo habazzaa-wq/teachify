@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Mail\SendStudentInvitationMailJob;
 use App\Models\CourseEnrollment;
 use App\Models\LearnerAnalytics;
 use App\Models\Role;
@@ -330,11 +331,18 @@ class StudentController extends Controller
         }
 
         $invitations = app(InvitationService::class);
+        $tenant = currentTenant();
         $result = $invitations->create(
-            currentTenant(),
+            $tenant,
             $email,
             [$studentRole->id],
             $request->user(),
+        );
+
+        SendStudentInvitationMailJob::dispatch(
+            $tenant->id,
+            $result['invitation']->id,
+            $result['token'],
         );
 
         return response()->json([

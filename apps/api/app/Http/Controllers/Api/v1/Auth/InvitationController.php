@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Mail\SendStudentInvitationMailJob;
 use App\Services\Auth\InvitationService;
 use App\Services\Authorization\TenantAuthorizationService;
 use Illuminate\Http\JsonResponse;
@@ -23,11 +24,18 @@ class InvitationController extends Controller
             'role_ids.*' => ['integer'],
         ]);
 
+        $tenant = \currentTenant();
         $result = $invitations->create(
-            \currentTenant(),
+            $tenant,
             $validated['email'],
             $validated['role_ids'],
             $request->user(),
+        );
+
+        SendStudentInvitationMailJob::dispatch(
+            $tenant->id,
+            $result['invitation']->id,
+            $result['token'],
         );
 
         $payload = [
