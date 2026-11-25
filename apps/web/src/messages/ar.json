@@ -297,6 +297,8 @@
     "homepageDescription": "وصف الصفحة الرئيسية",
     "googleVerification": "رمز التحقق من جوجل (GSC)",
     "googleVerificationHint": "الرمز المكوّن من الأحرف والأرقام من Google Search Console",
+    "googleVerificationFile": "ملف تحقق جوجل (HTML)",
+    "googleVerificationFileHint": "اكتب اسم الملف الذي يبدأ بـ google وينتهي بـ .html من Search Console، وسيقدّمه الموقع تلقائياً على رابط المستأجر.",
     "bingVerification": "رمز التحقق من بينج",
     "bingVerificationHint": "الرمز msvalidate.01 من Bing Webmaster Tools",
     "saveSettings": "حفظ الإعدادات",

@@ -123,6 +123,7 @@ class PublicTenantController extends Controller
             'ogImage' => $ogImage !== null ? $this->assetUrl($ogImage) : null,
             'twitterImage' => $twitterImage !== null ? $this->assetUrl($twitterImage) : null,
             'googleVerification' => $settings->google_verification,
+            'googleVerificationFile' => $settings->google_verification_file,
             'bingVerification' => $settings->bing_verification,
         ];
     }

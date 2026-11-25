@@ -29,6 +29,8 @@ export interface TenantSeoConfig {
   description?: string | null;
   /** Google Search Console verification token for this tenant domain. */
   googleVerification?: string | null;
+  /** Google-generated verification file name served from this tenant root. */
+  googleVerificationFile?: string | null;
   /** Bing Webmaster (msvalidate.01) verification token for this tenant domain. */
   bingVerification?: string | null;
   /** Default OpenGraph image (absolute or root-relative URL). */

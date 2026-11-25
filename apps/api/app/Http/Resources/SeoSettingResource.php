@@ -24,6 +24,7 @@ class SeoSettingResource extends JsonResource
             'homepageTitle' => $this->homepage_title,
             'homepageDescription' => $this->homepage_description,
             'googleVerification' => $this->google_verification,
+            'googleVerificationFile' => $this->google_verification_file,
             'bingVerification' => $this->bing_verification,
             'updatedAt' => $this->updated_at?->toISOString(),
         ];

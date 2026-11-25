@@ -401,18 +401,34 @@ class SeoStudioFeatureTest extends TestCase
             'default_robots_policy' => 'index_follow',
             'sitemap_include_default' => true,
             'google_verification' => 'google-token-123',
+            'google_verification_file' => 'googleabc123.html',
             'bing_verification' => 'bing-token-456',
         ], $this->tenantHeader($tenant))
             ->assertOk()
             ->assertJsonPath('data.organizationName', 'أكاديمية النور')
             ->assertJsonPath('data.googleVerification', 'google-token-123')
+            ->assertJsonPath('data.googleVerificationFile', 'googleabc123.html')
             ->assertJsonPath('data.bingVerification', 'bing-token-456');
 
         $this->assertDatabaseHas('seo_settings', [
             'tenant_id' => $tenant->id,
             'google_verification' => 'google-token-123',
+            'google_verification_file' => 'googleabc123.html',
             'bing_verification' => 'bing-token-456',
         ]);
+    }
+
+    public function test_settings_update_rejects_invalid_google_verification_file(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->memberWithRole($tenant, 'admin');
+
+        Sanctum::actingAs($admin->user);
+        $this->putJson('/api/v1/seo/settings', [
+            'google_verification_file' => '../../logo.html',
+        ], $this->tenantHeader($tenant))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('google_verification_file');
     }
 
     public function test_link_search_is_tenant_scoped(): void

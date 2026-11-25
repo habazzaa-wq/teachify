@@ -256,6 +256,7 @@ export interface SeoSetting {
   homepageTitle: string | null;
   homepageDescription: string | null;
   googleVerification: string | null;
+  googleVerificationFile: string | null;
   bingVerification: string | null;
   updatedAt: string | null;
 }
@@ -273,6 +274,7 @@ export interface SeoSettingPayload {
   homepage_title?: string | null;
   homepage_description?: string | null;
   google_verification?: string | null;
+  google_verification_file?: string | null;
   bing_verification?: string | null;
 }
 

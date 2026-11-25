@@ -41,6 +41,7 @@ class PublicTenantByDomainTest extends TestCase
             'default_robots_policy' => 'index_follow',
             'sitemap_include_default' => true,
             'default_og_image_asset_id' => $ogImage->id,
+            'google_verification_file' => 'googleabc123.html',
         ]);
 
         $response = $this->getJson('/api/v1/tenant/by-domain?domain=noor.academy.test');
@@ -61,6 +62,7 @@ class PublicTenantByDomainTest extends TestCase
             ])
             ->assertJsonPath('seo.robotsPolicy', 'index_follow')
             ->assertJsonPath('seo.sitemapIncludeDefault', true)
+            ->assertJsonPath('seo.googleVerificationFile', 'googleabc123.html')
             ->assertJsonPath('seo.ogImage', 'https://cdn.example.com/og-default.png');
     }
 

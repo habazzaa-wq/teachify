@@ -50,6 +50,7 @@ class SeoSettingController extends Controller
             'homepage_title' => ['nullable', 'string', 'max:255'],
             'homepage_description' => ['nullable', 'string', 'max:500'],
             'google_verification' => ['nullable', 'string', 'max:255'],
+            'google_verification_file' => ['nullable', 'string', 'max:128', 'regex:/^google[A-Za-z0-9_-]+\.html$/'],
             'bing_verification' => ['nullable', 'string', 'max:255'],
         ]);
 

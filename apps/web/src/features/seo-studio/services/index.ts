@@ -142,6 +142,7 @@ function formatSetting(raw: Record<string, any>): SeoSetting {
     homepageTitle: raw.homepageTitle ?? raw.homepage_title ?? null,
     homepageDescription: raw.homepageDescription ?? raw.homepage_description ?? null,
     googleVerification: raw.googleVerification ?? raw.google_verification ?? null,
+    googleVerificationFile: raw.googleVerificationFile ?? raw.google_verification_file ?? null,
     bingVerification: raw.bingVerification ?? raw.bing_verification ?? null,
     updatedAt: raw.updatedAt ?? raw.updated_at ?? null,
   };

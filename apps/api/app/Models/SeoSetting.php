@@ -27,6 +27,7 @@ class SeoSetting extends Model
         'homepage_title',
         'homepage_description',
         'google_verification',
+        'google_verification_file',
         'bing_verification',
     ];
 

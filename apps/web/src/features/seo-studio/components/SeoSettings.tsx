@@ -44,6 +44,7 @@ interface SettingsFormState {
   defaultOgImageAssetId: number | null;
   defaultTwitterImageAssetId: number | null;
   googleVerification: string;
+  googleVerificationFile: string;
   bingVerification: string;
 }
 
@@ -60,6 +61,7 @@ const EMPTY_FORM: SettingsFormState = {
   defaultOgImageAssetId: null,
   defaultTwitterImageAssetId: null,
   googleVerification: "",
+  googleVerificationFile: "",
   bingVerification: "",
 };
 
@@ -88,6 +90,7 @@ function SeoSettings() {
       defaultOgImageAssetId: data.defaultOgImage ? Number(data.defaultOgImage.id) : null,
       defaultTwitterImageAssetId: data.defaultTwitterImage ? Number(data.defaultTwitterImage.id) : null,
       googleVerification: data.googleVerification ?? "",
+      googleVerificationFile: data.googleVerificationFile ?? "",
       bingVerification: data.bingVerification ?? "",
     });
     setDirty(false);
@@ -132,6 +135,7 @@ function SeoSettings() {
         default_og_image_asset_id: form.defaultOgImageAssetId,
         default_twitter_image_asset_id: form.defaultTwitterImageAssetId,
         google_verification: form.googleVerification.trim() || null,
+        google_verification_file: form.googleVerificationFile.trim() || null,
         bing_verification: form.bingVerification.trim() || null,
       },
       {
@@ -372,6 +376,17 @@ function SeoSettings() {
                   dir="ltr"
                   className="text-left"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{t("googleVerificationFile")}</Label>
+                <AppInput
+                  value={form.googleVerificationFile}
+                  onChange={(e) => patch({ googleVerificationFile: e.target.value })}
+                  placeholder="e.g. googleabc123.html"
+                  dir="ltr"
+                  className="text-left"
+                />
+                <p className="text-xs text-muted-foreground">{t("googleVerificationFileHint")}</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">{t("bingVerification")}</Label>
