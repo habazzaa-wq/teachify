@@ -279,7 +279,7 @@ class CourseLessonController extends Controller
                 $required,
                 Rule::notIn(app(InstructorCourseAuthorization::class)
                     ->isInstructorAccount($request->user(), currentTenant()) ? ['exam'] : []),
-                Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio', 'session']),
+                Rule::in(['video', 'text', 'pdf', 'external', 'live', 'exam', 'audio', 'session', 'image']),
             ],
                         'external_url' => ['nullable','url','max:2048'],
             'course_session_id' => [

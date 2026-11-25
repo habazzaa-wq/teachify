@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Video,
+  Image as ImageIcon,
   FileText,
   FileSpreadsheet,
   PenTool,
@@ -29,6 +30,7 @@ interface KnowledgeContentItemProps {
 
 const typeIcons: Record<ContentItemType, React.ComponentType<{ className?: string }>> = {
   video: Video,
+  image: ImageIcon,
   pdf: FileText,
   exam: FileSpreadsheet,
   assignment: PenTool,
@@ -43,6 +45,7 @@ const typeIcons: Record<ContentItemType, React.ComponentType<{ className?: strin
 
 const typeColors: Record<ContentItemType, string> = {
   video: "text-blue-500 bg-blue-500/10 ring-blue-500/20",
+  image: "text-emerald-500 bg-emerald-500/10 ring-emerald-500/20",
   pdf: "text-rose-500 bg-rose-500/10 ring-rose-500/20",
   exam: "text-secondary bg-secondary/10 ring-secondary/20",
   assignment: "text-amber-500 bg-amber-500/10 ring-amber-500/20",

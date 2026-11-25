@@ -5,7 +5,7 @@ export const createLessonSchema = z.object({
   slug: z.string().max(255, "الرابط طويل جداً").optional().or(z.literal("")),
   short_description: z.string().max(500, "الوصف القصير طويل جداً").optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
-  lesson_type: z.enum(["video", "text", "pdf", "external", "live", "exam", "audio", "session"], {
+  lesson_type: z.enum(["video", "image", "text", "pdf", "external", "live", "exam", "audio", "session"], {
     errorMap: () => ({ message: "نوع الدرس غير صالح" }),
   }),
   status: z.enum(["draft", "review", "published", "scheduled", "archived"]).optional(),
@@ -29,7 +29,7 @@ export const updateLessonSchema = z.object({
   slug: z.string().max(255).optional().or(z.literal("")),
   short_description: z.string().max(500).optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
-  lesson_type: z.enum(["video", "text", "pdf", "external", "live", "exam", "audio", "session"]).optional(),
+  lesson_type: z.enum(["video", "image", "text", "pdf", "external", "live", "exam", "audio", "session"]).optional(),
   status: z.enum(["draft", "review", "published", "scheduled", "archived"]).optional(),
   visibility: z.enum(["private", "preview", "public"]).optional(),
   sort_order: z.number().min(0).optional(),

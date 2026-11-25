@@ -1,5 +1,6 @@
 import {
   Play,
+  Image as ImageIcon,
   FileText,
   FileType,
   ClipboardCheck,
@@ -57,6 +58,7 @@ export interface LessonTypeConfig {
 
 export const LESSON_TYPE_CONFIG: Record<string, LessonTypeConfig> = {
   video: { icon: Play, label: "فيديو", color: "#3b82f6" },
+  image: { icon: ImageIcon, label: "صور", color: "#10b981" },
   text: { icon: FileText, label: "نص", color: "#10b981" },
   file: { icon: FolderOpen, label: "ملف", color: "#10b981" },
   pdf: { icon: FileType, label: "ملف PDF", color: "#f43f5e" },
@@ -89,6 +91,7 @@ export function getLessonConfig(
 
 const FILE_LESSON_TYPES = new Set([
   "file",
+  "image",
   "pdf",
   "document",
   "resource",

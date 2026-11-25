@@ -22,9 +22,10 @@ interface CourseStudioContentPickerProps {
 
 const DESCRIPTIONS: Record<ContentItemType, string> = {
   video: "اختيار وسائط موجودة من المكتبة",
+  image: "اختيار صور من مكتبة الوسائط",
   pdf: "اختيار مستند PDF موجود",
   audio: "اختيار ملف صوتي موجود",
-  resource: "اختيار ملف مرفق موجود",
+  resource: "اختيار أي ملف من مكتبة الوسائط",
   exam: "اختيار اختبار موجود",
   assignment: "اختيار واجب موجود",
   live: "إعداد جلسة مباشرة",
@@ -35,7 +36,7 @@ const DESCRIPTIONS: Record<ContentItemType, string> = {
 };
 
 const GROUPS: Array<{ label: string; types: ContentItemType[] }> = [
-  { label: "المحتوى الأساسي", types: ["video", "pdf", "audio", "resource"] },
+  { label: "المحتوى الأساسي", types: ["video", "image", "pdf", "audio", "resource"] },
   { label: "التقييم", types: ["exam", "assignment"] },
   { label: "متقدم", types: ["live", "session", "external_link", "scorm", "certificate"] },
 ];

@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Globe,
   GripVertical,
+  Image as ImageIcon,
   Headphones,
   Link,
   Lock,
@@ -34,6 +35,7 @@ import type { ContentItem, ContentItemType } from "@/features/course-content/typ
 
 const TYPE_ICONS: Record<ContentItemType, React.ComponentType<{ className?: string }>> = {
   video: Video,
+  image: ImageIcon,
   pdf: FileType,
   exam: ClipboardList,
   assignment: FileText,
@@ -48,6 +50,7 @@ const TYPE_ICONS: Record<ContentItemType, React.ComponentType<{ className?: stri
 
 const TYPE_META: Record<ContentItemType, { label: string; className: string }> = {
   video: { label: "فيديو", className: "text-secondary bg-secondary/10" },
+  image: { label: "الصور", className: "text-emerald-500 bg-emerald-500/10" },
   pdf: { label: "PDF", className: "text-red-500 bg-red-500/10" },
   exam: { label: "اختبار", className: "text-emerald-500 bg-emerald-500/10" },
   assignment: { label: "واجب", className: "text-orange-500 bg-orange-500/10" },

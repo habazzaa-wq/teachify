@@ -46,15 +46,26 @@ import { MediaPicker } from "@/features/media-library/components/MediaPicker";
 import { libraryForAllowedTypes } from "@/features/media-library/constants";
 import type { MediaType } from "@/features/media-library/types";
 
+const MEDIA_CONTENT_TYPES = new Set<ContentItemType>([
+  "video",
+  "image",
+  "pdf",
+  "audio",
+  "resource",
+]);
+
 const MEDIA_PICKER_TYPES: Partial<Record<ContentItemType, MediaType[]>> = {
   video: ["video"],
+  image: ["image"],
   pdf: ["pdf", "document"],
   audio: ["audio"],
-  resource: ["document", "zip", "file"],
+  // `resource` intentionally has no type filter so "ملف" browses every
+  // non-video asset in the media library.
 };
 
 const CONTENT_TO_LESSON_TYPE: Record<string, string> = {
   video: "video",
+  image: "image",
   pdf: "pdf",
   audio: "audio",
   resource: "text",
@@ -119,6 +130,7 @@ function CourseStudio({
   const [pendingContent, setPendingContent] = useState<{
     kind: "media" | "exam";
     mediaId?: number;
+    mediaIds?: number[];
     examId?: string;
     contentType?: ContentItemType;
     defaultTitle: string;
@@ -607,7 +619,7 @@ function CourseStudio({
         return;
       }
 
-      if (MEDIA_PICKER_TYPES[type]) {
+      if (MEDIA_CONTENT_TYPES.has(type)) {
         store.openMediaPicker(type);
         return;
       }
@@ -670,10 +682,12 @@ function CourseStudio({
       if (!courseId || !store.selectedSectionId) return;
       const contentType = store.mediaPickerContentType ?? "video";
       const typeLabel = CONTENT_TYPE_CONFIG[contentType]?.label ?? "الوسائط";
+      const mediaIds = result.ids?.length ? result.ids : [result.id];
       store.closeMediaPicker();
       setPendingContent({
         kind: "media",
-        mediaId: result.id,
+        mediaId: mediaIds[0],
+        mediaIds,
         contentType,
         defaultTitle: result.title || typeLabel,
       });
@@ -713,7 +727,10 @@ function CourseStudio({
       const sectionId = store.selectedSectionId;
       const nextOrder = contentItems.length + 1;
       try {
-        if (pendingContent.kind === "media" && pendingContent.mediaId != null) {
+        const mediaIds = pendingContent.mediaIds
+          ?? (pendingContent.mediaId != null ? [pendingContent.mediaId] : []);
+        const firstMediaId = mediaIds[0];
+        if (pendingContent.kind === "media" && firstMediaId !== undefined) {
           const contentType = pendingContent.contentType ?? "video";
           const lessonType = (CONTENT_TO_LESSON_TYPE[contentType] ?? "video") as any;
           const lesson = await createLesson.mutateAsync({
@@ -727,9 +744,17 @@ function CourseStudio({
             },
           });
           if (contentType === "video") {
-            await attachVideo.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId: pendingContent.mediaId });
+            await attachVideo.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId: firstMediaId });
           } else {
-            await attachFile.mutateAsync({ courseId, sectionId, lessonId: lesson.id, mediaAssetId: pendingContent.mediaId, title });
+            for (const [index, mediaAssetId] of mediaIds.entries()) {
+              await attachFile.mutateAsync({
+                courseId,
+                sectionId,
+                lessonId: lesson.id,
+                mediaAssetId,
+                title: mediaIds.length > 1 ? `${title} ${index + 1}` : title,
+              });
+            }
           }
           toast.success(`تم إضافة "${title}" بنجاح`);
         } else if (pendingContent.examId) {
@@ -1391,7 +1416,7 @@ function CourseStudio({
         open={store.mediaPickerOpen}
         onClose={store.closeMediaPicker}
         onSelect={handleMediaSelected}
-        mode="single"
+        mode={store.mediaPickerContentType === "image" ? "multi" : "single"}
         allowedTypes={MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"]}
         library={libraryForAllowedTypes(MEDIA_PICKER_TYPES[store.mediaPickerContentType ?? "video"])}
       />
