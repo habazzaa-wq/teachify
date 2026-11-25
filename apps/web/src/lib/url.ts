@@ -30,6 +30,20 @@ function proxyPathForStorageUrl(value: string): string | null {
 }
 
 /**
+ * True for same-origin media-proxy URLs that must bypass the Next.js image
+ * optimizer. On tenant domains the optimizer cannot fetch these local paths
+ * (it returns 400 "The requested resource isn't a valid image"), while the
+ * browser can load the proxy URL directly.
+ */
+export function isLocalMediaProxyUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const trimmed = url.trim();
+  return (
+    trimmed === MEDIA_PROXY_PREFIX || trimmed.startsWith(`${MEDIA_PROXY_PREFIX}/`)
+  );
+}
+
+/**
  * Normalize a possibly protocol-less asset URL into something <img> and
  * next/image can always load. A bare hostname like
  * `cdn.example.com/file.jpg` would otherwise be resolved by the browser

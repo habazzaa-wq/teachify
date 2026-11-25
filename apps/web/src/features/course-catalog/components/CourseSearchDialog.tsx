@@ -8,6 +8,7 @@ import { ArrowRight, BookOpen, Command, Flame, Loader2, Search, X } from "lucide
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { isLocalMediaProxyUrl } from "@/lib/url";
 import { formatCoursePrice } from "@/features/public-course/utils";
 import { catalogService } from "../services";
 import type { CatalogCourse } from "../types";
@@ -290,6 +291,7 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
                 ]
                   .filter(Boolean)
                   .join(" · ");
+                const coverSrc = course.thumbnail || course.coverImage;
 
                 return (
                   <Link
@@ -307,13 +309,14 @@ export function CourseSearchDialog({ open, onOpenChange }: CourseSearchDialogPro
                     style={selected ? { background: "var(--brand-primary)", color: "var(--brand-primary-contrast)" } : undefined}
                   >
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
-                      {course.thumbnail || course.coverImage ? (
+                      {coverSrc ? (
                         <Image
-                          src={course.thumbnail || course.coverImage!}
+                          src={coverSrc}
                           alt={course.title}
                           fill
                           sizes="48px"
                           className="object-cover"
+                          unoptimized={isLocalMediaProxyUrl(coverSrc)}
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">

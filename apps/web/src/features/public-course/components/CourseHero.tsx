@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { isLocalMediaProxyUrl } from "@/lib/url";
 import { formatCoursePrice } from "../utils";
 import { useUiStore } from "@/stores/ui.store";
 import { formatDurationLong } from "../utils";
@@ -402,6 +403,7 @@ function CourseHeroInner({ course, isEnrolled, onEnroll, onLogin }: CourseHeroPr
                           sizes="(max-width: 1024px) 90vw, 520px"
                           priority
                           className="object-cover"
+                          unoptimized={isLocalMediaProxyUrl(coverSrc)}
                         />
                       ) : (
                         <div
