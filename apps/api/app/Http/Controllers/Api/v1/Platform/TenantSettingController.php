@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantSetting;
 use App\Repositories\TenantRepository;
 use App\Services\Platform\PlatformBrandingService;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -220,22 +221,30 @@ class TenantSettingController extends Controller
 
     public function update(Request $request, string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer', 'about'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer', 'about', 'student_fields'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);
         }
 
-        $validated = $request->validate([
-            'values' => ['required', 'array'],
-        ]);
+        $validated = $request->validate(
+            $group === 'student_fields'
+                ? StudentFields::validationRules()
+                : ['values' => ['required', 'array']],
+        );
+
+        $values = $validated['values'];
+        if ($group === 'student_fields') {
+            // Never persist unknown keys into the student-fields config.
+            $values = array_intersect_key($values, array_flip(StudentFields::OPTIONAL));
+        }
 
         $existing = TenantSetting::query()
             ->where('tenant_id', currentTenant()->id)
             ->where('group', $group)
             ->first();
 
-        $merged = array_merge($existing?->values ?? [], $validated['values']);
+        $merged = array_merge($existing?->values ?? [], $values);
 
         $setting = TenantSetting::updateOrCreate(
             [
@@ -244,6 +253,10 @@ class TenantSettingController extends Controller
             ],
             ['values' => $merged],
         );
+
+        if ($group === 'student_fields') {
+            app(TenantRepository::class)->forget(currentTenant()->id);
+        }
 
         return response()->json([
             'message' => 'Settings updated.',
@@ -254,7 +267,7 @@ class TenantSettingController extends Controller
 
     public function show(string $group): JsonResponse
     {
-        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer', 'about'];
+        $allowedGroups = ['profile', 'branding', 'locale', 'notifications', 'enrollment', 'video', 'storage', 'setup', 'homepage', 'legal', 'footer', 'about', 'student_fields'];
 
         if (! in_array($group, $allowedGroups, true)) {
             return response()->json(['message' => 'Invalid settings group.'], 422);
@@ -267,7 +280,9 @@ class TenantSettingController extends Controller
 
         return response()->json([
             'group' => $group,
-            'values' => $setting?->values ?? [],
+            'values' => $group === 'student_fields'
+                ? StudentFields::resolve(currentTenant()->id)
+                : ($setting?->values ?? []),
         ]);
     }
 }

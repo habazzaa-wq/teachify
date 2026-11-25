@@ -1,5 +1,16 @@
 import { tenantStudentFetch } from "@/services/api/tenant-student-fetch";
-import type { StudentEditableProfileFields, StudentProfile } from "../types";
+import type { StudentProfile, StudentProfileUpdateValues } from "../types";
+
+const UPDATE_FIELD_MAP: Record<keyof StudentProfileUpdateValues, string> = {
+  name: "name",
+  parentPhone: "parent_phone",
+  gender: "gender",
+  studyType: "study_type",
+  nationality: "nationality",
+  studyLevel: "study_level",
+  governorate: "governorate",
+  city: "city",
+};
 
 export const studentProfileService = {
   async getProfile(): Promise<StudentProfile> {
@@ -7,20 +18,20 @@ export const studentProfileService = {
     return json.data;
   },
 
-  async updateProfile(values: StudentEditableProfileFields): Promise<StudentProfile> {
+  async updateProfile(values: StudentProfileUpdateValues): Promise<StudentProfile> {
+    const body: Record<string, string | null> = {};
+    for (const [field, value] of Object.entries(values)) {
+      if (value === undefined) continue;
+      body[UPDATE_FIELD_MAP[field as keyof StudentProfileUpdateValues]] =
+        typeof value === "string" ? value.trim() : null;
+    }
+
     const json = await tenantStudentFetch<{ data: StudentProfile }>(
       "/student/profile",
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name.trim(),
-          gender: values.gender.trim() || null,
-          nationality: values.nationality.trim() || null,
-          study_level: values.studyLevel.trim() || null,
-          governorate: values.governorate.trim() || null,
-          city: values.city.trim() || null,
-        }),
+        body: JSON.stringify(body),
       },
     );
     return json.data;

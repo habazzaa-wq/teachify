@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -40,6 +41,7 @@ class CurrentUserController extends Controller
                 ],
                 'branding' => $this->getBranding($tenant),
                 'platform_branding' => $this->getPlatformBranding($tenant),
+                'student_fields' => StudentFields::resolve($tenant->id),
                 'platform_plan_id' => $tenant->platform_plan_id,
                 // The canonical assignment, so the dashboard can show the real
                 // plan instead of guessing one from the legacy JSON columns.

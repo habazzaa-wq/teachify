@@ -354,6 +354,13 @@ export function WorkspaceLeftSidebar() {
                 onClick={() => handleNavigate(routes.dashboardBranding)}
               />
               <StudioSidebarItem
+                icon={<User className="h-4 w-4" />}
+                label="حقول حساب الطالب"
+                active={pathname.startsWith(routes.dashboardStudentFields)}
+                collapsed={leftSidebarCollapsed}
+                onClick={() => handleNavigate(routes.dashboardStudentFields)}
+              />
+              <StudioSidebarItem
                 icon={<Palette className="h-4 w-4" />}
                 label="مظهر لوحة التحكم"
                 active={pathname.startsWith("/teacher/settings/appearance")}

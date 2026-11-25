@@ -9,4 +9,5 @@ export const SETTINGS_GROUPS = [
   "video",
   "storage",
   "setup",
+  "student_fields",
 ] as const;

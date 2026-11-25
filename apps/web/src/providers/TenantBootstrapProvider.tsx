@@ -19,6 +19,7 @@ import {
   TENANT_BOOTSTRAP_ERRORS,
 } from "@/features/tenant-bootstrap/classify";
 import type { TenantByDomainResponse } from "@/features/tenant-bootstrap/types";
+import { normalizeStudentFieldConfig } from "@/features/student-fields";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 1000;
@@ -52,6 +53,7 @@ export function TenantBootstrapProvider({
   const setBootstrapError = useTenantStore((s) => s.setBootstrapError);
   const setPlatformBranding = useTenantStore((s) => s.setPlatformBranding);
   const setGoogleClientId = useTenantStore((s) => s.setGoogleClientId);
+  const setStudentFields = useTenantStore((s) => s.setStudentFields);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +89,7 @@ export function TenantBootstrapProvider({
     if (useTenantStore.getState().activeTenant) {
       if (tenantContext) {
         setGoogleClientId(tenantContext.auth?.google_client_id ?? null);
+        setStudentFields(normalizeStudentFieldConfig(tenantContext.student_fields));
       }
       setBootstrapStatus("resolved");
       return;
@@ -106,6 +109,7 @@ export function TenantBootstrapProvider({
         // it here is what makes the Google button render immediately on the
         // student login/register forms without a second client-side fetch.
         googleClientId: tenantContext.auth?.google_client_id?.trim() || null,
+        student_fields: tenantContext.student_fields,
         subdomain: getTenantSubdomain(hostname),
       });
       return;
@@ -172,6 +176,7 @@ export function TenantBootstrapProvider({
               branding: data.branding,
               platformBranding: data.platform_branding ?? data.platformBranding ?? null,
               googleClientId: publicGoogleClientId,
+              student_fields: data.student_fields,
               subdomain: getTenantSubdomain(hostname),
             });
             return;
@@ -228,6 +233,7 @@ export function TenantBootstrapProvider({
     setBootstrapError,
     setPlatformBranding,
     setGoogleClientId,
+    setStudentFields,
   ]);
 
   const effectiveStatus =

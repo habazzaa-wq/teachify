@@ -6,6 +6,7 @@ use App\Models\MediaAsset;
 use App\Models\SeoSetting;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
+use App\Models\TenantSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,7 +64,35 @@ class PublicTenantByDomainTest extends TestCase
             ->assertJsonPath('seo.robotsPolicy', 'index_follow')
             ->assertJsonPath('seo.sitemapIncludeDefault', true)
             ->assertJsonPath('seo.googleVerificationFile', 'googleabc123.html')
-            ->assertJsonPath('seo.ogImage', 'https://cdn.example.com/og-default.png');
+            ->assertJsonPath('seo.ogImage', 'https://cdn.example.com/og-default.png')
+            ->assertJsonPath('student_fields.parent_phone', true)
+            ->assertJsonPath('student_fields.gender', true)
+            ->assertJsonPath('student_fields.nationality', true);
+    }
+
+    public function test_by_domain_returns_tenant_student_field_choices(): void
+    {
+        $tenant = Tenant::factory()->create(['status' => 'active']);
+
+        TenantDomain::create([
+            'tenant_id' => $tenant->id,
+            'domain' => 'fields.academy.test',
+            'type' => 'custom',
+            'status' => 'active',
+            'is_primary' => true,
+        ]);
+
+        TenantSetting::create([
+            'tenant_id' => $tenant->id,
+            'group' => 'student_fields',
+            'values' => ['parent_phone' => false, 'gender' => false],
+        ]);
+
+        $this->getJson('/api/v1/tenant/by-domain?domain=fields.academy.test')
+            ->assertOk()
+            ->assertJsonPath('student_fields.parent_phone', false)
+            ->assertJsonPath('student_fields.gender', false)
+            ->assertJsonPath('student_fields.nationality', true);
     }
 
     public function test_by_domain_returns_null_seo_when_no_settings_exist(): void

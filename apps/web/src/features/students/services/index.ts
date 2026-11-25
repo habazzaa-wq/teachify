@@ -21,6 +21,7 @@ function formatStudent(raw: Record<string, any>): Student {
     parentPhone: raw.parentPhone ?? raw.parent_phone ?? "",
     gender: raw.gender ?? "",
     nationality: raw.nationality ?? "",
+    studyType: raw.studyType ?? raw.study_type ?? "",
     studyLevel: raw.studyLevel ?? raw.study_level ?? "",
     governorate: raw.governorate ?? "",
     city: raw.city ?? "",

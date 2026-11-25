@@ -1,5 +1,6 @@
 import type { ApiMessageResponse } from "./common.types";
 import type { TenantBranding } from "@/features/tenant-bootstrap/types";
+import type { StudentFieldConfig } from "@/features/student-fields";
 
 export interface LoginRequest {
   email?: string;
@@ -37,6 +38,8 @@ export interface AuthTenant {
   platform_plan?: AuthTenantPlan | null;
   subscription?: Subscription | null;
   feature_flags?: FeatureFlags | null;
+  /** Optional student-account fields enabled on this tenant's platform. */
+  student_fields?: Partial<StudentFieldConfig> | null;
 }
 
 export interface AuthTenantPlan {

@@ -5,6 +5,7 @@ export interface StudentProfile {
   phone: string;
   parentPhone: string;
   gender: string;
+  studyType: string;
   nationality: string;
   studyLevel: string;
   governorate: string;
@@ -18,5 +19,17 @@ export interface StudentProfile {
 /** Fields a student is allowed to edit from the profile drawer. */
 export type StudentEditableProfileFields = Pick<
   StudentProfile,
-  "name" | "gender" | "nationality" | "studyLevel" | "governorate" | "city"
+  | "name"
+  | "parentPhone"
+  | "gender"
+  | "studyType"
+  | "nationality"
+  | "studyLevel"
+  | "governorate"
+  | "city"
+>;
+
+/** Partial profile update; empty values are sent as null to clear a field. */
+export type StudentProfileUpdateValues = Partial<
+  Record<keyof StudentEditableProfileFields, string | null>
 >;

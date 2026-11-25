@@ -8,9 +8,11 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Auth\PublicEmailVerificationService;
 use App\Services\AvatarGenerator;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class PublicStudentRegisterController extends Controller
@@ -25,22 +27,19 @@ class PublicStudentRegisterController extends Controller
             ]);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'email_notifications_enabled' => ['nullable', 'boolean'],
             'phone' => ['required', 'string', 'max:50'],
-            'parent_phone' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:8'],
             'password_confirmation' => ['required', 'string', 'same:password'],
-            'gender' => ['nullable', 'string', 'max:20'],
-            'study_type' => ['nullable', 'string', 'max:100'],
-            'study_level' => ['nullable', 'string', 'max:100'],
-            'governorate' => ['nullable', 'string', 'max:100'],
-            'city' => ['nullable', 'string', 'max:100'],
-        ]);
+        ] + StudentFields::rulesFor($tenant->id);
+        $validated = Validator::make($request->all(), $rules)->validate();
 
         $tenantId = $tenant->id;
+        // Only fields enabled for this platform are persisted.
+        $studentAttributes = StudentFields::onlyEnabled($tenantId, $validated);
         $phone = trim((string) $validated['phone']);
         $email = mb_strtolower(trim((string) $validated['email']));
 
@@ -69,21 +68,15 @@ class PublicStudentRegisterController extends Controller
                 ->first();
 
             if (! $membership) {
-                $avatar = AvatarGenerator::generate($validated['gender'] ?? null, $existingUser->id);
-                $membership = TenantUser::create([
+                $avatar = AvatarGenerator::generate($studentAttributes['gender'] ?? null, $existingUser->id);
+                $membership = TenantUser::create(array_merge([
                     'tenant_id' => $tenantId,
                     'user_id' => $existingUser->id,
                     'status' => 'active',
                     'phone' => $phone,
-                    'parent_phone' => $validated['parent_phone'] ?? null,
-                    'gender' => $validated['gender'] ?? null,
-                    'study_type' => $validated['study_type'] ?? null,
-                    'study_level' => $validated['study_level'] ?? null,
-                    'governorate' => $validated['governorate'] ?? null,
-                    'city' => $validated['city'] ?? null,
                     'avatar' => $avatar,
                     'joined_at' => now(),
-                ]);
+                ], $studentAttributes));
                 $studentRole = Role::where('tenant_id', $tenantId)->where('slug', 'student')->first();
                 if ($studentRole) {
                     $membership->roles()->attach($studentRole->id, ['tenant_id' => $tenantId]);
@@ -112,22 +105,16 @@ class PublicStudentRegisterController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $avatar = AvatarGenerator::generate($validated['gender'] ?? null, $user->id);
+        $avatar = AvatarGenerator::generate($studentAttributes['gender'] ?? null, $user->id);
 
-        $membership = TenantUser::create([
+        $membership = TenantUser::create(array_merge([
             'tenant_id' => $tenantId,
             'user_id' => $user->id,
             'status' => 'active',
             'phone' => $phone,
-            'parent_phone' => $validated['parent_phone'] ?? null,
-            'gender' => $validated['gender'] ?? null,
-            'study_type' => $validated['study_type'] ?? null,
-            'study_level' => $validated['study_level'] ?? null,
-            'governorate' => $validated['governorate'] ?? null,
-            'city' => $validated['city'] ?? null,
             'avatar' => $avatar,
             'joined_at' => now(),
-        ]);
+        ], $studentAttributes));
 
         $studentRole = Role::where('tenant_id', $tenantId)->where('slug', 'student')->first();
         if ($studentRole) {

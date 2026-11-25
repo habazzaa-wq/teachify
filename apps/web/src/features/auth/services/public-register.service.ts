@@ -9,6 +9,7 @@ export interface PublicRegisterPayload {
   password: string;
   password_confirmation: string;
   gender?: string;
+  nationality?: string;
   study_type?: string;
   study_level?: string;
   governorate?: string;

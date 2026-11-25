@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class StudentProfileController extends Controller
@@ -21,33 +24,46 @@ class StudentProfileController extends Controller
     }
 
     /**
-     * Self-service profile edit. Email, phone and parent phone are deliberately
-     * absent from the validation rules so they can never be changed here.
+     * Self-service profile edit. Email and phone are deliberately absent from
+     * the validation rules so they can never be changed here. Guardian phone
+     * can only be set once: after the first save it becomes read-only.
      */
     public function updateProfile(Request $request): JsonResponse
     {
         [$user, $tenantUser] = $this->currentMembership($request);
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'gender' => ['sometimes', 'nullable', 'string', 'max:20'],
-            'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'study_level' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'governorate' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'city' => ['sometimes', 'nullable', 'string', 'max:100'],
-        ]);
+        // Validate only fields this platform actually supports. A disabled
+        // field is ignored even if a client sends it explicitly.
+        $rules = ['name' => ['sometimes', 'required', 'string', 'max:255']]
+            + StudentFields::rulesFor(currentTenant()->id);
+        $validated = Validator::make($request->all(), $rules)->validate();
 
-        if (array_key_exists('name', $validated)) {
-            $user->update(['name' => $validated['name']]);
+        // Guardian phone can be set once. After that it is read-only even if a
+        // client sends a new value.
+        if (array_key_exists('parent_phone', $validated) && filled($tenantUser->parent_phone)) {
+            unset($validated['parent_phone']);
         }
 
-        $membershipFields = array_intersect_key($validated, array_flip([
-            'gender', 'nationality', 'study_level', 'governorate', 'city',
-        ]));
-
-        if ($membershipFields !== []) {
-            $tenantUser->update($membershipFields);
+        foreach ($validated as $key => $value) {
+            if (is_string($value)) {
+                $validated[$key] = trim($value);
+            }
         }
+
+        if (array_key_exists('name', $validated) && $validated['name'] === '') {
+            throw ValidationException::withMessages(['name' => ['الاسم مطلوب.']]);
+        }
+
+        DB::transaction(function () use ($user, $tenantUser, $validated): void {
+            if (array_key_exists('name', $validated)) {
+                $user->update(['name' => $validated['name']]);
+            }
+
+            $membershipFields = array_intersect_key($validated, array_flip(StudentFields::OPTIONAL));
+            if ($membershipFields !== []) {
+                $tenantUser->update($membershipFields);
+            }
+        });
 
         return response()->json([
             'message' => 'تم تحديث المعلومات الشخصية بنجاح.',
@@ -136,11 +152,12 @@ class StudentProfileController extends Controller
             'phone' => $tenantUser->phone ?? '',
             'parentPhone' => $tenantUser->parent_phone ?? '',
             'gender' => $tenantUser->gender ?? '',
+            'studyType' => $tenantUser->study_type ?? '',
             'nationality' => $tenantUser->nationality ?? '',
             'studyLevel' => $tenantUser->study_level ?? '',
             'governorate' => $tenantUser->governorate ?? '',
             'city' => $tenantUser->city ?? '',
-            'avatar' => $tenantUser->avatar ?? $user->avatar ?? null,
+            'avatar' => $tenantUser->avatar ?: ($user->avatar ?: null),
             'status' => $tenantUser->status,
             'joinedAt' => $tenantUser->joined_at?->toIso8601String(),
             'createdAt' => $tenantUser->created_at->toIso8601String(),

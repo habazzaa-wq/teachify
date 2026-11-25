@@ -1,3 +1,5 @@
+import type { StudentFieldConfig } from "@/features/student-fields";
+
 export interface TenantBranding {
   logo: string | null;
   favicon: string | null;
@@ -83,4 +85,6 @@ export interface TenantByDomainResponse {
   seo?: TenantSeoConfig | null;
   /** Public auth configuration (e.g. Google OAuth client id). */
   auth?: TenantPublicAuthConfig | null;
+  /** Optional student-account fields enabled on this platform. */
+  student_fields?: Partial<StudentFieldConfig> | null;
 }

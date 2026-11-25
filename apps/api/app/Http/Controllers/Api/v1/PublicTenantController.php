@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
 use App\Models\SeoSetting;
 use App\Repositories\TenantRepository;
+use App\Support\StudentFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -61,6 +62,7 @@ class PublicTenantController extends Controller
             'platform_branding' => $this->resolvePlatformBranding($tenant),
             'seo' => $this->resolveSeo($tenant),
             'auth' => $this->resolvePublicAuth($tenant),
+            'student_fields' => StudentFields::resolve($tenant->id),
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
