@@ -74,6 +74,24 @@ function loadGisScript(): Promise<void> {
   return gisLoadPromise;
 }
 
+const GOOGLE_SCOPE = "openid email profile";
+
+function googleAuthErrorMessage(
+  error?: string | null,
+  fallback = "لم يتم إكمال تسجيل الدخول عبر Google.",
+): string {
+  switch (error) {
+    case "origin_mismatch":
+      return "مصدر الموقع غير مسجّل في إعدادات Google OAuth. أضف الدومين إلى Authorized JavaScript origins.";
+    case "access_denied":
+      return "تطبيق Google في وضع الاختبار. لازم تضيف بريدك كمستخدم تجريبي أو ينشر التطبيق.";
+    case "popup_closed_by_user":
+      return "تم إغلاق نافذة Google قبل إكمال تسجيل الدخول.";
+    default:
+      return fallback;
+  }
+}
+
 interface GoogleAuthButtonProps {
   onToken: (accessToken: string) => void | Promise<void>;
   onError?: (message: string) => void;
@@ -109,11 +127,11 @@ export function GoogleAuthButton({
         if (cancelled || !window.google?.accounts?.oauth2) return;
         clientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: clientId,
-          scope: "openid email profile https://www.googleapis.com/auth/user.birthday.read",
+          scope: GOOGLE_SCOPE,
           callback: async (response) => {
             if (response.error || !response.access_token) {
               setLoading(false);
-              onError?.("لم يتم إكمال تسجيل الدخول عبر Google.");
+              onError?.(googleAuthErrorMessage(response.error));
               return;
             }
             try {
@@ -125,9 +143,14 @@ export function GoogleAuthButton({
               setLoading(false);
             }
           },
-          error_callback: () => {
+          error_callback: (error) => {
             setLoading(false);
-            onError?.("تعذر فتح نافذة Google. حاول مرة أخرى.");
+            onError?.(
+              googleAuthErrorMessage(
+                error?.type ?? null,
+                "تعذر فتح نافذة Google. حاول مرة أخرى.",
+              ),
+            );
           },
         });
         setReadyClientId(clientId);
