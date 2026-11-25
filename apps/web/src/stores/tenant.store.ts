@@ -92,6 +92,9 @@ interface TenantState {
   bootstrapError: string | null;
   /** Font changed in this session — bootstrap refreshes keep our newer value. */
   fontOverridden: boolean;
+  /** Student fields saved in this session — stale SSR/bootstrap payloads must
+   *  not re-enable a field the admin just switched off. */
+  studentFieldsOverridden: boolean;
 
   setActiveTenant: (tenant: ActiveTenant | null) => void;
   setTenantSite: (site: {
@@ -167,6 +170,7 @@ export const useTenantStore = create<TenantState>()(
     bootstrapStatus: "idle",
     bootstrapError: null,
     fontOverridden: false,
+    studentFieldsOverridden: false,
 
     setActiveTenant: (tenant) => set({ activeTenant: tenant }),
 
@@ -269,9 +273,11 @@ export const useTenantStore = create<TenantState>()(
           permissions,
           abilities,
           navigation,
-          studentFields: tenant?.student_fields
-            ? normalizeStudentFieldConfig(tenant.student_fields)
-            : state.studentFields,
+          studentFields: state.studentFieldsOverridden
+            ? state.studentFields
+            : tenant?.student_fields
+              ? normalizeStudentFieldConfig(tenant.student_fields)
+              : state.studentFields,
           ...(tenantPlatformBranding
             ? {
                 platformBranding: normalizeBranding(
@@ -343,9 +349,11 @@ export const useTenantStore = create<TenantState>()(
             ...(state.fontOverridden ? { font: liveFont } : {}),
           }) as unknown as TenantBranding,
           googleClientId: data.googleClientId ?? null,
-          studentFields: data.student_fields
-            ? normalizeStudentFieldConfig(data.student_fields)
-            : (state.studentFields ?? normalizeStudentFieldConfig()),
+          studentFields: state.studentFieldsOverridden
+            ? state.studentFields
+            : data.student_fields
+              ? normalizeStudentFieldConfig(data.student_fields)
+              : (state.studentFields ?? normalizeStudentFieldConfig()),
           bootstrapStatus: "resolved",
           bootstrapError: null,
         };
@@ -357,7 +365,10 @@ export const useTenantStore = create<TenantState>()(
       set({ googleClientId: clientId?.trim() || null }),
 
     setStudentFields: (fields) =>
-      set({ studentFields: normalizeStudentFieldConfig(fields) }),
+      set({
+        studentFields: normalizeStudentFieldConfig(fields),
+        studentFieldsOverridden: true,
+      }),
 
     setPlatformBranding: (branding) =>
       set((state) => ({
@@ -427,6 +438,7 @@ export const useTenantStore = create<TenantState>()(
         bootstrapStatus: "idle",
         bootstrapError: null,
         fontOverridden: false,
+        studentFieldsOverridden: false,
       }),
     }),
     {

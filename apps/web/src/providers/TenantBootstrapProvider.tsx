@@ -59,12 +59,13 @@ export function TenantBootstrapProvider({
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
+    const store = useTenantStore.getState();
+
     // ألوان المنصة (platformBranding) بتتم إدارتها بالكامل من BrandThemeProvider
     // (تحميل ذاتي مستقل عن البوتستراب/تسجيل الدخول). هنا بنكتفي ببذرها من سياق
     // السيرفر (SSR) لو موجودة عشان أول رسمية تكون صح من غير وميض.
     const platformBranding = tenantContext?.platform_branding ?? tenantContext?.platformBranding ?? null;
     if (platformBranding) {
-      const store = useTenantStore.getState();
       setPlatformBranding({
         ...platformBranding,
         // The site editor can change the font live. A later client navigation
@@ -86,10 +87,15 @@ export function TenantBootstrapProvider({
     // control-panel colors back to defaults and causes them to "change on their
     // own" between pages. The public Google client id still has to be seeded:
     // persisted tenant state can outlive a settings change made by the admin.
-    if (useTenantStore.getState().activeTenant) {
+    if (store.activeTenant) {
       if (tenantContext) {
         setGoogleClientId(tenantContext.auth?.google_client_id ?? null);
-        setStudentFields(normalizeStudentFieldConfig(tenantContext.student_fields));
+        // Settings saved in this session are newer than the SSR by-domain
+        // payload. Re-seeding from it silently re-enabled fields the admin had
+        // just switched off in /teacher/settings/student-fields.
+        if (!store.studentFieldsOverridden) {
+          setStudentFields(normalizeStudentFieldConfig(tenantContext.student_fields));
+        }
       }
       setBootstrapStatus("resolved");
       return;

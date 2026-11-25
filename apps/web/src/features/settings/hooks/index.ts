@@ -56,6 +56,15 @@ export function useUpdateSettingsGroup() {
   return useMutation({
     mutationFn: ({ group, values }: { group: string; values: Record<string, unknown> }) =>
       settingsService.updateGroup(group, values),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] }),
+    onSuccess: (response, { group }) => {
+      // Seed the cache with the values the server actually persisted *before*
+      // invalidating. Otherwise the form falls back to the stale query data for
+      // a moment after save (e.g. a disabled student field flips back to true
+      // while the background refetch is still in flight).
+      if (response?.values && typeof response.values === "object") {
+        qc.setQueryData([SETTINGS_QUERY_KEY, "group", group], response.values);
+      }
+      return qc.invalidateQueries({ queryKey: [SETTINGS_QUERY_KEY] });
+    },
   });
 }

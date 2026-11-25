@@ -55,9 +55,15 @@ export default function StudentFieldsSettingsPage() {
     updateSettings.mutate(
       { group: "student_fields", values: form },
       {
-        onSuccess: () => {
-          setStudentFields(form);
-          setDraft(null);
+        onSuccess: (response) => {
+          // Keep exactly what the server persisted. Clearing the draft straight
+          // away would briefly re-render the switches from the pre-save query
+          // data, making a just-disabled field look enabled again.
+          const saved = normalizeStudentFieldConfig(
+            (response?.values ?? form) as Partial<Record<StudentFieldKey, unknown>>,
+          );
+          setStudentFields(saved);
+          setDraft(saved);
           toast.success("تم حفظ إعدادات حقول الطالب بنجاح.");
         },
         onError: () => toast.error("تعذر حفظ الإعدادات. حاول مرة أخرى."),
