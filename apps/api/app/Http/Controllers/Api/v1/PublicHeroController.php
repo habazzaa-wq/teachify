@@ -20,9 +20,14 @@ class PublicHeroController extends Controller
 
         $values = $setting?->values ?? [];
 
+        // The public home page must identify the app by its exact tenant name
+        // and be usable without logging in. Google's OAuth consent-screen
+        // review reads this visible copy, so keep the fallback brand-accurate.
+        $tenantName = trim((string) (currentTenant()->name ?? '')) ?: 'منصتنا';
+
         $hero = [
-            'title' => $values['hero']['title'] ?? 'مرحباً بكم',
-            'subtitle' => $values['hero']['subtitle'] ?? '',
+            'title' => ($values['hero']['title'] ?? '') ?: "مرحباً بكم في {$tenantName}",
+            'subtitle' => ($values['hero']['subtitle'] ?? '') ?: "منصة {$tenantName} التعليمية — تصفّح المراحل والكورسات والمحتوى التعليمي دون تسجيل الدخول.",
             'teacherImage' => $this->normalizeTeacherImage(
                 $values['hero']['teacherImage'] ?? '',
                 $this->cdnBaseUrl($tenantId)

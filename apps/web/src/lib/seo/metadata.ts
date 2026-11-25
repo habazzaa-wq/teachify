@@ -138,6 +138,8 @@ export function buildSeoMetadata(
 
   return {
     title: input.title,
+    // Machine-readable app name for OAuth consent-screen reviewers and browsers.
+    applicationName: siteName,
     ...(description ? { description } : {}),
     ...(input.keywords && input.keywords.length ? { keywords: input.keywords } : {}),
     alternates: input.noindex ? undefined : { canonical: input.canonical },

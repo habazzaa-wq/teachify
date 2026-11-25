@@ -37,6 +37,11 @@ async function buildWithEnv(
 }
 
 describe("buildSeoMetadata — verification", () => {
+  it("exposes the exact tenant name as the application name", async () => {
+    const md = await buildWithEnv({}, tenant(1, "Geo Top"), "https://geo-top.teachify.tech");
+    expect(md.applicationName).toBe("Geo Top");
+  });
+
   it("emits google-site-verification from tenant SEO config", async () => {
     const md = await buildWithEnv(
       {},
