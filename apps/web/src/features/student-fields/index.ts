@@ -44,6 +44,31 @@ export function normalizeStudentFieldConfig(
   }, {} as StudentFieldConfig);
 }
 
+/**
+ * Resolve the form values for the student-fields settings page.
+ *
+ * `useSettingsGroup` unwraps the API response to its `values` object, while
+ * older callers may still hand over the full `{ group, values }` response.
+ * Accept both shapes so a saved `false` is never replaced by the all-true
+ * defaults — doing that silently re-enables fields the admin disabled.
+ */
+export function resolveStudentFieldConfig(
+  source?: unknown,
+  draft?: StudentFieldConfig | null,
+): StudentFieldConfig {
+  if (draft) return draft;
+
+  const record =
+    source && typeof source === "object" ? (source as Record<string, unknown>) : null;
+  const nested = record?.values;
+  const values =
+    nested && typeof nested === "object"
+      ? (nested as Partial<Record<StudentFieldKey, unknown>>)
+      : (record as Partial<Record<StudentFieldKey, unknown>> | null);
+
+  return normalizeStudentFieldConfig(values);
+}
+
 export const STUDY_TYPES = ["أونلاين", "اوفلاين"];
 
 export const GENDER_OPTIONS = [

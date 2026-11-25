@@ -15,7 +15,7 @@ import {
 } from "@/components/ui";
 import { useSettingsGroup, useUpdateSettingsGroup } from "@/features/settings/hooks";
 import {
-  normalizeStudentFieldConfig,
+  resolveStudentFieldConfig,
   STUDENT_FIELD_KEYS,
   STUDENT_FIELD_LABELS,
   type StudentFieldConfig,
@@ -40,9 +40,10 @@ export default function StudentFieldsSettingsPage() {
   // `draft` is null until the admin changes something; the form then reflects
   // the query data directly and only user edits are kept in local state.
   const [draft, setDraft] = useState<StudentFieldConfig | null>(null);
-  const form = draft ?? normalizeStudentFieldConfig(
-    (data?.values ?? null) as Partial<Record<StudentFieldKey, unknown>> | null,
-  );
+  // Accept both the unwrapped `values` object returned by `useSettingsGroup`
+  // and a full API response. A saved `false` must never fall back to the
+  // all-true defaults and get saved back, re-enabling a disabled field.
+  const form = resolveStudentFieldConfig(data, draft);
 
   if (isLoading) return <AppLoadingState />;
   if (isError) return <AppErrorState onRetry={() => refetch()} />;
