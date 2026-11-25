@@ -64,6 +64,10 @@ export function LessonViewerDialog({ slug, lesson, onClose, onProgressChanged }:
 
   const embedUrl = video?.video?.embed_url;
   const playbackUrl = video?.video?.playback_url;
+  const imageFiles = files?.files?.filter(
+    (file) => file.type === "image" || file.mimeType?.startsWith("image/"),
+  ) ?? [];
+  const documentFiles = files?.files?.filter((file) => !imageFiles.includes(file)) ?? [];
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-auto p-4" onClick={onClose}>
@@ -100,11 +104,31 @@ export function LessonViewerDialog({ slug, lesson, onClose, onProgressChanged }:
             <div className="rounded-xl border p-6 text-center text-sm text-muted-foreground">لا يوجد فيديو متاح لهذا الدرس حالياً.</div>
           )}
 
-          {!loading && files?.files?.length ? (
+          {!loading && imageFiles.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-bold">صور الدرس</h4>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {imageFiles.map((file) => (
+                  <figure key={`image-${file.id}`} className="rounded-xl border p-2">
+                    <img
+                      src={file.url ?? undefined}
+                      alt={file.title || file.fileName || "صورة"}
+                      className="max-h-[50vh] w-full rounded-lg object-contain"
+                    />
+                    <figcaption className="pt-2 text-xs text-muted-foreground">
+                      {file.title || file.fileName}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!loading && documentFiles.length > 0 && (
             <div className="space-y-2">
               <h4 className="font-bold">ملفات الدرس</h4>
               <div className="grid gap-2">
-                {files.files.map((file) => (
+                {documentFiles.map((file) => (
                   <a key={file.id} href={file.url ?? "#"} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted">
                     <div>
                       <div className="font-medium text-sm">{file.title || file.fileName || "ملف"}</div>
@@ -115,9 +139,9 @@ export function LessonViewerDialog({ slug, lesson, onClose, onProgressChanged }:
                 ))}
               </div>
             </div>
-          ) : null}
+          )}
 
-          {!loading && !video && !files?.files?.length && lesson.lessonType !== "video" && lesson.lessonType !== "audio" && (
+          {!loading && !video && imageFiles.length === 0 && documentFiles.length === 0 && lesson.lessonType !== "video" && lesson.lessonType !== "audio" && (
             <div className="rounded-xl border p-6 text-center text-sm text-muted-foreground">تم فتح الدرس. يمكنك تحديده كمكتمل بعد الانتهاء.</div>
           )}
         </div>

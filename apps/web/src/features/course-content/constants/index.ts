@@ -1,5 +1,6 @@
 import {
   Video,
+  Image as ImageIcon,
   FileType,
   FileText,
   ClipboardList,
@@ -23,6 +24,12 @@ export const CONTENT_TYPE_CONFIG: Record<
     label: "فيديو",
     color: "text-purple-500",
     bg: "bg-purple-500/10",
+  },
+  image: {
+    icon: ImageIcon,
+    label: "الصور",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
   },
   pdf: {
     icon: FileType,

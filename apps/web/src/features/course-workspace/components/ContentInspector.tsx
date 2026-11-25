@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import {
   Video,
+  Image as ImageIcon,
   FileText,
   FileSpreadsheet,
   PenTool,
@@ -40,6 +41,7 @@ interface ContentInspectorProps {
 
 const typeMeta: Record<ContentItemType, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; description: string }> = {
   video: { label: "فيديو", icon: Video, color: "text-blue-500 bg-blue-500/10", description: "محتوى فيديو تعليمي" },
+  image: { label: "الصور", icon: ImageIcon, color: "text-emerald-500 bg-emerald-500/10", description: "صور من مكتبة الوسائط" },
   pdf: { label: "PDF", icon: FileType, color: "text-rose-500 bg-rose-500/10", description: "ملف PDF قابل للعرض" },
   exam: { label: "اختبار", icon: ClipboardList, color: "text-secondary bg-secondary/10", description: "اختبار تفاعلي للطلاب" },
   assignment: { label: "واجب", icon: PenTool, color: "text-amber-500 bg-amber-500/10", description: "واجب للتقييم والتسليم" },
@@ -159,6 +161,7 @@ function GenericPreview({ item, compact }: { item: ContentItem; compact?: boolea
 function ContentInspector({ item, compact = false }: ContentInspectorProps) {
   const previewMap: Record<ContentItemType, React.ComponentType<{ item: ContentItem; compact?: boolean }>> = {
     video: VideoPreview,
+    image: GenericPreview,
     pdf: PdfPreview,
     exam: ExamPreview,
     assignment: AssignmentPreview,

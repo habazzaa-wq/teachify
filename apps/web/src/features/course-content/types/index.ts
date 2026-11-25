@@ -1,5 +1,6 @@
 export type ContentItemType =
   | "video"
+  | "image"
   | "pdf"
   | "exam"
   | "assignment"

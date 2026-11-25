@@ -22,9 +22,10 @@ interface ContentPickerDialogProps {
 
 const DESCRIPTIONS: Record<ContentItemType, string> = {
   video: "درس فيديو عبر مسار الوسائط الحالي",
+  image: "صور من مكتبة الوسائط",
   pdf: "مستند PDF للقراءة والتحميل",
   audio: "درس صوتي أو بودكاست",
-  resource: "ملف مرفق أو مادة داعمة",
+  resource: "أي ملف من مكتبة الوسائط",
   exam: "اختبار يُبنى عبر وحدة الاختبارات",
   assignment: "واجب يُدار عبر وحدة الواجبات",
   live: "جلسة تفاعلية مباشرة",
@@ -35,7 +36,7 @@ const DESCRIPTIONS: Record<ContentItemType, string> = {
 };
 
 const GROUPS: Array<{ label: string; types: ContentItemType[] }> = [
-  { label: "المحتوى الأساسي", types: ["video", "pdf", "audio", "resource"] },
+  { label: "المحتوى الأساسي", types: ["video", "image", "pdf", "audio", "resource"] },
   { label: "التقييم", types: ["exam", "assignment"] },
   { label: "متقدم", types: ["live", "session", "external_link", "scorm", "certificate"] },
 ];

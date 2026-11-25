@@ -11,6 +11,7 @@ import type {
 function mapLessonToContentItem(lesson: Lesson): ContentItem {
   const typeMap: Record<string, ContentItemType> = {
     video: "video",
+    image: "image",
     text: "resource",
     pdf: "pdf",
     external: "external_link",

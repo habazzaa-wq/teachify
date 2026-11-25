@@ -11,6 +11,7 @@ import {
   FileType,
   FolderOpen,
   Globe,
+  Image as ImageIcon,
   Headphones,
   Link,
   Lock,
@@ -27,6 +28,7 @@ import type { ContentItem, ContentItemType } from "@/features/course-content/typ
 
 const TYPE_META: Record<ContentItemType, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
   video: { label: "فيديو", icon: Video, color: "text-secondary", bg: "bg-secondary/10" },
+  image: { label: "الصور", icon: ImageIcon, color: "text-emerald-500", bg: "bg-emerald-500/10" },
   pdf: { label: "PDF", icon: FileType, color: "text-red-500", bg: "bg-red-500/10" },
   exam: { label: "اختبار", icon: ClipboardList, color: "text-emerald-500", bg: "bg-emerald-500/10" },
   assignment: { label: "واجب", icon: FileText, color: "text-orange-500", bg: "bg-orange-500/10" },

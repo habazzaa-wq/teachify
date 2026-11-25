@@ -18,6 +18,7 @@ export const LESSON_VISIBILITY_CONFIG: Record<LessonVisibility, { label: string;
 
 export const LESSON_TYPE_CONFIG: Record<LessonType, { label: string; color: string }> = {
   video: { label: "فيديو", color: "primary" },
+  image: { label: "صور", color: "success" },
   text: { label: "نص", color: "info" },
   pdf: { label: "PDF", color: "destructive" },
   external: { label: "خارجي", color: "warning" },
@@ -46,6 +47,7 @@ export const VISIBILITY_OPTIONS = [
 export const LESSON_TYPE_OPTIONS = [
   { value: "all", label: "جميع الأنواع" },
   { value: "video", label: "فيديو" },
+  { value: "image", label: "صور" },
   { value: "text", label: "نص" },
   { value: "pdf", label: "PDF" },
   { value: "external", label: "خارجي" },

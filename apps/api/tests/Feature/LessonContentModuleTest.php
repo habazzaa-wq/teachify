@@ -98,6 +98,29 @@ class LessonContentModuleTest extends TestCase
         $this->assertDatabaseMissing('lesson_files', ['id' => $secondFileId]);
     }
 
+    public function test_media_library_asset_types_can_be_attached_as_lesson_files(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $admin = $this->memberWithRole($tenant, 'admin');
+        [$courseId, $sectionId, $lessonId] = $this->createLessonHierarchy($tenant, $admin, 'image');
+
+        $assets = collect(['image', 'zip', 'presentation', 'spreadsheet', 'document', 'file'])
+            ->map(fn (string $type): MediaAsset => $this->createRawMediaAsset($tenant, $type));
+
+        Sanctum::actingAs($admin->user);
+
+        foreach ($assets as $asset) {
+            $this->postJson($this->lessonPath($courseId, $sectionId, $lessonId).'/files', [
+                'media_asset_id' => $asset->id,
+                'title' => 'Media '.$asset->type,
+            ], $this->tenantHeader($tenant))
+                ->assertCreated()
+                ->assertJsonPath('file.media_asset_id', $asset->id);
+        }
+
+        $this->assertDatabaseCount('lesson_files', $assets->count());
+    }
+
     public function test_text_content_can_be_created_updated_and_deleted(): void
     {
         $tenant = Tenant::factory()->create();
@@ -253,6 +276,22 @@ class LessonContentModuleTest extends TestCase
         $this->bindTenant($tenant);
 
         return app(MediaLibraryService::class)->createAsset($tenant, [
+            'provider' => 'bunny',
+            'provider_service' => $type === 'video' ? 'stream' : 'storage',
+            'type' => $type,
+            'status' => 'ready',
+            'visibility' => 'private',
+            'storage_key' => "tenants/{$tenant->id}/assets/{$type}",
+            'metadata' => [],
+        ]);
+    }
+
+    private function createRawMediaAsset(Tenant $tenant, string $type): MediaAsset
+    {
+        $this->bindTenant($tenant);
+
+        return MediaAsset::query()->create([
+            'tenant_id' => $tenant->id,
             'provider' => 'bunny',
             'provider_service' => $type === 'video' ? 'stream' : 'storage',
             'type' => $type,
