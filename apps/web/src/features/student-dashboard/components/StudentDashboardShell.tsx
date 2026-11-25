@@ -16,10 +16,11 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
   const { tenant } = useActiveTenant();
   const theme = useUiStore((s) => s.theme);
 
-  // لوحة الطالب بتستخدم ألوان المنصة العالمية (platformBranding) اللي بتطبّقها
-  // BrandThemeProvider على .student-theme — فمفيش حاجة نحقنها هنا، وده بيضمن
-  // اتحاد الألوان مع باقي المنصة (الموقع العام + لوحة المدرس) سواء المسجّل
-  // دخول أو غير المسجّل، ومن غير أي اعتماد على localStorage أو مظهر المدرس.
+  // المحتوى (البطاقات/الأزرار) يتبع ألوان لوحة التحكم عبر .student-theme، لكن
+  // شريط الموقع العام (النافذة/القائمة الجانبية للموبايل) لازم يتبع ألوان
+  // المنصة (platformBranding) زي ما بيحصل في الصفحة الرئيسية — لذلك بنعزله
+  // في نطاق .community-theme. بدون كده قائمة البروفايل كانت بترث --accent
+  // من لوحة التحكم فكانت ألوانها وألوان الـ hover مختلفة عن باقي المنصة.
 
   const isDark = theme === "dark";
 
@@ -27,9 +28,11 @@ function StudentDashboardShell({ children }: StudentDashboardShellProps) {
     <ProtectedRoute>
       <div className="student-theme flex min-h-screen flex-col bg-background">
         {/* Home page chrome — same news bar, navbar and mobile nav as the main site */}
-        <NewsTicker />
-        <PublicNavbar />
-        <MobileSecondaryNav />
+        <div className="community-theme">
+          <NewsTicker />
+          <PublicNavbar />
+          <MobileSecondaryNav />
+        </div>
 
         <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 md:py-10 lg:pr-28 xl:pr-32">
           {children}
