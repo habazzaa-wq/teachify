@@ -9,6 +9,7 @@ use App\Services\Mail\TenantMailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class TenantMailSettingsController extends Controller
@@ -50,10 +51,35 @@ class TenantMailSettingsController extends Controller
             }
         }
         if (array_key_exists('password', $validated) && filled($validated['password'])) {
-            $mail['password_encrypted'] = Crypt::encryptString($validated['password']);
+            $plain = (string) $validated['password'];
+            if ($this->isGmailHost($mail['host'] ?? null)) {
+                // Gmail displays app passwords in 4x4 groups with spaces. Accept
+                // both forms, but never accept a pasted paragraph or account password.
+                $plain = preg_replace('/\s+/', '', $plain);
+                if (! preg_match('/^[A-Za-z0-9]{16}$/', $plain)) {
+                    throw ValidationException::withMessages([
+                        'password' => 'كلمة مرور جيميل غير صحيحة. يجب إدخال App Password المكوّن من 16 حرفًا من https://myaccount.google.com/apppasswords — وليس كلمة مرور الحساب ولا أي نص آخر.',
+                    ]);
+                }
+            }
+            $mail['password_encrypted'] = Crypt::encryptString($plain);
             $mail['password_configured'] = true;
         }
         unset($mail['password']);
+
+        // Verify the candidate credentials before persisting them. A bad password
+        // must never be saved, otherwise every mail flow silently stops working.
+        if (($mail['mailer'] ?? 'smtp') === 'smtp' && filled($mail['host'] ?? null) && filled($mail['username'] ?? null)) {
+            try {
+                $probe = clone $tenant;
+                $probe->forceFill(['settings_json' => ['mail' => $mail]]);
+                app(TenantMailService::class)->verifyTransport($probe);
+            } catch (Throwable $e) {
+                throw ValidationException::withMessages([
+                    'password' => 'تعذر تسجيل الدخول إلى SMTP بالبيانات الحالية: '.mb_substr($e->getMessage(), 0, 180).'. راجع اسم المستخدم وكلمة المرور (App Password لجيميل).',
+                ]);
+            }
+        }
 
         $settings['mail'] = $mail;
         $tenant->forceFill(['settings_json' => $settings])->save();
@@ -88,7 +114,10 @@ class TenantMailSettingsController extends Controller
                 app(TenantMailService::class)->verifyTransport($tenant);
                 $smtp = true;
             } catch (Throwable $e) {
-                $error = mb_substr($e->getMessage(), 0, 500);
+                $raw = strtolower($e->getMessage());
+                $error = str_contains($raw, 'authenticate') || str_contains($raw, '535')
+                    ? 'فشل تسجيل الدخول إلى SMTP. راجع اسم المستخدم وكلمة المرور (App Password لجيميل).'
+                    : mb_substr($e->getMessage(), 0, 300);
             }
         }
 
@@ -119,6 +148,11 @@ class TenantMailSettingsController extends Controller
             'fromName' => $mail['from_name'] ?? '',
             'status' => (!empty($mail['is_enabled']) && !empty($mail['host'])) ? 'active' : 'inactive',
         ];
+    }
+
+    private function isGmailHost(mixed $host): bool
+    {
+        return in_array(strtolower(trim((string) $host)), ['smtp.gmail.com', 'smtp.googlemail.com'], true);
     }
 
     private function authorizeAdmin(Request $request, $tenant): void
