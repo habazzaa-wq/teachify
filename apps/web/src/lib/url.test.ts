@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toAbsoluteAssetUrl } from "./url";
+import { isLocalMediaProxyUrl, toAbsoluteAssetUrl } from "./url";
 
 describe("toAbsoluteAssetUrl", () => {
   it("routes legacy local storage URLs through the media proxy", () => {
@@ -43,5 +43,24 @@ describe("toAbsoluteAssetUrl", () => {
   it("returns null for empty values", () => {
     expect(toAbsoluteAssetUrl(null)).toBeNull();
     expect(toAbsoluteAssetUrl("   ")).toBeNull();
+  });
+});
+
+describe("isLocalMediaProxyUrl", () => {
+  it("matches same-origin media proxy paths", () => {
+    expect(
+      isLocalMediaProxyUrl("/api/v1/media/serve/tenants/28/assets/a.webp"),
+    ).toBe(true);
+    expect(isLocalMediaProxyUrl(" /api/v1/media/serve/a.png ")).toBe(true);
+  });
+
+  it("does not match absolute URLs or unrelated local paths", () => {
+    expect(
+      isLocalMediaProxyUrl(
+        "https://geo-top.teachify.tech/api/v1/media/serve/a.png",
+      ),
+    ).toBe(false);
+    expect(isLocalMediaProxyUrl("/storage/a.png")).toBe(false);
+    expect(isLocalMediaProxyUrl(null)).toBe(false);
   });
 });

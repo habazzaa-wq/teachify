@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { isLocalMediaProxyUrl } from "@/lib/url";
 import { formatCoursePrice } from "../utils";
 import { SubscribeButton } from "./primitives";
 import { CTA_GRADIENT, DIFFICULTY_COLORS, DIFFICULTY_LABELS } from "../brand";
@@ -71,13 +72,14 @@ function PurchaseSidebarInner({ course, isEnrolled, onEnroll }: PurchaseSidebarP
 
         {/* Cover image */}
         <div className="relative aspect-video w-full overflow-hidden">
-          {coverSrc && coverSrc.startsWith("https") ? (
+          {coverSrc ? (
             <Image
               src={coverSrc}
               alt={course.title}
               fill
               sizes="(max-width: 1024px) 100vw, 380px"
               className="object-cover"
+              unoptimized={isLocalMediaProxyUrl(coverSrc)}
             />
           ) : (
             <div

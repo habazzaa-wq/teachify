@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import { BookOpen, Clock, Users, Award, Tag, Sparkles, CheckCircle2 } from "lucide-react";
 import { useUiStore } from "@/stores/ui.store";
 import { cn } from "@/lib/cn";
-import { formatNumber, initialsOf } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import { isLocalMediaProxyUrl } from "@/lib/url";
 import { formatCoursePrice } from "@/features/public-course/utils";
 import { getTeacherAvatar } from "@/lib/teacher-avatar";
 import type { CatalogCourse } from "../types";
@@ -36,6 +37,7 @@ export function CatalogCourseCard({ course, index, enrolled = false }: CatalogCo
   const isDark = theme === "dark";
   const diffColor = DIFFICULTY_COLORS[course.difficulty] ?? DIFFICULTY_COLORS.beginner!;
   const dur = formatDuration(course.duration);
+  const coverSrc = course.thumbnail || course.coverImage;
   const hasDiscount = course.discountPrice !== null && course.discountPrice > 0;
   const isFree = course.pricingType === "free";
   const instructors = course.instructors.length > 0
@@ -57,13 +59,14 @@ export function CatalogCourseCard({ course, index, enrolled = false }: CatalogCo
     >
       {/* ── Thumbnail ── */}
       <div className="relative aspect-video w-full overflow-hidden">
-        {course.thumbnail || course.coverImage ? (
+        {coverSrc ? (
           <Image
-            src={course.thumbnail || course.coverImage!}
+            src={coverSrc}
             alt={course.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            unoptimized={isLocalMediaProxyUrl(coverSrc)}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
