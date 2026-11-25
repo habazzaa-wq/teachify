@@ -291,7 +291,7 @@ if [ "$DO_RESTART" = "1" ]; then
     if pm2 describe teachify-queue-notifications >/dev/null 2>&1; then
       pm2 restart teachify-queue-notifications
     else
-      pm2 start ecosystem.config.js --only teachify-queue-notifications
+      pm2 start deploy/pm2/ecosystem.config.js --only teachify-queue-notifications
       pm2 save
     fi
   fi
