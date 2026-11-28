@@ -26,8 +26,8 @@ class PublicHeroController extends Controller
         // The public home page must identify the app by its exact tenant name
         // and be usable without logging in. Google's OAuth consent-screen
         // review reads this visible copy, so keep the fallback brand-accurate.
-        // A null/unset value means "not edited yet" and uses this fallback; an
-        // explicitly saved empty string is a deliberate clear and stays empty.
+        // A missing key means "not edited yet" and uses this fallback. Once the
+        // tenant has saved the hero object, null is a deliberate clear.
         $tenantName = trim((string) (currentTenant()->name ?? '')) ?: 'منصتنا';
 
         $hero = [
@@ -70,19 +70,25 @@ class PublicHeroController extends Controller
     }
 
     /**
-     * A null/unset value means the tenant has not edited this field yet, so
-     * the brand-accurate fallback applies. An explicitly saved empty string is
-     * data: the admin deliberately cleared the field and it must stay clear.
+     * A missing key means the tenant has never saved this field, so the
+     * brand-accurate fallback applies. Once a hero object exists, null is data:
+     * Laravel's ConvertEmptyStringsToNull middleware turns a deliberately
+     * cleared input into null, and treating that as "unset" was what kept the
+     * default subtitle from ever being removed.
      *
      * @param  array<string, mixed>  $values
      */
     private function valueOrFallback(array $values, string $key, string $fallback): string
     {
-        if (! array_key_exists($key, $values) || $values[$key] === null) {
+        if (! array_key_exists($key, $values)) {
             return $fallback;
         }
 
         $value = $values[$key];
+
+        if ($value === null) {
+            return '';
+        }
 
         return is_string($value) || is_numeric($value) ? (string) $value : $fallback;
     }
