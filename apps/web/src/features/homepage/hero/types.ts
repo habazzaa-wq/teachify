@@ -54,8 +54,8 @@ export const HERO_BG_STYLE_OPTIONS: HeroBgStyleOption[] = [
   },
   {
     value: "geomatics",
-    label: "جيوماتكس / GIS",
-    preview: "⌖ ◎ △ GIS",
+    label: "خريطة GIS",
+    preview: "N  +  ◎  △",
     fontFamily: "ui-monospace, 'SFMono-Regular', Menlo, monospace",
     direction: "ltr",
   },
