@@ -1,5 +1,5 @@
 import api from "@/services/api/axios";
-import type { HeroSettings } from "./types";
+import { normalizeHeroSettings, type HeroSettings } from "./types";
 
 export const heroService = {
   async getPublicHero() {
@@ -8,10 +8,11 @@ export const heroService = {
   },
 
   async getHeroSettings() {
-    const { data } = await api.get<{ values: { hero?: Partial<HeroSettings> } }>(
-      "/settings/homepage",
-    );
-    return data.values.hero ?? {};
+    // Edit the copy visitors actually see. The raw settings row can contain
+    // nulls while /public/hero applies the tenant-aware fallbacks, so reading
+    // it here is what made the default title/subtitle look uneditable.
+    const { data } = await api.get<{ hero: HeroSettings }>("/public/hero");
+    return normalizeHeroSettings(data.hero);
   },
 
   async updateHeroSettings(hero: HeroSettings) {

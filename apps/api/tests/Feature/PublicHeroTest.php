@@ -43,6 +43,48 @@ class PublicHeroTest extends TestCase
             ->assertJsonPath('hero.subtitle', 'تعلم الرياضيات بسهولة');
     }
 
+    public function test_explicitly_cleared_subtitle_stays_empty_instead_of_using_the_fallback(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Geo Top']);
+
+        TenantSetting::create([
+            'tenant_id' => $tenant->id,
+            'group' => 'homepage',
+            'values' => [
+                'hero' => [
+                    'title' => 'أكاديمية النور',
+                    'subtitle' => '',
+                ],
+            ],
+        ]);
+
+        $this->getJson('/api/v1/public/hero', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('hero.title', 'أكاديمية النور')
+            ->assertJsonPath('hero.subtitle', '');
+    }
+
+    public function test_null_subtitle_is_still_treated_as_not_edited_yet(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Geo Top']);
+
+        TenantSetting::create([
+            'tenant_id' => $tenant->id,
+            'group' => 'homepage',
+            'values' => [
+                'hero' => [
+                    'title' => 'أكاديمية النور',
+                    'subtitle' => null,
+                ],
+            ],
+        ]);
+
+        $this->getJson('/api/v1/public/hero', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('hero.title', 'أكاديمية النور')
+            ->assertJsonPath('hero.subtitle', 'منصة Geo Top التعليمية — تصفّح المراحل والكورسات والمحتوى التعليمي دون تسجيل الدخول.');
+    }
+
     /**
      * @return array<string, string>
      */

@@ -27,18 +27,22 @@ import {
 import { ChooseMediaButton } from "@/features/media-library/components/ChooseMediaButton";
 import { mediaLibraryService } from "@/features/media-library/services";
 import { useHeroSettings, useUpdateHeroSettings } from "@/features/homepage/hero/hooks";
-import { DEFAULT_HERO, type HeroSettings, type HeroBgStyle } from "@/features/homepage/hero/types";
+import {
+  normalizeHeroSettings,
+  type HeroSettings,
+  type HeroBgStyle,
+} from "@/features/homepage/hero/types";
 import { HeroSection } from "@/components/home/HeroSection";
 import { toAbsoluteAssetUrl } from "@/lib/url";
 
 export default function HomepageHeroPage() {
   const { data, isLoading } = useHeroSettings();
   const updateHero = useUpdateHeroSettings();
-  const [form, setForm] = useState<HeroSettings>(DEFAULT_HERO);
+  const [form, setForm] = useState<HeroSettings>(() => normalizeHeroSettings());
 
   useEffect(() => {
     if (data) {
-      setForm({ ...DEFAULT_HERO, ...data });
+      setForm(normalizeHeroSettings(data));
     }
   }, [data]);
 

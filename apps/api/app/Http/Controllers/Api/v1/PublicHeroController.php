@@ -19,59 +19,86 @@ class PublicHeroController extends Controller
             ->first();
 
         $values = $setting?->values ?? [];
+        $heroValues = is_array($values['hero'] ?? null) ? $values['hero'] : [];
+        $socialValues = is_array($heroValues['socialLinks'] ?? null) ? $heroValues['socialLinks'] : [];
+        $iconValues = is_array($heroValues['icons'] ?? null) ? $heroValues['icons'] : [];
 
         // The public home page must identify the app by its exact tenant name
         // and be usable without logging in. Google's OAuth consent-screen
         // review reads this visible copy, so keep the fallback brand-accurate.
+        // A null/unset value means "not edited yet" and uses this fallback; an
+        // explicitly saved empty string is a deliberate clear and stays empty.
         $tenantName = trim((string) (currentTenant()->name ?? '')) ?: 'منصتنا';
 
         $hero = [
-            'title' => ($values['hero']['title'] ?? '') ?: "مرحباً بكم في {$tenantName}",
-            'subtitle' => ($values['hero']['subtitle'] ?? '') ?: "منصة {$tenantName} التعليمية — تصفّح المراحل والكورسات والمحتوى التعليمي دون تسجيل الدخول.",
+            'title' => $this->valueOrFallback(
+                $heroValues,
+                'title',
+                "مرحباً بكم في {$tenantName}",
+            ),
+            'subtitle' => $this->valueOrFallback(
+                $heroValues,
+                'subtitle',
+                "منصة {$tenantName} التعليمية — تصفّح المراحل والكورسات والمحتوى التعليمي دون تسجيل الدخول.",
+            ),
             'teacherImage' => $this->normalizeTeacherImage(
-                $values['hero']['teacherImage'] ?? '',
+                $this->valueOrFallback($heroValues, 'teacherImage', ''),
                 $this->cdnBaseUrl($tenantId)
             ),
-            'teacherName' => $values['hero']['teacherName'] ?? '',
-            'badge1Text' => $values['hero']['badge1Text'] ?? 'معلم محترف',
-            'badge2Text' => $values['hero']['badge2Text'] ?? '',
-            'isActive' => $values['hero']['isActive'] ?? true,
-            'bgStyle' => $values['hero']['bgStyle'] ?? 'math',
+            'teacherName' => $this->valueOrFallback($heroValues, 'teacherName', ''),
+            'badge1Text' => $this->valueOrFallback($heroValues, 'badge1Text', 'معلم محترف'),
+            'badge2Text' => $this->valueOrFallback($heroValues, 'badge2Text', ''),
+            'isActive' => (bool) ($heroValues['isActive'] ?? true),
+            'bgStyle' => $this->valueOrFallback($heroValues, 'bgStyle', 'math'),
             'socialLinks' => [
-                'facebook' => $values['hero']['socialLinks']['facebook'] ?? '',
-                'youtube' => $values['hero']['socialLinks']['youtube'] ?? '',
-                'phone' => $values['hero']['socialLinks']['phone'] ?? '',
-                'whatsapp' => $values['hero']['socialLinks']['whatsapp'] ?? '',
+                'facebook' => $this->valueOrFallback($socialValues, 'facebook', ''),
+                'youtube' => $this->valueOrFallback($socialValues, 'youtube', ''),
+                'phone' => $this->valueOrFallback($socialValues, 'phone', ''),
+                'whatsapp' => $this->valueOrFallback($socialValues, 'whatsapp', ''),
             ],
             'icons' => [
-                'gifts' => [
-                    'label' => $values['hero']['icons']['gifts']['label'] ?? 'الهدايا',
-                    'visible' => $values['hero']['icons']['gifts']['visible'] ?? true,
-                ],
-                'facebook' => [
-                    'label' => $values['hero']['icons']['facebook']['label'] ?? 'فيس بوك',
-                    'visible' => $values['hero']['icons']['facebook']['visible'] ?? true,
-                ],
-                'chat' => [
-                    'label' => $values['hero']['icons']['chat']['label'] ?? 'محادثة مباشرة',
-                    'visible' => $values['hero']['icons']['chat']['visible'] ?? true,
-                ],
-                'youtube' => [
-                    'label' => $values['hero']['icons']['youtube']['label'] ?? 'يوتيوب',
-                    'visible' => $values['hero']['icons']['youtube']['visible'] ?? true,
-                ],
-                'bestStudents' => [
-                    'label' => $values['hero']['icons']['bestStudents']['label'] ?? 'أفضل الطلاب',
-                    'visible' => $values['hero']['icons']['bestStudents']['visible'] ?? true,
-                ],
-                'phone' => [
-                    'label' => $values['hero']['icons']['phone']['label'] ?? 'رقم الهاتف',
-                    'visible' => $values['hero']['icons']['phone']['visible'] ?? true,
-                ],
+                'gifts' => $this->iconConfig($iconValues, 'gifts', 'الهدايا'),
+                'facebook' => $this->iconConfig($iconValues, 'facebook', 'فيس بوك'),
+                'chat' => $this->iconConfig($iconValues, 'chat', 'محادثة مباشرة'),
+                'youtube' => $this->iconConfig($iconValues, 'youtube', 'يوتيوب'),
+                'bestStudents' => $this->iconConfig($iconValues, 'bestStudents', 'أفضل الطلاب'),
+                'phone' => $this->iconConfig($iconValues, 'phone', 'رقم الهاتف'),
             ],
         ];
 
         return response()->json(['hero' => $hero]);
+    }
+
+    /**
+     * A null/unset value means the tenant has not edited this field yet, so
+     * the brand-accurate fallback applies. An explicitly saved empty string is
+     * data: the admin deliberately cleared the field and it must stay clear.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function valueOrFallback(array $values, string $key, string $fallback): string
+    {
+        if (! array_key_exists($key, $values) || $values[$key] === null) {
+            return $fallback;
+        }
+
+        $value = $values[$key];
+
+        return is_string($value) || is_numeric($value) ? (string) $value : $fallback;
+    }
+
+    /**
+     * @param  array<string, mixed>  $icons
+     * @return array{label: string, visible: bool}
+     */
+    private function iconConfig(array $icons, string $key, string $defaultLabel): array
+    {
+        $config = is_array($icons[$key] ?? null) ? $icons[$key] : [];
+
+        return [
+            'label' => $this->valueOrFallback($config, 'label', $defaultLabel),
+            'visible' => (bool) ($config['visible'] ?? true),
+        ];
     }
 
     /**
