@@ -934,6 +934,13 @@ html[data-tenant-font="true"] .public-display-font {
   .hero-bg-orb {
     opacity: var(--orb-opacity, 0.12) !important;
   }
+  .gis-radar {
+    animation: none !important;
+    opacity: 0.22 !important;
+  }
+  .gis-contour {
+    animation-duration: 30s;
+  }
 }
 
 /* ───────── Touch devices (phones + tablets) ─────────
@@ -955,6 +962,12 @@ html[data-tenant-font="true"] .public-display-font {
     will-change: auto !important;
   }
 
+  .gis-radar {
+    animation: none !important;
+    opacity: 0.22 !important;
+    will-change: auto !important;
+  }
+
   .glass-touch-solid {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -969,7 +982,13 @@ html[data-tenant-font="true"] .public-display-font {
 
 /* ───────── Pause animations while scrolling or when off-screen ───────── */
 .hero-anim-paused .hero-bg-orb,
-body.page-is-scrolling .hero-bg-orb {
+body.page-is-scrolling .hero-bg-orb,
+.hero-anim-paused .gis-contour,
+.hero-anim-paused .gis-marker-pulse,
+.hero-anim-paused .gis-radar,
+body.page-is-scrolling .gis-contour,
+body.page-is-scrolling .gis-marker-pulse,
+body.page-is-scrolling .gis-radar {
   animation-play-state: paused !important;
 }
 
@@ -1071,6 +1090,57 @@ body.page-is-scrolling .nav-touch-solid {
   25% { transform: translate(10px, -15px) scale(1.05); opacity: calc(var(--orb-opacity, 0.15) + 0.05); }
   50% { transform: translate(-5px, -25px) scale(1.1); opacity: var(--orb-opacity, 0.15); }
   75% { transform: translate(-15px, -10px) scale(1.03); opacity: calc(var(--orb-opacity, 0.15) - 0.03); }
+}
+
+/* — Hero GIS/geomatics backdrop — transform+opacity only, no filter repaints — */
+.gis-backdrop {
+  pointer-events: none;
+}
+
+.gis-contour {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gis-contour-drift 18s ease-in-out infinite alternate;
+}
+
+.gis-marker-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gis-marker-pulse 3.2s ease-out infinite;
+}
+
+.gis-radar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(46vw, 420px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 305deg,
+    color-mix(in srgb, var(--brand-secondary) 16%, transparent) 350deg,
+    transparent 360deg
+  );
+  opacity: 0.6;
+  will-change: transform;
+  animation: gis-radar-sweep 16s linear infinite;
+}
+
+@keyframes gis-contour-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(14px, -10px, 0); }
+}
+
+@keyframes gis-marker-pulse {
+  0% { transform: scale(0.45); opacity: 0.85; }
+  70%, 100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes gis-radar-sweep {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Render the hero in its final state on the first paint. */
@@ -1294,7 +1364,10 @@ body.page-is-scrolling .nav-touch-solid {
 @media (prefers-reduced-motion: reduce) {
   .home-icon-swap,
   .home-menu-pop,
-  .hero-bg-orb {
+  .hero-bg-orb,
+  .gis-contour,
+  .gis-marker-pulse,
+  .gis-radar {
     animation: none !important;
   }
   .wcu-anim-rise,

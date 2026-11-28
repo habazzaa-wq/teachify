@@ -19,7 +19,47 @@ export interface HeroIcons {
   phone: HeroIconConfig;
 }
 
-export type HeroBgStyle = "math" | "arabic" | "english";
+export type HeroBgStyle = "math" | "arabic" | "english" | "geomatics";
+
+export interface HeroBgStyleOption {
+  value: HeroBgStyle;
+  label: string;
+  preview: string;
+  fontFamily: string;
+  direction: "ltr" | "rtl";
+}
+
+/** Shared by the editor and tests so a new tenant-specific style is selectable. */
+export const HERO_BG_STYLE_OPTIONS: HeroBgStyleOption[] = [
+  {
+    value: "math",
+    label: "رموز رياضية",
+    preview: "π ∑ √ ∞ Δ θ",
+    fontFamily: "'Georgia', serif",
+    direction: "ltr",
+  },
+  {
+    value: "arabic",
+    label: "حروف عربية",
+    preview: "أ ب ت ث ج ح",
+    fontFamily: "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif",
+    direction: "rtl",
+  },
+  {
+    value: "english",
+    label: "حروف إنجليزية",
+    preview: "A B C D E F",
+    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+    direction: "ltr",
+  },
+  {
+    value: "geomatics",
+    label: "جيوماتكس / GIS",
+    preview: "⌖ ◎ △ GIS",
+    fontFamily: "ui-monospace, 'SFMono-Regular', Menlo, monospace",
+    direction: "ltr",
+  },
+];
 
 export interface HeroSettings {
   title: string;

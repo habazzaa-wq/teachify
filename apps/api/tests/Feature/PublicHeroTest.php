@@ -33,6 +33,7 @@ class PublicHeroTest extends TestCase
                     'title' => 'أكاديمية النور',
                     'subtitle' => 'تعلم الرياضيات بسهولة',
                     'isActive' => true,
+                    'bgStyle' => 'geomatics',
                 ],
             ],
         ]);
@@ -40,7 +41,8 @@ class PublicHeroTest extends TestCase
         $this->getJson('/api/v1/public/hero', $this->tenantHeader($tenant))
             ->assertOk()
             ->assertJsonPath('hero.title', 'أكاديمية النور')
-            ->assertJsonPath('hero.subtitle', 'تعلم الرياضيات بسهولة');
+            ->assertJsonPath('hero.subtitle', 'تعلم الرياضيات بسهولة')
+            ->assertJsonPath('hero.bgStyle', 'geomatics');
     }
 
     public function test_explicitly_cleared_subtitle_stays_empty_instead_of_using_the_fallback(): void
