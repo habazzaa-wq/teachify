@@ -64,7 +64,7 @@ class PublicHeroTest extends TestCase
             ->assertJsonPath('hero.subtitle', '');
     }
 
-    public function test_null_subtitle_is_still_treated_as_not_edited_yet(): void
+    public function test_null_subtitle_is_treated_as_a_deliberate_clear(): void
     {
         $tenant = Tenant::factory()->create(['name' => 'Geo Top']);
 
@@ -82,6 +82,24 @@ class PublicHeroTest extends TestCase
         $this->getJson('/api/v1/public/hero', $this->tenantHeader($tenant))
             ->assertOk()
             ->assertJsonPath('hero.title', 'أكاديمية النور')
+            ->assertJsonPath('hero.subtitle', '');
+    }
+
+    public function test_tenant_with_homepage_settings_but_no_hero_object_still_gets_defaults(): void
+    {
+        $tenant = Tenant::factory()->create(['name' => 'Geo Top']);
+
+        TenantSetting::create([
+            'tenant_id' => $tenant->id,
+            'group' => 'homepage',
+            'values' => [
+                'educationalStages' => ['titleLead' => 'المستويات', 'titleEmphasis' => 'التعليمية'],
+            ],
+        ]);
+
+        $this->getJson('/api/v1/public/hero', $this->tenantHeader($tenant))
+            ->assertOk()
+            ->assertJsonPath('hero.title', 'مرحباً بكم في Geo Top')
             ->assertJsonPath('hero.subtitle', 'منصة Geo Top التعليمية — تصفّح المراحل والكورسات والمحتوى التعليمي دون تسجيل الدخول.');
     }
 
