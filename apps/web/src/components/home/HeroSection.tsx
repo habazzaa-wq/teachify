@@ -422,7 +422,7 @@ export function HeroSection({
 
         {/* ── Title ── */}
         <h1
-          className="home-enter-up mb-4 max-w-2xl text-center text-3xl font-extrabold leading-snug tracking-tight sm:mb-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.3]"
+          className="home-enter-up mb-4 max-w-none text-center text-[clamp(1.25rem,5.2vw,2.75rem)] font-extrabold leading-tight tracking-tight whitespace-nowrap sm:mb-5 lg:leading-[1.3]"
           style={{ fontFamily: "var(--font-sans)" }}
         >
           {(() => {
@@ -434,12 +434,7 @@ export function HeroSection({
               return (
                 <>
                   <span style={{ color: "var(--brand-primary)" }}>{parts[0] + separator}</span>
-                  {rest && (
-                    <>
-                      <br />
-                      <span style={{ color: "var(--brand-secondary)" }}>{rest}</span>
-                    </>
-                  )}
+                  {rest && <span style={{ color: "var(--brand-secondary)" }}>{" "}{rest}</span>}
                 </>
               );
             }
