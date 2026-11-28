@@ -168,6 +168,21 @@ const DESKTOP_ENGLISH = [
   { char: "T", x: "48%", y: "55%", size: 24, rotate: 5 },
 ];
 
+const DESKTOP_GEOMATICS = [
+  { char: "⌖", x: "12%", y: "18%", size: 34, rotate: -8 },
+  { char: "◎", x: "88%", y: "22%", size: 30, rotate: 12 },
+  { char: "△", x: "20%", y: "82%", size: 26, rotate: -15 },
+  { char: "◇", x: "78%", y: "80%", size: 26, rotate: 18 },
+  { char: "+", x: "5%", y: "48%", size: 24, rotate: 0 },
+  { char: "≈", x: "93%", y: "58%", size: 28, rotate: -10 },
+  { char: "N", x: "50%", y: "7%", size: 20, rotate: 0 },
+  { char: "E", x: "95%", y: "40%", size: 18, rotate: 0 },
+  { char: "EPSG", x: "17%", y: "62%", size: 13, rotate: -6 },
+  { char: "31°N", x: "70%", y: "12%", size: 13, rotate: 6 },
+  { char: "29°E", x: "30%", y: "28%", size: 13, rotate: -4 },
+  { char: "◎", x: "58%", y: "92%", size: 18, rotate: 0 },
+];
+
 const DESKTOP_DOTS = [
   { x: "14%", y: "22%", size: 5, color: neutralDeco },
   { x: "86%", y: "20%", size: 6, color: neutralDeco },
@@ -215,16 +230,119 @@ const MOBILE_DECOR = {
     { char: "C", x: "50%", y: "90%", size: 16, rotate: 15 },
     { char: "D", x: "75%", y: "15%", size: 14, rotate: -8 },
   ],
+  geomatics: [
+    { char: "⌖", x: "88%", y: "68%", size: 24, rotate: 8 },
+    { char: "◎", x: "10%", y: "30%", size: 20, rotate: -12 },
+    { char: "△", x: "50%", y: "90%", size: 18, rotate: 15 },
+    { char: "N", x: "75%", y: "15%", size: 14, rotate: -8 },
+  ],
 };
 
-function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" }) {
-  const desktopSymbols = bgStyle === "arabic" ? DESKTOP_ARABIC : bgStyle === "english" ? DESKTOP_ENGLISH : DESKTOP_MATH;
+/** Animated GIS/survey backdrop: map grid, contour lines, markers and radar. */
+function GisBackdrop({ compact = false }: { compact?: boolean }) {
+  const gridId = compact ? "gis-grid-mobile" : "gis-grid-desktop";
+  const contourRings = compact ? [90, 150] : [130, 190, 250, 320];
+  const markers = [
+    { x: 140, y: 160, primary: true },
+    { x: 830, y: 150, primary: false },
+    { x: 180, y: 470, primary: false },
+    { x: 860, y: 460, primary: true },
+  ];
+
+  return (
+    <div className="gis-backdrop absolute inset-0 overflow-hidden" aria-hidden="true">
+      {!compact && <div className="gis-radar" />}
+      <svg
+        className="absolute inset-0 h-full w-full"
+        viewBox="0 0 1000 620"
+        preserveAspectRatio="none"
+        style={{ color: "var(--brand-secondary)" }}
+      >
+        <defs>
+          <pattern id={gridId} width="50" height="50" patternUnits="userSpaceOnUse">
+            <path
+              d="M 50 0 L 0 0 0 50"
+              fill="none"
+              stroke="currentColor"
+              strokeOpacity="0.1"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          </pattern>
+        </defs>
+
+        <rect width="1000" height="620" fill={`url(#${gridId})`} />
+
+        <g className="gis-contour" fill="none" stroke="currentColor" strokeWidth="1.2" vectorEffect="non-scaling-stroke">
+          {contourRings.map((radius, index) => (
+            <ellipse
+              key={radius}
+              cx="500"
+              cy="310"
+              rx={radius * 1.6}
+              ry={radius}
+              strokeOpacity={0.18 - index * 0.03}
+              strokeDasharray={index % 2 === 0 ? undefined : "7 11"}
+            />
+          ))}
+          <path
+            d="M -40 430 C 170 330 280 500 480 390 S 820 250 1040 340"
+            strokeOpacity="0.16"
+            strokeDasharray="9 13"
+          />
+          <path
+            d="M -30 180 C 190 260 320 120 520 210 S 850 330 1030 230"
+            strokeOpacity="0.12"
+          />
+        </g>
+
+        {markers.map((marker, index) => (
+          <g
+            key={`${marker.x}-${marker.y}`}
+            style={{ color: marker.primary ? "var(--brand-primary)" : "var(--brand-secondary)" }}
+          >
+            <circle
+              className="gis-marker-pulse"
+              cx={marker.x}
+              cy={marker.y}
+              r="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              vectorEffect="non-scaling-stroke"
+              style={{ animationDelay: `${index * 0.65}s` }}
+            />
+            <circle cx={marker.x} cy={marker.y} r="4.5" fill="currentColor" />
+            <path
+              d={`M ${marker.x - 13} ${marker.y} h 26 M ${marker.x} ${marker.y - 13} v 26`}
+              stroke="currentColor"
+              strokeOpacity="0.75"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" | "geomatics" }) {
+  const desktopSymbols =
+    bgStyle === "arabic"
+      ? DESKTOP_ARABIC
+      : bgStyle === "english"
+        ? DESKTOP_ENGLISH
+        : bgStyle === "geomatics"
+          ? DESKTOP_GEOMATICS
+          : DESKTOP_MATH;
   const mobileSymbols = MOBILE_DECOR[bgStyle] || MOBILE_DECOR.math;
 
   return (
     <>
       {/* Desktop — richer background, heavily reduced element count */}
       <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block" aria-hidden="true">
+        {bgStyle === "geomatics" && <GisBackdrop />}
         {/* Static geometric shapes */}
         {DESKTOP_SHAPES.map((s, i) => (
           <div key={`shape-${i}`} className="hero-decoration absolute" style={{ left: s.x, top: s.y }}>
@@ -242,7 +360,7 @@ function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" })
               top: m.y,
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
-              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
+              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : bgStyle === "geomatics" ? "ui-monospace, 'SFMono-Regular', Menlo, monospace" : "'Georgia', serif",
             }}
           >
             {m.char}
@@ -304,6 +422,7 @@ function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" })
 
       {/* Mobile — simplified background, fully static */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden md:hidden" aria-hidden="true">
+        {bgStyle === "geomatics" && <GisBackdrop compact />}
         {MOBILE_DECOR.dots.map((d, i) => (
           <div
             key={`dot-${i}`}
@@ -331,7 +450,7 @@ function HeroBackground({ bgStyle }: { bgStyle: "math" | "arabic" | "english" })
               top: m.y,
               fontSize: m.size,
               transform: `rotate(${m.rotate}deg)`,
-              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : "'Georgia', serif",
+              fontFamily: bgStyle === "arabic" ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif" : bgStyle === "english" ? "'Inter', 'Segoe UI', sans-serif" : bgStyle === "geomatics" ? "ui-monospace, 'SFMono-Regular', Menlo, monospace" : "'Georgia', serif",
             }}
           >
             {m.char}

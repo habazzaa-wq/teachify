@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHeroSettings } from "./types";
+import { HERO_BG_STYLE_OPTIONS, normalizeHeroSettings } from "./types";
 
 describe("normalizeHeroSettings", () => {
   it("fills missing nested defaults without dropping boolean false", () => {
@@ -28,5 +28,10 @@ describe("normalizeHeroSettings", () => {
 
     expect(hero.subtitle).toBe("");
     expect(hero.teacherName).toBe("");
+  });
+
+  it("keeps the GIS/geomatics background style selectable", () => {
+    expect(normalizeHeroSettings({ bgStyle: "geomatics" }).bgStyle).toBe("geomatics");
+    expect(HERO_BG_STYLE_OPTIONS.map((option) => option.value)).toContain("geomatics");
   });
 });

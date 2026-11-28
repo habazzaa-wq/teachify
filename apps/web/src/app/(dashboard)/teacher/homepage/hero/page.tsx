@@ -28,6 +28,7 @@ import { ChooseMediaButton } from "@/features/media-library/components/ChooseMed
 import { mediaLibraryService } from "@/features/media-library/services";
 import { useHeroSettings, useUpdateHeroSettings } from "@/features/homepage/hero/hooks";
 import {
+  HERO_BG_STYLE_OPTIONS,
   normalizeHeroSettings,
   type HeroSettings,
   type HeroBgStyle,
@@ -212,20 +213,16 @@ export default function HomepageHeroPage() {
                 <AppCardHeader>
                   <AppCardTitle>شكل الخلفية</AppCardTitle>
                   <AppCardDescription>
-                    اختر نوع الحروف التي تظهر في خلفية البطاقة التعريفية
+                    اختر زخارف الخلفية التي تعكس تخصص المنصة
                   </AppCardDescription>
                 </AppCardHeader>
                 <AppCardContent>
                   <AppRadioGroup
                     value={form.bgStyle}
                     onValueChange={(v) => setForm({ ...form, bgStyle: v as HeroBgStyle })}
-                    className="grid grid-cols-3 gap-3"
+                    className="grid grid-cols-2 gap-3 sm:grid-cols-4"
                   >
-                    {[
-                      { value: "math", label: "رموز رياضية", preview: "π ∑ √ ∞ Δ θ" },
-                      { value: "arabic", label: "حروف عربية", preview: "أ ب ت ث ج ح" },
-                      { value: "english", label: "حروف إنجليزية", preview: "A B C D E F" },
-                    ].map((option) => (
+                    {HERO_BG_STYLE_OPTIONS.map((option) => (
                       <label
                         key={option.value}
                         className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all hover:bg-accent ${
@@ -238,15 +235,7 @@ export default function HomepageHeroPage() {
                         <span className="text-sm font-medium">{option.label}</span>
                         <span
                           className="text-lg font-bold text-muted-foreground"
-                          style={{
-                            fontFamily:
-                              option.value === "arabic"
-                                ? "'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif"
-                                : option.value === "english"
-                                ? "'Inter', 'Segoe UI', sans-serif"
-                                : "'Georgia', serif",
-                            direction: option.value === "arabic" ? "rtl" : "ltr",
-                          }}
+                          style={{ fontFamily: option.fontFamily, direction: option.direction }}
                         >
                           {option.preview}
                         </span>
