@@ -114,20 +114,20 @@ function ThemeBtn() {
         setToggleCount((count) => count + 1);
         toggleTheme();
       }}
-      className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
+      className="relative flex h-8 w-8 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group sm:h-9 sm:w-9 lg:h-10 lg:w-10 lg:rounded-2xl"
       aria-label="تبديل وضع العرض"
       title="تبديل وضع العرض"
     >
       {/* Default border */}
       <span
-        className="absolute inset-0 rounded-2xl"
+        className="absolute inset-0 rounded-xl lg:rounded-2xl"
         style={{
           boxShadow: `inset 0 0 0 1px hsl(var(--border))`,
         }}
       />
       {/* Hover: bg = secondary, border = primary */}
       <span
-        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 lg:rounded-2xl"
         style={{
           backgroundColor: secondary,
           border: `3px solid var(--brand-primary)`,
@@ -141,8 +141,8 @@ function ThemeBtn() {
           toggleCount > 0 && "home-icon-swap",
         )}
       >
-        <Moon className="hidden h-[18px] w-[18px] dark:block" aria-hidden="true" />
-        <Sun className="h-[18px] w-[18px] dark:hidden" aria-hidden="true" />
+        <Moon className="hidden h-4 w-4 dark:block lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
+        <Sun className="h-4 w-4 dark:hidden lg:h-[18px] lg:w-[18px]" aria-hidden="true" />
       </span>
     </button>
   );
@@ -486,7 +486,7 @@ export function PublicNavbar() {
     <>
       <header className="sticky top-0 z-50 w-full" role="banner">
         <div
-          className="nav-touch-solid relative flex h-16 w-full items-center justify-between gap-2 bg-background/75 px-4 backdrop-blur-2xl sm:px-6 lg:px-8"
+          className="nav-touch-solid relative flex h-14 w-full items-center justify-between gap-1.5 bg-background/75 px-2.5 backdrop-blur-2xl sm:gap-2 sm:px-4 lg:h-16 lg:gap-2 lg:px-8"
           style={{
             boxShadow: `0 8px 32px rgba(0,0,0,0.06)`,
           }}
@@ -495,7 +495,7 @@ export function PublicNavbar() {
             <div className="relative z-10 flex items-center">
                <Link href="/" aria-label={tenantName} className="group relative flex items-center gap-2.5">
                 <NavbarLogo plan={navbarLogo} />
-                <span className="text-lg font-bold tracking-tight max-md:hidden" style={{ color: primary }}>
+                <span className="hidden text-base font-bold tracking-tight lg:inline lg:text-lg" style={{ color: primary }}>
                   {tenantName}
                 </span>
               </Link>
@@ -503,7 +503,7 @@ export function PublicNavbar() {
 
             {/* ── Desktop Nav ── */}
             <nav
-              className="hidden md:flex items-center gap-1 relative z-10"
+              className="hidden lg:flex items-center gap-1 relative z-10"
               role="navigation"
               aria-label="القائمة الرئيسية"
             >
@@ -529,14 +529,14 @@ export function PublicNavbar() {
 
             {/* ── Right actions ── */}
             <div className="relative z-10 flex items-center gap-1 sm:gap-1.5 lg:gap-2">
-              {/* Search + theme move to the mobile secondary nav on small screens */}
-              <div className="hidden items-center gap-1 sm:gap-1.5 lg:gap-2 md:flex">
+              {/* Search + theme stay in the top bar on every screen size. */}
+              <div className="flex items-center gap-1 sm:gap-1.5 lg:gap-2">
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}
                   title="بحث عن كورس (Ctrl+K)"
                   aria-label="بحث عن كورس"
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group"
+                  className="relative flex h-8 w-8 items-center justify-center rounded-xl transition-transform duration-300 hover:scale-110 active:scale-90 group sm:h-9 sm:w-9 lg:h-10 lg:w-10"
                 >
                   <span
                     className="absolute inset-0 rounded-xl"
@@ -550,7 +550,7 @@ export function PublicNavbar() {
                       boxShadow: `0 0 24px rgba(0,0,0,0.251)`,
                     }}
                   />
-                  <Search className="h-[18px] w-[18px] relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300" />
+                  <Search className="h-4 w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors duration-300 lg:h-[18px] lg:w-[18px]" />
                 </button>
 
                 <ThemeBtn />
@@ -794,7 +794,7 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setLoginOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3 md:py-1.5 md:text-sm"
+                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2 py-1.5 text-[10px] leading-none font-semibold transition-all duration-300 sm:gap-1.5 sm:px-3 sm:text-xs lg:gap-2 lg:rounded-2xl lg:px-3.5 lg:py-1.5 lg:text-sm"
                         style={{
                           color: "hsl(var(--foreground))",
                           border: `1px solid hsl(var(--border))`,
@@ -802,7 +802,7 @@ export function PublicNavbar() {
                         }}
                       >
                         <span
-                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl md:rounded-2xl"
+                          className="absolute -inset-[2px] rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 sm:rounded-2xl lg:rounded-2xl"
                           style={{
                             backgroundColor: secondary,
                             border: `3px solid var(--brand-primary)`,
@@ -810,7 +810,7 @@ export function PublicNavbar() {
                           }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                        <LogIn className="h-4 w-4 sm:h-4 sm:w-4 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors" />
+                        <LogIn className="h-3.5 w-3.5 relative z-10 group-hover:text-[var(--brand-secondary-contrast)] transition-colors sm:h-4 sm:w-4" />
                         <span className="relative z-10 whitespace-nowrap group-hover:text-[var(--brand-secondary-contrast)] transition-colors">تسجيل الدخول</span>
                       </button>
                     </div>
@@ -819,18 +819,18 @@ export function PublicNavbar() {
                       <button
                         type="button"
                         onClick={() => setRegisterOpen(true)}
-                        className="group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-4 py-2 text-[13px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:rounded-2xl sm:text-[13px] md:gap-2 md:rounded-2xl md:px-3.5 md:py-1.5 md:text-sm"
+                        className="group relative inline-flex shrink-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-xl px-2 py-1.5 text-[10px] leading-none font-semibold text-[var(--brand-primary-contrast)] transition-all duration-300 sm:gap-1.5 sm:px-3 sm:text-xs lg:gap-2 lg:rounded-2xl lg:px-3.5 lg:py-1.5 lg:text-sm"
                         style={{
                           backgroundColor: primary,
                           boxShadow: `0 4px 20px rgba(0,0,0,0.271)`,
                         }}
                       >
                         <span
-                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-2xl md:rounded-[18px]"
+                          className="absolute -inset-[3px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 sm:rounded-2xl lg:rounded-[18px]"
                           style={{ border: `3px solid var(--brand-secondary)`, boxShadow: `0 0 28px rgba(0,0,0,0.333)` }}
                         />
                         <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                        <Sparkles className="h-4 w-4 sm:h-4 sm:w-4 relative z-10" />
+                        <Sparkles className="h-3.5 w-3.5 relative z-10 sm:h-4 sm:w-4" />
                         <span className="relative z-10 whitespace-nowrap">إنشاء حساب</span>
                         <ChevronLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5 relative z-10 group-hover:-translate-x-1 transition-transform max-sm:hidden" />
                       </button>
