@@ -58,3 +58,51 @@ export const DEFAULT_HERO: HeroSettings = {
   },
   bgStyle: "math",
 };
+
+type HeroSettingsInput = {
+  [K in keyof Omit<HeroSettings, "socialLinks" | "icons">]?: HeroSettings[K] | null;
+} & {
+  socialLinks?: Partial<Record<keyof HeroSocialLinks, string | null>> | null;
+  icons?: Partial<
+    Record<keyof HeroIcons, { label?: string | null; visible?: boolean | null } | null>
+  > | null;
+};
+
+/**
+ * The public hero API fills unset copy with tenant-aware defaults and may
+ * still return `null` for older saved rows. Normalize once here so the editor
+ * never feeds null into a controlled input or loses a nested default.
+ */
+export function normalizeHeroSettings(value?: HeroSettingsInput | null): HeroSettings {
+  const social = value?.socialLinks ?? {};
+  const icons = value?.icons ?? {};
+  const icon = (key: keyof HeroIcons): HeroIconConfig => ({
+    label: icons[key]?.label ?? DEFAULT_HERO.icons[key].label,
+    visible: icons[key]?.visible ?? DEFAULT_HERO.icons[key].visible,
+  });
+
+  return {
+    title: value?.title ?? DEFAULT_HERO.title,
+    subtitle: value?.subtitle ?? DEFAULT_HERO.subtitle,
+    teacherImage: value?.teacherImage ?? DEFAULT_HERO.teacherImage,
+    teacherName: value?.teacherName ?? DEFAULT_HERO.teacherName,
+    badge1Text: value?.badge1Text ?? DEFAULT_HERO.badge1Text,
+    badge2Text: value?.badge2Text ?? DEFAULT_HERO.badge2Text,
+    isActive: value?.isActive ?? DEFAULT_HERO.isActive,
+    bgStyle: value?.bgStyle ?? DEFAULT_HERO.bgStyle,
+    socialLinks: {
+      facebook: social.facebook ?? DEFAULT_HERO.socialLinks.facebook,
+      youtube: social.youtube ?? DEFAULT_HERO.socialLinks.youtube,
+      phone: social.phone ?? DEFAULT_HERO.socialLinks.phone,
+      whatsapp: social.whatsapp ?? DEFAULT_HERO.socialLinks.whatsapp,
+    },
+    icons: {
+      gifts: icon("gifts"),
+      facebook: icon("facebook"),
+      chat: icon("chat"),
+      youtube: icon("youtube"),
+      bestStudents: icon("bestStudents"),
+      phone: icon("phone"),
+    },
+  };
+}
